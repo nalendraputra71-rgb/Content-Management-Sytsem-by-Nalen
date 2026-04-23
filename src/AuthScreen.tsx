@@ -204,7 +204,8 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
     <div style={{minHeight:"100vh", display:"flex", background:"#FAFAFA", alignItems:"center", justifyContent:"center", padding:24, fontFamily:"'Inter', sans-serif"}}>
       <div className="card-shadow" style={{width:"100%", maxWidth:400, background:"#FFFFFF", borderRadius:32, padding:48, border:"1px solid rgba(44,32,22,0.05)"}}>
         <div style={{textAlign:"center", marginBottom:40}}>
-          <h1 style={{fontSize:32, color:"#2C2016", fontWeight:800, letterSpacing:"-1px", marginBottom:12}}>Your Company CMS</h1>
+          <h1 style={{fontSize:32, color:"#2C2016", fontWeight:800, letterSpacing:"-1px", marginBottom:8}}>CONTENT MANAGEMENT</h1>
+          <p style={{fontSize:12, color:"#FF6B00", fontWeight:700, textTransform:"uppercase", letterSpacing:1, marginBottom:16}}>By Nalendra Putra Firdaus</p>
           <p style={{fontSize:16, color:"rgba(44,32,22,0.6)", fontWeight:500}}>
             {mode === "login" ? "Selamat datang kembali!" : mode === "signup" ? "Mulai rencanakan kontenmu sekarang." : "Lengkapi profilmu."}
           </p>
