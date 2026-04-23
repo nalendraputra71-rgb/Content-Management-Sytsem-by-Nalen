@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { db, collection, query, where, getDocs, doc, setDoc, deleteDoc, updateDoc, limit } from "./firebase";
 import { Users, Mail, Shield, Trash2, Link, Copy, Check, Search, AtSign } from "lucide-react";
 import { I, B, CARD } from "./data";
+import { motion } from "motion/react";
 
 export function ShareWorkspaceModal({ workspace, onClose }: { workspace: any, onClose: () => void }) {
   const [email, setEmail] = useState("");
@@ -97,10 +98,10 @@ export function ShareWorkspaceModal({ workspace, onClose }: { workspace: any, on
   const publicUrl = `${window.location.origin}${window.location.pathname}#/public/${workspace.id}`;
 
   return (
-    <div onClick={onClose} style={{position:"fixed", inset:0, background:"rgba(30,21,9,0.7)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:1000, padding:16}}>
-      <div onClick={e=>e.stopPropagation()} style={{background:"#FAF7F2", borderRadius:24, width:"100%", maxWidth:480, maxHeight:"90vh", overflowY:"auto", padding:32, boxShadow:"0 40px 100px rgba(0,0,0,0.4)"}}>
+    <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} transition={{ duration: 0.2 }} onClick={onClose} style={{position:"fixed", inset:0, background:"rgba(30,21,9,0.7)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:1000, padding:16}}>
+      <motion.div initial={{scale:0.95, opacity:0, y:20}} animate={{scale:1, opacity:1, y:0}} exit={{scale:0.95, opacity:0, y:20}} transition={{ type: "spring", damping: 25, stiffness: 300 }} onClick={e=>e.stopPropagation()} style={{background:"#FAFAFA", borderRadius:24, width:"100%", maxWidth:480, maxHeight:"90vh", overflowY:"auto", padding:32, boxShadow:"0 40px 100px rgba(0,0,0,0.4)"}}>
         <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:24}}>
-          <h2 style={{fontFamily:"'Playfair Display',serif", fontSize:24, color:"#2C2016"}}>Share Workspace</h2>
+          <h2 style={{ fontSize:24, color:"#2C2016"}}>Share Workspace</h2>
           <button onClick={onClose} style={{background:"none", border:"none", fontSize:24, color:"rgba(44,32,22,0.3)", cursor:"pointer"}}>&times;</button>
         </div>
 
@@ -185,7 +186,7 @@ export function ShareWorkspaceModal({ workspace, onClose }: { workspace: any, on
              ))}
            </div>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

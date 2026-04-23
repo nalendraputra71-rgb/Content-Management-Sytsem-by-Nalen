@@ -291,14 +291,14 @@ export function AnalyticsView({content,pillars,platforms,pics,statuses,openEdit}
   const CDataList = ({title, list, rank=1}:any) => (
     <div style={CARD()}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-        <h4 style={{fontFamily:"'Playfair Display',serif",fontSize:16,margin:0}}>{title}</h4>
+        <h4 style={{fontSize:16,fontWeight:700,margin:0}}>{title}</h4>
       </div>
       {list.length===0 && <p style={{fontSize:12,color:"rgba(44,32,22,0.4)"}}>Data tidak tersedia</p>}
       {list.map((item:any,i:number)=>{
         const e=getEng(item),ps=gps(pillars,item.pillar);
         return (
           <div key={item.id} style={{display:"flex",alignItems:"flex-start",gap:10,padding:"10px 12px",background:i===0&&rank===1?"#FDF0EB":"#FAFAF8",border:"1px solid rgba(44,32,22,0.06)",borderRadius:8,marginBottom:6}}>
-            {rank===1 && <span style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:600,color:i===0?"#C4622D":i===1?"#A67C1C":"rgba(44,32,22,0.2)",width:24,flexShrink:0}}>#{i+1}</span>}
+            {rank===1 && <span style={{fontSize:18,fontWeight:700,color:i===0?"#FF6B00":i===1?"#A67C1C":"rgba(44,32,22,0.2)",width:24,flexShrink:0}}>#{i+1}</span>}
             <div style={{flex:1,minWidth:0}}>
               <div style={{fontSize:13,fontWeight:600,display:"flex",alignItems:"center",gap:6}}>
                 <span onClick={()=>openEdit(item)} style={{cursor:"pointer", color:"inherit", borderBottom:"1px dashed rgba(0,0,0,0.3)"}} title="Buka Detail Brief">{item.title||"(Tanpa judul)"}</span>
@@ -313,7 +313,7 @@ export function AnalyticsView({content,pillars,platforms,pics,statuses,openEdit}
               </div>
             </div>
             <div style={{textAlign:"right",flexShrink:0}}>
-              <div style={{fontFamily:"'Playfair Display',serif",fontSize:16,fontWeight:600,color:"#C4622D"}}>{fmt(topSort==="engagement"?e:topSort==="reach"?getR(item):getV(item))}</div>
+              <div style={{fontSize:16,fontWeight:700,color:"#FF6B00"}}>{fmt(topSort==="engagement"?e:topSort==="reach"?getR(item):getV(item))}</div>
               <div style={{fontSize:9,color:"rgba(44,32,22,0.4)",textTransform:"capitalize"}}>{topSort}</div>
             </div>
           </div>
@@ -328,7 +328,7 @@ export function AnalyticsView({content,pillars,platforms,pics,statuses,openEdit}
         <div style={{fontSize:9,fontWeight:600,letterSpacing:1.5,textTransform:"uppercase",color:"rgba(44,32,22,0.4)"}}>{label}</div>
         {pctStr && <div style={{fontSize:10,fontWeight:600,color:pctColor(pctStr),background:pctColor(pctStr)+"1A",padding:"2px 6px",borderRadius:4}}>{pctStr}</div>}
       </div>
-      <div style={{fontFamily:"'Playfair Display',serif",fontSize:24,fontWeight:600,color,lineHeight:1,marginTop:"auto"}}>{val}</div>
+      <div style={{fontSize:24,fontWeight:700,color,lineHeight:1,marginTop:"auto"}}>{val}</div>
       {sub&&<div style={{fontSize:10,color:"rgba(44,32,22,0.4)",marginTop:3}}>{sub}</div>}
     </div>
   );
@@ -370,7 +370,7 @@ export function AnalyticsView({content,pillars,platforms,pics,statuses,openEdit}
 
       <div style={CARD()}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:10}}>
-          <h4 style={{fontFamily:"'Playfair Display',serif",fontSize:16,margin:0}}>📈 Tren Pertumbuhan</h4>
+          <h4 style={{fontSize:16,fontWeight:700,margin:0}}>📈 Tren Pertumbuhan</h4>
           <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
             {["reach","likes","comments","shares","reposts","saves","clicks"].map(k=>(
               <button key={k} onClick={()=>toggleMetric(k)} style={{background:activeMetrics.includes(k)?`${MC[k]}22`||"rgba(196,98,45,0.1)":"rgba(44,32,22,0.03)",color:activeMetrics.includes(k)?MC[k]||"#C4622D":"rgba(44,32,22,0.4)",border:"none",borderRadius:12,padding:"4px 10px",fontSize:11,fontWeight:600,cursor:"pointer",textTransform:"capitalize"}}>
@@ -412,7 +412,7 @@ export function AnalyticsView({content,pillars,platforms,pics,statuses,openEdit}
       <div style={{padding:"18px 22px",background:"#1E1509",color:"#FAF7F2",borderRadius:12}}>
         <div style={{fontSize:12,fontWeight:600,color:"#C4622D",textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>📊 Executive Summary</div>
         
-        <ul style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,lineHeight:1.8,margin:0,paddingLeft:20,marginBottom:16,opacity:0.95}}>
+        <ul style={{fontSize:13,lineHeight:1.8,margin:0,paddingLeft:20,marginBottom:16,opacity:0.95}}>
           <li><strong>Total Konten:</strong> {total} (Dipublikasikan: {pub}) dalam periode & fiter terpilih.</li>
           <li><strong>Agregasi Views & Reach:</strong> Total views mencapai <strong style={{color:"#F0B18A"}}>{fmt(tV)}</strong> impresi dengan ukuran audiens (reach) sekitar <strong style={{color:"#F0B18A"}}>{fmt(tR)}</strong>.</li>
           <li><strong>Kualitas Interaksi:</strong> Menghasilkan <strong style={{color:"#F0B18A"}}>{fmt(tE)} total engagement</strong> (Engagement Rate = {er}%).</li>
@@ -423,7 +423,7 @@ export function AnalyticsView({content,pillars,platforms,pics,statuses,openEdit}
           {aiInsight ? (
             <div style={{background:"rgba(255,255,255,0.05)",padding:14,borderRadius:8}}>
               <div style={{fontSize:11,fontWeight:600,color:"#8AAEF0",marginBottom:6}}>🤖 Rekomendasi AI Next Step:</div>
-              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,lineHeight:1.6,wordWrap:"break-word"}} className="markdown-body">
+              <div style={{fontSize:13,lineHeight:1.6,wordWrap:"break-word"}} className="markdown-body">
                 {aiInsight.split("\n").map((ln,i)=><div key={i} style={{marginBottom:4}}>{ln}</div>)}
               </div>
             </div>
@@ -438,7 +438,7 @@ export function AnalyticsView({content,pillars,platforms,pics,statuses,openEdit}
       {/* Heatmap & PIC Workload */}
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(340px,1fr))",gap:20}}>
         <div style={CARD()}>
-          <h4 style={{fontFamily:"'Playfair Display',serif",fontSize:16,margin:"0 0 16px"}}>🔥 Best Time to Upload (Heatmap)</h4>
+          <h4 style={{fontSize:16,fontWeight:700,margin:"0 0 16px"}}>🔥 Best Time to Upload (Heatmap)</h4>
           <div style={{display:"flex",gap:4,marginBottom:6}}>
             <div style={{width:30}}/>
             {Array.from({length:24}).map((_,i)=><div key={`h${i}`} style={{flex:1,textAlign:"center",fontSize:8,color:"rgba(44,32,22,0.4)"}}>{i}</div>)}
@@ -457,7 +457,7 @@ export function AnalyticsView({content,pillars,platforms,pics,statuses,openEdit}
         </div>
         
         <div style={CARD()}>
-          <h4 style={{fontFamily:"'Playfair Display',serif",fontSize:16,margin:"0 0 16px"}}>👥 Beban Kerja PIC</h4>
+          <h4 style={{fontSize:16,fontWeight:700,margin:"0 0 16px"}}>👥 Beban Kerja PIC</h4>
           <div style={{display:"flex",flexDirection:"column",gap:8}}>
             {picData.map((p:any) => (
               <div key={p.name} style={{display:"flex",alignItems:"center",gap:10}}>

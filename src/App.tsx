@@ -23,6 +23,8 @@ import { AuthScreen } from "./AuthScreen";
 import { UserProfile } from "./UserProfile";
 import { ShareWorkspaceModal } from "./ShareWorkspaceModal";
 
+import { motion, AnimatePresence } from "motion/react";
+
 export default function App() {
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
@@ -34,7 +36,11 @@ export default function App() {
     const unsubAuth = onAuthStateChanged(auth, async (u) => {
       try {
         if (u) {
-          // Listen to profile for real-time updates (auto-provisioning etc)
+          // Check profile existence first to prevent flicker
+          const snap = await getDoc(doc(db, "users", u.uid));
+          if (snap.exists()) setProfile(snap.data());
+          
+          // Listen to profile for real-time updates
           unsubProfile = onSnapshot(doc(db, "users", u.uid), (snap) => {
             if (snap.exists()) setProfile(snap.data());
           });
@@ -58,10 +64,10 @@ export default function App() {
   return (
     <HashRouter>
       <Routes>
-        <Route path="/login" element={user ? <Navigate to="/" /> : <AuthScreen onUserCreated={(u)=>setUser(u)} />} />
+        <Route path="/login" element={(user && profile) ? <Navigate to="/" /> : <AuthScreen currentUser={user && !profile ? user : null} onUserCreated={(u)=>setUser(u)} />} />
         <Route path="/public/:wsId" element={<PublicView />} />
-        <Route path="/profile" element={user ? <CMSLayout><UserProfile userProfile={profile} activeWorkspace={null} onUpdate={setProfile} /></CMSLayout> : <Navigate to="/login" />} />
-        <Route path="/*" element={user ? <CMSLayout><Dashboard user={user} profile={profile} /></CMSLayout> : <Navigate to="/login" />} />
+        <Route path="/profile" element={(user && profile) ? <CMSLayout><UserProfile userProfile={profile} activeWorkspace={null} onUpdate={setProfile} /></CMSLayout> : <Navigate to="/login" />} />
+        <Route path="/*" element={(user && profile) ? <CMSLayout><Dashboard user={user} profile={profile} /></CMSLayout> : <Navigate to="/login" />} />
       </Routes>
     </HashRouter>
   );
@@ -69,8 +75,8 @@ export default function App() {
 
 function LoadingScreen({ title }: { title?: string }) {
   return (
-    <div style={{height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#FAF7F2",flexDirection:"column",gap:16}}>
-      <div style={{fontFamily:"'Playfair Display',serif",fontSize:32,color:"#2C2016",fontWeight:600}}>{title || "Your Company"}</div>
+    <div style={{height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#FAFAFA",flexDirection:"column",gap:16}}>
+      <div style={{fontFamily:"'Inter', sans-serif",fontSize:32,color:"#2C2016",fontWeight:700}}>{title || "Your Company"}</div>
       <div style={{fontSize:14,color:"rgba(44,32,22,0.5)"}}>Menyiapkan arsitektur...</div>
     </div>
   );
@@ -78,7 +84,7 @@ function LoadingScreen({ title }: { title?: string }) {
 
 function CMSLayout({ children }: any) {
   return (
-    <div style={{fontFamily:"'DM Sans',sans-serif",background:"#FAF7F2",minHeight:"100vh",color:"#2C2016"}}>
+    <div style={{fontFamily:"'Inter', sans-serif",background:"#FAFAFA",minHeight:"100vh",color:"#2C2016"}}>
       {children}
     </div>
   );
@@ -112,7 +118,7 @@ function Dashboard({ user, profile }: any) {
   const [headerImage, setHeaderImage] = useState<string|null>(null);
   const [headerStyle, setHeaderStyle] = useState({
     titleColor: "#C4622D", taglineColor: "#FAF7F2", subtitleColor: "rgba(250,247,242,0.8)",
-    bgColor: "#2C2016", titleFont: "'Playfair Display', serif", taglineFont: "'DM Sans', sans-serif", subtitleFont: "'DM Sans', sans-serif"
+    bgColor: "#2C2016", titleFont: "inherit", taglineFont: "inherit", subtitleFont: "inherit"
   });
   const [qYear, setQYear]       = useState(new Date().getFullYear());
   const [qNumber, setQNumber]   = useState(Math.ceil((new Date().getMonth() + 1) / 3));
@@ -343,11 +349,11 @@ function Dashboard({ user, profile }: any) {
 
   if (workspaces.length === 0) {
     return (
-      <div style={{height:"100vh", display:"flex", alignItems:"center", justifyContent:"center", background:"#FAF7F2", flexDirection:"column", gap:20, padding:40, textAlign:"center"}}>
-        <div style={{fontFamily:"'Playfair Display',serif", fontSize:24, color:"#2C2016", fontWeight:600}}>
+      <div style={{height:"100vh", display:"flex", alignItems:"center", justifyContent:"center", background:"#FAFAFA", flexDirection:"column", gap:20, padding:40, textAlign:"center"}}>
+        <div style={{ fontSize:24, color:"#2C2016", fontWeight:800, letterSpacing:"-0.5px"}}>
           {errorMsg.includes("index") ? "Indeks Database Sedang Disiapkan..." : "Mempersiapkan Workspace Anda..."}
         </div>
-        {!errorMsg.includes("index") && <div style={{width:40, height:40, border:"3px solid #C4622D", borderTopColor:"transparent", borderRadius:"50%", animation:"spin 1s linear infinite"}}/>}
+        {!errorMsg.includes("index") && <div style={{width:40, height:40, border:"3px solid #FF6B00", borderTopColor:"transparent", borderRadius:"50%", animation:"spin 1s linear infinite"}}/>}
         
         {errorMsg && (
           <div style={{maxWidth:500, fontSize:13, color:"#9C2B4E", background:"#F8EAF0", padding:16, borderRadius:12, fontWeight:500}}>
@@ -358,10 +364,10 @@ function Dashboard({ user, profile }: any) {
         )}
         
         {errorMsg.includes("index") && (
-          <button onClick={()=>window.location.reload()} style={{...B(true), padding:"10px 24px"}}>Coba Refresh Sekarang</button>
+          <button onClick={()=>window.location.reload()} className="hover-scale" style={{...B(true), padding:"10px 24px", borderRadius:24}}>Coba Refresh Sekarang</button>
         )}
         
-        <button onClick={()=>signOut(auth)} style={{...B(false), fontSize:13}}>Batal & Logout</button>
+        <button onClick={()=>signOut(auth)} className="hover-scale" style={{...B(false), fontSize:13, borderRadius:24, marginTop:12}}>Batal & Logout</button>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
@@ -385,6 +391,7 @@ function Dashboard({ user, profile }: any) {
           onExport={()=>setExportModal(true)} onImportClick={()=>setShowCsv(true)} 
           user={user} onShare={()=>setShareModal(true)}
           sidebarOpen={sidebarOpen} onToggleSidebar={()=>setSidebarOpen(!sidebarOpen)}
+          search={search} onSearch={setSearch}
         />
       
         <NavBar tab={tab} setTab={setTab} year={year} setYear={setYear} month={month} setMonth={setMonth} onOpenAdd={()=>openAdd(1)}/>
@@ -397,33 +404,45 @@ function Dashboard({ user, profile }: any) {
         onImportClick={()=>setShowCsv(true)}
       />
 
-      <div style={{padding:"20px 24px 56px"}}>
-        {tab==="month"&&<MonthView year={year} month={month} monthContent={monthContent} filtered={filtered} openEdit={openEdit} openAdd={openAdd} showHolidays={showHolidays} holidays={holidays} pillars={pillars} platforms={platforms}/>}
-        {tab==="week"&&<WeekView year={year} month={month} content={content} filtered={filtered} openEdit={openEdit} openAdd={openAdd} showHolidays={showHolidays} holidays={holidays} pillars={pillars} platforms={platforms}/>}
-        {tab==="board"&&<BoardView year={year} month={month} content={content} filtered={filtered} openEdit={openEdit} openAdd={openAdd} statuses={statuses} pillars={pillars} platforms={platforms} search={search}/>}
-        {tab==="timeline"&&<TimelineView year={year} month={month} content={content} filtered={filtered} openEdit={openEdit} openAdd={openAdd} pillars={pillars} platforms={platforms} showHolidays={showHolidays} holidays={holidays}/>}
-        {tab==="table"&&<TableView filtered={filtered} openEdit={openEdit} archiveItem={archiveItem} unarchiveItem={unarchiveItem} deleteItem={deleteItem} pillars={pillars} platforms={platforms} showArchived={showArchived} search={search} bulkIds={bulkIds} setBulkIds={setBulkIds} onBulk={handleBulkActions} />}
-        {tab==="analytics"&&<AnalyticsView content={content} pillars={pillars} platforms={platforms} pics={pics} statuses={statuses} openEdit={openEdit}/>}
-        {tab==="settings"&&<SettingsPanel pillars={pillars} setPillars={setPillars} platforms={platforms} setPlatforms={setPlatforms} pics={pics} setPics={setPics} statuses={statuses} setStatuses={setStatuses} holidays={holidays} setHolidays={setHolidays} onSeed={() => setContent(makeSeed())} />}
+      <div style={{padding:"20px 24px 56px", position: "relative"}}>
+        <AnimatePresence mode="wait">
+          <motion.div key={tab} initial={{ opacity: 0, y: 5, scale: 0.99 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -5, scale: 0.99 }} transition={{ duration: 0.15, ease: "easeOut" }}>
+            {tab==="month"&&<MonthView year={year} month={month} monthContent={monthContent} filtered={filtered} openEdit={openEdit} openAdd={openAdd} showHolidays={showHolidays} holidays={holidays} pillars={pillars} platforms={platforms}/>}
+            {tab==="week"&&<WeekView year={year} month={month} content={content} filtered={filtered} openEdit={openEdit} openAdd={openAdd} showHolidays={showHolidays} holidays={holidays} pillars={pillars} platforms={platforms}/>}
+            {tab==="board"&&<BoardView year={year} month={month} content={content} filtered={filtered} openEdit={openEdit} openAdd={openAdd} statuses={statuses} pillars={pillars} platforms={platforms} search={search}/>}
+            {tab==="timeline"&&<TimelineView year={year} month={month} content={content} filtered={filtered} openEdit={openEdit} openAdd={openAdd} pillars={pillars} platforms={platforms} showHolidays={showHolidays} holidays={holidays}/>}
+            {tab==="table"&&<TableView filtered={filtered} openEdit={openEdit} archiveItem={archiveItem} unarchiveItem={unarchiveItem} deleteItem={deleteItem} pillars={pillars} platforms={platforms} showArchived={showArchived} search={search} bulkIds={bulkIds} setBulkIds={setBulkIds} onBulk={handleBulkActions} />}
+            {tab==="analytics"&&<AnalyticsView content={content} pillars={pillars} platforms={platforms} pics={pics} statuses={statuses} openEdit={openEdit}/>}
+            {tab==="settings"&&<SettingsPanel pillars={pillars} setPillars={setPillars} platforms={platforms} setPlatforms={setPlatforms} pics={pics} setPics={setPics} statuses={statuses} setStatuses={setStatuses} holidays={holidays} setHolidays={setHolidays} onSeed={() => setContent(makeSeed())} />}
+          </motion.div>
+        </AnimatePresence>
       </div>
 
-      {shareModal && <ShareWorkspaceModal workspace={workspace} onClose={()=>setShareModal(false)} />}
-      {modal&&<ContentModal modal={modal} onSave={handleSave} onClose={()=>setModal(null)} onArchive={archiveItem} onRestore={unarchiveItem} onDelete={deleteItem} pillars={pillars} platforms={platforms} pics={pics} statuses={statuses}/>}
-      {showCsv && <CsvModal onClose={()=>setShowCsv(false)} onImport={handleBulkImport} workspaceId={workspace?.id} pillars={pillars} platforms={platforms} pics={pics} statuses={statuses} />}
-      {exportModal && <div style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.8)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center"}}>
-        <div style={CARD({width:400})}>
-           <h3 style={{fontFamily:"'Playfair Display',serif", fontSize:20, marginBottom:16}}>Ekspor Data (XLSX)</h3>
-           <p style={{fontSize:14, color:"rgba(44,32,22,0.6)", marginBottom:20}}>Unduh seluruh data konten dalam format Excel untuk workspace {workspace?.name}.</p>
-           <button onClick={() => {
-              const ws = XLSX.utils.json_to_sheet(content);
-              const wb = XLSX.utils.book_new();
-              XLSX.utils.book_append_sheet(wb, ws, "Content");
-              XLSX.writeFile(wb, `Export_${workspace?.name}.xlsx`);
-              setExportModal(false);
-           }} style={{...B(true, "#2D7A5E"), width:"100%", height:44, marginBottom:10}}>Download XLSX</button>
-           <button onClick={()=>setExportModal(false)} style={{...B(false), width:"100%"}}>Batal</button>
-        </div>
-      </div>}
+      <AnimatePresence>
+        {shareModal && <ShareWorkspaceModal key="share" workspace={workspace} onClose={()=>setShareModal(false)} />}
+      </AnimatePresence>
+      <AnimatePresence>
+        {modal && <ContentModal key="content" modal={modal} onSave={handleSave} onClose={()=>setModal(null)} onArchive={archiveItem} onRestore={unarchiveItem} onDelete={deleteItem} pillars={pillars} platforms={platforms} pics={pics} statuses={statuses}/>}
+      </AnimatePresence>
+      <AnimatePresence>
+        {showCsv && <CsvModal key="csv" onClose={()=>setShowCsv(false)} onImport={handleBulkImport} workspaceId={workspace?.id} pillars={pillars} platforms={platforms} pics={pics} statuses={statuses} />}
+      </AnimatePresence>
+      <AnimatePresence>
+        {exportModal && <motion.div key="export" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.8)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center"}}>
+          <motion.div initial={{scale:0.95, opacity:0, y:20}} animate={{scale:1, opacity:1, y:0}} exit={{scale:0.95, opacity:0, y:20}} transition={{ type: "spring", damping: 25, stiffness: 300 }} style={CARD({width:400, padding:32, borderRadius:24, boxShadow:"0 20px 40px rgba(0,0,0,0.2)"})}>
+             <h3 style={{fontSize:20, fontWeight:700, marginBottom:16}}>Ekspor Data (XLSX)</h3>
+             <p style={{fontSize:14, color:"rgba(44,32,22,0.6)", marginBottom:24, lineHeight:1.5}}>Unduh seluruh data konten dalam format Excel (XLSX) untuk workspace <strong style={{color:"#FF6B00"}}>{workspace?.name}</strong>.</p>
+             <button className="btn-hover hover-scale" onClick={() => {
+                const ws = XLSX.utils.json_to_sheet(content);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Content");
+                XLSX.writeFile(wb, `Export_${workspace?.name}.xlsx`);
+                setExportModal(false);
+             }} style={{...B(true, "#FF6B00"), width:"100%", height:48, marginBottom:12, fontSize:14, borderRadius:24}}>Unduh File Excel</button>
+             <button className="hover-scale" onClick={()=>setExportModal(false)} style={{...B(false), width:"100%", height:48, fontSize:14, borderRadius:24}}>Batal</button>
+          </motion.div>
+        </motion.div>}
+      </AnimatePresence>
     </div>
   </div>
 );
@@ -445,10 +464,10 @@ function PublicView() {
   if (!ws?.publicLinkEnabled) return <div style={{textAlign:"center", padding:100}}>Workspace ini private atau tidak ditemukan.</div>;
 
   return (
-    <div style={{padding:40, background:"#FAF7F2", minHeight:"100vh"}}>
+    <div style={{padding:40, background:"#FAFAFA", minHeight:"100vh"}}>
        <div style={{maxWidth:1200, margin:"0 auto"}}>
-          <h1 style={{fontFamily:"'Playfair Display',serif", fontSize:32, color:"#2C2016", marginBottom:8}}>{ws.settings?.title || ws.name}</h1>
-          {ws.settings?.tagline && <p style={{fontSize:16, color:"#C4622D", fontStyle:"italic", marginBottom:12}}>{ws.settings.tagline}</p>}
+          <h1 style={{fontSize:32, color:"#2C2016", marginBottom:8, fontWeight:800, letterSpacing:"-1px"}}>{ws.settings?.title || ws.name}</h1>
+          {ws.settings?.tagline && <p style={{fontSize:16, color:"rgba(44,32,22,0.6)", fontStyle:"italic", marginBottom:12}}>{ws.settings.tagline}</p>}
           <p style={{fontSize:14, color:"rgba(44,32,22,0.5)", marginBottom:32}}>Public Read-Only View • Terakhir diperbarui: {new Date().toLocaleDateString("id-ID")}</p>
           
           <TableView 

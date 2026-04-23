@@ -1,3 +1,4 @@
+import { motion, AnimatePresence } from "motion/react";
 import { useState, useEffect } from "react";
 import { 
   Calendar, Layout, List, Clock, PieChart, Settings, 
@@ -17,6 +18,7 @@ export function Header({
   const [tmp, setTmp] = useState(title);
   const [tmpTag, setTmpTag] = useState(tagline);
   const [tmpStyle, setTmpStyle] = useState(headerStyle || {});
+  const [localSearchOpen, setLocalSearchOpen] = useState(sidebarOpen);
 
   // Sync temp state when props change (from DB)
   useEffect(() => {
@@ -24,6 +26,10 @@ export function Header({
     setTmpTag(tagline);
     setTmpStyle(headerStyle || {});
   }, [title, tagline, headerStyle]);
+
+  useEffect(() => {
+    setLocalSearchOpen(sidebarOpen);
+  }, [sidebarOpen]);
 
   const appliedStyle = headerStyle || {};
   const navigate = useNavigate();
@@ -48,71 +54,96 @@ export function Header({
   };
 
   return (
-    <div style={{background:appliedStyle?.bgColor||"#1E1509",color:appliedStyle?.titleColor||"#FAF7F2",padding:"16px 24px",position:"relative",overflow:"hidden",minHeight:140,display:"flex",alignItems:"center",borderBottom:"1px solid rgba(255,255,255,0.05)"}}>
+    <div style={{background:appliedStyle?.bgColor||"#2C2016",color:appliedStyle?.titleColor||"#FAFAFA",padding:"24px 40px",position:"relative",overflow:"hidden",minHeight:160,display:"flex",alignItems:"center",borderBottom:"1px solid rgba(255,255,255,0.05)"}}>
       {headerImage && <img src={headerImage} alt="header" style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover",opacity:0.3,pointerEvents:"none"}} />}
       
-      <div style={{position:"relative",display:"flex",justifyContent:"space-between",alignItems:"center",gap:24,width:"100%"}}>
-        <div style={{display:"flex", alignItems:"center", gap:16, flex:1}}>
-          <button onClick={onToggleSidebar} style={{background:"rgba(255,255,255,0.1)", border:"none", borderRadius:8, width:36, height:36, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", color:"white"}}>
-            {sidebarOpen ? <ChevronLeft size={20}/> : <Menu size={20}/>}
+      <div style={{position:"relative",display:"flex",justifyContent:"space-between",alignItems:"center",gap:32,width:"100%"}}>
+        <div style={{display:"flex", alignItems:"center", gap:24, flex:1}}>
+          <button className="hover-scale" onClick={onToggleSidebar} style={{background:"rgba(255,255,255,0.1)", border:"none", borderRadius:16, width:44, height:44, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", color:"white", transition: "all 0.3s ease"}}>
+            {sidebarOpen ? <ChevronLeft size={22}/> : <Menu size={22}/>}
           </button>
           
-          <div style={{minWidth:200}}>
+          <div style={{minWidth:250}}>
             {ed ? (
-              <div style={{display:"flex",flexDirection:"column",gap:6,background:"rgba(0,0,0,0.85)",padding:14,borderRadius:12,backdropFilter:"blur(12px)",maxWidth:350,border:"1px solid rgba(255,255,255,0.15)",zIndex:100,boxShadow:"0 10px 30px rgba(0,0,0,0.3)"}}>
-                 <div style={{display:"flex",flexDirection:"column",gap:4}}>
-                   <label style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,0.4)",textTransform:"uppercase"}}>Judul Utama</label>
-                   <div style={{display:"flex",gap:8}}>
-                     <input value={tmp} onChange={(e:any)=>setTmp(e.target.value)} style={{flex:1,fontSize:13,background:"white",border:"none",borderRadius:6,color:"#333",padding:"6px 10px"}}/>
-                     <input type="color" value={tmpStyle?.titleColor||"#FAF7F2"} onChange={(e)=>setTmpStyle({...tmpStyle,titleColor:e.target.value})} style={{width:28,height:28,border:"none",borderRadius:4,cursor:"pointer"}}/>
+              <div style={{display:"flex",flexDirection:"column",gap:8,background:"rgba(0,0,0,0.9)",padding:24,borderRadius:24,backdropFilter:"blur(20px)",maxWidth:400,border:"1px solid rgba(255,255,255,0.15)",zIndex:100,boxShadow:"0 20px 50px rgba(0,0,0,0.4)"}}>
+                 <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                   <label style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,0.4)",textTransform:"uppercase",letterSpacing:1}}>Judul Utama</label>
+                   <div style={{display:"flex",gap:12}}>
+                     <input value={tmp} onChange={(e:any)=>setTmp(e.target.value)} style={{flex:1,fontSize:14,background:"white",border:"none",borderRadius:12,color:"#333",padding:"10px 16px"}}/>
+                     <input type="color" value={tmpStyle?.titleColor||"#FAFAFA"} onChange={(e)=>setTmpStyle({...tmpStyle,titleColor:e.target.value})} style={{width:40,height:40,border:"none",borderRadius:12,cursor:"pointer"}}/>
                    </div>
                  </div>
-                 <div style={{display:"flex",flexDirection:"column",gap:4}}>
-                   <label style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,0.4)",textTransform:"uppercase"}}>Tagline / Sub-judul</label>
-                   <input value={tmpTag} onChange={(e:any)=>setTmpTag(e.target.value)} placeholder="Masukkan tagline..." style={{fontSize:12,background:"white",border:"none",borderRadius:6,color:"#333",padding:"6px 10px",width:"100%"}}/>
+                 <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                   <label style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,0.4)",textTransform:"uppercase",letterSpacing:1}}>Tagline / Sub-judul</label>
+                   <input value={tmpTag} onChange={(e:any)=>setTmpTag(e.target.value)} placeholder="Masukkan tagline..." style={{fontSize:13,background:"white",border:"none",borderRadius:12,color:"#333",padding:"10px 16px",width:"100%"}}/>
                  </div>
-                 <div style={{display:"flex",gap:12,marginTop:8}}>
-                   <button onClick={()=>{onBrandingChange({title:tmp, tagline:tmpTag, headerStyle:tmpStyle});setEd(false);}} style={{background:"#C4622D",border:"none",borderRadius:6,padding:"7px 14px",cursor:"pointer",color:"white",fontSize:11,fontWeight:700,flex:1}}>Simpan Perubahan</button>
-                   <button onClick={()=>{setTmp(title);setTmpTag(tagline);setTmpStyle(headerStyle);setEd(false);}} style={{background:"rgba(255,255,255,0.1)",border:"none",borderRadius:6,padding:"7px 14px",cursor:"pointer",color:"white",fontSize:11}}>Batal</button>
+                 <div style={{display:"flex",gap:16,marginTop:12}}>
+                   <button className="btn-hover" onClick={()=>{onBrandingChange({title:tmp, tagline:tmpTag, headerStyle:tmpStyle});setEd(false);}} style={{background:"#FF6B00",border:"none",borderRadius:16,padding:"10px 20px",cursor:"pointer",color:"white",fontSize:13,fontWeight:700,flex:1}}>Simpan</button>
+                   <button className="btn-hover" onClick={()=>{setTmp(title);setTmpTag(tagline);setTmpStyle(headerStyle);setEd(false);}} style={{background:"rgba(255,255,255,0.1)",border:"none",borderRadius:16,padding:"10px 20px",cursor:"pointer",color:"white",fontSize:12}}>Batal</button>
                  </div>
               </div>
             ) : (
-              <div onClick={()=>setEd(true)} style={{cursor:"pointer"}}>
-                 <h1 style={{fontFamily:appliedStyle?.titleFont||"'Playfair Display',serif",fontSize:24,fontWeight:600,margin:0,color:appliedStyle?.titleColor||"#FAF7F2",display:"flex",alignItems:"center",gap:8}}>{title} <Pencil size={14} style={{opacity:0.3}}/></h1>
-                 <p style={{margin:"2px 0 0",color:appliedStyle?.taglineColor||"rgba(250,247,242,0.6)",fontSize:12,fontStyle:"italic"}}>{tagline}</p>
+              <div onClick={()=>setEd(true)} className="hover-scale" style={{cursor:"pointer"}}>
+                 <h1 style={{fontFamily:appliedStyle?.titleFont||"inherit",fontSize:32,fontWeight:800,letterSpacing:"-1px",margin:0,color:appliedStyle?.titleColor||"#FAFAFA",display:"flex",alignItems:"center",gap:12}}>{title} <Pencil size={18} style={{opacity:0.3}}/></h1>
+                 <p style={{margin:"6px 0 0",color:appliedStyle?.taglineColor||"rgba(250,247,242,0.6)",fontSize:14,fontWeight:500,fontStyle:"italic"}}>{tagline}</p>
               </div>
             )}
           </div>
-
-          <div style={{display:"flex",alignItems:"center",gap:10,background:"rgba(255,255,255,0.08)",borderRadius:10,padding:"6px 12px",border:"1px solid rgba(255,255,255,0.1)",maxWidth:300,flex:1}}>
-            <Search size={14} style={{opacity:0.5}}/>
-            <input value={search} onChange={(e:any)=>onSearch(e.target.value)} placeholder="Cari konten..." style={{background:"transparent",border:"none",outline:"none",color:"white",fontSize:12,width:"100%"}}/>
-          </div>
+ 
+          <motion.div 
+            animate={{ width: localSearchOpen ? 240 : 44, padding: localSearchOpen ? "8px 16px" : "8px" }}
+            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+            style={{display:"flex",alignItems:"center",gap:8,background:"rgba(255,255,255,0.1)",borderRadius:22, border:"1px solid rgba(255,255,255,0.15)", overflow:"hidden", cursor: !localSearchOpen ? "pointer" : "text", flexShrink: 0, height: 40}}
+            onClick={() => { if (!localSearchOpen) setLocalSearchOpen(true); }}
+          >
+            <Search size={18} style={{opacity:0.5, flexShrink:0, margin: !localSearchOpen ? "auto" : "0"}} onClick={(e) => {
+               if(localSearchOpen && !search) {
+                  e.stopPropagation();
+                  setLocalSearchOpen(false);
+               }
+            }}/>
+            <AnimatePresence>
+              {localSearchOpen && (
+                <motion.input 
+                  initial={{ opacity: 0, width: 0 }}
+                  animate={{ opacity: 1, width: "100%" }}
+                  exit={{ opacity: 0, width: 0 }}
+                  transition={{ duration: 0.2 }}
+                  style={{background:"transparent",border:"none",outline:"none",color:"white",fontSize:13}}
+                  className="focus-ring" value={search} onChange={(e:any)=>onSearch && onSearch(e.target.value)} placeholder="Cari konten..." 
+                  autoFocus
+                />
+              )}
+            </AnimatePresence>
+          </motion.div>
         </div>
 
-        <div style={{display:"flex",gap:32,alignItems:"center"}}>
-          <div style={{display:"flex", gap:16, borderRight:"1px solid rgba(255,255,255,0.1)", paddingRight:24}}>
+        <div style={{display:"flex",gap:24,alignItems:"center"}}>
+          <div style={{display:"flex", gap:24, borderRight:"1px solid rgba(255,255,255,0.15)", paddingRight:24}}>
             {[["Published",pub], ["Reach",fmt(tr)], ["Eng",fmt(te)]].map(([l,v])=>(
               <div key={l as string} style={{textAlign:"center"}}>
-                <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:600,lineHeight:1}}>{v as any}</div>
-                <div style={{fontSize:9,color:"rgba(250,247,242,0.4)",marginTop:4,letterSpacing:1,textTransform:"uppercase",fontWeight:700}}>{l as string}</div>
+                <div style={{fontSize:28,fontWeight:800,lineHeight:1,letterSpacing:"-1px"}}>{v as any}</div>
+                <div style={{fontSize:10,color:"rgba(250,247,242,0.4)",marginTop:6,letterSpacing:1.5,textTransform:"uppercase",fontWeight:700}}>{l as string}</div>
               </div>
             ))}
           </div>
 
-          <div style={{display:"flex", gap:12, alignItems:"center", background:"rgba(255,255,255,0.05)", padding:"6px 12px", borderRadius:10}}>
-             <select value={qNumber} onChange={(e)=>onQNumberChange(+e.target.value)} style={{background:"transparent", border:"none", color:"white", fontSize:11, fontWeight:700, cursor:"pointer", outline:"none"}}>
-               <option value={0} style={{color:"black"}}>Thn Ini</option>
-               <option value={1} style={{color:"black"}}>Q1</option>
-               <option value={2} style={{color:"black"}}>Q2</option>
-               <option value={3} style={{color:"black"}}>Q3</option>
-               <option value={4} style={{color:"black"}}>Q4</option>
+          <div style={{display:"flex", gap:16, alignItems:"center", background:"rgba(255,255,255,0.1)", padding:"8px 16px", borderRadius:14, border:"1px solid rgba(255,255,255,0.1)"}}>
+             <select className="custom-select-dark focus-ring" value={qNumber} onChange={(e)=>onQNumberChange(+e.target.value)} style={{background:"transparent", border:"none", color:"white", fontSize:13, fontWeight:700, cursor:"pointer", outline:"none", borderRadius: 8}}>
+               <option value={0}>Tahun Ini</option>
+               <option value={1}>Q1 (Jan-Mar)</option>
+               <option value={2}>Q2 (Apr-Jun)</option>
+               <option value={3}>Q3 (Jul-Sep)</option>
+               <option value={4}>Q4 (Okt-Des)</option>
              </select>
           </div>
 
-          <div style={{display:"flex",gap:8}}>
-            <button onClick={onShare} style={{...B(true,"#C4622D"), border:"none", height:32, padding:"0 12px", display:"flex", alignItems:"center", gap:6, fontSize:11}}><Share2 size={14}/> Share</button>
-            <button onClick={onExport} style={{...B(false), background:"rgba(255,255,255,0.1)", color:"white", border:"none", height:32, padding:"0 12px", display:"flex", alignItems:"center", gap:6, fontSize:11, fontWeight:600}}>Export</button>
+          <div style={{display:"flex",gap:12}}>
+            <button className="hover-scale btn-hover shadow-lg" onClick={onShare} style={{background:"#FF6B00",border:"none",borderRadius:14,width:40,height:40,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:"white",boxShadow:"0 8px 16px rgba(255,107,0,0.3)"}} title="Bagikan Link Workspace"><Share2 size={18}/></button>
+            <label className="hover-scale btn-hover" style={{background:"rgba(255,255,255,0.1)",border:"none",borderRadius:14,width:40,height:40,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:"white",transition: "all 0.3s ease"}}>
+              <Image size={18}/>
+              <input type="file" hidden accept="image/*" onChange={handleImg} />
+            </label>
           </div>
         </div>
       </div>
@@ -133,77 +164,91 @@ export function Sidebar({
     {id:"timeline", ic:<Clock size={18}/>, lb:"Timeline"},
     {id:"table", ic:<List size={18}/>, lb:"Tabel"},
     {id:"analytics", ic:<PieChart size={18}/>, lb:"Analitik"},
-    {id:"settings", ic:<Settings size={18}/>, lb:"Pilar & Tag"}
+    {id:"settings", ic:<Settings size={18}/>, lb:"Pengaturan"}
   ];
 
-  if (!open) return null;
-
   return (
-    <div style={{width:240, background:"#1E1509", borderRight:"1px solid rgba(255,255,255,0.05)", height:"100vh", position:"sticky", top:0, display:"flex", flexDirection:"column", flexShrink:0, zIndex:200, color:"#FAF7F2"}}>
-      <div style={{padding:24, borderBottom:"1px solid rgba(255,255,255,0.05)"}}>
-        <div style={{fontFamily:"'Playfair Display',serif", fontSize:20, fontWeight:700, letterSpacing:1, color:"#C4622D", marginBottom:16}}>{title || "Your Company"}</div>
-        
-        <label style={{fontSize:9, fontWeight:700, color:"rgba(255,255,255,0.3)", textTransform:"uppercase", letterSpacing:1, display:"block", marginBottom:8}}>Workspaces</label>
-        <div style={{display:"flex", flexDirection:"column", gap:6}}>
-          {workspaces.map((ws:any) => (
-            <button 
-              key={ws.id} 
-              onClick={() => onWorkspaceSelect(ws)} 
-              style={{
-                width:"100%", textAlign:"left", background:activeWorkspace?.id === ws.id ? "rgba(196,98,45,1)" : "rgba(255,255,255,0.05)", 
-                border:"none", borderRadius:8, padding:"8px 12px", color:activeWorkspace?.id === ws.id ? "white" : "#FAF7F2", 
-                fontSize:13, fontWeight:500, cursor:"pointer", transition:"all 0.2s"
-              }}
-            >
-              {ws.name}
-            </button>
-          ))}
-        </div>
-      </div>
+    <AnimatePresence>
+      {open && (
+        <motion.div 
+          initial={{ width: 0, opacity: 0 }} 
+          animate={{ width: 240, opacity: 1 }} 
+          exit={{ width: 0, opacity: 0 }} 
+          transition={{ duration: 0.3 }}
+          style={{background:"#2C2016", color:"#FAFAFA", display:"flex", flexDirection:"column", borderRight:"1px solid rgba(255,255,255,0.05)", height:"100vh", position:"sticky", top:0, zIndex:200, overflow:"hidden", whiteSpace: "nowrap"}}
+        >
+          <div style={{minWidth: 240, height: "100%", display: "flex", flexDirection: "column"}}>
+            <div style={{padding:"24px 20px", borderBottom:"1px solid rgba(255,255,255,0.05)"}}>
+              <div style={{fontSize:20, fontWeight:800, marginBottom:16, letterSpacing:"-1px", color:"#FF6B00"}}>{title || "CMS Console"}</div>
+              
+              <div style={{display:"flex", flexDirection:"column", gap:8}}>
+                <label style={{fontSize:9, fontWeight:700, color:"rgba(255,255,255,0.3)", textTransform:"uppercase", letterSpacing:1.5}}>Pilih Workspace</label>
+                {workspaces.map((ws: any) => (
+                  <button 
+                    className="hover-scale"
+                    key={ws.id} 
+                    onClick={() => onWorkspaceSelect(ws)} 
+                    style={{
+                      width:"100%", textAlign:"left", background:activeWorkspace?.id === ws.id ? "#FF6B00" : "rgba(255,255,255,0.05)", 
+                      border:"none", borderRadius:12, padding:"10px 14px", color:activeWorkspace?.id === ws.id ? "white" : "#FAFAFA", 
+                      fontSize:13, fontWeight:600, cursor:"pointer", transition: "all 0.3s ease"
+                    }}
+                  >
+                    {ws.name}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-      <div style={{padding:16, flex:1, overflowY:"auto"}}>
-        <label style={{fontSize:9, fontWeight:700, color:"rgba(255,255,255,0.3)", textTransform:"uppercase", letterSpacing:1, display:"block", marginBottom:8, paddingLeft:8}}>Views</label>
-        <div style={{display:"flex", flexDirection:"column", gap:4}}>
-          {VIEWS.map(v => (
-             <button 
-                key={v.id} 
-                onClick={() => setTab(v.id)} 
+            <div style={{padding:"20px 12px", flex:1, overflowY:"auto"}}>
+              <label style={{fontSize:9, fontWeight:700, color:"rgba(255,255,255,0.3)", textTransform:"uppercase", letterSpacing:1.5, display:"block", marginBottom:8, paddingLeft:8}}>Navigasi Utama</label>
+              <div style={{display:"flex", flexDirection:"column", gap:4}}>
+                {VIEWS.map(v => (
+                  <button 
+                      className="hover-scale"
+                      key={v.id} 
+                      onClick={() => setTab(v.id)} 
+                      style={{
+                        display:"flex", alignItems:"center", gap:14, width:"100%", padding:"10px 14px", background:tab===v.id?"rgba(255,255,255,0.1)":"transparent",
+                        border:"none", borderRadius:12, color:tab===v.id?"white":"rgba(250,247,242,0.6)", cursor:"pointer", transition: "all 0.3s ease"
+                      }}
+                  >
+                      <span style={{color:tab===v.id?"#FF6B00":"currentColor"}}>{v.ic}</span>
+                      <span style={{fontSize:13, fontWeight:tab===v.id?700:500}}>{v.lb}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{padding:"20px 16px", borderTop:"1px solid rgba(255,255,255,0.05)"}}>
+              <div 
+                onClick={() => navigate("/profile")}
+                className="hover-scale"
                 style={{
-                  display:"flex", alignItems:"center", gap:12, width:"100%", padding:"10px 12px", background:tab===v.id?"rgba(255,255,255,0.1)":"transparent",
-                  border:"none", borderRadius:8, color:tab===v.id?"white":"rgba(250,247,242,0.6)", cursor:"pointer", transition:"all 0.2s"
+                  display:"flex", alignItems:"center", gap:12, padding:12, borderRadius:16, background:"rgba(255,255,255,0.05)", cursor:"pointer", marginBottom:8
                 }}
-             >
-                <span style={{color:tab===v.id?"#C4622D":"currentColor"}}>{v.ic}</span>
-                <span style={{fontSize:13, fontWeight:tab===v.id?600:400}}>{v.lb}</span>
-             </button>
-          ))}
-        </div>
-      </div>
-
-      <div style={{padding:16, borderTop:"1px solid rgba(255,255,255,0.05)"}}>
-        <div 
-          onClick={() => navigate("/profile")}
-          style={{
-            display:"flex", alignItems:"center", gap:12, padding:10, borderRadius:12, background:"rgba(0,0,0,0.2)", cursor:"pointer", marginBottom:8
-          }}
-        >
-          <img src={user?.photoURL || `https://ui-avatars.com/api/?name=${user?.displayName}`} alt="avatar" style={{width:32, height:32, borderRadius:8, border:"2px solid #C4622D"}} />
-          <div style={{overflow:"hidden"}}>
-            <div style={{fontSize:12, fontWeight:700, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis"}}>{user?.displayName}</div>
-            <div style={{fontSize:10, color:"#C4622D", fontWeight:600}}>Lihat Profil</div>
+              >
+                <img src={user?.photoURL || `https://ui-avatars.com/api/?name=${user?.displayName}`} alt="avatar" style={{width:36, height:36, borderRadius:12, border:"2px solid #FF6B00"}} />
+                <div style={{overflow:"hidden"}}>
+                  <div style={{fontSize:13, fontWeight:700, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", color:"white"}}>{user?.displayName}</div>
+                  <div style={{fontSize:10, color:"#FF6B00", fontWeight:700}}>Pengaturan Profil</div>
+                </div>
+              </div>
+              <button 
+                onClick={onLogout} 
+                className="btn-hover hover-scale"
+                style={{
+                  width:"100%", background:"rgba(156, 43, 78, 0.1)", border:"1.5px solid rgba(156, 43, 78, 0.2)", borderRadius:12, padding:"10px", 
+                  color:"#E57373", fontSize:11, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:8
+                }}
+              >
+                <LogOut size={14}/> KELUAR SISTEM
+              </button>
+            </div>
           </div>
-        </div>
-        <button 
-          onClick={onLogout} 
-          style={{
-            width:"100%", background:"rgba(156, 43, 78, 0.1)", border:"1.5px solid rgba(156, 43, 78, 0.2)", borderRadius:8, padding:"8px", 
-            color:"#E57373", fontSize:11, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:8
-          }}
-        >
-          <LogOut size={14}/> LOGOUT
-        </button>
-      </div>
-    </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
 
@@ -211,11 +256,11 @@ function ColsIcon({size}: any) { return <div style={{width:size, height:size, bo
 
 export function NavBar({tab,setTab,year,setYear,month,setMonth,onOpenAdd}: any) {
   return (
-    <div style={{background:"white",borderBottom:"1px solid rgba(44,32,22,0.08)",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 32px",height:60,position:"sticky",top:0,zIndex:50}}>
-      <div style={{display:"flex",gap:12,alignItems:"center"}}>
-        <select value={year} onChange={(e:any)=>setYear(+e.target.value)} style={{...I(),width:100,padding:"6px",fontSize:13}}>{YEARS.map(y=><option key={y}>{y}</option>)}</select>
-        <select value={month} onChange={(e:any)=>setMonth(+e.target.value)} style={{...I(),width:120,padding:"6px",fontSize:13}}>{MONTHS.map((m,i)=><option key={i} value={i+1}>{m}</option>)}</select>
-        <button onClick={onOpenAdd} style={{...B(true,"#C4622D"), height:36, padding:"0 20px", display:"flex", alignItems:"center", gap:8, border:"none", color:"white", fontWeight:700, marginLeft:12}}><Plus size={18}/> Konten Baru</button>
+    <div style={{background:"white",borderBottom:"1px solid rgba(44,32,22,0.06)",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 40px",height:80,position:"sticky",top:0,zIndex:50}}>
+      <div style={{display:"flex",gap:16,alignItems:"center"}}>
+        <select className="hover-scale custom-select focus-ring" value={year} onChange={(e:any)=>setYear(+e.target.value)} style={{...I(),width:120,padding:"8px 12px",borderRadius:12}}>{YEARS.map(y=><option key={y}>{y}</option>)}</select>
+        <select className="hover-scale custom-select focus-ring" value={month} onChange={(e:any)=>setMonth(+e.target.value)} style={{...I(),width:140,padding:"8px 12px",borderRadius:12}}>{MONTHS.map((m,i)=><option key={i} value={i+1}>{m}</option>)}</select>
+        <button className="hover-scale btn-hover shadow-lg" onClick={onOpenAdd} style={{...B(true,"#FF6B00"), height:46, padding:"0 28px", borderRadius:23, fontSize:14, display:"flex", alignItems:"center", gap:10, border:"none", color:"white", fontWeight:700, marginLeft:24, boxShadow:"0 6px 16px rgba(255,107,0,0.3)"}}><Plus size={22}/> Konten Baru</button>
       </div>
     </div>
   );
@@ -224,10 +269,10 @@ export function NavBar({tab,setTab,year,setYear,month,setMonth,onOpenAdd}: any) 
 export function FilterBar({filters,setFilters,pillars,platforms,pics,statuses,showHolidays,setShowHolidays,showArchived,setShowArchived,onImportClick}: any) {
   const set = (k: any,v: any) => setFilters((p:any)=>({...p,[k]:v}));
   return (
-    <div style={{background:"#F5F0E8",borderBottom:"1px solid rgba(44,32,22,0.07)",padding:"10px 32px",display:"flex",gap:24,alignItems:"center"}}>
-      <div style={{display:"flex", gap:16, flexWrap:"wrap"}}>
+    <div style={{background:"#FAFAFA",borderBottom:"1px solid rgba(44,32,22,0.05)",padding:"16px 40px",display:"flex",gap:24,alignItems:"center"}}>
+      <div style={{display:"flex", gap:12, flexWrap:"wrap"}}>
         {[["Pillar",pillars,"pillar"], ["Platform",platforms,"platform"], ["PIC",pics,"pic"]].map(([l,opt,key])=>(
-          <select key={key as string} value={filters[key as string]} onChange={(e)=>set(key,e.target.value)} style={{...I(),width:130,padding:"5px 10px",fontSize:12,background:"transparent",borderColor:"rgba(44,32,22,0.1)"}}>
+          <select className="hover-scale custom-select focus-ring" key={key as string} value={filters[key as string]} onChange={(e)=>set(key,e.target.value)} style={{...I(),width:160,padding:"10px 14px",fontSize:13,background:"white",borderColor:"rgba(44,32,22,0.08)",borderRadius:12}}>
             <option key="all" value="All">Semua {l as string}</option>
             {(opt as any[]).map((o:any)=>{
               const name = typeof o === 'string' ? o : o.name;
@@ -237,12 +282,12 @@ export function FilterBar({filters,setFilters,pillars,platforms,pics,statuses,sh
         ))}
       </div>
       <div style={{display:"flex", gap:12}}>
-        <button onClick={()=>setShowHolidays((v:any)=>!v)} style={{...B(showHolidays,"#2C2016"), fontSize:11, padding:"4px 12px"}}>{showHolidays?"Tampil":"Sembunyi"} Hari Besar</button>
-        <button onClick={()=>setShowArchived((v:any)=>!v)} style={{...B(showArchived,"#C4622D"), fontSize:11, padding:"4px 12px"}}>📦 Arsip</button>
+        <button className="hover-scale" onClick={()=>setShowHolidays((v:any)=>!v)} style={{...B(false,"#2C2016"), background: showHolidays ? "rgba(44,32,22,0.05)" : "transparent", borderColor: showHolidays ? "rgba(44,32,22,0.2)" : "rgba(44,32,22,0.1)", fontSize:12, padding:"8px 16px", borderRadius:20}}>{showHolidays?"Tampil":"Sembunyi"} Hari Besar</button>
+        <button className="hover-scale" onClick={()=>setShowArchived((v:any)=>!v)} style={{...B(false,"#FF6B00"), background: showArchived ? "rgba(255,107,0,0.05)" : "transparent", borderColor: showArchived ? "rgba(255,107,0,0.3)" : "rgba(44,32,22,0.1)", fontSize:12, padding:"8px 16px", borderRadius:20}}>📦 Arsip</button>
       </div>
       <div style={{flex:1}}/>
-      <button onClick={onImportClick} style={{...B(false), background:"rgba(125, 200, 164, 0.1)", color:"#7DC8A4", borderColor:"rgba(125, 200, 164, 0.2)", height:30, fontSize:10, display:"flex", alignItems:"center", gap:6}}>
-        <Plus size={14}/> IMPORT CSV
+      <button className="hover-scale btn-hover" onClick={onImportClick} style={{...B(false,"#2C2016"), background:"white", border:"1px solid rgba(44,32,22,0.1)", height:38, padding:"0 16px", fontSize:12, fontWeight:700, display:"flex", alignItems:"center", gap:8}}>
+        <Plus size={16} style={{opacity:0.6}}/> Import CSV
       </button>
     </div>
   );

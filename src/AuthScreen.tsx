@@ -6,16 +6,24 @@ import {
 } from "./firebase";
 import { Mail, Lock, User, AtSign, ArrowRight, Globe } from "lucide-react";
 import { I, B } from "./data";
+import { motion, AnimatePresence } from "motion/react";
 
-export function AuthScreen({ onUserCreated }: { onUserCreated: (u: any) => void }) {
-  const [mode, setMode] = useState<"login" | "signup" | "onboarding">("login");
+export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: any) => void, currentUser?: any }) {
+  const [mode, setMode] = useState<"login" | "signup" | "onboarding">(currentUser ? "onboarding" : "login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [tempUser, setTempUser] = useState<any>(null);
+  const [tempUser, setTempUser] = useState<any>(currentUser || null);
+
+  React.useEffect(() => {
+    if (currentUser && !tempUser) {
+      setTempUser(currentUser);
+      setMode("onboarding");
+    }
+  }, [currentUser, tempUser]);
 
   const checkUserDocument = async (user: any) => {
     const userRef = doc(db, "users", user.uid);
@@ -193,76 +201,79 @@ export function AuthScreen({ onUserCreated }: { onUserCreated: (u: any) => void 
   };
 
   return (
-    <div style={{minHeight:"100vh", display:"flex", background:"#1E1509", alignItems:"center", justifyContent:"center", padding:24}}>
-      <div style={{width:"100%", maxWidth:400, background:"#FAF7F2", borderRadius:24, padding:40, boxShadow:"0 30px 100px rgba(0,0,0,0.5)"}}>
-        <div style={{textAlign:"center", marginBottom:32}}>
-          <h1 style={{fontFamily:"'Playfair Display',serif", fontSize:32, color:"#2C2016", marginBottom:8}}>Your Company CMS</h1>
-          <p style={{fontSize:14, color:"rgba(44,32,22,0.6)"}}>
+    <div style={{minHeight:"100vh", display:"flex", background:"#FAFAFA", alignItems:"center", justifyContent:"center", padding:24, fontFamily:"'Inter', sans-serif"}}>
+      <div className="card-shadow" style={{width:"100%", maxWidth:400, background:"#FFFFFF", borderRadius:32, padding:48, border:"1px solid rgba(44,32,22,0.05)"}}>
+        <div style={{textAlign:"center", marginBottom:40}}>
+          <h1 style={{fontSize:32, color:"#2C2016", fontWeight:800, letterSpacing:"-1px", marginBottom:12}}>Your Company CMS</h1>
+          <p style={{fontSize:16, color:"rgba(44,32,22,0.6)", fontWeight:500}}>
             {mode === "login" ? "Selamat datang kembali!" : mode === "signup" ? "Mulai rencanakan kontenmu sekarang." : "Lengkapi profilmu."}
           </p>
         </div>
 
-        {error && <div style={{background:"#F8EAF0", color:"#9C2B4E", padding:12, borderRadius:12, fontSize:12, marginBottom:20, fontWeight:500}}>{error}</div>}
-
-        {mode === "onboarding" ? (
-          <form onSubmit={handleOnboarding} style={{display:"flex", flexDirection:"column", gap:16}}>
-            <div style={{display:"flex", flexDirection:"column", gap:6}}>
-              <label style={{fontSize:11, fontWeight:700, color:"rgba(44,32,22,0.4)", textTransform:"uppercase"}}>Username Unik</label>
+        {error && <div style={{background:"#F8EAF0", color:"#9C2B4E", padding:14, borderRadius:16, fontSize:13, marginBottom:24, fontWeight:600}}>{error}</div>}
+        <AnimatePresence mode="wait">
+          <motion.div key={mode} initial={{opacity:0, x:20}} animate={{opacity:1, x:0}} exit={{opacity:0, x:-20}} transition={{duration:0.2}}>
+            {mode === "onboarding" ? (
+              <form onSubmit={handleOnboarding} style={{display:"flex", flexDirection:"column", gap:20}}>
+            <div style={{display:"flex", flexDirection:"column", gap:8}}>
+              <label style={{fontSize:11, fontWeight:700, color:"rgba(44,32,22,0.4)", textTransform:"uppercase", letterSpacing:1}}>Username Unik</label>
               <div style={{position:"relative"}}>
-                <AtSign size={16} style={{position:"absolute", left:12, top:13, color:"rgba(44,32,22,0.3)"}}/>
-                <input required value={username} onChange={e=>setUsername(e.target.value.replace(/[^a-z0-9_]/g,""))} placeholder="username" style={{...I({paddingLeft:36})}} />
+                <AtSign size={18} style={{position:"absolute", left:16, top:15, color:"rgba(44,32,22,0.3)"}}/>
+                <input required value={username} onChange={e=>setUsername(e.target.value.replace(/[^a-z0-9_]/g,""))} placeholder="username" style={{...I({paddingLeft:44})}} />
               </div>
             </div>
-            <div style={{display:"flex", flexDirection:"column", gap:6}}>
-              <label style={{fontSize:11, fontWeight:700, color:"rgba(44,32,22,0.4)", textTransform:"uppercase"}}>Nama Lengkap</label>
+            <div style={{display:"flex", flexDirection:"column", gap:8}}>
+              <label style={{fontSize:11, fontWeight:700, color:"rgba(44,32,22,0.4)", textTransform:"uppercase", letterSpacing:1}}>Nama Lengkap</label>
               <div style={{position:"relative"}}>
-                <User size={16} style={{position:"absolute", left:12, top:13, color:"rgba(44,32,22,0.3)"}}/>
-                <input required value={fullName} onChange={e=>setFullName(e.target.value)} placeholder="Nama Lengkap" style={{...I({paddingLeft:36})}} />
+                <User size={18} style={{position:"absolute", left:16, top:15, color:"rgba(44,32,22,0.3)"}}/>
+                <input required value={fullName} onChange={e=>setFullName(e.target.value)} placeholder="Nama Lengkap" style={{...I({paddingLeft:44})}} />
               </div>
             </div>
-            <button disabled={loading} type="submit" style={{...B(false), background:"#C4622D", color:"white", border:"none", height:48, fontWeight:600, display:"flex", alignItems:"center", justifyContent:"center", gap:10, marginTop:8}}>
-              {loading ? "Menyimpan..." : "Selesaikan Registrasi"} <ArrowRight size={18}/>
+            <button className="hover-scale btn-hover" disabled={loading} type="submit" style={{...B(true), height:54, fontSize:15, marginTop:12}}>
+              {loading ? "Menyimpan..." : "Selesaikan Registrasi"} <ArrowRight size={20}/>
             </button>
           </form>
         ) : (
           <>
-            <form onSubmit={handleEmailAuth} style={{display:"flex", flexDirection:"column", gap:16}}>
-              <div style={{display:"flex", flexDirection:"column", gap:6}}>
+            <form onSubmit={handleEmailAuth} style={{display:"flex", flexDirection:"column", gap:20}}>
+              <div style={{display:"flex", flexDirection:"column", gap:8}}>
                 <div style={{position:"relative"}}>
-                  <Mail size={16} style={{position:"absolute", left:12, top:13, color:"rgba(44,32,22,0.3)"}}/>
-                  <input required type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="Email Address" style={{...I({paddingLeft:36})}} />
+                  <Mail size={18} style={{position:"absolute", left:16, top:15, color:"rgba(44,32,22,0.3)"}}/>
+                  <input required type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="Email Address" style={{...I({paddingLeft:44})}} />
                 </div>
               </div>
-              <div style={{display:"flex", flexDirection:"column", gap:6}}>
+              <div style={{display:"flex", flexDirection:"column", gap:8}}>
                 <div style={{position:"relative"}}>
-                  <Lock size={16} style={{position:"absolute", left:12, top:13, color:"rgba(44,32,22,0.3)"}}/>
-                  <input required type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Password" style={{...I({paddingLeft:36})}} />
+                  <Lock size={18} style={{position:"absolute", left:16, top:15, color:"rgba(44,32,22,0.3)"}}/>
+                  <input required type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Password" style={{...I({paddingLeft:44})}} />
                 </div>
               </div>
-              <button disabled={loading} type="submit" style={{...B(false), background:"#2C2016", color:"white", border:"none", height:48, fontWeight:600, marginTop:8}}>
+              <button className="hover-scale btn-hover" disabled={loading} type="submit" style={{...B(true, "#2C2016"), height:54, fontSize:15, marginTop:12}}>
                 {loading ? "Memproses..." : mode === "login" ? "Masuk" : "Daftar Akun"}
               </button>
             </form>
 
-            <div style={{display:"flex", alignItems:"center", gap:16, margin:"24px 0"}}>
-              <div style={{flex:1, height:1, background:"rgba(44,32,22,0.1)"}}/>
-              <span style={{fontSize:11, color:"rgba(44,32,22,0.3)", fontWeight:600}}>ATAU</span>
-              <div style={{flex:1, height:1, background:"rgba(44,32,22,0.1)"}}/>
+            <div style={{display:"flex", alignItems:"center", gap:20, margin:"32px 0"}}>
+              <div style={{flex:1, height:1, background:"rgba(44,32,22,0.08)"}}/>
+              <span style={{fontSize:12, color:"rgba(44,32,22,0.3)", fontWeight:700, letterSpacing:1}}>ATAU</span>
+              <div style={{flex:1, height:1, background:"rgba(44,32,22,0.08)"}}/>
             </div>
 
-            <button onClick={handleGoogle} disabled={loading} style={{...B(false), width:"100%", height:48, display:"flex", alignItems:"center", justifyContent:"center", gap:12, fontWeight:600}}>
-              <Globe size={18} color="#C4622D"/> Masuk dengan Google
+            <button onClick={handleGoogle} className="hover-scale btn-hover" disabled={loading} style={{...B(false), width:"100%", height:54, fontSize:15, border:"2px solid rgba(44,32,22,0.08)"}}>
+              <Globe size={20} color="#FF6B00"/> Masuk dengan Google
             </button>
 
-            <div style={{textAlign:"center", marginTop:32, fontSize:13, color:"rgba(44,32,22,0.5)"}}>
+            <div style={{textAlign:"center", marginTop:40, fontSize:14, color:"rgba(44,32,22,0.5)", fontWeight:500}}>
               {mode === "login" ? (
-                <>Belum punya akun? <button onClick={()=>setMode("signup")} style={{background:"none", border:"none", color:"#C4622D", fontWeight:700, cursor:"pointer"}}>Daftar</button></>
+                <>Belum punya akun? <button onClick={()=>setMode("signup")} style={{background:"none", border:"none", color:"#FF6B00", fontWeight:700, cursor:"pointer", transition:"all 0.3s"}}>Daftar</button></>
               ) : (
-                <>Sudah punya akun? <button onClick={()=>setMode("login")} style={{background:"none", border:"none", color:"#C4622D", fontWeight:700, cursor:"pointer"}}>Masuk</button></>
+                <>Sudah punya akun? <button onClick={()=>setMode("login")} style={{background:"none", border:"none", color:"#FF6B00", fontWeight:700, cursor:"pointer", transition:"all 0.3s"}}>Masuk</button></>
               )}
             </div>
           </>
         )}
+          </motion.div>
+        </AnimatePresence>
       </div>
     </div>
   );

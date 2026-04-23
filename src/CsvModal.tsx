@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import * as XLSX from "xlsx";
 import { emptyItem, gid } from "./data";
+import { motion } from "motion/react";
 
 export function CsvModal({onClose, onImport, pillars, platforms, pics, statuses}: any) {
   const [dataPreview, setDataPreview] = useState<any[]>([]);
@@ -98,10 +99,10 @@ export function CsvModal({onClose, onImport, pillars, platforms, pics, statuses}
   };
 
   return (
-    <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(30,21,9,0.7)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:300,padding:16,backdropFilter:"blur(4px)"}}>
-      <div onClick={e=>e.stopPropagation()} style={{background:"#FAF7F2",borderRadius:16,padding:26,maxWidth:600,width:"100%",position:"relative"}}>
-        <button onClick={onClose} style={{position:"absolute",top:14,right:14,background:"rgba(44,32,22,0.08)",border:"none",borderRadius:"50%",width:30,height:30,cursor:"pointer",fontSize:17,color:"#2C2016",display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
-        <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:22,margin:"0 0 16px",color:"#2C2016"}}>📥 Bulk Import via CSV</h2>
+    <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(30,21,9,0.7)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:300,padding:16,backdropFilter:"blur(4px)"}}>
+      <motion.div initial={{scale:0.9, opacity:0, y:20}} animate={{scale:1, opacity:1, y:0}} exit={{scale:0.9, opacity:0, y:20}} onClick={e=>e.stopPropagation()} style={{background:"#FAFAFA",borderRadius:24,padding:32,maxWidth:600,width:"100%",position:"relative", boxShadow:"0 20px 40px rgba(0,0,0,0.2)"}}>
+        <button className="hover-scale" onClick={onClose} style={{position:"absolute",top:20,right:20,background:"rgba(44,32,22,0.05)",border:"none",borderRadius:"50%",width:32,height:32,cursor:"pointer",fontSize:18,color:"#2C2016",display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+        <h2 style={{fontSize:24,margin:"0 0 16px",color:"#2C2016", fontWeight:800, letterSpacing:"-0.5px"}}>📥 Bulk Import via CSV</h2>
         
         {step===1 && (
             <div>
@@ -161,7 +162,7 @@ export function CsvModal({onClose, onImport, pillars, platforms, pics, statuses}
                 </div>
             </div>
         )}
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

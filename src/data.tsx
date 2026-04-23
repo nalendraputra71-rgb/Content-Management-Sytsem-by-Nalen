@@ -9,10 +9,10 @@ export const DAYS_ID = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"
 export const DAYS_S = ["Min","Sen","Sel","Rab","Kam","Jum","Sab"];
 export const YEARS = [2024,2025,2026,2027,2028];
 export const MK = ["views","reach","likes","comments","shares","reposts","saves"];
-export const MC: any = {views:"#2C2016",reach:"#C4622D",likes:"#9C2B4E",comments:"#2B4C7E",shares:"#2D7A5E",reposts:"#A67C1C",saves:"#723680"};
+export const MC: any = {views:"#2C2016",reach:"#FF6B00",likes:"#9C2B4E",comments:"#2B4C7E",shares:"#2D7A5E",reposts:"#A67C1C",saves:"#723680"};
 
 export const DP = [
-  {name:"Outfit Inspiration",    color:"#C4622D",light:"#FDF0EB"},
+  {name:"Outfit Inspiration",    color:"#FF6B00",light:"#FDF0EB"},
   {name:"Product Showcase",      color:"#A67C1C",light:"#FBF5E3"},
   {name:"Edukasi",               color:"#2D7A5E",light:"#E5F4EE"},
   {name:"Campaign/Promo",        color:"#9C2B4E",light:"#F8EAF0"},
@@ -22,7 +22,7 @@ export const DP = [
 ];
 export const DPL = [
   {name:"Feed",   color:"#2C2016"},
-  {name:"Reels",  color:"#C4622D"},
+  {name:"Reels",  color:"#FF6B00"},
   {name:"Stories",color:"#A67C1C"},
   {name:"TikTok", color:"#2D7A5E"},
 ];
@@ -157,13 +157,75 @@ export const makeSeed = () => {
 };
 
 // ─── SHARED STYLE HELPERS ─────────────────────────────────────────────────────
-export const I = (ex:any={}) => ({border:"1.5px solid rgba(44,32,22,0.15)",borderRadius:8,padding:"7px 11px",fontSize:13,fontFamily:"inherit",color:"#2C2016",background:"white",width:"100%",boxSizing:"border-box" as any,outline:"none",...ex});
-export const L = {fontSize:10,fontWeight:600,letterSpacing:1.5,textTransform:"uppercase" as any,color:"rgba(44,32,22,0.45)",display:"block",marginBottom:4};
-export const B = (active:any,color="#2C2016") => ({border:`1.5px solid ${active?color:"rgba(44,32,22,0.15)"}`,borderRadius:20,padding:"5px 13px",fontSize:12,cursor:"pointer",fontFamily:"inherit",fontWeight:500,transition:"all .15s",background:active?color:"transparent",color:active?"#FAF7F2":"#2C2016"});
-export const TAB = (active:any) => ({border:"none",borderBottom:`2.5px solid ${active?"#C4622D":"transparent"}`,background:"transparent",padding:"11px 16px",fontSize:12,fontWeight:active?600:400,cursor:"pointer",fontFamily:"inherit",color:active?"#C4622D":"rgba(44,32,22,0.5)",transition:"all .15s",whiteSpace:"nowrap" as any});
-export const CARD = (ex:any={}) => ({background:"white",borderRadius:12,padding:"18px 20px",boxShadow:"0 1px 4px rgba(44,32,22,0.08)",...ex});
-export const GRP = {display:"flex",flexDirection:"column" as any,gap:4};
+export const TRANS = "all 0.3s ease";
+export const I = (ex:any={}) => ({
+  border: "1px solid rgba(44,32,22,0.15)",
+  borderRadius: 12,
+  padding: "10px 14px",
+  fontSize: 14,
+  
+  color: "#2C2016",
+  background: "white",
+  width: "100%",
+  boxSizing: "border-box" as any,
+  outline: "none",
+  transition: "all 0.2s ease",
+  ...ex
+});
+export const L = {
+  fontSize: 11,
+  fontWeight: 700,
+  letterSpacing: 0.5,
+  textTransform: "uppercase" as any,
+  color: "rgba(44,32,22,0.5)",
+  display: "block",
+  marginBottom: 6
+};
+export const B = (active:any, color = "#FF6B00") => ({
+  border: active ? `1px solid ${color}` : `1px solid rgba(44,32,22,0.1)`,
+  borderRadius: 24,
+  padding: "8px 18px",
+  fontSize: 13,
+  cursor: "pointer",
+  
+  fontWeight: 600,
+  background: active ? color : "transparent",
+  color: active ? "white" : "#2C2016",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 8
+});
+
+export const TAB = (active:any) => ({
+  border: "none",
+  borderBottom: `2.5px solid ${active ? "#FF6B00" : "transparent"}`,
+  background: "transparent",
+  padding: "12px 20px",
+  fontSize: 13,
+  fontWeight: active ? 700 : 500,
+  cursor: "pointer",
+  
+  color: active ? "#FF6B00" : "rgba(44,32,22,0.5)",
+  whiteSpace: "nowrap" as any
+});
+export const CARD = (ex:any={}) => ({
+  background: "white",
+  borderRadius: 24,
+  padding: "24px",
+  boxShadow: "0 8px 30px rgba(44,32,22,0.06)",
+  border: "1px solid rgba(44,32,22,0.04)",
+  ...ex
+});
+export const GRP = {display:"flex",flexDirection:"column" as any,gap:8};
 
 // ─── TINY COMPONENTS ─────────────────────────────────────────────────────────
-export const SBadge = ({status}: any) => { const s=gss(status); return <span style={{background:s.bg,color:s.color,fontSize:9,fontWeight:700,padding:"2px 7px",borderRadius:8,whiteSpace:"nowrap"}}>{status}</span>; };
-export const PBadge = ({name,platforms}: any) => <span style={{background:gpc(platforms,name),color:"#FAF7F2",fontSize:9,fontWeight:700,padding:"2px 6px",borderRadius:8}}>{name}</span>;
+export const SBadge = ({status}: any) => { const s=gss(status); return <span className="pill-tag" style={{background:s.bg,color:s.color}}>{status}</span>; };
+export const PBadge = ({name,platforms}: any) => { 
+  const bg = gpc(platforms,name); 
+  // Add transparency to the hex background colors defined in DP/DPL if needed for pastel, but we have 'light' variant.
+  // Actually, we'll just stick to the text color = thick, bg = pastel. We can use the 'light' color.
+  const p = platforms?.find((x:any)=>x.name===name);
+  const light = p?.light || `${bg}20`; // 20% opacity as fallback pastel
+  return <span className="pill-tag" style={{background:light,color:bg}}>{name}</span>; 
+};

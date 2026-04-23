@@ -52,7 +52,7 @@ export function SettingsPanel({pillars,setPillars,platforms,setPlatforms,pics,se
     <div style={{display:"grid",gridTemplateColumns:"200px 1fr",gap:16,minHeight:400}}>
       <div style={{background:"white",borderRadius:12,padding:"12px 0",boxShadow:"0 1px 4px rgba(44,32,22,0.08)",height:"fit-content"}}>
         {sections.map(([id,label,ic])=>(
-          <button key={id} onClick={()=>setSection(id)} style={{width:"100%",padding:"10px 16px",textAlign:"left",border:"none",borderLeft:`3px solid ${section===id?"#C4622D":"transparent"}`,background:section===id?"#FDF0EB":"transparent",cursor:"pointer",fontFamily:"inherit",fontSize:13,fontWeight:section===id?600:400,color:"#2C2016",display:"flex",alignItems:"center",gap:8}}>
+          <button key={id} onClick={()=>setSection(id)} style={{width:"100%",padding:"10px 16px",textAlign:"left",border:"none",borderLeft:`3px solid ${section===id?"#C4622D":"transparent"}`,background:section===id?"#FDF0EB":"transparent",cursor:"pointer",fontSize:13,fontWeight:section===id?600:400,color:"#2C2016",display:"flex",alignItems:"center",gap:8}}>
             <span>{ic}</span>{label}
           </button>
         ))}
@@ -60,12 +60,12 @@ export function SettingsPanel({pillars,setPillars,platforms,setPlatforms,pics,se
       <div style={CARD()}>
         {section==="pillars"&&(
           <>
-            <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:18,margin:"0 0 14px"}}>🎨 Content Pillars</h3>
+            <h3 style={{fontSize:18,margin:"0 0 14px"}}>🎨 Content Pillars</h3>
             {pillars.map((p:any,i:any)=>(
               <div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 10px",background:"#FAFAF8",borderRadius:8,marginBottom:6}}>
                 <input type="color" value={p.color} onChange={(e:any)=>editPillar(i,p.name,e.target.value)} title="Warna Pillar" style={{width:24,height:24,padding:0,border:"none",cursor:"pointer"}}/>
                 <input value={p.name} onChange={(e:any)=>editPillar(i,e.target.value,p.color)} style={{flex:1,fontSize:13,fontWeight:500,border:"none",background:"transparent",outline:"none"}}/>
-                <button onClick={()=>delPillar(i)} style={{background:"#FDF5F8",border:"none",borderRadius:6,padding:"3px 8px",fontSize:11,cursor:"pointer",color:"#9C2B4E",fontFamily:"inherit"}}>Hapus</button>
+                <button onClick={()=>delPillar(i)} style={{background:"#FDF5F8",border:"none",borderRadius:6,padding:"3px 8px",fontSize:11,cursor:"pointer",color:"#9C2B4E",}}>Hapus</button>
               </div>
             ))}
             <InputRow placeholder="Nama pillar baru..." value={newVal} onChange={setNewVal} onAdd={addPillar} colorPicker/>
@@ -73,12 +73,12 @@ export function SettingsPanel({pillars,setPillars,platforms,setPlatforms,pics,se
         )}
         {section==="platforms"&&(
           <>
-            <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:18,margin:"0 0 14px"}}>📱 Platforms</h3>
+            <h3 style={{fontSize:18,margin:"0 0 14px"}}>📱 Platforms</h3>
             {platforms.map((p:any,i:any)=>(
               <div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 10px",background:"#FAFAF8",borderRadius:8,marginBottom:6}}>
                 <input type="color" value={p.color} onChange={(e:any)=>editPlatform(i,p.name,e.target.value)} title="Warna Platform" style={{width:24,height:24,padding:0,border:"none",cursor:"pointer"}}/>
                 <input value={p.name} onChange={(e:any)=>editPlatform(i,e.target.value,p.color)} style={{flex:1,fontSize:13,fontWeight:500,border:"none",background:"transparent",outline:"none"}}/>
-                <button onClick={()=>delPlatform(i)} style={{background:"#FDF5F8",border:"none",borderRadius:6,padding:"3px 8px",fontSize:11,cursor:"pointer",color:"#9C2B4E",fontFamily:"inherit"}}>Hapus</button>
+                <button onClick={()=>delPlatform(i)} style={{background:"#FDF5F8",border:"none",borderRadius:6,padding:"3px 8px",fontSize:11,cursor:"pointer",color:"#9C2B4E",}}>Hapus</button>
               </div>
             ))}
             <InputRow placeholder="Nama platform baru..." value={newVal} onChange={setNewVal} onAdd={addPlatform} colorPicker/>
@@ -86,12 +86,12 @@ export function SettingsPanel({pillars,setPillars,platforms,setPlatforms,pics,se
         )}
         {section==="pics"&&(
           <>
-            <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:18,margin:"0 0 14px"}}>👤 Team PIC</h3>
+            <h3 style={{fontSize:18,margin:"0 0 14px"}}>👤 Team PIC</h3>
             {pics.map((p:any,i:any)=>(
               <div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 10px",background:"#FAFAF8",borderRadius:8,marginBottom:6}}>
                 <div style={{width:24,height:24,borderRadius:"50%",background:"#C4622D",display:"flex",alignItems:"center",justifyContent:"center",color:"white",fontWeight:700,fontSize:10}}>{p[0]}</div>
                 <input value={p} onChange={(e:any)=>editPic(i,e.target.value)} style={{flex:1,fontSize:13,fontWeight:500,border:"none",background:"transparent",outline:"none"}}/>
-                <button onClick={()=>delPic(i)} style={{background:"#FDF5F8",border:"none",borderRadius:6,padding:"3px 8px",fontSize:11,cursor:"pointer",color:"#9C2B4E",fontFamily:"inherit"}}>Hapus</button>
+                <button onClick={()=>delPic(i)} style={{background:"#FDF5F8",border:"none",borderRadius:6,padding:"3px 8px",fontSize:11,cursor:"pointer",color:"#9C2B4E",}}>Hapus</button>
               </div>
             ))}
             <InputRow placeholder="Nama PIC baru..." value={newVal} onChange={setNewVal} onAdd={addPic}/>
@@ -99,13 +99,13 @@ export function SettingsPanel({pillars,setPillars,platforms,setPlatforms,pics,se
         )}
         {section==="statuses"&&(
           <>
-            <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:18,margin:"0 0 14px"}}>📋 Status Workflow</h3>
+            <h3 style={{fontSize:18,margin:"0 0 14px"}}>📋 Status Workflow</h3>
             <div style={{fontSize:11,color:"rgba(44,32,22,0.4)",marginBottom:10}}>Urutan dari atas ke bawah = alur kerja</div>
             {statuses.map((s:any,i:any)=>{return(
               <div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 10px",background:"#FAFAF8",borderRadius:8,marginBottom:6}}>
                 <span style={{fontSize:11,color:"rgba(44,32,22,0.3)"}}>{i+1}.</span>
                 <input value={s} onChange={(e:any)=>editStatus(i,e.target.value)} style={{flex:1,background:"#F5F0E8",color:"#A67C1C",fontSize:11,fontWeight:700,padding:"4px 8px",borderRadius:8,border:"none",outline:"none",maxWidth:"fit-content"}}/>
-                <button onClick={()=>delStatus(i)} style={{background:"#FDF5F8",border:"none",borderRadius:6,padding:"3px 8px",fontSize:11,cursor:"pointer",color:"#9C2B4E",fontFamily:"inherit"}}>Hapus</button>
+                <button onClick={()=>delStatus(i)} style={{background:"#FDF5F8",border:"none",borderRadius:6,padding:"3px 8px",fontSize:11,cursor:"pointer",color:"#9C2B4E",}}>Hapus</button>
               </div>
             );})}
             <InputRow placeholder="Status baru (e.g. In Review)..." value={newVal} onChange={setNewVal} onAdd={addStatus}/>
@@ -113,14 +113,14 @@ export function SettingsPanel({pillars,setPillars,platforms,setPlatforms,pics,se
         )}
         {section==="holidays"&&(
           <>
-            <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:18,margin:"0 0 14px"}}>📅 Hari Besar & Event</h3>
+            <h3 style={{fontSize:18,margin:"0 0 14px"}}>📅 Hari Besar & Event</h3>
             <div style={{fontSize:11,color:"rgba(44,32,22,0.4)",marginBottom:10}}>Format key: YYYY-M-D (contoh: 2026-8-17)</div>
             <div style={{maxHeight:280,overflow:"auto",display:"flex",flexDirection:"column",gap:4,marginBottom:10}}>
               {Object.entries(holidays).sort().map(([k,v]: any)=>(
                 <div key={k} style={{display:"flex",alignItems:"center",gap:8,padding:"7px 10px",background:"#FAFAF8",borderRadius:8}}>
                   <span style={{fontSize:10,color:"rgba(44,32,22,0.4)",fontFamily:"monospace",flexShrink:0}}>{k}</span>
                   <span style={{flex:1,fontSize:12}}>{v}</span>
-                  <button onClick={()=>delHoliday(k)} style={{background:"#FDF5F8",border:"none",borderRadius:6,padding:"2px 7px",fontSize:10,cursor:"pointer",color:"#9C2B4E",fontFamily:"inherit"}}>✕</button>
+                  <button onClick={()=>delHoliday(k)} style={{background:"#FDF5F8",border:"none",borderRadius:6,padding:"2px 7px",fontSize:10,cursor:"pointer",color:"#9C2B4E",}}>✕</button>
                 </div>
               ))}
             </div>
@@ -133,7 +133,7 @@ export function SettingsPanel({pillars,setPillars,platforms,setPlatforms,pics,se
         )}
         {section==="general"&&(
           <>
-            <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:18,margin:"0 0 14px"}}>⚙️ General & Debug</h3>
+            <h3 style={{fontSize:18,margin:"0 0 14px"}}>⚙️ General & Debug</h3>
             <div style={{background:"#FAFAF8",borderRadius:10,padding:16,border:"1px solid rgba(44,32,22,0.06)"}}>
                <p style={{fontSize:13,color:"#2C2016",marginBottom:12}}><strong>Penyimpanan Data:</strong> Data Anda disinkronkan secara real-time ke Google Firebase Cloud Firestore.</p>
                <div style={{display:"flex",flexDirection:"column",gap:10}}>

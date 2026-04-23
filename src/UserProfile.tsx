@@ -3,6 +3,7 @@ import { auth, db, signOut, updatePassword, doc, getDoc, updateDoc } from "./fir
 import { User, Mail, Shield, CreditCard, ChevronRight, LogOut, Key, Save, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { I, B, CARD } from "./data";
+import { motion } from "motion/react";
 
 export function UserProfile({ userProfile, activeWorkspace, onUpdate }: { userProfile: any, activeWorkspace: any, onUpdate: (data: any) => void }) {
   const navigate = useNavigate();
@@ -43,9 +44,9 @@ export function UserProfile({ userProfile, activeWorkspace, onUpdate }: { userPr
   };
 
   return (
-    <div style={{maxWidth:800, margin:"0 auto", padding:"40px 24px", display:"flex", flexDirection:"column", gap:32}}>
+    <motion.div initial={{opacity:0, y: 20}} animate={{opacity:1, y: 0}} exit={{opacity:0, y: -20}} transition={{ duration: 0.3 }} style={{maxWidth:800, margin:"0 auto", padding:"40px 24px", display:"flex", flexDirection:"column", gap:32}}>
       <div>
-        <button onClick={() => navigate("/")} style={{...B(false), border:"none", background:"#F5F0E8", color:"#2C2016", fontSize:12, fontWeight:700, padding:"8px 16px", borderRadius:10, display:"flex", alignItems:"center", gap:8, cursor:"pointer"}}>
+        <button className="hover-scale" onClick={() => navigate("/")} style={{...B(false), border:"none", background:"#FAFAFA", borderBottom:"1px solid rgba(44,32,22,0.1)", color:"#2C2016", fontSize:12, fontWeight:700, padding:"8px 16px", borderRadius:10, display:"flex", alignItems:"center", gap:8, cursor:"pointer"}}>
           <ArrowLeft size={16}/> Kembali ke Beranda
         </button>
       </div>
@@ -55,7 +56,7 @@ export function UserProfile({ userProfile, activeWorkspace, onUpdate }: { userPr
           {userProfile?.fullName?.[0]}
         </div>
         <div>
-          <h1 style={{fontFamily:"'Playfair Display',serif", fontSize:28, color:"#2C2016", marginBottom:4}}>{userProfile?.fullName}</h1>
+          <h1 style={{ fontSize:28, color:"#2C2016", marginBottom:4}}>{userProfile?.fullName}</h1>
           <p style={{fontSize:14, color:"rgba(44,32,22,0.5)", fontWeight:500}}>@{userProfile?.username} · {userProfile?.email}</p>
         </div>
       </div>
@@ -131,6 +132,6 @@ export function UserProfile({ userProfile, activeWorkspace, onUpdate }: { userPr
            </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

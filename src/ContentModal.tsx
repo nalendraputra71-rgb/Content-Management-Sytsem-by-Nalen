@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { GoogleGenAI } from "@google/genai";
+import { motion } from "motion/react";
 import { 
   MK, MC, eng, fmt, fmtD,
   I, L, B, GRP 
@@ -65,23 +66,23 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
   const canDelete = !isNew;
 
   return (
-    <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(30,21,9,0.7)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:300,padding:16,backdropFilter:"blur(4px)",overflow:"auto"}}>
-      <div onClick={e=>e.stopPropagation()} style={{background:"#FAF7F2",borderRadius:16,padding:26,maxWidth:700,width:"100%",maxHeight:"94vh",overflow:"auto",position:"relative",boxShadow:"0 24px 60px rgba(30,21,9,0.4)"}}>
-        <button onClick={onClose} style={{position:"absolute",top:14,right:14,background:"rgba(44,32,22,0.08)",border:"none",borderRadius:"50%",width:30,height:30,cursor:"pointer",fontSize:17,color:"#2C2016",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+    <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(30,21,9,0.7)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:300,padding:16,backdropFilter:"blur(4px)",overflow:"auto"}}>
+      <motion.div initial={{scale:0.95, opacity:0, y:20}} animate={{scale:1, opacity:1, y:0}} exit={{scale:0.95, opacity:0, y:20}} onClick={e=>e.stopPropagation()} style={{background:"#FAFAFA",borderRadius:24,padding:32,maxWidth:700,width:"100%",maxHeight:"94vh",overflow:"auto",position:"relative",boxShadow:"0 24px 60px rgba(30,21,9,0.4)"}}>
+        <button className="hover-scale" onClick={onClose} style={{position:"absolute",top:20,right:20,background:"rgba(44,32,22,0.05)",border:"none",borderRadius:"50%",width:32,height:32,cursor:"pointer",fontSize:18,color:"#2C2016",display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
         
-        <div style={{background:"#1E1509",color:"#FAF7F2",borderRadius:12,padding:"20px 24px",marginBottom:20}}>
+        <div style={{background:"#2C2016",color:"#FAFAFA",borderRadius:16,padding:"24px 28px",marginBottom:24, boxShadow:"inset 0 2px 4px rgba(255,255,255,0.05)"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:16,marginBottom:16}}>
                 <div style={{flex:1}}>
                    <label style={{...L, color:"rgba(250,247,242,0.4)", fontSize:10}}>Judul Konten</label>
                    <input value={d.title} onChange={(e:any)=>set("title",e.target.value)} 
-                     style={{background:"transparent",border:"none",borderBottom:"1.5px solid rgba(250,247,242,0.2)",fontFamily:"'Playfair Display',serif",fontSize:26,fontWeight:600,color:"white",width:"100%",outline:"none",padding:"4px 0"}} placeholder="Tulis Judul Konten..."/>
+                     style={{background:"transparent",border:"none",borderBottom:"1.5px solid rgba(250,247,242,0.2)",fontSize:26,fontWeight:800, letterSpacing:"-0.5px",color:"white",width:"100%",outline:"none",padding:"4px 0"}} placeholder="Tulis Judul Konten..."/>
                 </div>
                 <div style={{textAlign:"right"}}>
-                    <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:16,margin:0,color:"#C4622D"}}>{isNew?"✨ Baru":"✏️ Detail Konten"}</h2>
+                    <h2 style={{fontSize:16,margin:0,color:"#FF6B00", fontWeight:700}}>{isNew?"✨ Baru":"✏️ Detail Konten"}</h2>
                 </div>
             </div>
             
-            <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(130px, 1fr))", gap:20, fontFamily:"'DM Sans',sans-serif"}}>
+            <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(130px, 1fr))", gap:20 }}>
               <div style={GRP}>
                 <label style={{...L, color:"rgba(250,247,242,0.4)", marginBottom:4}}>Content Pillar</label>
                 <select value={d.pillar} onChange={(e:any)=>set("pillar",e.target.value)} style={{...I({background:"rgba(255,255,255,0.1)", border:"1px solid rgba(255,255,255,0.2)", color:"white", padding:"6px 10px"}), width:"100%"}}>
@@ -274,8 +275,8 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
             <button onClick={()=>{if(!d.title.trim()){alert("Judul tidak boleh kosong.");return;} onSave(d);}} style={{...B(true,"#C4622D"),padding:"8px 22px",fontWeight:600}}>{isNew?"+ Tambahkan":"💾 Simpan"}</button>
           </div>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
 
