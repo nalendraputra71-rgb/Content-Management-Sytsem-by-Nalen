@@ -28,6 +28,26 @@ export function AuthScreen({ onUserCreated }: { onUserCreated: (u: any) => void 
     }
   };
 
+  const getErrorMessage = (e: any) => {
+    const code = e.code || "";
+    if (code === "auth/unauthorized-domain") {
+      return "Domain belum terdaftar. Silakan tambahkan domain ini ke Authorized Domains di setelan Firebase Authentication.";
+    }
+    if (code === "auth/operation-not-allowed") {
+      return "Login dengan Email/Password belum diaktifkan. Silakan aktifkan di setelan Firebase Authentication.";
+    }
+    if (code === "auth/invalid-credential" || code === "auth/user-not-found" || code === "auth/wrong-password") {
+      return "Email atau password salah.";
+    }
+    if (code === "auth/email-already-in-use") {
+      return "Email ini sudah terdaftar. Silakan login.";
+    }
+    if (code === "auth/weak-password") {
+      return "Password terlalu lemah (minimal 6 karakter).";
+    }
+    return e.message || "Terjadi kesalahan saat memproses permintaan.";
+  };
+
   const handleGoogle = async () => {
     setLoading(true);
     try {
@@ -88,7 +108,9 @@ export function AuthScreen({ onUserCreated }: { onUserCreated: (u: any) => void 
         onUserCreated(user);
       }
     } catch (e: any) {
-      setError(e.message);
+      if (e.code !== "auth/popup-closed-by-user") {
+        setError(getErrorMessage(e));
+      }
     } finally {
       setLoading(false);
     }
@@ -108,7 +130,7 @@ export function AuthScreen({ onUserCreated }: { onUserCreated: (u: any) => void 
         setMode("onboarding");
       }
     } catch (e: any) {
-      setError(e.message);
+      setError(getErrorMessage(e));
     } finally {
       setLoading(false);
     }

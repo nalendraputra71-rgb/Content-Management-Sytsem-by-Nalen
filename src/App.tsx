@@ -157,6 +157,10 @@ function Dashboard({ user, profile }: any) {
       } finally {
         setWsLoading(false);
       }
+    }, (error) => {
+      console.error("onSnapshot CollectionGroup error:", error);
+      setErrorMsg(error.message);
+      setWsLoading(false);
     });
     return () => unsub();
   }, [user]);
@@ -334,59 +338,6 @@ function Dashboard({ user, profile }: any) {
 
   const provLock = useRef(false);
   const [errorMsg, setErrorMsg] = useState("");
-
-  // AUTO-PROVISION WORKSPACE IF EMPTY
-  useEffect(() => {
-    if (!wsLoading && workspaces.length === 0 && user && !provLock.current) {
-      provLock.current = true;
-      console.log("Auto-provisioning workspace for user...");
-      const wsId = `ws-${Date.now()}`;
-      const fullName = user.displayName || user.email?.split("@")[0] || "User";
-      
-      const provision = async () => {
-        try {
-          // Ensure user document exists first
-          const userRef = doc(db, "users", user.uid);
-          const uSnap = await getDoc(userRef);
-          if (!uSnap.exists()) {
-            await setDoc(userRef, {
-              uid: user.uid,
-              email: user.email,
-              username: (user.email?.split("@")[0] || "user") + Math.floor(Math.random()*1000),
-              fullName,
-              plan: "pro",
-              createdAt: new Date().toISOString()
-            }, { merge: true });
-          }
-
-          // Force create workspace FIRST
-          await setDoc(doc(db, "workspaces", wsId), {
-            id: wsId,
-            name: `${fullName}'s Workspace`,
-            ownerId: user.uid,
-            publicLinkEnabled: false,
-            createdAt: new Date().toISOString(),
-            settings: { title: "Your Company", tagline: "Content Management System", plan: "pro" }
-          });
-          
-          // Then member
-          await setDoc(doc(db, "workspaces", wsId, "members", user.uid), {
-            userId: user.uid,
-            workspaceId: wsId,
-            email: user.email,
-            role: "owner",
-            joinedAt: new Date().toISOString()
-          });
-          console.log("Auto-provision successful.");
-        } catch (e: any) {
-          console.error("Auto-provision failed:", e);
-          setErrorMsg(e.message);
-          provLock.current = false; // Allow retry on failure ONLY
-        }
-      };
-      provision();
-    }
-  }, [wsLoading, workspaces.length, user]);
 
   if (wsLoading) return <LoadingScreen title={title} />;
 
