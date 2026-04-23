@@ -1,0 +1,93 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ─── UTILS ───────────────────────────────────────────────────────────────
+    function isSignedIn() { return request.auth != null; }
+    function isAdmin() { return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)); }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+
+    // RBAC Helpers
+    function getMember(wsId) {
+      return get(/databases/$(database)/documents/workspaces/$(wsId)/members/$(request.auth.uid));
+    }
+    function isOwner(wsId) { 
+      return exists(/databases/$(database)/documents/workspaces/$(wsId)/members/$(request.auth.uid)) && 
+             get(/databases/$(database)/documents/workspaces/$(wsId)/members/$(request.auth.uid)).data.role == "owner"; 
+    }
+    function isEditor(wsId) { 
+      return exists(/databases/$(database)/documents/workspaces/$(wsId)/members/$(request.auth.uid)) && 
+             get(/databases/$(database)/documents/workspaces/$(wsId)/members/$(request.auth.uid)).data.role in ["owner", "editor"]; 
+    }
+    function isMember(wsId) { 
+      return exists(/databases/$(database)/documents/workspaces/$(wsId)/members/$(request.auth.uid)); 
+    }
+
+    // ─── DEFAULT DENY ────────────────────────────────────────────────────────
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // ─── USERS ───────────────────────────────────────────────────────────────
+    match /users/{userId} {
+      allow get: if isSignedIn();
+      // Allow searching for users by email (limited to prevent scraping)
+      allow list: if isSignedIn() && (
+        resource.data.email == request.auth.token.email || 
+        (request.query.limit <= 5)
+      );
+      allow create: if isSignedIn() && request.auth.uid == userId && incoming().uid == userId;
+      allow update: if isSignedIn() && request.auth.uid == userId && incoming().diff(existing()).affectedKeys().hasOnly(['fullName', 'avatar', 'username']);
+    }
+
+    // Collection Group rule for memberships
+    match /{path=**}/members/{memberId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    // ─── USERNAMES (Integrity Guard) ──────────────────────────────────────────
+    match /usernames/{username} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn(); // Validated via transaction in AuthScreen
+    }
+
+    // ─── WORKSPACES ──────────────────────────────────────────────────────────
+    match /workspaces/{wsId} {
+      allow get: if isMember(wsId) || existing().publicLinkEnabled == true;
+      allow create: if isSignedIn() && incoming().ownerId == request.auth.uid;
+      allow delete: if isOwner(wsId);
+      allow update: if isOwner(wsId) && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'publicLinkEnabled', 'settings']);
+
+      // ─── MEMBERS ───────────────────────────────────────────────────────────
+      match /members/{memberId} {
+        allow read: if isMember(wsId);
+        allow create: if isSignedIn() && (
+          isOwner(wsId) || 
+          (request.auth.uid == memberId && incoming().role == "owner" && 
+           get(/databases/$(database)/documents/workspaces/$(wsId)).data.ownerId == request.auth.uid)
+        );
+        allow delete: if isOwner(wsId) && memberId != request.auth.uid;
+        allow update: if isOwner(wsId) && incoming().diff(existing()).affectedKeys().hasOnly(['role']);
+      }
+
+      // ─── CONTENT ───────────────────────────────────────────────────────────
+      match /content/{contentId} {
+        allow read: if isMember(wsId) || get(/databases/$(database)/documents/workspaces/$(wsId)).data.publicLinkEnabled == true;
+        allow create: if isEditor(wsId) && incoming().workspaceId == wsId && incoming().userId == request.auth.uid;
+        allow delete: if isEditor(wsId);
+        allow update: if isEditor(wsId) && (
+          isOwner(wsId) ||
+          (incoming().diff(existing()).affectedKeys().hasOnly([
+            'status', 'metrics', 'adsMetrics', 'title', 'caption', 
+            'pillar', 'platform', 'pic', 'isAds', 'uploadHour', 
+            'uploadMinute', 'day', 'month', 'year', 'briefCopywriting',
+            'objective', 'referenceText', 'linkAsset', 'linkUpload',
+            'archived', 'updatedAt', 'metricsUpdatedAt'
+          ]))
+        );
+      }
+    }
+  }
+}

@@ -250,7 +250,7 @@ export function AnalyticsView({content,pillars,platforms,pics,statuses,openEdit}
         
         const picDataStr = picData.map((p:any)=>`${p.name} (${p.total})`).join(", ");
 
-        const prompt = `Act as an expert Social Media Analyst. Review this comprehensive data summary for Fakdhera CMS:
+        const prompt = `Act as an expert Social Media Analyst. Review this comprehensive data summary for Your Company CMS:
         - Date Filter: ${dateFilt} (Quick range: ${adsFilter})
         - Growth/Trends:
            * Total Content: ${total} (${pTotal||"N/A"})

@@ -214,7 +214,7 @@ export function TimelineView({year,month,content,filtered,openEdit,openAdd,pilla
   );
 }
 
-export function TableView({filtered,openEdit,archiveItem,deleteItem,pillars,platforms,showArchived,search,bulkIds,setBulkIds,onBulk}: any) {
+export function TableView({filtered,openEdit,archiveItem,unarchiveItem,deleteItem,pillars,platforms,showArchived,search,bulkIds,setBulkIds,onBulk}: any) {
   const [sort,setSort] = useState({col:"day",dir:"asc"});
   const items = filtered.filter((c:any)=>showArchived?c.archived:!c.archived);
   const sorted = useMemo(()=>{
@@ -248,6 +248,7 @@ export function TableView({filtered,openEdit,archiveItem,deleteItem,pillars,plat
           <span style={{fontSize:13,fontWeight:600,color:"#C4622D"}}>{bulkIds.length} terpilih</span>
           <div style={{width:1,height:14,background:"rgba(196,98,45,0.2)"}}/>
           <button onClick={()=>onBulk("archive")} style={{background:"none",border:"none",color:"#723680",fontSize:13,fontWeight:600,cursor:"pointer"}}>📦 Arsip Massal</button>
+          <button onClick={()=>onBulk("restore")} style={{background:"none",border:"none",color:"#2E7D32",fontSize:13,fontWeight:600,cursor:"pointer"}}>🔄 Pulihkan Massal</button>
           <button onClick={()=>onBulk("delete")} style={{background:"none",border:"none",color:"#9C2B4E",fontSize:13,fontWeight:600,cursor:"pointer"}}>🗑️ Hapus Massal</button>
           <div style={{flex:1}}/>
           <button onClick={()=>setBulkIds([])} style={{background:"none",border:"none",color:"rgba(44,32,22,0.4)",fontSize:13,cursor:"pointer"}}>Batal</button>
@@ -298,7 +299,8 @@ export function TableView({filtered,openEdit,archiveItem,deleteItem,pillars,plat
                       <div style={{display:"flex",gap:3,flexWrap:"wrap"}}>
                         <button onClick={()=>openEdit(item)} style={{background:"#F5F0E8",border:"none",borderRadius:6,padding:"3px 8px",fontSize:10,cursor:"pointer",fontFamily:"inherit",color:"#2C2016",fontWeight:500}}>Edit</button>
                         {item.status==="Published"&&!item.archived&&<button onClick={()=>archiveItem(item.id)} style={{background:"#F1E8F5",border:"none",borderRadius:6,padding:"3px 8px",fontSize:10,cursor:"pointer",fontFamily:"inherit",color:"#723680",fontWeight:500}}>📦 Arsip</button>}
-                        {item.status==="Draft"&&!item.archived&&<button onClick={()=>deleteItem(item.id)} style={{background:"#FDF5F8",border:"none",borderRadius:6,padding:"3px 8px",fontSize:10,cursor:"pointer",fontFamily:"inherit",color:"#9C2B4E",fontWeight:500}}>🗑️ Hapus</button>}
+                        {item.archived&&<button onClick={()=>unarchiveItem(item.id)} style={{background:"#E8F5E9",border:"none",borderRadius:6,padding:"3px 8px",fontSize:10,cursor:"pointer",fontFamily:"inherit",color:"#2E7D32",fontWeight:500}}>🔄 Pulihkan</button>}
+                        {!item.archived&&<button onClick={()=>deleteItem(item.id)} style={{background:"#FDF5F8",border:"none",borderRadius:6,padding:"3px 8px",fontSize:10,cursor:"pointer",fontFamily:"inherit",color:"#9C2B4E",fontWeight:500}}>🗑️ Hapus</button>}
                       </div>
                     </td>
                   </tr>

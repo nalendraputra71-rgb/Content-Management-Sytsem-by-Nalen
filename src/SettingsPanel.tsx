@@ -1,14 +1,21 @@
 import { useState } from "react";
 import { I, B, CARD } from "./data";
 
-export function SettingsPanel({pillars,setPillars,platforms,setPlatforms,pics,setPics,statuses,setStatuses,holidays,setHolidays}: any) {
+export function SettingsPanel({pillars,setPillars,platforms,setPlatforms,pics,setPics,statuses,setStatuses,holidays,setHolidays,onSeed}: any) {
   const [section,setSection] = useState("pillars");
   const [newVal,setNewVal] = useState("");
   const [newColor,setNewColor] = useState("#C4622D");
   const [newHKey,setNewHKey] = useState("");
   const [newHVal,setNewHVal] = useState("");
 
-  const sections = [["pillars","Content Pillars","🎨"],["platforms","Platforms","📱"],["pics","Team PIC","👤"],["statuses","Status Workflow","📋"],["holidays","Hari Besar","📅"]];
+  const sections = [
+    ["pillars","Content Pillars","🎨"],
+    ["platforms","Platforms","📱"],
+    ["pics","Team PIC","👤"],
+    ["statuses","Status Workflow","📋"],
+    ["holidays","Hari Besar","📅"],
+    ["general","General & Debug","⚙️"]
+  ];
 
   const addPillar = () => {
     if(!newVal.trim())return;
@@ -121,6 +128,21 @@ export function SettingsPanel({pillars,setPillars,platforms,setPlatforms,pics,se
               <input value={newHKey} onChange={(e:any)=>setNewHKey(e.target.value)} placeholder="YYYY-M-D" style={I({width:130,flex:"none"})}/>
               <input value={newHVal} onChange={(e:any)=>setNewHVal(e.target.value)} placeholder="🎉 Nama Event" style={I({flex:1})}/>
               <button onClick={addHoliday} style={{...B(true,"#C4622D"),padding:"7px 14px",fontWeight:600}}>+ Tambah</button>
+            </div>
+          </>
+        )}
+        {section==="general"&&(
+          <>
+            <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:18,margin:"0 0 14px"}}>⚙️ General & Debug</h3>
+            <div style={{background:"#FAFAF8",borderRadius:10,padding:16,border:"1px solid rgba(44,32,22,0.06)"}}>
+               <p style={{fontSize:13,color:"#2C2016",marginBottom:12}}><strong>Penyimpanan Data:</strong> Data Anda disinkronkan secara real-time ke Google Firebase Cloud Firestore.</p>
+               <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                  <div style={{background:"#FDF0EB",padding:12,borderRadius:8,border:"1px solid rgba(196,98,45,0.15)"}}>
+                     <h4 style={{fontSize:12,margin:"0 0 6px",color:"#C4622D"}}>🧪 Testing Mode</h4>
+                     <p style={{fontSize:11,color:"rgba(44,32,22,0.6)",marginBottom:10}}>Gunakan data dummy untuk melihat bagaimana dashboard ini bekerja dengan banyak data.</p>
+                     <button onClick={onSeed} style={{...B(false),background:"#C4622D",color:"white",border:"none",fontWeight:700,padding:"8px 16px"}}>✨ Generate Data Dummy (Seed)</button>
+                  </div>
+               </div>
             </div>
           </>
         )}

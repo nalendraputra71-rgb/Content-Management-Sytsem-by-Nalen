@@ -1,0 +1,78 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Extended user information stored in Firestore",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "username": { "type": "string" },
+        "fullName": { "type": "string" },
+        "avatar": { "type": "string" },
+        "plan": { "type": "string", "enum": ["free", "pro"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "username"]
+    },
+    "Workspace": {
+      "title": "Workspace",
+      "description": "Collaborative container for content",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "publicLinkEnabled": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "name", "ownerId"]
+    },
+    "WorkspaceMember": {
+      "title": "Workspace Member",
+      "description": "Mapping of users to roles within a workspace",
+      "type": "object",
+      "properties": {
+        "workspaceId": { "type": "string" },
+        "userId": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["owner", "editor", "viewer"] },
+        "joinedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["workspaceId", "userId", "role"]
+    },
+    "Content": {
+      "title": "Social Media Content",
+      "description": "Main CMS posting document",
+      "type": "object",
+      "properties": {
+        "workspaceId": { "type": "string" },
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "pillar": { "type": "string" },
+        "platform": { "type": "string" },
+        "status": { "type": "string" },
+        "metrics": { "type": "object" }
+      },
+      "required": ["workspaceId", "userId", "title"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Individual user profiles"
+    },
+    "/workspaces/{workspaceId}": {
+      "schema": "Workspace",
+      "description": "Workspaces metadata"
+    },
+    "/workspaces/{workspaceId}/members/{memberId}": {
+      "schema": "WorkspaceMember",
+      "description": "Role-based membership within a workspace"
+    },
+    "/workspaces/{workspaceId}/content/{contentId}": {
+      "schema": "Content",
+      "description": "Posts associated with a specific workspace"
+    }
+  }
+}

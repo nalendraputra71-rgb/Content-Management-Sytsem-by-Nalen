@@ -56,16 +56,10 @@ export const fmtT = (h: any,m: any) => `${String(h||9).padStart(2,"0")}:${String
  */
 export const getDynamicEvents = (y: number, m: number, d: number) => {
   const events = [];
-  
-  // Twin Date Check
-  // H (Day == Month)
-  if (d === m) events.push("💎 Twin Date Promo");
-  // H-1 (Day == Month - 1)
-  if (d === m - 1) events.push("⏳ Twin Date Eve");
-
-  // Payday Sale (25th to end of month)
+  if (d === m) events.push(`💎 Twin Date ${m}.${m} Promo`);
+  const tm = new Date(y, m - 1, d + 1);
+  if (tm.getDate() === tm.getMonth() + 1) events.push(`⏳ ${tm.getMonth() + 1}.${tm.getMonth() + 1} Eve`);
   if (d >= 25) events.push("💰 Payday Sale");
-
   return events.join(" & ");
 };
 export const nowTs= () => new Date().toLocaleString("id-ID",{dateStyle:"medium",timeStyle:"short"});
@@ -90,18 +84,18 @@ export const emptyItem = (y:any,mo:any,d:any,pillars:any,platforms:any,pics:any,
 // ─── SEED ─────────────────────────────────────────────────────────────────────
 
 const baseSeed = [
-  {day:1,pillar:"Outfit Inspiration",platform:"Feed",title:"Perempuan Bekerja, Tetap Stylish & Halal",pic:"Fakhri",status:"Published",isAds:false,uploadHour:9,uploadMinute:0,metrics:{views:2100,reach:1800,likes:220,comments:31,shares:15,reposts:8,saves:44}},
+  {day:1,pillar:"Outfit Inspiration",platform:"Feed",title:"Perempuan Bekerja, Tetap Stylish & Profesional",pic:"Fakhri",status:"Published",isAds:false,uploadHour:9,uploadMinute:0,metrics:{views:2100,reach:1800,likes:220,comments:31,shares:15,reposts:8,saves:44}},
   {day:1,pillar:"Community & Social Proof",platform:"Stories",title:"Poll: Tim WFO atau WFH?",pic:"Eko",status:"Published",isAds:false,uploadHour:10,uploadMinute:0,metrics:{views:890,reach:720,likes:0,comments:0,shares:0,reposts:0,saves:0}},
-  {day:2,pillar:"Values & Brand Story",platform:"Reels",title:"Dari Kampus ke Karier: Fakdhera Tumbuh Bareng Kamu",pic:"Fauzan",status:"Published",isAds:true,uploadHour:17,uploadMinute:0,metrics:{views:5200,reach:4100,likes:580,comments:72,shares:90,reposts:45,saves:130},adsMetrics:{views:15000,reach:12000,likes:800,comments:120,shares:150,reposts:80,saves:200,clicks:350,conversions:24}},
+  {day:2,pillar:"Values & Brand Story",platform:"Reels",title:"Dari Kampus ke Karier: Your Company Tumbuh Bareng Kamu",pic:"Fauzan",status:"Published",isAds:true,uploadHour:17,uploadMinute:0,metrics:{views:5200,reach:4100,likes:580,comments:72,shares:90,reposts:45,saves:130},adsMetrics:{views:15000,reach:12000,likes:800,comments:120,shares:150,reposts:80,saves:200,clicks:350,conversions:24}},
   {day:3,pillar:"Product Showcase",platform:"Feed",title:"Hero Koleksi Work Life Outdoor — Ini Dia Andalanmu!",pic:"Fakhri",status:"Published",isAds:false,uploadHour:9,uploadMinute:0,metrics:{views:1800,reach:1500,likes:190,comments:24,shares:12,reposts:6,saves:55}},
   {day:5,pillar:"Behind the Scene",platform:"Reels",title:"BTS Campaign Shoot 'Work Life Outdoor' 🎬",pic:"Fauzan",status:"Published",isAds:false,uploadHour:18,uploadMinute:0,metrics:{views:3800,reach:3000,likes:410,comments:55,shares:60,reposts:28,saves:95}},
   {day:7,pillar:"Edukasi",platform:"Feed",title:"Panduan Lengkap Pilih Bahan Breathable untuk Outdoor",pic:"Eko",status:"Published",isAds:false,uploadHour:8,uploadMinute:30,metrics:{views:1600,reach:1300,likes:175,comments:30,shares:45,reposts:20,saves:120}},
-  {day:10,pillar:"Outfit Inspiration",platform:"Reels",title:"GRWM: From Work to Outdoor with Fakdhera ✨",pic:"Fauzan",status:"Published",isAds:true,uploadHour:17,uploadMinute:30,metrics:{views:6100,reach:5200,likes:720,comments:95,shares:110,reposts:55,saves:180},adsMetrics:{views:25000,reach:18000,likes:1200,comments:300,shares:450,reposts:200,saves:800,clicks:600,conversions:55}},
-  {day:14,pillar:"Product Showcase",platform:"Reels",title:"🎉 LAUNCH DAY: Koleksi Terbaru Fakdhera!",pic:"Fauzan",status:"Published",isAds:true,uploadHour:9,uploadMinute:0,metrics:{views:12500,reach:10200,likes:1800,comments:250,shares:320,reposts:180,saves:420},adsMetrics:{views:50000,reach:38000,likes:3500,comments:800,shares:1200,reposts:900,saves:2100,clicks:1500,conversions:210}},
-  {day:17,pillar:"Edukasi",platform:"Reels",title:"5 Ways to Style Koleksi Baru Fakdhera 🎥",pic:"Fauzan",status:"Published",isAds:false,uploadHour:17,uploadMinute:0,metrics:{views:7200,reach:6100,likes:880,comments:120,shares:145,reposts:70,saves:230}},
-  {day:21,pillar:"Campaign/Promo",platform:"Reels",title:"⚡ FLASH SALE INCOMING — Siap-Siap Fakdhera Squad!",pic:"Fauzan",status:"Published",isAds:true,uploadHour:9,uploadMinute:0,metrics:{views:8900,reach:7500,likes:1100,comments:180,shares:200,reposts:95,saves:280},adsMetrics:{views:35000,reach:27000,likes:2200,comments:450,shares:850,reposts:350,saves:1200,clicks:1800,conversions:320}},
+  {day:10,pillar:"Outfit Inspiration",platform:"Reels",title:"GRWM: From Work to Outdoor with Your Company ✨",pic:"Fauzan",status:"Published",isAds:true,uploadHour:17,uploadMinute:30,metrics:{views:6100,reach:5200,likes:720,comments:95,shares:110,reposts:55,saves:180},adsMetrics:{views:25000,reach:18000,likes:1200,comments:300,shares:450,reposts:200,saves:800,clicks:600,conversions:55}},
+  {day:14,pillar:"Product Showcase",platform:"Reels",title:"🎉 LAUNCH DAY: Koleksi Terbaru Your Company!",pic:"Fauzan",status:"Published",isAds:true,uploadHour:9,uploadMinute:0,metrics:{views:12500,reach:10200,likes:1800,comments:250,shares:320,reposts:180,saves:420},adsMetrics:{views:50000,reach:38000,likes:3500,comments:800,shares:1200,reposts:900,saves:2100,clicks:1500,conversions:210}},
+  {day:17,pillar:"Edukasi",platform:"Reels",title:"5 Ways to Style Koleksi Baru Your Company 🎥",pic:"Fauzan",status:"Published",isAds:false,uploadHour:17,uploadMinute:0,metrics:{views:7200,reach:6100,likes:880,comments:120,shares:145,reposts:70,saves:230}},
+  {day:21,pillar:"Campaign/Promo",platform:"Reels",title:"⚡ FLASH SALE INCOMING — Siap-Siap Your Company Squad!",pic:"Fauzan",status:"Published",isAds:true,uploadHour:9,uploadMinute:0,metrics:{views:8900,reach:7500,likes:1100,comments:180,shares:200,reposts:95,saves:280},adsMetrics:{views:35000,reach:27000,likes:2200,comments:450,shares:850,reposts:350,saves:1200,clicks:1800,conversions:320}},
   {day:22,pillar:"Campaign/Promo",platform:"Feed",title:"🔥 FLASH SALE IS LIVE! Buruan Sebelum Habis!",pic:"Fakhri",status:"Published",isAds:true,uploadHour:7,uploadMinute:0,metrics:{views:9800,reach:8200,likes:1350,comments:220,shares:280,reposts:130,saves:310},adsMetrics:{views:42000,reach:35000,likes:2800,comments:600,shares:1100,reposts:450,saves:1500,clicks:2100,conversions:450}},
-  {day:25,pillar:"Community & Social Proof",platform:"Feed",title:"Terima Kasih Sudah Belanja! 💕 #FakdheraFamily",pic:"Eko",status:"Published",isAds:false,uploadHour:12,uploadMinute:0,metrics:{views:3300,reach:2900,likes:450,comments:80,shares:35,reposts:18,saves:70}},
+  {day:25,pillar:"Community & Social Proof",platform:"Feed",title:"Terima Kasih Sudah Belanja! 💕 #YourCompanyFamily",pic:"Eko",status:"Published",isAds:false,uploadHour:12,uploadMinute:0,metrics:{views:3300,reach:2900,likes:450,comments:80,shares:35,reposts:18,saves:70}},
   {day:15,pillar:"Product Showcase",platform:"Feed",title:"Draft Konten Juni - Product Review",pic:"Eko",status:"Draft",isAds:false,uploadHour:9,uploadMinute:0,metrics:{views:0,reach:0,likes:0,comments:0,shares:0,reposts:0,saves:0}},
 ];
 

@@ -5,7 +5,7 @@ import {
   I, L, B, GRP 
 } from "./data";
 
-export function ContentModal({modal,onSave,onClose,onArchive,onDelete,pillars,platforms,pics,statuses}: any) {
+export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,pillars,platforms,pics,statuses}: any) {
   const [d,setD] = useState({...modal.data,metrics:{...modal.data.metrics},adsMetrics:{...(modal.data.adsMetrics||{views:0,reach:0,likes:0,comments:0,shares:0,reposts:0,saves:0,clicks:0,conversions:0})},referenceLinks:modal.data.referenceLinks||[],customFields:modal.data.customFields||[]});
   const [aiResult, setAiResult] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
@@ -262,7 +262,11 @@ export function ContentModal({modal,onSave,onClose,onArchive,onDelete,pillars,pl
         {/* Actions */}
         <div style={{display:"flex",gap:8,justifyContent:"space-between",alignItems:"center"}}>
           <div style={{display:"flex",gap:8}}>
-            {canArchive&&<button onClick={()=>onArchive(d.id)} style={{...B(false),background:"#F1E8F5",border:"1.5px solid #723680",color:"#723680",padding:"8px 16px",fontWeight:600}}>📦 Arsipkan</button>}
+            {d.archived ? (
+              <button onClick={()=>onRestore(d.id)} style={{...B(false),background:"#E8F5E9",border:"1.5px solid #2E7D32",color:"#2E7D32",padding:"8px 16px",fontWeight:600}}>🔄 Tampilkan Lagi</button>
+            ) : (
+              canArchive&&<button onClick={()=>onArchive(d.id)} style={{...B(false),background:"#F1E8F5",border:"1.5px solid #723680",color:"#723680",padding:"8px 16px",fontWeight:600}}>📦 Arsipkan</button>
+            )}
             {canDelete&&<button onClick={()=>onDelete(d.id)} style={{...B(false),background:"#FDF5F8",border:"1.5px solid #9C2B4E",color:"#9C2B4E",padding:"8px 16px",fontWeight:600}}>🗑️ Hapus Permanen</button>}
           </div>
           <div style={{display:"flex",gap:8}}>

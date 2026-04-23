@@ -1,0 +1,247 @@
+import React, { useState } from "react";
+import { 
+  auth, db, googleProvider, signInWithPopup, 
+  createUserWithEmailAndPassword, signInWithEmailAndPassword,
+  doc, setDoc, getDoc, runTransaction, collection
+} from "./firebase";
+import { Mail, Lock, User, AtSign, ArrowRight, Globe } from "lucide-react";
+import { I, B } from "./data";
+
+export function AuthScreen({ onUserCreated }: { onUserCreated: (u: any) => void }) {
+  const [mode, setMode] = useState<"login" | "signup" | "onboarding">("login");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [tempUser, setTempUser] = useState<any>(null);
+
+  const checkUserDocument = async (user: any) => {
+    const userRef = doc(db, "users", user.uid);
+    const snap = await getDoc(userRef);
+    if (snap.exists()) {
+      onUserCreated(user);
+    } else {
+      setTempUser(user);
+      setMode("onboarding");
+    }
+  };
+
+  const handleGoogle = async () => {
+    setLoading(true);
+    try {
+      const res = await signInWithPopup(auth, googleProvider);
+      const user = res.user;
+      
+      // Check if user info exists
+      const userRef = doc(db, "users", user.uid);
+      const snap = await getDoc(userRef);
+      
+      if (snap.exists()) {
+        onUserCreated(user);
+      } else {
+        // Auto-provision for Google users to reduce friction
+        const wsId = `ws-${Date.now()}`;
+        const autoUsername = (user.email?.split("@")[0] || "user") + Math.floor(Math.random() * 1000);
+        const fullName = user.displayName || autoUsername;
+        
+        await runTransaction(db, async (transaction) => {
+          const usernameRef = doc(db, "usernames", autoUsername.toLowerCase());
+          const wsRef = doc(db, "workspaces", wsId);
+          const memberRef = doc(db, "workspaces", wsId, "members", user.uid);
+          
+          transaction.set(usernameRef, { uid: user.uid });
+          transaction.set(userRef, {
+            uid: user.uid,
+            email: user.email,
+            username: autoUsername.toLowerCase(),
+            fullName: fullName,
+            avatar: user.photoURL || `https://ui-avatars.com/api/?name=${fullName}`,
+            plan: "pro", // Bypass paywall
+            role: "user",
+            createdAt: new Date().toISOString()
+          });
+
+          transaction.set(wsRef, {
+            id: wsId,
+            name: `${fullName}'s Workspace`,
+            ownerId: user.uid,
+            publicLinkEnabled: false,
+            createdAt: new Date().toISOString(),
+            settings: {
+               title: "Your Company",
+               tagline: "Content Management System",
+               plan: "pro" // Workspace level plan
+            }
+          });
+
+          transaction.set(memberRef, {
+            userId: user.uid,
+            workspaceId: wsId,
+            email: user.email,
+            role: "owner",
+            joinedAt: new Date().toISOString()
+          });
+        });
+        
+        onUserCreated(user);
+      }
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEmailAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    try {
+      if (mode === "login") {
+        const res = await signInWithEmailAndPassword(auth, email, password);
+        await checkUserDocument(res.user);
+      } else {
+        const res = await createUserWithEmailAndPassword(auth, email, password);
+        setTempUser(res.user);
+        setMode("onboarding");
+      }
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOnboarding = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!tempUser || !username.trim()) return;
+    setLoading(true);
+    setError("");
+
+    try {
+      await runTransaction(db, async (transaction) => {
+        // Check if username taken
+        const usernameRef = doc(db, "usernames", username.toLowerCase());
+        const uSnap = await transaction.get(usernameRef);
+        if (uSnap.exists()) throw new Error("Username sudah digunakan.");
+
+        const userRef = doc(db, "users", tempUser.uid);
+        const wsId = `ws-${Date.now()}`;
+        const wsRef = doc(db, "workspaces", wsId);
+        const memberRef = doc(db, "workspaces", wsId, "members", tempUser.uid);
+
+        transaction.set(usernameRef, { uid: tempUser.uid });
+        transaction.set(userRef, {
+          uid: tempUser.uid,
+          email: tempUser.email,
+          username: username.toLowerCase(),
+          fullName,
+          avatar: tempUser.photoURL || `https://ui-avatars.com/api/?name=${fullName}`,
+          plan: "pro", // Per user request: Lifetime Pro Active
+          createdAt: new Date().toISOString()
+        });
+
+        // Initialize first workspace
+        transaction.set(wsRef, {
+          id: wsId,
+          name: `${fullName}'s Workspace`,
+          ownerId: tempUser.uid,
+          publicLinkEnabled: false,
+          createdAt: new Date().toISOString(),
+          settings: { title: "Your Company", tagline: "Content Management System", plan: "pro" }
+        });
+
+        transaction.set(memberRef, {
+          userId: tempUser.uid,
+          workspaceId: wsId,
+          email: tempUser.email,
+          role: "owner",
+          joinedAt: new Date().toISOString()
+        });
+      });
+
+      onUserCreated(tempUser);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={{minHeight:"100vh", display:"flex", background:"#1E1509", alignItems:"center", justifyContent:"center", padding:24}}>
+      <div style={{width:"100%", maxWidth:400, background:"#FAF7F2", borderRadius:24, padding:40, boxShadow:"0 30px 100px rgba(0,0,0,0.5)"}}>
+        <div style={{textAlign:"center", marginBottom:32}}>
+          <h1 style={{fontFamily:"'Playfair Display',serif", fontSize:32, color:"#2C2016", marginBottom:8}}>Your Company CMS</h1>
+          <p style={{fontSize:14, color:"rgba(44,32,22,0.6)"}}>
+            {mode === "login" ? "Selamat datang kembali!" : mode === "signup" ? "Mulai rencanakan kontenmu sekarang." : "Lengkapi profilmu."}
+          </p>
+        </div>
+
+        {error && <div style={{background:"#F8EAF0", color:"#9C2B4E", padding:12, borderRadius:12, fontSize:12, marginBottom:20, fontWeight:500}}>{error}</div>}
+
+        {mode === "onboarding" ? (
+          <form onSubmit={handleOnboarding} style={{display:"flex", flexDirection:"column", gap:16}}>
+            <div style={{display:"flex", flexDirection:"column", gap:6}}>
+              <label style={{fontSize:11, fontWeight:700, color:"rgba(44,32,22,0.4)", textTransform:"uppercase"}}>Username Unik</label>
+              <div style={{position:"relative"}}>
+                <AtSign size={16} style={{position:"absolute", left:12, top:13, color:"rgba(44,32,22,0.3)"}}/>
+                <input required value={username} onChange={e=>setUsername(e.target.value.replace(/[^a-z0-9_]/g,""))} placeholder="username" style={{...I({paddingLeft:36})}} />
+              </div>
+            </div>
+            <div style={{display:"flex", flexDirection:"column", gap:6}}>
+              <label style={{fontSize:11, fontWeight:700, color:"rgba(44,32,22,0.4)", textTransform:"uppercase"}}>Nama Lengkap</label>
+              <div style={{position:"relative"}}>
+                <User size={16} style={{position:"absolute", left:12, top:13, color:"rgba(44,32,22,0.3)"}}/>
+                <input required value={fullName} onChange={e=>setFullName(e.target.value)} placeholder="Nama Lengkap" style={{...I({paddingLeft:36})}} />
+              </div>
+            </div>
+            <button disabled={loading} type="submit" style={{...B(false), background:"#C4622D", color:"white", border:"none", height:48, fontWeight:600, display:"flex", alignItems:"center", justifyContent:"center", gap:10, marginTop:8}}>
+              {loading ? "Menyimpan..." : "Selesaikan Registrasi"} <ArrowRight size={18}/>
+            </button>
+          </form>
+        ) : (
+          <>
+            <form onSubmit={handleEmailAuth} style={{display:"flex", flexDirection:"column", gap:16}}>
+              <div style={{display:"flex", flexDirection:"column", gap:6}}>
+                <div style={{position:"relative"}}>
+                  <Mail size={16} style={{position:"absolute", left:12, top:13, color:"rgba(44,32,22,0.3)"}}/>
+                  <input required type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="Email Address" style={{...I({paddingLeft:36})}} />
+                </div>
+              </div>
+              <div style={{display:"flex", flexDirection:"column", gap:6}}>
+                <div style={{position:"relative"}}>
+                  <Lock size={16} style={{position:"absolute", left:12, top:13, color:"rgba(44,32,22,0.3)"}}/>
+                  <input required type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Password" style={{...I({paddingLeft:36})}} />
+                </div>
+              </div>
+              <button disabled={loading} type="submit" style={{...B(false), background:"#2C2016", color:"white", border:"none", height:48, fontWeight:600, marginTop:8}}>
+                {loading ? "Memproses..." : mode === "login" ? "Masuk" : "Daftar Akun"}
+              </button>
+            </form>
+
+            <div style={{display:"flex", alignItems:"center", gap:16, margin:"24px 0"}}>
+              <div style={{flex:1, height:1, background:"rgba(44,32,22,0.1)"}}/>
+              <span style={{fontSize:11, color:"rgba(44,32,22,0.3)", fontWeight:600}}>ATAU</span>
+              <div style={{flex:1, height:1, background:"rgba(44,32,22,0.1)"}}/>
+            </div>
+
+            <button onClick={handleGoogle} disabled={loading} style={{...B(false), width:"100%", height:48, display:"flex", alignItems:"center", justifyContent:"center", gap:12, fontWeight:600}}>
+              <Globe size={18} color="#C4622D"/> Masuk dengan Google
+            </button>
+
+            <div style={{textAlign:"center", marginTop:32, fontSize:13, color:"rgba(44,32,22,0.5)"}}>
+              {mode === "login" ? (
+                <>Belum punya akun? <button onClick={()=>setMode("signup")} style={{background:"none", border:"none", color:"#C4622D", fontWeight:700, cursor:"pointer"}}>Daftar</button></>
+              ) : (
+                <>Sudah punya akun? <button onClick={()=>setMode("login")} style={{background:"none", border:"none", color:"#C4622D", fontWeight:700, cursor:"pointer"}}>Masuk</button></>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
