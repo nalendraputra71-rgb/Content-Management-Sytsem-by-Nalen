@@ -105,26 +105,6 @@ export function ShareWorkspaceModal({ workspace, onClose }: { workspace: any, on
           <button onClick={onClose} style={{background:"none", border:"none", fontSize:24, color:"rgba(44,32,22,0.3)", cursor:"pointer"}}>&times;</button>
         </div>
 
-        {/* Public Link Section */}
-        <div style={{...CARD({background:"#FDF0EB", border:"1px solid rgba(196,98,45,0.15)", marginBottom:24})}}>
-          <div style={{display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:12}}>
-            <h4 style={{fontSize:13, fontWeight:700, display:"flex", alignItems:"center", gap:8}}><Link size={16}/> Public View-Only Link</h4>
-            <div onClick={togglePublicLink} style={{width:40, height:20, background:workspace.publicLinkEnabled?"#C4622D":"rgba(44,32,22,0.1)", borderRadius:10, position:"relative", cursor:"pointer", transition:"all 0.2s"}}>
-               <div style={{width:16, height:16, background:"white", borderRadius:"50%", position:"absolute", top:2, left:workspace.publicLinkEnabled?22:2, transition:"all 0.2s"}}/>
-            </div>
-          </div>
-          {workspace.publicLinkEnabled && (
-            <div style={{display:"flex", gap:8}}>
-              <div style={{...I({flex:1, fontSize:11, overflow:"hidden", textOverflow:"ellipsis", paddingRight:4})}}>
-                {publicUrl}
-              </div>
-              <button onClick={copyLink} style={{...B(linkCopied), padding:"6px 12px", display:"flex", alignItems:"center", gap:6}}>
-                {linkCopied ? <Check size={14}/> : <Copy size={14}/>} {linkCopied ? "Copied" : "Copy"}
-              </button>
-            </div>
-          )}
-        </div>
-
         {/* Invite Section */}
         <div style={{marginBottom:32}}>
           <label style={{fontSize:11, fontWeight:700, color:"rgba(44,32,22,0.4)", textTransform:"uppercase", display:"block", marginBottom:8}}>Invite by Email</label>

@@ -2,22 +2,78 @@ import React, { useState } from "react";
 import { 
   auth, db, googleProvider, signInWithPopup, 
   createUserWithEmailAndPassword, signInWithEmailAndPassword,
+  sendEmailVerification, sendPasswordResetEmail,
   doc, setDoc, getDoc, runTransaction, collection
 } from "./firebase";
 import { motion, AnimatePresence } from "motion/react";
 
 export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: any) => void, currentUser?: any }) {
-  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [mode, setMode] = useState<"login" | "signup" | "forgot">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [msg, setMsg] = useState("");
+
+  const checkUserDocument = async (user: any) => {
+    try {
+      const userRef = doc(db, "users", user.uid);
+      const snap = await getDoc(userRef);
+      if (!snap.exists()) {
+         const activeUntil = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7-Day Free Trial
+         
+         const cRole = user.email?.toLowerCase() === "nalendraputra71@gmail.com" ? "admin" : "user";
+         const cPlan = user.email?.toLowerCase() === "nalendraputra71@gmail.com" ? "pro" : "trial";
+
+         await setDoc(userRef, {
+           uid: user.uid,
+           email: user.email,
+           fullName: user.displayName || "New User",
+           username: (user.displayName || "user").replace(/\s+/g, "").toLowerCase() + Math.floor(Math.random()*1000),
+           avatar: user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || "New User"}`,
+           plan: cPlan,
+           activeUntil: activeUntil.toISOString(),
+           hasUsedPromo: false,
+           role: cRole,
+           createdAt: new Date().toISOString()
+         });
+
+         const wsRef = doc(collection(db, "workspaces"));
+         await setDoc(wsRef, {
+           name: "Workspace Personal",
+           ownerId: user.uid,
+           settings: {}
+         });
+         await setDoc(doc(db, "workspaces", wsRef.id, "members", user.uid), {
+           userId: user.uid,
+           workspaceId: wsRef.id,
+           role: "owner"
+         });
+      }
+      onUserCreated(user);
+    } catch (e: any) {
+      setError("Error checkUser: " + e.message);
+    }
+  };
 
   const handleGoogle = async () => {
     setLoading(true);
     try {
       const res = await signInWithPopup(auth, googleProvider);
-      onUserCreated(res.user);
+      await checkUserDocument(res.user);
+    } catch (e: any) { setError(e.message); }
+    finally { setLoading(false); }
+  };
+
+  const handleForgot = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) return setError("Masukkan email terlebih dahulu.");
+    setLoading(true);
+    setError("");
+    setMsg("");
+    try {
+      await sendPasswordResetEmail(auth, email);
+      setMsg("Link pencetakan ulang password telah dikirim ke email Anda.");
     } catch (e: any) { setError(e.message); }
     finally { setLoading(false); }
   };
@@ -27,9 +83,21 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
     setLoading(true);
     setError("");
     try {
-      if (mode === "login") await signInWithEmailAndPassword(auth, email, password);
-      else await createUserWithEmailAndPassword(auth, email, password);
-    } catch (e: any) { setError(e.message); }
+      if (mode === "login") {
+         const res = await signInWithEmailAndPassword(auth, email, password);
+         await checkUserDocument(res.user);
+      } else if (mode === "signup") {
+         const res = await createUserWithEmailAndPassword(auth, email, password);
+         await sendEmailVerification(res.user);
+         await checkUserDocument(res.user);
+      }
+    } catch (e: any) { 
+      if (e.code === 'auth/operation-not-allowed') {
+        setError("Firebase Error (auth/operation-not-allowed). Fitur Email/Password belum aktif. Silakan masuk ke project Firebase Anda, menu Authentication > Sign-in method, dan aktifkan Email/Password.");
+      } else {
+        setError(e.message); 
+      }
+    }
     finally { setLoading(false); }
   };
 
@@ -56,30 +124,54 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
 
             <AnimatePresence mode="wait">
               <motion.div key={mode} initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-10}}>
-                <form onSubmit={handleEmailAuth} className="space-y-4">
-                  <input type="email" placeholder="Email" className="w-full p-4 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-blue-600 outline-none transition-all" value={email} onChange={e=>setEmail(e.target.value)} />
-                  <input type="password" placeholder="Password" className="w-full p-4 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-blue-600 outline-none transition-all" value={password} onChange={e=>setPassword(e.target.value)} />
-                  <button className="w-full bg-gray-950 text-white rounded-2xl p-4 font-bold hover:bg-gray-800 transition-all">{mode === "login" ? "Masuk" : "Daftar"}</button>
-                </form>
+                {error && <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-xl text-sm font-semibold">{error}</div>}
+                {msg && <div className="mb-4 p-3 bg-green-50 text-green-600 rounded-xl text-sm font-semibold">{msg}</div>}
+                
+                {mode === "forgot" ? (
+                  <form onSubmit={handleForgot} className="space-y-4">
+                    <input type="email" placeholder="Email terdaftar" className="w-full p-4 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-blue-600 outline-none transition-all" value={email} onChange={e=>setEmail(e.target.value)} />
+                    <button disabled={loading} className="w-full bg-gray-950 text-white rounded-2xl p-4 font-bold hover:bg-gray-800 transition-all">{loading ? "Loading..." : "Kirim Link Reset"}</button>
+                    <div className="text-center mt-4 text-sm">
+                      <button type="button" onClick={() => setMode("login")} className="text-blue-600 font-bold hover:underline">Kembali ke Login</button>
+                    </div>
+                  </form>
+                ) : (
+                  <form onSubmit={handleEmailAuth} className="space-y-4">
+                    <input type="email" placeholder="Email" className="w-full p-4 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-blue-600 outline-none transition-all" value={email} onChange={e=>setEmail(e.target.value)} required />
+                    <input type="password" placeholder="Password" className="w-full p-4 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-blue-600 outline-none transition-all" value={password} onChange={e=>setPassword(e.target.value)} required />
+                    {mode === "login" && (
+                      <div className="flex justify-end">
+                        <button type="button" onClick={() => setMode("forgot")} className="text-sm font-semibold text-blue-600 hover:underline">Lupa Password?</button>
+                      </div>
+                    )}
+                    <button disabled={loading} className="w-full bg-gray-950 text-white rounded-2xl p-4 font-bold hover:bg-gray-800 transition-all">
+                      {loading ? "Loading..." : mode === "login" ? "Masuk" : "Daftar Free Trial 7 Hari"}
+                    </button>
+                  </form>
+                )}
 
-                <div className="flex items-center my-6 text-sm text-gray-400 gap-2">
-                  <div className="flex-1 h-px bg-gray-200"></div>
-                  atau masuk lewat
-                  <div className="flex-1 h-px bg-gray-200"></div>
-                </div>
+                {mode !== "forgot" && (
+                  <>
+                    <div className="flex items-center my-6 text-sm text-gray-400 gap-2">
+                      <div className="flex-1 h-px bg-gray-200"></div>
+                      atau masuk lewat
+                      <div className="flex-1 h-px bg-gray-200"></div>
+                    </div>
 
-                <button onClick={handleGoogle} className="w-full flex items-center justify-center gap-3 border border-gray-200 rounded-2xl p-4 font-semibold hover:bg-gray-50 transition-all">
-                  <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" className="w-5" alt="Google" />
-                  {mode === "login" ? "Masuk" : "Daftar"} Pake Google
-                </button>
+                    <button onClick={handleGoogle} disabled={loading} className="w-full flex items-center justify-center gap-3 border border-gray-200 rounded-2xl p-4 font-semibold hover:bg-gray-50 transition-all text-sm">
+                      <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" className="w-5" alt="Google" />
+                      {mode === "login" ? "Masuk Pake Google" : "Daftar Pake Google (Free Trial 7 Hari)"}
+                    </button>
 
-                <div className="mt-8 text-center text-sm text-gray-500">
-                  {mode === "login" ? (
-                    <>Belum punya akun? <button onClick={() => setMode("signup")} className="text-blue-600 font-bold hover:underline">Daftar</button></>
-                  ) : (
-                    <>Sudah punya akun? <button onClick={() => setMode("login")} className="text-blue-600 font-bold hover:underline">Masuk</button></>
-                  )}
-                </div>
+                    <div className="mt-8 text-center text-sm text-gray-500">
+                      {mode === "login" ? (
+                        <>Belum punya akun? <button onClick={() => setMode("signup")} className="text-blue-600 font-bold hover:underline">Daftar</button></>
+                      ) : (
+                        <>Sudah punya akun? <button onClick={() => setMode("login")} className="text-blue-600 font-bold hover:underline">Masuk</button></>
+                      )}
+                    </div>
+                  </>
+                )}
               </motion.div>
             </AnimatePresence>
         </div>

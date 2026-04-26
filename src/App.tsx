@@ -16,11 +16,14 @@ import {
 import { Header, NavBar, FilterBar, Sidebar } from "./Nav";
 import { MonthView, WeekView, BoardView, TimelineView, TableView } from "./Views";
 import { AnalyticsView } from "./AnalyticsView";
+import { SocialStudioView } from "./SocialStudioView";
 import { SettingsPanel } from "./SettingsPanel";
+import { AdminPanel } from "./AdminPanel";
 import { ContentModal } from "./ContentModal";
 import { CsvModal } from "./CsvModal";
 import { AuthScreen } from "./AuthScreen";
 import { UserProfile } from "./UserProfile";
+import { BillingView } from "./BillingView";
 import { ShareWorkspaceModal } from "./ShareWorkspaceModal";
 
 import { motion, AnimatePresence } from "motion/react";
@@ -38,7 +41,12 @@ export default function App() {
         if (u) {
           // Check profile existence first to prevent flicker
           const snap = await getDoc(doc(db, "users", u.uid));
-          if (snap.exists()) setProfile(snap.data());
+          if (snap.exists()) {
+             setProfile(snap.data());
+             if (snap.data().emailVerified !== u.emailVerified) {
+               await setDoc(doc(db, "users", u.uid), { emailVerified: u.emailVerified }, { merge: true });
+             }
+          }
           
           // Listen to profile for real-time updates
           unsubProfile = onSnapshot(doc(db, "users", u.uid), (snap) => {
@@ -65,8 +73,8 @@ export default function App() {
     <HashRouter>
       <Routes>
         <Route path="/login" element={(user && profile) ? <Navigate to="/" /> : <AuthScreen currentUser={user && !profile ? user : null} onUserCreated={(u)=>setUser(u)} />} />
-        <Route path="/public/:wsId" element={<PublicView />} />
         <Route path="/profile" element={(user && profile) ? <CMSLayout><UserProfile userProfile={profile} activeWorkspace={null} onUpdate={setProfile} /></CMSLayout> : <Navigate to="/login" />} />
+        <Route path="/billing" element={(user && profile) ? <CMSLayout><BillingView userProfile={profile} activeWorkspace={null} onUpdate={setProfile} /></CMSLayout> : <Navigate to="/login" />} />
         <Route path="/*" element={(user && profile) ? <CMSLayout><Dashboard user={user} profile={profile} /></CMSLayout> : <Navigate to="/login" />} />
       </Routes>
     </HashRouter>
@@ -75,9 +83,17 @@ export default function App() {
 
 function LoadingScreen({ title }: { title?: string }) {
   return (
-    <div style={{height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#FAFAFA",flexDirection:"column",gap:16}}>
-      <div style={{fontFamily:"'Inter', sans-serif",fontSize:32,color:"#2C2016",fontWeight:700}}>{title || "Your Company"}</div>
-      <div style={{fontSize:14,color:"rgba(44,32,22,0.5)"}}>Menyiapkan arsitektur...</div>
+    <div style={{height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#FAFAFA",flexDirection:"column",gap:24}}>
+      <motion.div
+        animate={{ rotate: 360 }}
+        transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
+        style={{
+          width: 50, height: 50, borderRadius: "50%",
+          border: "4px solid rgba(255, 107, 0, 0.2)",
+          borderTopColor: "#FF6B00"
+        }}
+      />
+      <div style={{fontFamily:"'Inter', sans-serif",fontSize:24,color:"#2C2016",fontWeight:800}}>{title || "CMS Console"}</div>
     </div>
   );
 }
@@ -102,6 +118,7 @@ function Dashboard({ user, profile }: any) {
   const [modal, setModal]       = useState<any>(null);
   const [saveMsg, setSaveMsg]   = useState("");
   const [search, setSearch]     = useState("");
+  const [confirmAction, setConfirmAction] = useState<{title:string, msg:string, onConfirm:()=>void}|null>(null);
   const [shareModal, setShareModal] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const workspaceRef = useRef(workspace);
@@ -134,6 +151,11 @@ function Dashboard({ user, profile }: any) {
   const [exportModal, setExportModal] = useState(false);
   const [exStart, setExStart] = useState("");
   const [exEnd, setExEnd] = useState("");
+
+  const isRestricted = useMemo(() => {
+    if (!profile?.activeUntil) return false;
+    return new Date() > new Date(profile.activeUntil);
+  }, [profile]);
 
   useEffect(() => {
     if (!user) return;
@@ -206,7 +228,7 @@ function Dashboard({ user, profile }: any) {
   }, [workspace?.id, user?.uid]);
 
   const handleSave = async (data: any) => {
-    if (!workspace) return;
+    if (!workspace || isRestricted) return;
     const isNew = modal.mode === "add";
     const itemId = isNew ? gid() : data.id;
     const itemData = { ...data, id: itemId, workspaceId: workspace.id, userId: user.uid };
@@ -217,23 +239,27 @@ function Dashboard({ user, profile }: any) {
   };
 
   const openEdit = (item:any) => setModal({mode:"edit",data:{...item,metrics:{...item.metrics}}});
-  const openAdd  = (day:any) => setModal({mode:"add",data:emptyItem(year,month,day,pillars,platforms,pics,statuses)});
+  const openAdd  = (day:any) => {
+    if (isRestricted) return alert("Akses Terbatas: Fitur ini dikunci pada masa uji coba yang telah habis.");
+    setModal({mode:"add",data:emptyItem(year,month,day,pillars,platforms,pics,statuses)});
+  };
   const deleteItem = async (id:string) => { 
-    if(!workspace || !id) {
-      alert("Error: Identitas konten tidak ditemukan.");
-      return;
-    }
-    // Removing window.confirm as it might be blocked in some iframe environments
-    try {
-      const docRef = doc(db, "workspaces", workspace.id, "content", id);
-      await deleteDoc(docRef); 
-      setModal(null); 
-      setSaveMsg("Konten berhasil dihapus secara permanen.");
-      setTimeout(()=>setSaveMsg(""), 3000);
-    } catch (e: any) {
-      alert(`Gagal menghapus (ID: ${id}): ` + e.message);
-      handleFirestoreError(e, 'delete');
-    }
+    if(!workspace || !id || isRestricted) return;
+    setConfirmAction({
+      title: "Hapus Konten?",
+      msg: "Yakin ingin menghapus permanen konten ini? Tindakan ini tidak dapat dikembalikan.",
+      onConfirm: async () => {
+        try {
+          const docRef = doc(db, "workspaces", workspace.id, "content", id);
+          await deleteDoc(docRef); 
+          setModal(null); 
+          setSaveMsg("Konten berhasil dihapus secara permanen.");
+          setTimeout(()=>setSaveMsg(""), 3000);
+        } catch (e: any) {
+          handleFirestoreError(e, 'delete');
+        }
+      }
+    });
   };
 
   const archiveItem = async (id:string) => {
@@ -245,7 +271,6 @@ function Dashboard({ user, profile }: any) {
       setSaveMsg("Konten berhasil diarsipkan.");
       setTimeout(()=>setSaveMsg(""), 3000);
     } catch (e: any) {
-      alert("Gagal mengarsipkan konten: " + e.message);
       handleFirestoreError(e, 'update');
     }
   };
@@ -259,36 +284,39 @@ function Dashboard({ user, profile }: any) {
       setSaveMsg("Konten berhasil dipulihkan ke kalender.");
       setTimeout(()=>setSaveMsg(""), 3000);
     } catch (e: any) {
-      alert("Gagal memulihkan konten: " + e.message);
       handleFirestoreError(e, 'update');
     }
   };
 
   const handleBulkActions = async (type: string) => {
-    if (!workspace || bulkIds.length === 0) return;
-    const confirmMsg = type === "delete" ? `Hapus permanen ${bulkIds.length} konten?` : type === "restore" ? `Pulihkan ${bulkIds.length} konten ke kalender?` : `Arsipkan ${bulkIds.length} konten?`;
-    if (!window.confirm(confirmMsg)) return;
-
-    try {
-      const batch = writeBatch(db);
-      bulkIds.forEach(id => {
-        const ref = doc(db, "workspaces", workspace.id, "content", id);
-        if (type === "delete") {
-          batch.delete(ref);
-        } else if (type === "restore") {
-          batch.update(ref, { archived: false });
-        } else {
-          batch.update(ref, { archived: true });
+    if (!workspace || bulkIds.length === 0 || isRestricted) return;
+    
+    setConfirmAction({
+      title: type === "delete" ? "Hapus Massal?" : type === "restore" ? "Pulihkan Massal?" : "Arsipkan Massal?",
+      msg: `Apakah Anda yakin ingin ${type === "delete" ? "menghapus permanen" : type === "restore" ? "memulihkan" : "mengarsipkan"} ${bulkIds.length} konten?`,
+      onConfirm: async () => {
+        try {
+          const batch = writeBatch(db);
+          bulkIds.forEach(id => {
+            const ref = doc(db, "workspaces", workspace.id, "content", id);
+            if (type === "delete") {
+              batch.delete(ref);
+            } else if (type === "restore") {
+              batch.update(ref, { archived: false });
+            } else {
+              batch.update(ref, { archived: true });
+            }
+          });
+          await batch.commit();
+          setBulkIds([]);
+          const actionName = type === "delete" ? "menghapus" : type === "restore" ? "memulihkan" : "mengarsipkan";
+          setSaveMsg(`Berhasil ${actionName} ${bulkIds.length} konten.`);
+          setTimeout(()=>setSaveMsg(""), 3000);
+        } catch (e) {
+          handleFirestoreError(e, 'write');
         }
-      });
-      await batch.commit();
-      setBulkIds([]);
-      const actionName = type === "delete" ? "menghapus" : type === "restore" ? "memulihkan" : "mengarsipkan";
-      setSaveMsg(`Berhasil ${actionName} ${bulkIds.length} konten.`);
-      setTimeout(()=>setSaveMsg(""), 3000);
-    } catch (e) {
-      handleFirestoreError(e, 'write');
-    }
+      }
+    });
   };
 
   const updateWsSettings = async (updates: any) => {
@@ -316,19 +344,23 @@ function Dashboard({ user, profile }: any) {
   const handleBulkImport = async (items: any[]) => {
     if (!workspace) return;
     try {
-      const batch = writeBatch(db);
-      items.forEach(item => {
-        const id = item.id || gid();
-        const ref = doc(db, "workspaces", workspace.id, "content", id);
-        batch.set(ref, { 
-          ...item, 
-          id, 
-          workspaceId: workspace.id, 
-          userId: user.uid,
-          updatedAt: new Date().toISOString()
-        }, { merge: true });
-      });
-      await batch.commit();
+      const CHUNK_SIZE = 450;
+      for (let i = 0; i < items.length; i += CHUNK_SIZE) {
+        const chunk = items.slice(i, i + CHUNK_SIZE);
+        const batch = writeBatch(db);
+        chunk.forEach(item => {
+          const id = item.id || gid();
+          const ref = doc(db, "workspaces", workspace.id, "content", id);
+          batch.set(ref, { 
+            ...item, 
+            id, 
+            workspaceId: workspace.id, 
+            userId: user.uid,
+            updatedAt: new Date().toISOString()
+          }, { merge: true });
+        });
+        await batch.commit();
+      }
       setSaveMsg(`Berhasil mengimpor ${items.length} konten.`);
       setTimeout(()=>setSaveMsg(""), 3000);
     } catch (e) {
@@ -380,6 +412,7 @@ function Dashboard({ user, profile }: any) {
         workspaces={workspaces} activeWorkspace={workspace} onWorkspaceSelect={setWorkspace} 
         user={user} profile={profile} onLogout={()=>signOut(auth)}
         title={title}
+        onOpenSidebar={() => setSidebarOpen(true)}
       />
       <div style={{flex:1, minWidth:0, display:"flex", flexDirection:"column"}}>
         <Header 
@@ -394,26 +427,39 @@ function Dashboard({ user, profile }: any) {
           search={search} onSearch={setSearch}
         />
       
-        <NavBar tab={tab} setTab={setTab} year={year} setYear={setYear} month={month} setMonth={setMonth} onOpenAdd={()=>openAdd(1)}/>
+      {["month", "board", "timeline", "table"].includes(tab) && (
+        <NavBar tab={tab} setTab={setTab} year={year} setYear={setYear} month={month} setMonth={setMonth} onOpenAdd={()=>openAdd(1)} isRestricted={isRestricted}/>
+      )}
       
-      <FilterBar 
-        filters={filters} setFilters={setFilters} 
-        pillars={pillars} platforms={platforms} pics={pics} statuses={statuses} 
-        showHolidays={showHolidays} setShowHolidays={setShowHolidays} 
-        showArchived={showArchived} setShowArchived={setShowArchived}
-        onImportClick={()=>setShowCsv(true)}
-      />
+      {["month", "board", "timeline", "table"].includes(tab) && (
+        <FilterBar 
+          filters={filters} setFilters={setFilters} 
+          pillars={pillars} platforms={platforms} pics={pics} statuses={statuses} 
+          showHolidays={showHolidays} setShowHolidays={setShowHolidays} 
+          showArchived={showArchived} setShowArchived={setShowArchived}
+          onImportClick={()=>setShowCsv(true)}
+          isRestricted={isRestricted}
+        />
+      )}
 
       <div style={{padding:"20px 24px 56px", position: "relative"}}>
+        {isRestricted && (
+          <div style={{background:"#F8EAF0",border:"1px solid #9C2B4E",color:"#9C2B4E",padding:"12px 24px",borderRadius:12,marginBottom:24,display:"flex",alignItems:"center",gap:12,fontWeight:600}}>
+            🔒 Mode Terbatas: Masa aktif Anda telah habis. <span style={{flex:1}}></span>
+            <button onClick={()=>window.location.hash="/billing"} style={{background:"#9C2B4E",color:"#fff",padding:"8px 16px",borderRadius:8,fontSize:14,border:"none",cursor:"pointer"}}>Berlangganan Untuk Selengkapnya</button>
+          </div>
+        )}
         <AnimatePresence mode="wait">
           <motion.div key={tab} initial={{ opacity: 0, y: 5, scale: 0.99 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -5, scale: 0.99 }} transition={{ duration: 0.15, ease: "easeOut" }}>
-            {tab==="month"&&<MonthView year={year} month={month} monthContent={monthContent} filtered={filtered} openEdit={openEdit} openAdd={openAdd} showHolidays={showHolidays} holidays={holidays} pillars={pillars} platforms={platforms}/>}
-            {tab==="week"&&<WeekView year={year} month={month} content={content} filtered={filtered} openEdit={openEdit} openAdd={openAdd} showHolidays={showHolidays} holidays={holidays} pillars={pillars} platforms={platforms}/>}
-            {tab==="board"&&<BoardView year={year} month={month} content={content} filtered={filtered} openEdit={openEdit} openAdd={openAdd} statuses={statuses} pillars={pillars} platforms={platforms} search={search}/>}
-            {tab==="timeline"&&<TimelineView year={year} month={month} content={content} filtered={filtered} openEdit={openEdit} openAdd={openAdd} pillars={pillars} platforms={platforms} showHolidays={showHolidays} holidays={holidays}/>}
-            {tab==="table"&&<TableView filtered={filtered} openEdit={openEdit} archiveItem={archiveItem} unarchiveItem={unarchiveItem} deleteItem={deleteItem} pillars={pillars} platforms={platforms} showArchived={showArchived} search={search} bulkIds={bulkIds} setBulkIds={setBulkIds} onBulk={handleBulkActions} />}
-            {tab==="analytics"&&<AnalyticsView content={content} pillars={pillars} platforms={platforms} pics={pics} statuses={statuses} openEdit={openEdit}/>}
-            {tab==="settings"&&<SettingsPanel pillars={pillars} setPillars={setPillars} platforms={platforms} setPlatforms={setPlatforms} pics={pics} setPics={setPics} statuses={statuses} setStatuses={setStatuses} holidays={holidays} setHolidays={setHolidays} onSeed={() => setContent(makeSeed())} />}
+            {tab==="month"&&<MonthView year={year} month={month} monthContent={monthContent} filtered={filtered} openEdit={openEdit} openAdd={openAdd} showHolidays={showHolidays} holidays={holidays} pillars={pillars} platforms={platforms} isRestricted={isRestricted}/>}
+            {tab==="week"&&<WeekView year={year} month={month} content={content} filtered={filtered} openEdit={openEdit} openAdd={openAdd} showHolidays={showHolidays} holidays={holidays} pillars={pillars} platforms={platforms} isRestricted={isRestricted}/>}
+            {tab==="board"&&<BoardView year={year} month={month} content={content} filtered={filtered} openEdit={openEdit} openAdd={openAdd} statuses={statuses} pillars={pillars} platforms={platforms} search={search} isRestricted={isRestricted}/>}
+            {tab==="timeline"&&<TimelineView year={year} month={month} content={content} filtered={filtered} openEdit={openEdit} openAdd={openAdd} pillars={pillars} platforms={platforms} showHolidays={showHolidays} holidays={holidays} isRestricted={isRestricted}/>}
+            {tab==="table"&&<TableView filtered={filtered} openEdit={openEdit} archiveItem={archiveItem} unarchiveItem={unarchiveItem} deleteItem={deleteItem} pillars={pillars} platforms={platforms} showArchived={showArchived} search={search} bulkIds={bulkIds} setBulkIds={setBulkIds} onBulk={handleBulkActions} isRestricted={isRestricted}/>}
+            {tab.startsWith("social")&&<SocialStudioView tab={tab} />}
+            {tab==="analytics"&&<AnalyticsView content={content} pillars={pillars} platforms={platforms} pics={pics} statuses={statuses} openEdit={openEdit} isRestricted={isRestricted}/>}
+            {tab==="settings"&&<SettingsPanel pillars={pillars} setPillars={setPillars} platforms={platforms} setPlatforms={setPlatforms} pics={pics} setPics={setPics} statuses={statuses} setStatuses={setStatuses} holidays={holidays} setHolidays={setHolidays} onSeed={() => setContent(makeSeed())} isRestricted={isRestricted}/>}
+            {tab==="admin"&&<AdminPanel userProfile={profile} onLogout={()=>signOut(auth)} />}
           </motion.div>
         </AnimatePresence>
       </div>
@@ -422,10 +468,10 @@ function Dashboard({ user, profile }: any) {
         {shareModal && <ShareWorkspaceModal key="share" workspace={workspace} onClose={()=>setShareModal(false)} />}
       </AnimatePresence>
       <AnimatePresence>
-        {modal && <ContentModal key="content" modal={modal} onSave={handleSave} onClose={()=>setModal(null)} onArchive={archiveItem} onRestore={unarchiveItem} onDelete={deleteItem} pillars={pillars} platforms={platforms} pics={pics} statuses={statuses}/>}
+        {modal && <ContentModal key="content" modal={modal} onSave={handleSave} onClose={()=>setModal(null)} onArchive={archiveItem} onRestore={unarchiveItem} onDelete={deleteItem} pillars={pillars} platforms={platforms} pics={pics} statuses={statuses} isRestricted={isRestricted}/>}
       </AnimatePresence>
       <AnimatePresence>
-        {showCsv && <CsvModal key="csv" onClose={()=>setShowCsv(false)} onImport={handleBulkImport} workspaceId={workspace?.id} pillars={pillars} platforms={platforms} pics={pics} statuses={statuses} />}
+        {showCsv && <CsvModal key="csv" onClose={()=>setShowCsv(false)} onImport={handleBulkImport} workspaceId={workspace?.id} pillars={pillars} platforms={platforms} pics={pics} statuses={statuses} existingContent={content} />}
       </AnimatePresence>
       <AnimatePresence>
         {exportModal && <motion.div key="export" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.8)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center"}}>
@@ -442,6 +488,20 @@ function Dashboard({ user, profile }: any) {
              <button className="hover-scale" onClick={()=>setExportModal(false)} style={{...B(false), width:"100%", height:48, fontSize:14, borderRadius:24}}>Batal</button>
           </motion.div>
         </motion.div>}
+      </AnimatePresence>
+      <AnimatePresence>
+        {confirmAction && (
+          <motion.div key="confirm" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.8)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center"}}>
+            <motion.div initial={{scale:0.95, opacity:0, y:20}} animate={{scale:1, opacity:1, y:0}} exit={{scale:0.95, opacity:0, y:20}} transition={{ type: "spring", damping: 25, stiffness: 300 }} style={CARD({width:400, padding:32, borderRadius:24, boxShadow:"0 20px 40px rgba(0,0,0,0.2)", textAlign:"center"})}>
+               <h3 style={{fontSize:20, fontWeight:700, marginBottom:16, color: confirmAction.title.includes("Hapus") ? "#9C2B4E" : "#2C2016"}}>{confirmAction.title}</h3>
+               <p style={{fontSize:14, color:"rgba(44,32,22,0.6)", marginBottom:24, lineHeight:1.5}}>{confirmAction.msg}</p>
+               <div style={{display:"flex",gap:12,justifyContent:"center"}}>
+                 <button className="hover-scale" onClick={()=>setConfirmAction(null)} style={{...B(false), flex:1, height:48, fontSize:14, borderRadius:24}}>Batal</button>
+                 <button className="hover-scale btn-hover" onClick={()=>{confirmAction.onConfirm(); setConfirmAction(null);}} style={{...B(true, confirmAction.title.includes("Hapus") ? "#9C2B4E" : "#C4622D"), flex:1, height:48, fontSize:14, borderRadius:24}}>{confirmAction.title.includes("Hapus") ? "Hapus" : "Lanjutkan"}</button>
+               </div>
+            </motion.div>
+          </motion.div>
+        )}
       </AnimatePresence>
     </div>
   </div>

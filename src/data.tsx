@@ -63,8 +63,8 @@ export const getDynamicEvents = (y: number, m: number, d: number) => {
   return events.join(" & ");
 };
 export const nowTs= () => new Date().toLocaleString("id-ID",{dateStyle:"medium",timeStyle:"short"});
-export const gps  = (ps: any,name: any) => ps.find((p:any)=>p.name===name)||ps[0]||{color:"#C4622D",light:"#FDF0EB"};
-export const gpc  = (pls: any,name: any) => (pls.find((p:any)=>p.name===name)||{color:"#2C2016"}).color;
+export const gps  = (ps: any,name: any) => ps.find((p:any)=>p.name?.trim()?.toLowerCase()===name?.trim()?.toLowerCase())||ps[0]||{color:"#C4622D",light:"#FDF0EB"};
+export const gpc  = (pls: any,name: any) => (pls.find((p:any)=>p.name?.trim()?.toLowerCase()===name?.trim()?.toLowerCase())||{color:"#2C2016"}).color;
 export const gss  = (name: any) => SS[name]||{bg:"#F5F0E8",color:"#A67C1C"};
 
 export const emptyItem = (y:any,mo:any,d:any,pillars:any,platforms:any,pics:any,statuses:any) => ({

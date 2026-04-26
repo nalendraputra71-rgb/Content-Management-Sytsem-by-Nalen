@@ -3,23 +3,32 @@ import * as XLSX from "xlsx";
 import { emptyItem, gid } from "./data";
 import { motion } from "motion/react";
 
-export function CsvModal({onClose, onImport, pillars, platforms, pics, statuses}: any) {
+export function CsvModal({onClose, onImport, pillars, platforms, pics, statuses, existingContent}: any) {
   const [dataPreview, setDataPreview] = useState<any[]>([]);
   const [errorMsg, setErrorMsg] = useState("");
   const [step, setStep] = useState(1);
+  const [showConfirm, setShowConfirm] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Utility to clean encoding issues (like â instead of quotes/dashes)
   const cleanStr = (str: any) => {
     if (!str) return "";
     let s = String(str);
-    // Common UTF-8 misinterpretations (e.g., â instead of em-dash or smart quotes)
-    // This is a safety measure if the CSV reader misidentifies the encoding
     return s
       .replace(/â€\x9d/g, '"')
       .replace(/â€\x9c/g, '"')
       .replace(/â€/g, "-")
-      .replace(/â/g, ""); // The specific 'â' reported by user
+      .replace(/â/g, "");
+  };
+
+  const handleImportClick = () => {
+    const hasDups = dataPreview.some(d => existingContent?.some((ec:any) => ec.title === d.title && ec.year === d.year && ec.month === d.month && ec.day === d.day));
+    if (hasDups) {
+       setShowConfirm(true);
+    } else {
+       onImport(dataPreview);
+       onClose();
+    }
   };
 
   const template = [
@@ -158,9 +167,24 @@ export function CsvModal({onClose, onImport, pillars, platforms, pics, statuses}
                 </div>
                 <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
                     <button onClick={redo} style={{background:"transparent",border:"none",color:"#2C2016",padding:"8px 16px",fontWeight:600,cursor:"pointer",textDecoration:"underline"}}>Ulangi (Redo)</button>
-                    <button onClick={()=>{onImport(dataPreview); onClose();}} style={{background:"#C4622D",border:"none",color:"white",padding:"8px 24px",borderRadius:8,fontWeight:600,cursor:"pointer"}}>Mulai Import</button>
+                    <button onClick={handleImportClick} style={{background:"#C4622D",border:"none",color:"white",padding:"8px 24px",borderRadius:8,fontWeight:600,cursor:"pointer"}}>Mulai Import</button>
                 </div>
             </div>
+        )}
+
+        {showConfirm && (
+          <div style={{position:"absolute",inset:0,background:"rgba(255,255,255,0.9)",display:"flex",alignItems:"center",justifyContent:"center",borderRadius:24,zIndex:100,backdropFilter:"blur(5px)"}}>
+            <div style={{background:"white",padding:32,borderRadius:16,maxWidth:400,textAlign:"center",boxShadow:"0 10px 40px rgba(0,0,0,0.15)",border:"1px solid rgba(44,32,22,0.1)"}}>
+              <h3 style={{fontSize:18,color:"#9C2B4E",fontWeight:800,marginBottom:12}}>⚠️ Data duplikat terdeteksi</h3>
+              <p style={{fontSize:14,color:"rgba(44,32,22,0.7)",marginBottom:24,lineHeight:1.5}}>
+                Beberapa konten yang akan diimpor memiliki judul dan tanggal yang sama dengan data yang sudah ada di database. Apakah Anda yakin ingin tetap memasukkannya?
+              </p>
+              <div style={{display:"flex",gap:12,justifyContent:"center"}}>
+                <button onClick={()=>setShowConfirm(false)} style={{background:"#F5F0E8",border:"none",color:"#2C2016",padding:"10px 24px",borderRadius:8,fontWeight:600,cursor:"pointer"}}>Tidak, Batal</button>
+                <button onClick={()=>{onImport(dataPreview); onClose();}} style={{background:"#9C2B4E",border:"none",color:"white",padding:"10px 24px",borderRadius:8,fontWeight:600,cursor:"pointer"}}>Ya, Lanjutkan</button>
+              </div>
+            </div>
+          </div>
         )}
       </motion.div>
     </motion.div>

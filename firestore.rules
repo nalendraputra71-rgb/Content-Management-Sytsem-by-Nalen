@@ -4,7 +4,13 @@ service cloud.firestore {
     
     // ─── UTILS ───────────────────────────────────────────────────────────────
     function isSignedIn() { return request.auth != null; }
-    function isAdmin() { return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)); }
+    function isAdmin() { 
+      return isSignedIn() && (
+        (request.auth.token.email != null && (request.auth.token.email == 'nalendraputra71@gmail.com' || request.auth.token.email == 'NalendraPutra71@gmail.com')) ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', '') == 'admin')
+      ); 
+    }
     function incoming() { return request.resource.data; }
     function existing() { return resource.data; }
     function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
@@ -36,10 +42,15 @@ service cloud.firestore {
       // Allow searching for users by email (limited to prevent scraping)
       allow list: if isSignedIn() && (
         resource.data.email == request.auth.token.email || 
+        isAdmin() ||
         (request.query.limit <= 5)
       );
       allow create: if isSignedIn() && request.auth.uid == userId && incoming().uid == userId;
-      allow update: if isSignedIn() && request.auth.uid == userId && incoming().diff(existing()).affectedKeys().hasOnly(['fullName', 'avatar', 'username']);
+      allow update: if isSignedIn() && (
+        (request.auth.uid == userId && incoming().diff(existing()).affectedKeys().hasOnly(['fullName', 'avatar', 'username', 'activeUntil', 'plan', 'hasUsedPromo', 'emailVerified', 'createdAt'])) ||
+        isAdmin()
+      );
+      allow delete: if isAdmin();
     }
 
     // Collection Group rule for memberships
@@ -47,10 +58,43 @@ service cloud.firestore {
       allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
 
-    // ─── USERNAMES (Integrity Guard) ──────────────────────────────────────────
+    // ─── ADMINS ───────────────────────────────────────────────────────────────
+    match /admins/{adminId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin(); // Only admins can add other admins
+    }
+
+    // ─── PLANS & PROMOS ───────────────────────────────────────────────────────────
+    match /plans/{planId} {
+       allow read: if true;
+       allow write: if isAdmin();
+    }
+    match /promos/{promoId} {
+       allow read: if true;
+       allow write: if isAdmin();
+    }
+
+    // ─── TRANSACTIONS ───────────────────────────────────────────────────────────
+    match /transactions/{txId} {
+       allow read: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+       allow update, delete: if isAdmin();
+    }
     match /usernames/{username} {
       allow read: if isSignedIn();
-      allow create: if isSignedIn(); // Validated via transaction in AuthScreen
+      allow create: if isSignedIn(); // Validated via transaction in UserProfile
+      allow delete: if isSignedIn() && existing().uid == request.auth.uid;
+    }
+
+    match /global_notifications/{notifId} {
+       allow read: if request.auth != null;
+       allow write: if isAdmin();
+    }
+    match /tickets/{ticketId} {
+       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+       allow read: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+       allow update: if isSignedIn() && (isAdmin() || (resource.data.userId == request.auth.uid && incoming().diff(existing()).affectedKeys().hasOnly(['messages', 'updatedAt', 'status', 'readByUser'])));
+       allow delete: if isAdmin();
     }
 
     // ─── WORKSPACES ──────────────────────────────────────────────────────────

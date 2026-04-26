@@ -279,16 +279,16 @@ export function TableView({filtered,openEdit,archiveItem,unarchiveItem,deleteIte
                     </td>
                     <td style={td}><PBadge name={item.platform} platforms={platforms}/></td>
                     <td style={td}><span className="pill-tag" style={{background:ps.light,color:ps.color}}>{item.pillar}</span></td>
-                    <td style={{...td,maxWidth:200}}>
-                      <div style={{fontWeight:600,lineHeight:1.3,display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden"}}><High txt={item.title}/></div>
-                      <div style={{display:"flex",gap:4,marginTop:2}}>
+                    <td style={{...td,maxWidth:200, verticalAlign:"top"}}>
+                      <div style={{fontWeight:600,lineHeight:1.4, wordBreak:"break-word"}}><High txt={item.title}/></div>
+                      <div style={{display:"flex",gap:4,marginTop:6, flexWrap: "wrap"}}>
                         {item.isAds&&<span style={{fontSize:8,color:"#9C2B4E",fontWeight:700}}>💰 Ads</span>}
                         {item.archived&&<span style={{fontSize:8,color:"#723680",fontWeight:700}}>📦 Arsip</span>}
                         {item.linkAsset&&<a href={item.linkAsset} target="_blank" rel="noopener noreferrer" style={{fontSize:9,color:"#2B4C7E"}}>🔗 Aset</a>}
                       </div>
                     </td>
-                    <td style={{...td,maxWidth:200}}>
-                      <div style={{fontSize:11,color:"rgba(44,32,22,0.6)",lineHeight:1.3,display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden"}}>{item.briefCopywriting||"-"}</div>
+                    <td style={{...td,maxWidth:250, verticalAlign:"top"}}>
+                      <div style={{fontSize:12,color:"rgba(44,32,22,0.6)",lineHeight:1.5, wordBreak:"break-word", whiteSpace: "pre-wrap"}}>{item.briefCopywriting||"-"}</div>
                     </td>
                     <td style={td}><span className="pill-tag" style={{background:"rgba(44,32,22,0.06)",color:"#2C2016"}}>{item.pic}</span></td>
                     <td style={td}><SBadge status={item.status}/></td>

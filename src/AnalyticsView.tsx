@@ -1,13 +1,69 @@
-import { useState, useMemo } from "react";
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid } from "recharts";
+import { useState, useMemo, useRef, useEffect } from "react";
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid, Cell } from "recharts";
 import { GoogleGenAI } from "@google/genai";
+import Markdown from "react-markdown";
+import { motion, AnimatePresence } from "motion/react";
+import { ChevronDown } from "lucide-react";
 import { 
   MONTHS, MS, DAYS_S, DAYS_ID, YEARS, MK, MC,
   eng, fmt, gps,
   I, B, CARD, PBadge 
 } from "./data";
 
-export function AnalyticsView({content,pillars,platforms,pics,statuses,openEdit}: any) {
+function CustomDropdown({ value, options, onChange, style }: { value: string, options: any[], onChange: (val: string) => void, style?: any }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (ref.current && !ref.current.contains(event.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const activeOption = options.find(o => (typeof o === 'string' ? o : o.id) === value);
+  const displayLabel = activeOption ? (typeof activeOption === 'string' ? activeOption : activeOption.label) : value;
+
+  return (
+    <div ref={ref} style={{ position: "relative", ...style }}>
+      <button 
+        onClick={() => setOpen(!open)} 
+        className="hover-scale"
+        style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "6px 12px", borderRadius: 8, border: "1px solid rgba(44,32,22,0.1)", background: "white", fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#2C2016" }}
+      >
+        <span>{displayLabel}</span>
+        <ChevronDown size={14} color="rgba(44,32,22,0.4)" style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'all 0.2s' }} />
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div 
+            initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }} transition={{ duration: 0.15 }}
+            style={{ position: "absolute", top: "100%", right: 0, marginTop: 4, background: "white", border: "1px solid rgba(44,32,22,0.1)", borderRadius: 8, padding: 4, zIndex: 100, boxShadow: "0 10px 30px rgba(0,0,0,0.15)", minWidth: 120, overflowY: "auto", maxHeight: 200 }}
+          >
+            {options.map((o, i) => {
+              const val = typeof o === 'string' ? o : o.id;
+              const isSelected = val === value;
+              return (
+                <div 
+                  key={i} 
+                  onClick={() => { onChange(val); setOpen(false); }}
+                  style={{ padding: "8px 12px", borderRadius: 6, fontSize: 12, fontWeight: isSelected?800:600, cursor: "pointer", background: isSelected ? "#FDF0EB" : "transparent", color: isSelected ? "#C4622D" : "#2C2016", transition: "all 0.1s", whiteSpace: "nowrap" }}
+                  onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = "#FAFAFA"; }}
+                  onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = "transparent"; }}
+                >
+                  {typeof o === 'string' ? o : o.label}
+                </div>
+              );
+            })}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+export function AnalyticsView({content,pillars,platforms,pics,statuses,openEdit,isRestricted}: any) {
   const [dateFilt,setDateFilt] = useState("all"); 
   const [customS,setCustomS] = useState("");
   const [customE,setCustomE] = useState("");
@@ -18,6 +74,7 @@ export function AnalyticsView({content,pillars,platforms,pics,statuses,openEdit}
   
   const [aiInsight, setAiInsight] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
+  const [showAiInsight, setShowAiInsight] = useState(true);
 
   const toggleMetric = (k:string) => setActiveMetrics(m=>m.includes(k)?m.filter(x=>x!==k):[...m,k]);
 
@@ -69,13 +126,21 @@ export function AnalyticsView({content,pillars,platforms,pics,statuses,openEdit}
   
   const total  = base.length;
   const pub    = base.filter((c:any)=>c.status==="Published").length;
-  const tV = base.reduce((s:any,c:any)=>s+getV(c),0);
-  const tR = base.reduce((s:any,c:any)=>s+getR(c),0);
-  const tE = base.reduce((s:any,c:any)=>s+getEng(c),0);
+  
+  // Randomize numbers if restricted to prevent data leak but show structure
+  const seededRandom = (seed: number) => {
+    const x = Math.sin(seed++) * 10000;
+    return x - Math.floor(x);
+  };
+  const getRand = (val: number, seed: number) => isRestricted ? Math.floor(seededRandom(seed) * 50000) : val;
+  
+  const tV = getRand(base.reduce((s:any,c:any)=>s+getV(c),0), 1);
+  const tR = getRand(base.reduce((s:any,c:any)=>s+getR(c),0), 2);
+  const tE = getRand(base.reduce((s:any,c:any)=>s+getEng(c),0), 3);
   const er = tR>0?((tE/tR)*100).toFixed(2):"0.00";
 
-  const tClicks = base.reduce((s:any,c:any)=>s+(c.adsMetrics?.clicks||0),0);
-  const tConv = base.reduce((s:any,c:any)=>s+(c.adsMetrics?.conversions||0),0);
+  const tClicks = getRand(base.reduce((s:any,c:any)=>s+(c.adsMetrics?.clicks||0),0), 4);
+  const tConv = getRand(base.reduce((s:any,c:any)=>s+(c.adsMetrics?.conversions||0),0), 5);
 
   // Prev Calculations
   const prevTotal = prevBase.length;
@@ -215,7 +280,19 @@ export function AnalyticsView({content,pillars,platforms,pics,statuses,openEdit}
     return m;
   }, [base]);
 
-  // PIC Workload data
+  // Platform Data
+  const platformData = useMemo(() => {
+    const pmap: any = {};
+    base.forEach((c:any)=>{
+      if(!pmap[c.platform]) pmap[c.platform] = {name:c.platform, count:0};
+      pmap[c.platform].count += 1;
+    });
+    return platforms.map((p:any) => ({
+      name: p.name,
+      count: pmap[p.name]?.count || 0,
+      color: p.color
+    })).sort((a:any, b:any) => b.count - a.count);
+  }, [base, platforms]);
   const picData = useMemo(() => {
     const pmap: any = {};
     base.forEach((c:any)=>{
@@ -368,6 +445,18 @@ export function AnalyticsView({content,pillars,platforms,pics,statuses,openEdit}
         </>}
       </div>
 
+      {/* Restricted Overlay Logic applies downward */}
+      <div style={{position:"relative"}}>
+        {isRestricted && (
+          <div style={{position:"absolute",inset:0,zIndex:10,backdropFilter:"blur(8px)",display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(250, 247, 242, 0.4)",borderRadius:16}}>
+            <div style={{background:"white",padding:"24px 32px",borderRadius:16,boxShadow:"0 10px 40px rgba(0,0,0,0.1)",textAlign:"center",maxWidth:400}}>
+              <h3 style={{fontSize:18,fontWeight:800,marginBottom:12,color:"#9C2B4E"}}>Akses Analitik Terkunci</h3>
+              <p style={{fontSize:14,color:"rgba(44,32,22,0.6)",marginBottom:20}}>Upgrade ke Pro untuk melihat data asli, insight AI, dan laporan lengkap performa konten Anda.</p>
+              <button className="hover-scale" onClick={()=>window.location.hash="/billing"} style={{background:"#9C2B4E",color:"white",padding:"12px 24px",borderRadius:12,fontWeight:600,border:"none",cursor:"pointer",width:"100%"}}>Berlangganan Sekarang</button>
+            </div>
+          </div>
+        )}
+        <div style={{filter: isRestricted ? "blur(4px)" : "none", pointerEvents: isRestricted ? "none" : "auto", userSelect: isRestricted ? "none" : "auto"}}>
       <div style={CARD()}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:10}}>
           <h4 style={{fontSize:16,fontWeight:700,margin:0}}>📈 Tren Pertumbuhan</h4>
@@ -422,10 +511,18 @@ export function AnalyticsView({content,pillars,platforms,pics,statuses,openEdit}
         <div style={{borderTop:"1px dashed rgba(255,255,255,0.1)",paddingTop:14}}>
           {aiInsight ? (
             <div style={{background:"rgba(255,255,255,0.05)",padding:14,borderRadius:8}}>
-              <div style={{fontSize:11,fontWeight:600,color:"#8AAEF0",marginBottom:6}}>🤖 Rekomendasi AI Next Step:</div>
-              <div style={{fontSize:13,lineHeight:1.6,wordWrap:"break-word"}} className="markdown-body">
-                {aiInsight.split("\n").map((ln,i)=><div key={i} style={{marginBottom:4}}>{ln}</div>)}
+              <div 
+                style={{display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer"}}
+                onClick={() => setShowAiInsight(!showAiInsight)}
+              >
+                <div style={{fontSize:11,fontWeight:600,color:"#8AAEF0"}}>🤖 Rekomendasi AI Next Step:</div>
+                <div style={{fontSize:18,color:"#8AAEF0"}}>{showAiInsight ? "↑" : "↓"}</div>
               </div>
+              {showAiInsight && (
+                <div style={{fontSize:13,lineHeight:1.6,wordWrap:"break-word",marginTop:12}} className="markdown-body">
+                  <Markdown>{aiInsight}</Markdown>
+                </div>
+              )}
             </div>
           ) : (
             <button onClick={fetchAiInsight} disabled={aiLoading} style={{...B(false),background:"#C4622D",color:"white",border:"none",padding:"8px 16px",fontWeight:600,cursor:aiLoading?"wait":"pointer"}}>
@@ -436,20 +533,35 @@ export function AnalyticsView({content,pillars,platforms,pics,statuses,openEdit}
       </div>
       
       {/* Heatmap & PIC Workload */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(340px,1fr))",gap:20}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(380px,1fr))",gap:32}}>
+        <div style={CARD()}>
+          <h4 style={{fontSize:16,fontWeight:700,margin:"0 0 16px"}}>📈 Konten per Platform</h4>
+          <ResponsiveContainer width="100%" height={260}>
+            <BarChart data={platformData} margin={{top:10,right:10,left:-20,bottom:0}}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)"/>
+              <XAxis dataKey="name" tick={{fontSize:10,fill:"rgba(44,32,22,0.5)"}} tickLine={false} axisLine={false}/>
+              <YAxis tick={{fontSize:10,fill:"rgba(44,32,22,0.5)"}} tickLine={false} axisLine={false}/>
+              <Tooltip cursor={{fill:"rgba(0,0,0,0.05)"}} contentStyle={{borderRadius:8,fontSize:12,border:"1px solid rgba(0,0,0,0.1)",boxShadow:"0 4px 12px rgba(0,0,0,0.05)"}} itemStyle={{color:"#2C2016",fontWeight:600}} labelStyle={{color:"rgba(44,32,22,0.5)",marginBottom:4}}/>
+              <Bar dataKey="count" radius={[4,4,0,0]}>
+                {platformData.map((entry:any, index:number) => <Cell key={`cell-${index}`} fill={entry.color || "#C4622D"} />)}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
         <div style={CARD()}>
           <h4 style={{fontSize:16,fontWeight:700,margin:"0 0 16px"}}>🔥 Best Time to Upload (Heatmap)</h4>
           <div style={{display:"flex",gap:4,marginBottom:6}}>
             <div style={{width:30}}/>
-            {Array.from({length:24}).map((_,i)=><div key={`h${i}`} style={{flex:1,textAlign:"center",fontSize:8,color:"rgba(44,32,22,0.4)"}}>{i}</div>)}
+            {Array.from({length:24}).map((_,i)=><div key={`h${i}`} style={{flex:1,textAlign:"center",fontSize:10,color:"rgba(44,32,22,0.4)"}}>{i}</div>)}
           </div>
           {heatmap.map((row,di) => {
             const rowMax = Math.max(...row, 1);
             return (
               <div key={di} style={{display:"flex",gap:4,marginBottom:4,alignItems:"center"}}>
-                <div style={{width:30,fontSize:9,fontWeight:600}}>{DAYS_S[di]}</div>
+                <div style={{width:30,fontSize:10,fontWeight:600}}>{DAYS_S[di]}</div>
                 {row.map((val,hi) => (
-                  <div key={hi} title={`${DAYS_ID[di]} Jam ${hi} - ${fmt(val)} Eng`} style={{flex:1,height:12,borderRadius:2,background:`rgba(196,98,45,${val===0?0.03 : Math.max(0.15, val/rowMax)})`}}/>
+                  <div key={hi} title={`${DAYS_ID[di]} Jam ${hi} - ${fmt(val)} Eng`} style={{flex:1,height:22,borderRadius:4,background:`rgba(196,98,45,${val===0?0.03 : Math.max(0.15, val/rowMax)})`}}/>
                 ))}
               </div>
             );
@@ -487,10 +599,15 @@ export function AnalyticsView({content,pillars,platforms,pics,statuses,openEdit}
         <div style={{width:1,height:24,background:"rgba(44,32,22,0.1)"}}/>
         <div style={{display:"flex",gap:10,alignItems:"center"}}>
           <div style={{fontSize:12,fontWeight:600,color:"rgba(44,32,22,0.5)"}}>Filter Platform:</div>
-          <select value={topPlatform} onChange={(e)=>setTopPlatform(e.target.value)} style={{...I(),width:"auto",padding:"4px 8px",fontSize:13}}>
-            <option value="All">Semua Platform</option>
-            {platforms.map((p:any)=><option key={p.name} value={p.name}>{p.name}</option>)}
-          </select>
+          <CustomDropdown 
+            value={topPlatform} 
+            onChange={setTopPlatform} 
+            options={[
+              {id:"All", label:"Semua Platform"},
+              ...platforms.map((p:any)=>({id:p.name, label:p.name}))
+            ]} 
+            style={{ width: 160 }} 
+          />
         </div>
       </div>
 
@@ -518,6 +635,8 @@ export function AnalyticsView({content,pillars,platforms,pics,statuses,openEdit}
             rank={-1}
           />
         </div>
+      </div>
+      </div>
       </div>
     </div>
   );

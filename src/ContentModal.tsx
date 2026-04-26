@@ -1,10 +1,72 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { GoogleGenAI } from "@google/genai";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import { 
   MK, MC, eng, fmt, fmtD,
   I, L, B, GRP 
 } from "./data";
+import { ChevronDown } from "lucide-react";
+
+function EditorDropdown({ value, options, onChange, dark = false }: { value: string, options: any[], onChange: (val: string) => void, dark?: boolean }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (ref.current && !ref.current.contains(event.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const activeOption = options.find(o => (typeof o === 'string' ? o : o.id || o.name || o) === value);
+  const displayLabel = activeOption ? (typeof activeOption === 'string' ? activeOption : activeOption.label || activeOption.name || activeOption) : value;
+
+  return (
+    <div ref={ref} style={{ position: "relative", width: "100%" }}>
+      <button 
+        onClick={() => setOpen(!open)} 
+        className="hover-scale"
+        style={{ 
+          width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, 
+          padding: "8px 12px", borderRadius: 8, 
+          border: dark ? "1px solid rgba(255,255,255,0.2)" : "1px solid rgba(44,32,22,0.2)", 
+          background: dark ? "rgba(255,255,255,0.1)" : "white", 
+          fontSize: 13, fontWeight: 600, cursor: "pointer", 
+          color: dark ? "white" : "#2C2016" 
+        }}
+      >
+        <span>{displayLabel}</span>
+        <ChevronDown size={14} style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'all 0.2s', opacity: 0.6 }} />
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div 
+            initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }} transition={{ duration: 0.15 }}
+            style={{ position: "absolute", top: "100%", left: 0, right: 0, marginTop: 4, background: "white", border: "1px solid rgba(44,32,22,0.1)", borderRadius: 8, padding: 4, zIndex: 9999, boxShadow: "0 10px 40px rgba(0,0,0,0.15)", maxHeight: 200, overflowY: "auto" }}
+          >
+            {options.map((o, i) => {
+              const val = typeof o === 'string' ? o : o.id || o.name || o;
+              const isSelected = val === value;
+              const label = typeof o === 'string' ? o : o.label || o.name || o;
+              return (
+                <div 
+                  key={i} 
+                  onClick={() => { onChange(val); setOpen(false); }}
+                  style={{ padding: "8px 10px", borderRadius: 6, fontSize: 13, fontWeight: isSelected?800:600, cursor: "pointer", background: isSelected ? "#FDF0EB" : "transparent", color: isSelected ? "#FF6B00" : "#2C2016", transition: "all 0.1s" }}
+                  onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = "#FAFAFA"; }}
+                  onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = "transparent"; }}
+                >
+                  {label}
+                </div>
+              );
+            })}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,pillars,platforms,pics,statuses}: any) {
   const [d,setD] = useState({...modal.data,metrics:{...modal.data.metrics},adsMetrics:{...(modal.data.adsMetrics||{views:0,reach:0,likes:0,comments:0,shares:0,reposts:0,saves:0,clicks:0,conversions:0})},referenceLinks:modal.data.referenceLinks||[],customFields:modal.data.customFields||[]});
@@ -68,10 +130,10 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
   return (
     <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(30,21,9,0.7)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:300,padding:16,backdropFilter:"blur(4px)",overflow:"auto"}}>
       <motion.div initial={{scale:0.95, opacity:0, y:20}} animate={{scale:1, opacity:1, y:0}} exit={{scale:0.95, opacity:0, y:20}} onClick={e=>e.stopPropagation()} style={{background:"#FAFAFA",borderRadius:24,padding:32,maxWidth:700,width:"100%",maxHeight:"94vh",overflow:"auto",position:"relative",boxShadow:"0 24px 60px rgba(30,21,9,0.4)"}}>
-        <button className="hover-scale" onClick={onClose} style={{position:"absolute",top:20,right:20,background:"rgba(44,32,22,0.05)",border:"none",borderRadius:"50%",width:32,height:32,cursor:"pointer",fontSize:18,color:"#2C2016",display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
         
-        <div style={{background:"#2C2016",color:"#FAFAFA",borderRadius:16,padding:"24px 28px",marginBottom:24, boxShadow:"inset 0 2px 4px rgba(255,255,255,0.05)"}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:16,marginBottom:16}}>
+        <div style={{background:"#2C2016",color:"#FAFAFA",borderRadius:16,padding:"24px 28px",marginBottom:24, boxShadow:"inset 0 2px 4px rgba(255,255,255,0.05)", position:"relative"}}>
+            <button className="hover-scale" onClick={onClose} style={{position:"absolute",top:20,right:20,background:"rgba(255,255,255,0.1)",border:"none",borderRadius:"50%",width:32,height:32,cursor:"pointer",fontSize:18,color:"white",display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:16,marginBottom:16, paddingRight: 40}}>
                 <div style={{flex:1}}>
                    <label style={{...L, color:"rgba(250,247,242,0.4)", fontSize:10}}>Judul Konten</label>
                    <input value={d.title} onChange={(e:any)=>set("title",e.target.value)} 
@@ -85,21 +147,15 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
             <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(130px, 1fr))", gap:20 }}>
               <div style={GRP}>
                 <label style={{...L, color:"rgba(250,247,242,0.4)", marginBottom:4}}>Content Pillar</label>
-                <select value={d.pillar} onChange={(e:any)=>set("pillar",e.target.value)} style={{...I({background:"rgba(255,255,255,0.1)", border:"1px solid rgba(255,255,255,0.2)", color:"white", padding:"6px 10px"}), width:"100%"}}>
-                    {pillars.map((p:any)=><option key={p.name} value={p.name} style={{color:"black"}}>{p.name}</option>)}
-                </select>
+                <EditorDropdown dark value={d.pillar} options={pillars} onChange={(v)=>set("pillar",v)} />
               </div>
               <div style={GRP}>
                 <label style={{...L, color:"rgba(250,247,242,0.4)", marginBottom:4}}>PIC Pengelola</label>
-                <select value={d.pic} onChange={(e:any)=>set("pic",e.target.value)} style={{...I({background:"rgba(255,255,255,0.1)", border:"1px solid rgba(255,255,255,0.2)", color:"white", padding:"6px 10px"}), width:"100%"}}>
-                    {pics.map((p:any)=><option key={p} value={p} style={{color:"black"}}>{p}</option>)}
-                </select>
+                <EditorDropdown dark value={d.pic} options={pics} onChange={(v)=>set("pic",v)} />
               </div>
               <div style={GRP}>
                 <label style={{...L, color:"rgba(250,247,242,0.4)", marginBottom:4}}>Status Konten</label>
-                <select value={d.status} onChange={(e:any)=>set("status",e.target.value)} style={{...I({background:"rgba(255,255,255,0.1)", border:"1px solid rgba(255,255,255,0.2)", color:"white", padding:"6px 10px"}), width:"100%"}}>
-                    {statuses.map((s:any)=><option key={s} value={s} style={{color:"black"}}>{s}</option>)}
-                </select>
+                <EditorDropdown dark value={d.status} options={statuses} onChange={(v)=>set("status",v)} />
               </div>
             </div>
         </div>
@@ -127,16 +183,14 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
           <div style={GRP}>
             <label style={L}>Jam Upload</label>
             <div style={{display:"flex",gap:4}}>
-              <input type="number" min={0} max={23} value={d.uploadHour} onChange={(e:any)=>set("uploadHour",+e.target.value)} style={I({textAlign:"center"})} placeholder="HH"/>
+              <input type="number" min={0} max={23} value={d.uploadHour} onChange={(e:any)=>set("uploadHour",+e.target.value)} style={I({textAlign:"center", width: 50})} placeholder="HH"/>
               <span style={{lineHeight:"36px",color:"rgba(44,32,22,0.4)"}}>:</span>
-              <input type="number" min={0} max={59} step={5} value={d.uploadMinute} onChange={(e:any)=>set("uploadMinute",+e.target.value)} style={I({textAlign:"center"})} placeholder="MM"/>
+              <input type="number" min={0} max={59} step={5} value={d.uploadMinute} onChange={(e:any)=>set("uploadMinute",+e.target.value)} style={I({textAlign:"center", width: 50})} placeholder="MM"/>
             </div>
           </div>
           <div style={GRP}>
             <label style={L}>Platform</label>
-            <select value={d.platform} onChange={(e:any)=>set("platform",e.target.value)} style={I()}>
-              {platforms.map((p:any)=><option key={p.name}>{p.name}</option>)}
-            </select>
+            <EditorDropdown value={d.platform} options={platforms} onChange={(v)=>set("platform",v)} />
           </div>
         </div>
 
