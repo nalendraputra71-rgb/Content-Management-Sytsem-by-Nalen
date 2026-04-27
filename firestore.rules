@@ -99,7 +99,7 @@ service cloud.firestore {
 
     // ─── WORKSPACES ──────────────────────────────────────────────────────────
     match /workspaces/{wsId} {
-      allow get: if isMember(wsId) || existing().publicLinkEnabled == true;
+      allow read: if isMember(wsId) || (isSignedIn() && (resource == null || resource.data.get('publicLinkEnabled', false) == true));
       allow create: if isSignedIn() && incoming().ownerId == request.auth.uid;
       allow delete: if isOwner(wsId);
       allow update: if isOwner(wsId) && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'publicLinkEnabled', 'settings']);

@@ -392,12 +392,12 @@ export function Sidebar({
         {open && (
           <motion.div 
             initial={{ width: 0, opacity: 0 }} 
-            animate={{ width: 240, opacity: 1 }} 
+            animate={{ width: 270, opacity: 1 }} 
             exit={{ width: 0, opacity: 0 }} 
             transition={{ duration: 0.3 }}
             style={{background:"#2C2016", color:"#FAFAFA", display:"flex", flexDirection:"column", borderRight:"1px solid rgba(255,255,255,0.05)", height:"100vh", position:"sticky", top:0, zIndex:200, overflow:"hidden", whiteSpace: "nowrap"}}
           >
-            <div style={{minWidth: 240, height: "100%", display: "flex", flexDirection: "column", position: "relative"}}>
+            <div style={{minWidth: 270, height: "100%", display: "flex", flexDirection: "column", position: "relative"}}>
               <div style={{padding:"24px 20px", borderBottom:"1px solid rgba(255,255,255,0.05)", display:"flex", alignItems:"center", justifyContent:"space-between"}}>
                 <div style={{fontSize:20, fontWeight:800, letterSpacing:"-1px", color:"#FF6B00"}}>{title || "CMS Console"}</div>
                 <div style={{position: "relative"}}>
@@ -484,29 +484,29 @@ export function Sidebar({
                   {showSocial ? <ChevronUp size={14} color="rgba(255,255,255,0.3)"/> : <ChevronDown size={14} color="rgba(255,255,255,0.3)"/>}
                 </div>
                 
-                <AnimatePresence>
-                  {showSocial && (
-                    <motion.div initial={{height:0, opacity:0}} animate={{height:"auto", opacity:1}} exit={{height:0, opacity:0}} style={{display:"flex", flexDirection:"column", gap:4, overflow:"hidden"}}>
-                      {SOCIAL_STUDIO.map((v: any) => (
-                        <button 
-                            className="hover-scale"
-                            key={v.id} 
-                            onClick={() => setTab(v.id)} 
-                            style={{
-                              display:"flex", alignItems:"center", gap:14, width:"100%", padding:"10px 14px", background:tab===v.id?"rgba(255,255,255,0.1)":"transparent",
-                              border:"none", borderRadius:12, color:tab===v.id?"white":"rgba(250,247,242,0.6)", cursor:"pointer", transition: "all 0.3s ease", position:"relative"
-                            }}
-                        >
-                            <span style={{color:tab===v.id?"#FF6B00":"currentColor"}}>{v.ic}</span>
-                            <span style={{fontSize:13, fontWeight:tab===v.id?700:500}}>{v.lb}</span>
-                            {v.soon && (
-                              <span style={{position:"absolute", right:14, background:"rgba(255,107,0,0.2)", color:"#FF6B00", padding:"2px 6px", borderRadius:4, fontSize:9, fontWeight:800}}>SOON</span>
-                            )}
-                        </button>
-                      ))}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+            <AnimatePresence>
+              {showSocial && (
+                <motion.div initial={{height:0, opacity:0}} animate={{height:"auto", opacity:1}} exit={{height:0, opacity:0}} style={{display:"flex", flexDirection:"column", gap:2, overflow:"hidden"}}>
+                  {SOCIAL_STUDIO.map((v: any) => (
+                    <button 
+                        className="hover-scale"
+                        key={v.id} 
+                        onClick={() => setTab(v.id)} 
+                        style={{
+                          display:"flex", alignItems:"center", gap:10, width:"100%", padding:"10px 14px", background:tab===v.id?"rgba(255,255,255,0.1)":"transparent",
+                          border:"none", borderRadius:12, color:tab===v.id?"white":"rgba(250,247,242,0.6)", cursor:"pointer", transition: "all 0.3s ease", position:"relative"
+                        }}
+                    >
+                        <span style={{color:tab===v.id?"#FF6B00":"currentColor", flexShrink: 0}}>{v.ic}</span>
+                        <span style={{fontSize:13, fontWeight:tab===v.id?700:500, flex: 1, overflow: "hidden", textOverflow: "ellipsis", textAlign: "left"}}>{v.lb}</span>
+                        {v.soon && (
+                          <span style={{background:"rgba(255,107,0,0.2)", color:"#FF6B00", padding:"1px 6px", borderRadius:4, fontSize:8, fontWeight:800, flexShrink: 0}}>SOON</span>
+                        )}
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
               </div>
 
               {/* Extras Section (Analytics/Settings) */}

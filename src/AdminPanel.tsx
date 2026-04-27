@@ -42,15 +42,6 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
     }
   };
 
-  useEffect(() => {
-    if (["users", "dashboard", "finance", "admins"].includes(activeTab)) {
-      fetchUsers();
-    }
-    if (activeTab === "plans") {
-      fetchPlans();
-    }
-  }, [activeTab]);
-
   const [showPlanModal, setShowPlanModal] = useState(false);
   const [editingPlan, setEditingPlan] = useState<any>(null);
 
@@ -73,7 +64,6 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
          await setDoc(doc(db, "plans", data.name!.toString().toLowerCase().replace(/\s+/g,'')), data);
        }
        setShowPlanModal(false);
-       fetchPlans();
      } catch (e: any) {
        alert(e.message);
      }
@@ -82,8 +72,6 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
   const handleUpdateRole = async (uid: string, newRole: string) => {
     try {
       await updateDoc(doc(db, "users", uid), { role: newRole });
-      fetchUsers();
-      if(selectedUser?.id === uid) setSelectedUser({...selectedUser, role: newRole});
     } catch (e) { console.error(e); }
   };
 
@@ -92,8 +80,6 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
       const activeUntil = new Date();
       activeUntil.setDate(activeUntil.getDate() + daysToAdd);
       await updateDoc(doc(db, "users", uid), { plan: newPlan, activeUntil: activeUntil.toISOString() });
-      fetchUsers();
-      if(selectedUser?.id === uid) setSelectedUser({...selectedUser, plan: newPlan, activeUntil: activeUntil.toISOString()});
     } catch (e) { console.error(e); }
   };
 
@@ -102,18 +88,8 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
       const features = selectedUser?.features || {};
       const newFeatures = { ...features, [feature]: !currentValue };
       await updateDoc(doc(db, "users", uid), { features: newFeatures });
-      setSelectedUser({...selectedUser, features: newFeatures});
     } catch (e) { console.error(e); }
   };
-
-  const isAdminUser = userProfile?.role === "admin" || userProfile?.email?.toLowerCase() === "nalendraputra71@gmail.com";
-  if (!userProfile || !isAdminUser) {
-    return (
-      <div style={{flex: 1, display:"flex", alignItems:"center", justifyContent:"center", color:"red", fontSize: 16, fontWeight: 700}}>
-        Akses Ditolak: Anda bukan Admin.
-      </div>
-    );
-  }
 
   const [dashboardDateRange, setDashboardDateRange] = useState({ 
     month: new Date().getMonth() + 1, 
@@ -132,16 +108,41 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
   useEffect(() => {
     let unsubs: any[] = [];
     import("./firebase").then(({ db, collection, onSnapshot, query }) => {
+      // Real-time synchronization for Users list
+      if (["users", "dashboard", "finance", "admins"].includes(activeTab)) {
+        unsubs.push(onSnapshot(collection(db, "users"), snap => {
+          const data = snap.docs.map(d => ({id: d.id, ...d.data()}));
+          setUsers(data as any[]);
+          setLoading(false);
+          if (selectedUser) {
+             const current = data.find((u: any) => u.id === selectedUser.id);
+             if (current) setSelectedUser(current);
+          }
+        }, err => {
+          console.error("Users onSnapshot error", err);
+          setLoading(false);
+        }));
+      }
+
+      // Real-time synchronization for Finance
       if (activeTab === "finance") {
          unsubs.push(onSnapshot(collection(db, "transactions"), snap => {
             setTransactions(snap.docs.map(d=>({id: d.id, ...d.data()})));
          }, err => console.error("Transactions onSnapshot error", err)));
       }
+
+      // Real-time synchronization for Plans & Promos
       if (activeTab === "plans") {
+         unsubs.push(onSnapshot(collection(db, "plans"), snap => {
+            setPlans(snap.docs.map(d => ({id: d.id, ...d.data()})));
+         }, err => console.error("Plans onSnapshot error", err)));
+
          unsubs.push(onSnapshot(collection(db, "promos"), snap => {
             setPromosList(snap.docs.map(d => ({id: d.id, ...d.data()})));
          }, err => console.error("Promos onSnapshot error", err)));
       }
+
+      // Real-time synchronization for Support
       if (activeTab === "support") {
          unsubs.push(onSnapshot(query(collection(db, "tickets")), snap => {
             const data = snap.docs.map(d=>({id: d.id, ...d.data()}));
@@ -158,7 +159,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
       }
     });
     return () => { unsubs.forEach(u => u()); };
-  }, [activeTab, selectedTicket]);
+  }, [activeTab, selectedUser?.id, selectedTicket?.id]);
   
   const filteredUsers = users.filter((u:any) => (u.email || "").toLowerCase().includes(searchEmail.toLowerCase()));
   const activePaidUsers = users.filter(u => u.plan === "pro" && new Date(u.activeUntil) > new Date()).length;
@@ -216,6 +217,15 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
         (document.getElementById("ticket_reply") as HTMLTextAreaElement).value = "";
      } catch(e:any) { alert(e.message); }
   };
+
+  const isAdminUser = userProfile?.role === "admin" || userProfile?.email?.toLowerCase() === "nalendraputra71@gmail.com";
+  if (!userProfile || !isAdminUser) {
+    return (
+      <div style={{flex: 1, display:"flex", alignItems:"center", justifyContent:"center", color:"red", fontSize: 16, fontWeight: 700}}>
+        Akses Ditolak: Anda bukan Admin.
+      </div>
+    );
+  }
 
   return (
     <div style={{flex:1, display:"flex", flexDirection:"column", height:"100vh", background:"#FAF7F2"}}>

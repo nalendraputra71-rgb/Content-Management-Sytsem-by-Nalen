@@ -9,7 +9,7 @@ import {
 
 import { 
   auth, db, onAuthStateChanged, signOut,
-  doc, setDoc, getDoc, collection, collectionGroup, query, onSnapshot, deleteDoc, writeBatch,
+  doc, setDoc, getDoc, collection, collectionGroup, query, onSnapshot, deleteDoc, writeBatch, updateDoc,
   handleFirestoreError, testFirestoreConnection, where
 } from "./firebase";
 
@@ -161,28 +161,62 @@ function Dashboard({ user, profile }: any) {
     if (!user) return;
     setWsLoading(true);
     const q = query(collectionGroup(db, "members"), where("userId", "==", user.uid));
-    const unsub = onSnapshot(q, async (snap) => {
+    
+    let wsUnsubs: (() => void)[] = [];
+
+    const unsubMembers = onSnapshot(q, (snap) => {
       try {
-        const wsIds = snap.docs.map(d => (d.data() as any).workspaceId);
+        const wsIds = snap.docs.map(d => (d.data() as any).workspaceId).filter(id => !!id);
+        
+        // Cleanup previous listeners
+        wsUnsubs.forEach(u => u());
+        wsUnsubs = [];
+
         if (wsIds.length === 0) {
           setWorkspaces([]);
           setWsLoading(false);
           return;
         }
-        const wsPromises = wsIds.map(id => getDoc(doc(db, "workspaces", id)));
-        const wsSnaps = await Promise.all(wsPromises);
-        const wsList = wsSnaps.filter(s => s.exists()).map(s => ({ ...s.data(), id: s.id }));
-        setWorkspaces(wsList);
-        const currentWs = workspaceRef.current;
-        if (wsList.length > 0) {
-          // If current workspace is null or no longer in the list, set to first
-          if (!currentWs || !wsList.find(w => w.id === currentWs.id)) {
-            setWorkspace(wsList[0]);
-          }
-        }
+
+        const results: Record<string, any> = {};
+        const pendingIds = new Set(wsIds);
+
+        wsIds.forEach(id => {
+          const u = onSnapshot(doc(db, "workspaces", id), (wsSnap) => {
+            if (wsSnap.exists()) {
+              results[id] = { ...wsSnap.data(), id: wsSnap.id };
+            } else {
+              delete results[id];
+            }
+            pendingIds.delete(id);
+            
+            // Only update state once we have checked all initial documents
+            if (pendingIds.size === 0) {
+              const list = wsIds.map(wid => results[wid]).filter(w => !!w);
+              setWorkspaces(list);
+              
+              const currentWs = workspaceRef.current;
+              if (list.length > 0) {
+                if (!currentWs || !list.find(w => w.id === currentWs.id)) {
+                  setWorkspace(list[0]);
+                }
+              }
+              setWsLoading(false);
+            }
+          }, (err) => {
+            console.error(`Workspace ${id} fetch error:`, err);
+            pendingIds.delete(id);
+            if (pendingIds.size === 0) {
+              const listArr = wsIds.map(wid => results[wid]).filter(w => !!w);
+              setWorkspaces(listArr);
+              setWsLoading(false);
+            }
+          });
+          wsUnsubs.push(u);
+        });
+
       } catch (err) {
-        console.error("Workspace fetch error:", err);
-      } finally {
+        console.error("Workspace processing error:", err);
         setWsLoading(false);
       }
     }, (error) => {
@@ -190,7 +224,11 @@ function Dashboard({ user, profile }: any) {
       setErrorMsg(error.message);
       setWsLoading(false);
     });
-    return () => unsub();
+
+    return () => {
+      unsubMembers();
+      wsUnsubs.forEach(u => u());
+    };
   }, [user]);
 
   useEffect(() => {
@@ -202,8 +240,6 @@ function Dashboard({ user, profile }: any) {
        if (data) {
           // Update current workspace state with fresh data from DB
           setWorkspace((prev: any) => {
-             // Deep comparison would be better, but at least don't update if nothing changed
-             // OR just update the specific fields we care about
              if (JSON.stringify(prev?.settings) === JSON.stringify(data.settings) && prev?.name === data.name) return prev;
              return { ...prev, ...data, id: snap.id };
           });
@@ -211,6 +247,15 @@ function Dashboard({ user, profile }: any) {
           if (data.settings) {
             setTitle(data.settings.title !== undefined ? data.settings.title : "Your Company");
             setTagline(data.settings.tagline !== undefined ? data.settings.tagline : "Content Management System");
+            
+            // Real-time synchronization for all settings categories
+            if (data.settings.pillars) setPillars(data.settings.pillars);
+            if (data.settings.platforms) setPlatforms(data.settings.platforms);
+            if (data.settings.pics) setPics(data.settings.pics);
+            if (data.settings.statuses) setStatuses(data.settings.statuses);
+            if (data.settings.holidays) setHolidays(data.settings.holidays);
+            if (data.settings.headerImage !== undefined) setHeaderImage(data.settings.headerImage);
+            if (data.settings.headerStyle) setHeaderStyle(data.settings.headerStyle);
           }
        }
     });
@@ -323,17 +368,19 @@ function Dashboard({ user, profile }: any) {
     if (!workspace) return;
     try {
       const wsRef = doc(db, "workspaces", workspace.id);
-      const newSettings = { ...workspace.settings, ...updates };
-      await setDoc(wsRef, { 
-        settings: newSettings,
-        ...(updates.title ? { name: updates.title } : {})
-      }, { merge: true });
+      const fsUpdates: any = {};
+      Object.keys(updates).forEach(k => {
+        fsUpdates[`settings.${k}`] = updates[k];
+        if (k === "title") fsUpdates.name = updates[k];
+      });
+      await updateDoc(wsRef, fsUpdates);
+      
       if (updates.title) {
         document.title = updates.title;
       }
-      // Local state is updated via onSnapshot listener in App.tsx
-    } catch (e) {
+    } catch (e: any) {
       console.error("Update settings error:", e);
+      handleFirestoreError(e, 'update');
     }
   };
 
@@ -458,7 +505,12 @@ function Dashboard({ user, profile }: any) {
             {tab==="table"&&<TableView filtered={filtered} openEdit={openEdit} archiveItem={archiveItem} unarchiveItem={unarchiveItem} deleteItem={deleteItem} pillars={pillars} platforms={platforms} showArchived={showArchived} search={search} bulkIds={bulkIds} setBulkIds={setBulkIds} onBulk={handleBulkActions} isRestricted={isRestricted}/>}
             {tab.startsWith("social")&&<SocialStudioView tab={tab} />}
             {tab==="analytics"&&<AnalyticsView content={content} pillars={pillars} platforms={platforms} pics={pics} statuses={statuses} openEdit={openEdit} isRestricted={isRestricted}/>}
-            {tab==="settings"&&<SettingsPanel pillars={pillars} setPillars={setPillars} platforms={platforms} setPlatforms={setPlatforms} pics={pics} setPics={setPics} statuses={statuses} setStatuses={setStatuses} holidays={holidays} setHolidays={setHolidays} onSeed={() => setContent(makeSeed())} isRestricted={isRestricted}/>}
+            {tab==="settings"&&<SettingsPanel 
+              initialSettings={{pillars, platforms, pics, statuses, holidays}} 
+              onSave={updateWsSettings}
+              onSeed={() => setContent(makeSeed())} 
+              isRestricted={isRestricted}
+            />}
             {tab==="admin"&&<AdminPanel userProfile={profile} onLogout={()=>signOut(auth)} />}
           </motion.div>
         </AnimatePresence>
