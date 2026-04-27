@@ -4,6 +4,29 @@ import { GoogleGenAI } from "@google/genai";
 import Markdown from "react-markdown";
 import { motion, AnimatePresence } from "motion/react";
 import { ChevronDown } from "lucide-react";
+
+const GeminiIcon = ({ size = 18 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 1.5L14.45 9.55L22.5 12L14.45 14.45L12 22.5L9.55 14.45L1.5 12L9.55 9.55L12 1.5Z" fill="url(#gemini_gradient)" />
+    <defs>
+      <linearGradient id="gemini_gradient" x1="1.5" y1="12" x2="22.5" y2="12" gradientUnits="userSpaceOnUse">
+        <stop stopColor="#4285F4"/>
+        <stop offset="0.5" stopColor="#9B72CB"/>
+        <stop offset="1" stopColor="#D96570"/>
+      </linearGradient>
+    </defs>
+  </svg>
+);
+
+const LoadingDots = () => (
+  <span>
+    Menganalisis data
+    <motion.span animate={{opacity: [0, 1, 0]}} transition={{repeat: Infinity, duration: 1.5}}>.</motion.span>
+    <motion.span animate={{opacity: [0, 1, 0]}} transition={{repeat: Infinity, duration: 1.5, delay: 0.2}}>.</motion.span>
+    <motion.span animate={{opacity: [0, 1, 0]}} transition={{repeat: Infinity, duration: 1.5, delay: 0.4}}>.</motion.span>
+  </span>
+);
+
 import { 
   MONTHS, MS, DAYS_S, DAYS_ID, YEARS, MK, MC,
   eng, fmt, gps,
@@ -75,6 +98,10 @@ export function AnalyticsView({content,pillars,platforms,pics,statuses,openEdit,
   const [aiInsight, setAiInsight] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
   const [showAiInsight, setShowAiInsight] = useState(true);
+
+  useEffect(() => {
+    setAiInsight("");
+  }, [dateFilt, customS, customE, adsFilter]);
 
   const toggleMetric = (k:string) => setActiveMetrics(m=>m.includes(k)?m.filter(x=>x!==k):[...m,k]);
 
@@ -308,65 +335,57 @@ export function AnalyticsView({content,pillars,platforms,pics,statuses,openEdit,
     setAiLoading(true);
     setAiInsight("");
     try {
-      const apiKey = process.env.GEMINI_API_KEY;
-      
-      // Extract comprehensive data for LLM
+      // Extract data untuk LLM
       const topCont = base.filter((c:any)=>c.status==="Published"&&getV(c)>0).sort((a:any,b:any)=>getEng(b)-getEng(a)).slice(0,3);
       const badCont = base.filter((c:any)=>c.status==="Published"&&getV(c)>0).sort((a:any,b:any)=>getEng(a)-getEng(b)).slice(0,3);
       
-      // Calculate best time to post
       let bestDay = 0, bestHour = 0, maxEng = 0;
       heatmap.forEach((days, dIdx) => {
-        days.forEach((eng, hIdx) => {
-          if(eng > maxEng) { maxEng = eng; bestDay = dIdx; bestHour = hIdx; }
+        days.forEach((engValue, hIdx) => {
+          if(engValue > maxEng) { maxEng = engValue; bestDay = dIdx; bestHour = hIdx; }
         });
       });
       const bestTimeStr = maxEng > 0 ? `${DAYS_ID[bestDay]} pukul ${bestHour}:00` : "Belum cukup data";
-      
       const picDataStr = picData.map((p:any)=>`${p.name} (${p.total})`).join(", ");
 
-      const prompt = `Act as an expert Social Media Analyst. Review this comprehensive data summary for Your Company CMS:
-      - Date Filter: ${dateFilt} (Quick range: ${adsFilter})
-      - Growth/Trends:
-         * Total Content: ${total} (${pTotal||"N/A"})
-         * Total Views: ${fmt(tV)} (${pV||"N/A"})
-         * Total Reach: ${fmt(tR)} (${pR||"N/A"})
-         * Total Engagement: ${fmt(tE)} (${pE||"N/A"})
-         * Ad Performance: Clicks ${fmt(tClicks)} (${pC||"N/A"}), Conv ${fmt(tConv)} (${pCv||"N/A"})
-      - Engagement Rate Level: ${er}% (vs Prev: ${prevER.toFixed(2)}%)
-      - Best Time to Upload: ${bestTimeStr} (Peak Eng: ${maxEng})
-      - Team Workload (PIC): ${picDataStr}
-      
-      TOP PERFORMING CONTENT (Best 3):
-      ${topCont.map((c:any,i:number)=>`${i+1}. "${c.title}" [Pillar: ${c.pillar}, Platform: ${c.platform}, Eng: ${getEng(c)}]`).join("\n")}
-      
-      WORST PERFORMING CONTENT (Bottom 3):
-      ${badCont.map((c:any,i:number)=>`${i+1}. "${c.title}" [Pillar: ${c.pillar}, Platform: ${c.platform}, Eng: ${getEng(c)}]`).join("\n")}
-      
-      Please provide a comprehensive but concise Executive Summary and Analysis in Indonesian. 
-      Focus on identifying WHY some content works and others don't, based on pillars, timing, and PIC workload.
-      Structure your response with:
-      1. A bulleted summary of growth trends and key performance indicators.
-      2. Analysis of "Winners" vs "Losers" patterns.
-      3. Specifically give 3 bulleted actionable NEXT STEP suggestions. KEEP THE FORMAT CLEAN AND PROFESSIONAL.`;
+      const prompt = `Anda adalah ahli Social Media Analyst. Buatlah Executive Summary yang profesional dan actionable berdasarkan data kinerja konten berikut:
 
-      if(!apiKey || apiKey === "") {
-        setAiInsight("Analisis Cepat (Mode Tanpa AI):\n\n" + 
-          "* Engagement Rate: " + er + "%\n" +
-          "* Pertumbuhan Views: " + (pV||"N/A") + "\n" +
-          "* Waktu Terbaik: " + bestTimeStr + "\n\n" +
-          "(Catatan: AI Gemini tidak aktif karena GEMINI_API_KEY tidak terdeteksi. Gunakan VITE_GEMINI_API_KEY di setelan aplikasi).");
-      } else {
-        const ai = new GoogleGenAI({ apiKey });
-        const resp = await ai.models.generateContent({
-          model: "gemini-3-flash-preview",
-          contents: prompt
-        });
-        setAiInsight(resp.text || "Tidak ada respon dari AI.");
+Data Kinerja:
+- Filter Waktu: ${dateFilt}
+- Total Konten: ${total} (${pTotal||"N/A"})
+- Kinerja: Views ${fmt(tV)} (${pV||"N/A"}), Reach ${fmt(tR)} (${pR||"N/A"}), Eng. ${fmt(tE)} (${pE||"N/A"})
+- Engagement Rate (ER): ${er}% (vs Prev: ${prevER.toFixed(2)}%)
+- Kinerja Iklan: Clicks ${fmt(tClicks)} (${pC||"N/A"}), Conv ${fmt(tConv)} (${pCv||"N/A"})
+- Waktu Terbaik Upload: ${bestTimeStr} (Peak Eng: ${maxEng})
+
+Konten Terbaik (Top 3):
+${topCont.map((c:any,i:number)=>`${i+1}. "${c.title}" [Pilar: ${c.pillar}, Platform: ${c.platform}, Eng: ${getEng(c)}]`).join("\n")}
+
+Konten Terburuk (Bottom 3):
+${badCont.map((c:any,i:number)=>`${i+1}. "${c.title}" [Pilar: ${c.pillar}, Platform: ${c.platform}, Eng: ${getEng(c)}]`).join("\n")}
+
+Instruksi Format Output:
+Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
+1. Ringkasan Insight: Analisis kinerja keseluruhan, tren pertumbuhan, dan insight dari waktu tayang/metrik utama.
+2. Evaluasi Konten: Analisis pola dari konten yang berhasil (Winners) vs kurang berhasil (Losers), apa yang membedakannya (misalnya topik, pilar, atau platform).
+3. Next Step Pengembangan Konten: Berikan 3-5 saran konkrit dan actionable untuk pembuatan konten berikutnya berdasarkan data di atas.`;
+
+      const response = await fetch("/api/gemini", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt, model: "gemini-2.5-flash" })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Gagal menghubungi server AI.");
       }
+
+      setAiInsight(result.text || "Tidak ada respon dari AI.");
     } catch(e:any) {
       console.error("AI Error:", e);
-      setAiInsight("Gagal mengambil data AI (Executive Summary): " + e.message);
+      setAiInsight("Gagal mendapatkan Executive Summary: " + e.message + ".\n\nPastikan VITE_GEMINI_API_KEY sudah diset di Settings > Secrets.");
     }
     setAiLoading(false);
   };
@@ -521,7 +540,10 @@ export function AnalyticsView({content,pillars,platforms,pics,statuses,openEdit,
                 style={{display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer"}}
                 onClick={() => setShowAiInsight(!showAiInsight)}
               >
-                <div style={{fontSize:11,fontWeight:600,color:"#8AAEF0"}}>🤖 Rekomendasi AI Next Step:</div>
+                <div style={{fontSize:11,fontWeight:600,color:"#8AAEF0",display:"flex",alignItems:"center",gap:6}}>
+                  <GeminiIcon size={14} />
+                  Rekomendasi AI Next Step:
+                </div>
                 <div style={{fontSize:18,color:"#8AAEF0"}}>{showAiInsight ? "↑" : "↓"}</div>
               </div>
               {showAiInsight && (
@@ -531,8 +553,9 @@ export function AnalyticsView({content,pillars,platforms,pics,statuses,openEdit,
               )}
             </div>
           ) : (
-            <button onClick={fetchAiInsight} disabled={aiLoading} style={{...B(false),background:"#C4622D",color:"white",border:"none",padding:"8px 16px",fontWeight:600,cursor:aiLoading?"wait":"pointer"}}>
-              {aiLoading?"Menganalisis data...":"🤖 Hasilkan Saran AI"}
+            <button onClick={fetchAiInsight} disabled={aiLoading} style={{...B(false),background:"#f3f4f6",color:"#1f2937",border:"1px solid #d1d5db",padding:"8px 16px",fontWeight:600,cursor:aiLoading?"wait":"pointer", display:"flex", alignItems:"center", gap: 8}}>
+              <GeminiIcon size={18} />
+              {aiLoading ? <LoadingDots /> : "Analyze with Gemini"}
             </button>
           )}
         </div>

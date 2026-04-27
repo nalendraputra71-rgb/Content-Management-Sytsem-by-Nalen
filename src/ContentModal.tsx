@@ -1,6 +1,30 @@
 import { useState, useRef, useEffect } from "react";
 import { GoogleGenAI } from "@google/genai";
 import { motion, AnimatePresence } from "motion/react";
+import Markdown from "react-markdown";
+
+const GeminiIcon = ({ size = 18 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 1.5L14.45 9.55L22.5 12L14.45 14.45L12 22.5L9.55 14.45L1.5 12L9.55 9.55L12 1.5Z" fill="url(#gemini_gradient_curr)" />
+    <defs>
+      <linearGradient id="gemini_gradient_curr" x1="1.5" y1="12" x2="22.5" y2="12" gradientUnits="userSpaceOnUse">
+        <stop stopColor="#4285F4"/>
+        <stop offset="0.5" stopColor="#9B72CB"/>
+        <stop offset="1" stopColor="#D96570"/>
+      </linearGradient>
+    </defs>
+  </svg>
+);
+
+const LoadingDots = () => (
+  <span>
+    Menganalisis konten
+    <motion.span animate={{opacity: [0, 1, 0]}} transition={{repeat: Infinity, duration: 1.5}}>.</motion.span>
+    <motion.span animate={{opacity: [0, 1, 0]}} transition={{repeat: Infinity, duration: 1.5, delay: 0.2}}>.</motion.span>
+    <motion.span animate={{opacity: [0, 1, 0]}} transition={{repeat: Infinity, duration: 1.5, delay: 0.4}}>.</motion.span>
+  </span>
+);
+
 import { 
   MK, MC, eng, fmt, fmtD,
   I, L, B, GRP 
@@ -91,7 +115,6 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
     setAiLoading(true);
     setAiResult("");
     try {
-        const apiKey = process.env.GEMINI_API_KEY;
         const prompt = `Analisis konten pemasaran berikut ini:
         Judul: ${d.title}
         Pillar: ${d.pillar}
@@ -102,19 +125,22 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
         
         Berikan evaluasi singkat dan 3 poin saran perbaikan untuk meningkatkan engagement. Format dalam Bahasa Indonesia, singkat, padat, dan teknis.`;
         
-        if(!apiKey || apiKey === "") {
-            setAiResult("API Key Gemini tidak terdeteksi (Gunakan VITE_GEMINI_API_KEY di setelan aplikasi). Silakan hubungi admin untuk konfigurasi.");
-        } else {
-            const ai = new GoogleGenAI({ apiKey });
-            const result = await ai.models.generateContent({
-              model: "gemini-3-flash-preview",
-              contents: prompt
-            });
-            setAiResult(result.text || "Tidak ada respon dari AI.");
+        const response = await fetch("/api/gemini", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt, model: "gemini-2.5-flash" })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || "Gagal menghubungi server AI.");
         }
+
+        setAiResult(result.text || "Tidak ada respon dari AI.");
     } catch (e: any) {
         console.error("AI Error:", e);
-        setAiResult("Gagal menganalisis konten: " + e.message);
+        setAiResult("Gagal menganalisis konten: " + e.message + ".\n\nPastikan VITE_GEMINI_API_KEY sudah diset di Settings > Secrets.");
     }
     setAiLoading(false);
   };
@@ -166,7 +192,10 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
         {aiResult && (
           <div style={{background:"#E3F2FD", border:"1px solid #BBDEFB", borderRadius:10, padding:14, marginBottom:20}}>
             <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8}}>
-              <span style={{fontSize:12, fontWeight:700, color:"#1E88E5"}}>🤖 AI Content Analysis</span>
+              <span style={{fontSize:12, fontWeight:700, color:"#1E88E5", display:"flex", alignItems:"center", gap:6}}>
+                  <GeminiIcon size={14} />
+                  AI Content Analysis
+              </span>
               <button onClick={()=>setAiResult("")} style={{border:"none", background:"transparent", fontSize:14, cursor:"pointer"}}>&times;</button>
             </div>
             <div style={{fontSize:12, lineHeight:1.5, color:"#333", whiteSpace:"pre-wrap"}}>{aiResult}</div>
@@ -184,10 +213,10 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
           </div>
           <div style={GRP}>
             <label style={L}>Jam Upload</label>
-            <div style={{display:"flex",gap:4}}>
-              <input type="number" min={0} max={23} value={d.uploadHour} onChange={(e:any)=>set("uploadHour",+e.target.value)} style={{...I(), textAlign:"center", width: 70, padding: "10px 8px"}} placeholder="HH"/>
-              <span style={{lineHeight:"40px",color:"rgba(44,32,22,0.4)"}}>:</span>
-              <input type="number" min={0} max={59} step={5} value={d.uploadMinute} onChange={(e:any)=>set("uploadMinute",+e.target.value)} style={{...I(), textAlign:"center", width: 70, padding: "10px 8px"}} placeholder="MM"/>
+            <div style={{display:"flex",gap:4, alignItems: "center"}}>
+              <input type="number" min={0} max={23} value={d.uploadHour} onChange={(e:any)=>set("uploadHour",+e.target.value)} style={{...I(), textAlign:"center", flex: 1, minWidth: 0, padding: "8px 4px"}} placeholder="Jam"/>
+              <span style={{lineHeight:"40px",color:"rgba(44,32,22,0.4)", fontWeight: 700}}>:</span>
+              <input type="number" min={0} max={59} step={5} value={d.uploadMinute} onChange={(e:any)=>set("uploadMinute",+e.target.value)} style={{...I(), textAlign:"center", flex: 1, minWidth: 0, padding: "8px 4px"}} placeholder="Menit"/>
             </div>
           </div>
           <div style={GRP}>
@@ -212,8 +241,9 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
             <div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}>
                 <label style={L}>Brief Konten</label>
                 <button onClick={analyzeContent} disabled={aiLoading} 
-                  style={{...B(false), fontSize:10, padding:"2px 8px", background:"#C4622D", color:"white", border:"none"}}>
-                  {aiLoading ? "Menganalisis..." : "🤖 Analisis AI"}
+                  style={{...B(false), fontSize:10, padding:"2px 8px", background:"#f3f4f6", color:"#1f2937", border:"1px solid #d1d5db", display:"flex", alignItems:"center", gap:4}}>
+                  <GeminiIcon size={12} />
+                  {aiLoading ? <LoadingDots /> : "Analyze with Gemini"}
                 </button>
             </div>
             <textarea value={d.briefCopywriting} onChange={(e:any)=>set("briefCopywriting",e.target.value)} style={I({minHeight:80,resize:"vertical"})} placeholder="Arah konten, tone, poin utama..."/>
