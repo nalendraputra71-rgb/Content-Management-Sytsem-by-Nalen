@@ -26,8 +26,18 @@ export const DPL = [
   {name:"Stories",color:"#A67C1C"},
   {name:"TikTok", color:"#2D7A5E"},
 ];
-export const DPIC = ["Eko","Fakhri","Fauzan"];
-export const DST = ["Draft","Waiting Approval","Revise","Ready to Post","Published"];
+export const DPIC = [
+  {name: "Eko", color: "#2B4C7E"},
+  {name: "Fakhri", color: "#9C2B4E"},
+  {name: "Fauzan", color: "#3E5E28"}
+];
+export const DST = [
+  {name: "Draft", color: "#A67C1C"},
+  {name: "Waiting Approval", color: "#2B4C7E"},
+  {name: "Revise", color: "#9C2B4E"},
+  {name: "Ready to Post", color: "#3E5E28"},
+  {name: "Published", color: "#2D7A5E"}
+];
 export const SS: any = {
   "Draft":{bg:"#FBF5E3",color:"#A67C1C"},
   "Waiting Approval":{bg:"#E5EEF7",color:"#2B4C7E"},
@@ -70,8 +80,8 @@ export const gss  = (name: any) => SS[name]||{bg:"#F5F0E8",color:"#A67C1C"};
 export const emptyItem = (y:any,mo:any,d:any,pillars:any,platforms:any,pics:any,statuses:any) => ({
   id:gid(),year:y,month:mo,day:d,
   uploadHour:9,uploadMinute:0,
-  pillar:pillars[0]?.name||"",platform:platforms[0]?.name||"",
-  pic:pics[0]||"",status:statuses[0]||"Draft",
+  pillar:pillars[0]?.name||pillars[0]||"",platform:platforms[0]?.name||platforms[0]||"",
+  pic:pics[0]?.name||pics[0]||"",status:statuses[0]?.name||statuses[0]||"Draft",
   title:"",caption:"",briefCopywriting:"",objective:"",
   referenceText:"",referenceLinks:[],referenceImage:"",
   customFields:[],

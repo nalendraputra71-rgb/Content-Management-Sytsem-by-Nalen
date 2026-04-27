@@ -71,12 +71,12 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted }:
   const editPlatform = (i: any, name: any, color: any) => setLocalPlatforms((p: any) => p.map((x: any, idx: any) => idx === i ? { name, color } : x));
   const delPlatform = (i: any) => setLocalPlatforms((p: any) => p.filter((_: any, idx: any) => idx !== i));
 
-  const addPic = () => { if (!newVal.trim()) return; setLocalPics((p: any) => [...p, newVal.trim()]); setNewVal(""); };
-  const editPic = (i: any, name: any) => setLocalPics((p: any) => p.map((x: any, idx: any) => idx === i ? name : x));
+  const addPic = () => { if (!newVal.trim()) return; setLocalPics((p: any) => [...p, { name: newVal.trim(), color: newColor }]); setNewVal(""); };
+  const editPic = (i: any, name: any, color: any) => setLocalPics((p: any) => p.map((x: any, idx: any) => idx === i ? { name, color } : x));
   const delPic = (i: any) => setLocalPics((p: any) => p.filter((_: any, idx: any) => idx !== i));
 
-  const addStatus = () => { if (!newVal.trim()) return; setLocalStatuses((s: any) => [...s, newVal.trim()]); setNewVal(""); };
-  const editStatus = (i: any, name: any) => setLocalStatuses((p: any) => p.map((x: any, idx: any) => idx === i ? name : x));
+  const addStatus = () => { if (!newVal.trim()) return; setLocalStatuses((s: any) => [...s, { name: newVal.trim(), color: newColor }]); setNewVal(""); };
+  const editStatus = (i: any, name: any, color: any) => setLocalStatuses((p: any) => p.map((x: any, idx: any) => idx === i ? { name, color } : x));
   const delStatus = (i: any) => setLocalStatuses((s: any) => s.filter((_: any, idx: any) => idx !== i));
 
   const addHoliday = () => { if (!newHKey.trim() || !newHVal.trim()) return; setLocalHolidays((h: any) => ({ ...h, [newHKey]: newHVal })); setNewHKey(""); setNewHVal(""); };
@@ -156,14 +156,18 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted }:
           {section === "pics" && (
             <>
               <h3 style={{ fontSize: 18, margin: "0 0 14px" }}>👤 Team PIC</h3>
-              {localPics.map((p: any, i: any) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", background: "#FAFAF8", borderRadius: 8, marginBottom: 6 }}>
-                  <div style={{ width: 24, height: 24, borderRadius: "50%", background: "#C4622D", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: 700, fontSize: 10 }}>{p[0]}</div>
-                  <input value={p} onChange={(e: any) => editPic(i, e.target.value)} style={{ flex: 1, fontSize: 13, fontWeight: 500, border: "none", background: "transparent", outline: "none" }} />
-                  <button onClick={() => delPic(i)} style={{ background: "#FDF5F8", border: "none", borderRadius: 6, padding: "3px 8px", fontSize: 11, cursor: "pointer", color: "#9C2B4E", }}>Hapus</button>
-                </div>
-              ))}
-              <InputRow placeholder="Nama PIC baru..." value={newVal} onChange={setNewVal} onAdd={addPic} />
+              {localPics.map((p: any, i: any) => {
+                const name = typeof p === 'string' ? p : p.name;
+                const color = typeof p === 'string' ? "#C4622D" : p.color;
+                return (
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", background: "#FAFAF8", borderRadius: 8, marginBottom: 6 }}>
+                    <input type="color" value={color} onChange={(e: any) => editPic(i, name, e.target.value)} title="Warna PIC" style={{ width: 24, height: 24, padding: 0, border: "none", cursor: "pointer" }} />
+                    <input value={name} onChange={(e: any) => editPic(i, e.target.value, color)} style={{ flex: 1, fontSize: 13, fontWeight: 500, border: "none", background: "transparent", outline: "none" }} />
+                    <button onClick={() => delPic(i)} style={{ background: "#FDF5F8", border: "none", borderRadius: 6, padding: "3px 8px", fontSize: 11, cursor: "pointer", color: "#9C2B4E", }}>Hapus</button>
+                  </div>
+                );
+              })}
+              <InputRow placeholder="Nama PIC baru..." value={newVal} onChange={setNewVal} onAdd={addPic} colorPicker />
             </>
           )}
           {section === "statuses" && (
@@ -171,15 +175,18 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted }:
               <h3 style={{ fontSize: 18, margin: "0 0 14px" }}>📋 Status Workflow</h3>
               <div style={{ fontSize: 11, color: "rgba(44,32,22,0.4)", marginBottom: 10 }}>Urutan dari atas ke bawah = alur kerja</div>
               {localStatuses.map((s: any, i: any) => {
+                const name = typeof s === 'string' ? s : s.name;
+                const color = typeof s === 'string' ? "#C4622D" : s.color;
                 return (
                   <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", background: "#FAFAF8", borderRadius: 8, marginBottom: 6 }}>
                     <span style={{ fontSize: 11, color: "rgba(44,32,22,0.3)" }}>{i + 1}.</span>
-                    <input value={s} onChange={(e: any) => editStatus(i, e.target.value)} style={{ flex: 1, background: "#F5F0E8", color: "#A67C1C", fontSize: 11, fontWeight: 700, padding: "4px 8px", borderRadius: 8, border: "none", outline: "none", maxWidth: "fit-content" }} />
+                    <input type="color" value={color} onChange={(e: any) => editStatus(i, name, e.target.value)} title="Warna Status" style={{ width: 24, height: 24, padding: 0, border: "none", cursor: "pointer" }} />
+                    <input value={name} onChange={(e: any) => editStatus(i, e.target.value, color)} style={{ flex: 1, background: color + "15", color: color, fontSize: 11, fontWeight: 700, padding: "4px 8px", borderRadius: 8, border: "none", outline: "none", maxWidth: "fit-content" }} />
                     <button onClick={() => delStatus(i)} style={{ background: "#FDF5F8", border: "none", borderRadius: 6, padding: "3px 8px", fontSize: 11, cursor: "pointer", color: "#9C2B4E", }}>Hapus</button>
                   </div>
                 );
               })}
-              <InputRow placeholder="Status baru (e.g. In Review)..." value={newVal} onChange={setNewVal} onAdd={addStatus} />
+              <InputRow placeholder="Status baru (e.g. In Review)..." value={newVal} onChange={setNewVal} onAdd={addStatus} colorPicker />
             </>
           )}
           {section === "holidays" && (

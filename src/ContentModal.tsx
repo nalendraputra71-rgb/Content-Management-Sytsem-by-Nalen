@@ -45,6 +45,7 @@ function EditorDropdown({ value, options, onChange, dark = false }: { value: str
 
   const activeOption = options.find(o => (typeof o === 'string' ? o : o.id || o.name || o) === value);
   const displayLabel = activeOption ? (typeof activeOption === 'string' ? activeOption : activeOption.label || activeOption.name || activeOption) : value;
+  const activeColor = (activeOption && typeof activeOption !== 'string') ? activeOption.color : null;
 
   return (
     <div ref={ref} style={{ position: "relative", width: "100%" }}>
@@ -52,36 +53,49 @@ function EditorDropdown({ value, options, onChange, dark = false }: { value: str
         onClick={() => setOpen(!open)} 
         className="hover-scale"
         style={{ 
-          width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, 
+          width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, 
           padding: "8px 12px", borderRadius: 8, 
           border: dark ? "1px solid rgba(255,255,255,0.2)" : "1px solid rgba(44,32,22,0.2)", 
-          background: dark ? "rgba(255,255,255,0.1)" : "white", 
-          fontSize: 13, fontWeight: 600, cursor: "pointer", 
-          color: dark ? "white" : "#2C2016" 
+          background: dark ? (activeColor ? activeColor : "rgba(255,255,255,0.1)") : (activeColor ? activeColor + "15" : "white"), 
+          fontSize: 13, fontWeight: 700, cursor: "pointer", 
+          color: dark ? "white" : (activeColor || "#2C2016")
         }}
       >
-        <span>{displayLabel}</span>
-        <ChevronDown size={14} style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'all 0.2s', opacity: 0.6 }} />
+        <div style={{display: "flex", alignItems: "center", gap: 8, overflow: "hidden"}}>
+           {activeColor && !dark && <div style={{width:8, height:8, borderRadius:"50%", background:activeColor, flexShrink:0}}/>}
+           <span style={{overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap"}}>{displayLabel}</span>
+        </div>
+        <ChevronDown size={14} style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'all 0.2s', opacity: 0.6, flexShrink: 0 }} />
       </button>
       <AnimatePresence>
         {open && (
           <motion.div 
             initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }} transition={{ duration: 0.15 }}
-            style={{ position: "absolute", top: "100%", left: 0, right: 0, marginTop: 4, background: "white", border: "1px solid rgba(44,32,22,0.1)", borderRadius: 8, padding: 4, zIndex: 9999, boxShadow: "0 10px 40px rgba(0,0,0,0.15)", maxHeight: 200, overflowY: "auto" }}
+            style={{ position: "absolute", top: "100%", left: 0, right: 0, marginTop: 4, background: "white", border: "1px solid rgba(44,32,22,0.1)", borderRadius: 12, padding: 6, zIndex: 9999, boxShadow: "0 10px 40px rgba(0,0,0,0.15)", maxHeight: 250, overflowY: "auto" }}
           >
             {options.map((o, i) => {
               const val = typeof o === 'string' ? o : o.id || o.name || o;
               const isSelected = val === value;
               const label = typeof o === 'string' ? o : o.label || o.name || o;
+              const color = (typeof o !== 'string') ? o.color : null;
+              
               return (
                 <div 
                   key={i} 
                   onClick={() => { onChange(val); setOpen(false); }}
-                  style={{ padding: "8px 10px", borderRadius: 6, fontSize: 13, fontWeight: isSelected?800:600, cursor: "pointer", background: isSelected ? "#FDF0EB" : "transparent", color: isSelected ? "#FF6B00" : "#2C2016", transition: "all 0.1s" }}
+                  style={{ 
+                    padding: "10px 12px", borderRadius: 8, fontSize: 13, fontWeight: isSelected?800:600, cursor: "pointer", 
+                    background: isSelected ? (color ? color + "20" : "#FDF0EB") : "transparent", 
+                    color: isSelected ? (color || "#FF6B00") : "#2C2016", 
+                    transition: "all 0.1s",
+                    display: "flex", alignItems: "center", gap: 10,
+                    marginBottom: 2
+                  }}
                   onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = "#FAFAFA"; }}
                   onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = "transparent"; }}
                 >
-                  {label}
+                  {color && <div style={{width:10, height:10, borderRadius:"50%", background:color}}/>}
+                  <span style={{flex: 1, overflow: "hidden", textOverflow: "ellipsis"}}>{label}</span>
                 </div>
               );
             })}
@@ -96,6 +110,9 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
   const [d,setD] = useState({...modal.data,metrics:{...modal.data.metrics},adsMetrics:{...(modal.data.adsMetrics||{views:0,reach:0,likes:0,comments:0,shares:0,reposts:0,saves:0,clicks:0,conversions:0})},referenceLinks:modal.data.referenceLinks||[],customFields:modal.data.customFields||[]});
   const [aiResult, setAiResult] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
+
+  const activePillar = pillars.find((p:any) => p.name === d.pillar);
+  const headerBg = activePillar?.color || "#2C2016";
 
   const set = (k:string,v:any) => setD((p:any)=>({...p,[k]:v}));
   const setM = (k:string,v:any, isAds=false) => {
@@ -151,23 +168,42 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
     reader.onload=(ev:any)=>set("referenceImage",ev.target.result);
     reader.readAsDataURL(file);
   };
+  const modalScrollRef = useRef<HTMLDivElement>(null);
+
+  const handleSave = () => {
+    if(!d.title.trim()){
+      alert("Judul tidak boleh kosong.");
+      return;
+    } 
+    onSave(d);
+  };
+
   const isNew = modal.mode==="add";
   const canArchive = !d.archived && !isNew;
   const canDelete = !isNew;
 
   return (
     <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(30,21,9,0.7)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:300,padding:16,backdropFilter:"blur(4px)",overflow:"auto"}}>
-      <motion.div initial={{scale:0.95, opacity:0, y:20}} animate={{scale:1, opacity:1, y:0}} exit={{scale:0.95, opacity:0, y:20}} onClick={e=>e.stopPropagation()} style={{background:"#FAFAFA",borderRadius:24,padding:32,maxWidth:700,width:"100%",maxHeight:"94vh",overflow:"auto",position:"relative",boxShadow:"0 24px 60px rgba(30,21,9,0.4)"}}>
-        
-        <div style={{background:"#2C2016",color:"#FAFAFA",borderRadius:16,padding:"24px 28px",marginBottom:24, boxShadow:"inset 0 2px 4px rgba(255,255,255,0.05)", position:"relative"}}>
-            <button className="hover-scale" onClick={onClose} style={{position:"absolute",top:20,right:20,background:"rgba(255,255,255,0.1)",border:"none",borderRadius:"50%",width:32,height:32,cursor:"pointer",fontSize:18,color:"white",display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:16,marginBottom:16, paddingRight: 40}}>
-                <div style={{flex:1}}>
-                   <label style={{...L, color:"rgba(250,247,242,0.4)", fontSize:10}}>Judul Konten</label>
-                   <input value={d.title} onChange={(e:any)=>set("title",e.target.value)} 
-                     style={{background:"transparent",border:"none",borderBottom:"1.5px solid rgba(250,247,242,0.2)",fontSize:26,fontWeight:800, letterSpacing:"-0.5px",color:"white",width:"100%",outline:"none",padding:"4px 0"}} placeholder="Tulis Judul Konten..."/>
+      <motion.div 
+        initial={{scale:0.95, opacity:0, y:20}} animate={{scale:1, opacity:1, y:0}} exit={{scale:0.95, opacity:0, y:20}} 
+        onClick={e=>e.stopPropagation()} 
+        style={{background:"#FAFAFA",borderRadius:24,maxWidth:700,width:"100%",maxHeight:"94vh",position:"relative",boxShadow:"0 24px 60px rgba(30,21,9,0.4)", overflow:"hidden", display: "flex", flexDirection: "column"}}
+      >
+        <div ref={modalScrollRef} style={{padding: 32, overflow: "auto", flex: 1}}>
+          <div style={{background:headerBg,color:"#FAFAFA",borderRadius:16,padding:"24px 28px",marginBottom:24, boxShadow:"inset 0 2px 4px rgba(255,255,255,0.05)", position:"relative", transition: "background 0.3s ease"}}>
+              <button className="hover-scale" onClick={onClose} style={{position:"absolute",top:20,right:20,background:"rgba(255,255,255,0.1)",border:"none",borderRadius:"50%",width:32,height:32,cursor:"pointer",fontSize:18,color:"white",display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:16,marginBottom:16, paddingRight: 40}}>
+                  <div style={{flex:1}}>
+                     <label style={{...L, color:"rgba(250,247,242,0.4)", fontSize:10}}>Judul Konten</label>
+                   <textarea 
+                      value={d.title} 
+                      onChange={(e:any)=>set("title",e.target.value)} 
+                      rows={1}
+                      onInput={(e:any) => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; }}
+                      style={{background:"transparent",border:"none",borderBottom:"1.5px solid rgba(250,247,242,0.2)",fontSize:26,fontWeight:800, letterSpacing:"-0.5px",color:"white",width:"100%",outline:"none",padding:"4px 0", resize: "none", overflow: "hidden", lineHeight: 1.2}} 
+                      placeholder="Tulis Judul Konten..."/>
                 </div>
-                <div style={{textAlign:"right"}}>
+                <div style={{textAlign:"right", flexShrink: 0}}>
                     <h2 style={{fontSize:16,margin:0,color:"#FF6B00", fontWeight:700}}>{isNew?"✨ Baru":"✏️ Detail Konten"}</h2>
                 </div>
             </div>
@@ -346,19 +382,26 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
           </div>
         )}
 
-        {/* Actions */}
-        <div style={{display:"flex",gap:8,justifyContent:"space-between",alignItems:"center"}}>
-          <div style={{display:"flex",gap:8}}>
+        </div>
+
+        <div style={{display:"flex", gap:10, justifyContent:"space-between", alignItems:"center", padding: "16px 28px", borderTop: "1px solid rgba(44,32,22,0.08)", background: "white", borderRadius: "0 0 24px 24px", zIndex: 10, flexShrink: 0}}>
+          <div style={{display:"flex", gap:8}}>
             {d.archived ? (
-              <button onClick={()=>onRestore(d.id)} style={{...B(false),background:"#E8F5E9",border:"1.5px solid #2E7D32",color:"#2E7D32",padding:"8px 16px",fontWeight:600}}>🔄 Tampilkan Lagi</button>
+              <button onClick={()=>onRestore(d.id)} className="hover-scale" style={{...B(false), background:"#E8F5E9", border:"1.5px solid #2E7D32", color:"#2E7D32", padding:"7px 14px", fontSize:12, fontWeight:700}}>🔄 Tampilkan Lagi</button>
             ) : (
-              canArchive&&<button onClick={()=>onArchive(d.id)} style={{...B(false),background:"#F1E8F5",border:"1.5px solid #723680",color:"#723680",padding:"8px 16px",fontWeight:600}}>📦 Arsipkan</button>
+              canArchive && <button onClick={()=>onArchive(d.id)} className="hover-scale" style={{...B(false), background:"#FAFAFA", border:"1.5px solid rgba(44,32,22,0.1)", color:"#666", padding:"7px 14px", fontSize:12, fontWeight:700}}>📦 Arsipkan</button>
             )}
-            {canDelete&&<button onClick={()=>onDelete(d.id)} style={{...B(false),background:"#FDF5F8",border:"1.5px solid #9C2B4E",color:"#9C2B4E",padding:"8px 16px",fontWeight:600}}>🗑️ Hapus Permanen</button>}
+            {canDelete && <button onClick={()=>onDelete(d.id)} className="hover-scale" style={{...B(false), background:"#FDF5F8", border:"1.5px solid #9C2B4E", color:"#9C2B4E", padding:"7px 14px", fontSize:12, fontWeight:700}}>🗑️ Hapus</button>}
           </div>
-          <div style={{display:"flex",gap:8}}>
-            <button onClick={onClose} style={{...B(false),padding:"8px 18px"}}>Batal</button>
-            <button onClick={()=>{if(!d.title.trim()){alert("Judul tidak boleh kosong.");return;} onSave(d);}} style={{...B(true,"#C4622D"),padding:"8px 22px",fontWeight:600}}>{isNew?"+ Tambahkan":"💾 Simpan"}</button>
+          <div style={{display:"flex", gap:10}}>
+            <button onClick={onClose} className="hover-scale" style={{...B(false), padding:"8px 16px", fontSize:12, color: "#666", fontWeight:600}}>Batal</button>
+            <button 
+              onClick={handleSave} 
+              className="hover-scale shadow-orange"
+              style={{...B(true,"#C4622D"), padding:"10px 24px", fontWeight:800, borderRadius: 12, fontSize:13}}
+            >
+              {isNew ? "+ Tambahkan" : "💾 Simpan Brief"}
+            </button>
           </div>
         </div>
       </motion.div>

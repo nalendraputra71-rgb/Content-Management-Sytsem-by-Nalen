@@ -543,14 +543,16 @@ export function Sidebar({
                 }}
               >
                 <img src={profile?.photoURL || user?.photoURL || `https://ui-avatars.com/api/?name=${user?.displayName}`} alt="avatar" style={{width:36, height:36, borderRadius:12, border:"2px solid #FF6B00", objectFit:"cover"}} />
-                <div style={{overflow:"hidden"}}>
-                  <div style={{fontSize:13, fontWeight:700, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", color:"white"}}>
-                    {user?.displayName}
-                    <span style={{background: (profile?.activeUntil && new Date(profile.activeUntil) > new Date()) ? "#FF6B00" : "#9C2B4E", color: "white", padding: "2px 6px", borderRadius: 4, fontSize: 9, marginLeft: 6, verticalAlign: "top"}}>
+                <div style={{flex: 1, minWidth: 0}}>
+                  <div style={{display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap"}}>
+                    <span style={{fontSize:13, fontWeight:700, whiteSpace:"normal", wordBreak:"break-word", color:"white"}}>
+                      {profile?.fullName || user?.displayName}
+                    </span>
+                    <span style={{background: (profile?.activeUntil && new Date(profile.activeUntil) > new Date()) ? "#FF6B00" : "#9C2B4E", color: "white", padding: "1px 5px", borderRadius: 4, fontSize: 8, fontWeight: 800, flexShrink: 0}}>
                       {(profile?.activeUntil && new Date(profile.activeUntil) > new Date()) ? "PRO" : "FREE"}
                     </span>
                   </div>
-                  <div style={{fontSize:10, color:"#FF6B00", fontWeight:700}}>Pengaturan Profil</div>
+                  <div style={{fontSize:10, color:"#FF6B00", fontWeight:700, marginTop: 2}}>Pengaturan Profil</div>
                 </div>
               </div>
               <button 
