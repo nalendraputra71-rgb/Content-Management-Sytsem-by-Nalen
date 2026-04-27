@@ -102,8 +102,8 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
         
         Berikan evaluasi singkat dan 3 poin saran perbaikan untuk meningkatkan engagement. Format dalam Bahasa Indonesia, singkat, padat, dan teknis.`;
         
-        if(!apiKey) {
-            setAiResult("API Key Gemini tidak terdeteksi. Silakan periksa setelan aplikasi.");
+        if(!apiKey || apiKey === "") {
+            setAiResult("API Key Gemini tidak terdeteksi (Gunakan VITE_GEMINI_API_KEY di setelan aplikasi). Silakan hubungi admin untuk konfigurasi.");
         } else {
             const ai = new GoogleGenAI({ apiKey });
             const result = await ai.models.generateContent({
@@ -185,9 +185,9 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
           <div style={GRP}>
             <label style={L}>Jam Upload</label>
             <div style={{display:"flex",gap:4}}>
-              <input type="number" min={0} max={23} value={d.uploadHour} onChange={(e:any)=>set("uploadHour",+e.target.value)} style={I({textAlign:"center", width: 50})} placeholder="HH"/>
-              <span style={{lineHeight:"36px",color:"rgba(44,32,22,0.4)"}}>:</span>
-              <input type="number" min={0} max={59} step={5} value={d.uploadMinute} onChange={(e:any)=>set("uploadMinute",+e.target.value)} style={I({textAlign:"center", width: 50})} placeholder="MM"/>
+              <input type="number" min={0} max={23} value={d.uploadHour} onChange={(e:any)=>set("uploadHour",+e.target.value)} style={{...I(), textAlign:"center", width: 70, padding: "10px 8px"}} placeholder="HH"/>
+              <span style={{lineHeight:"40px",color:"rgba(44,32,22,0.4)"}}>:</span>
+              <input type="number" min={0} max={59} step={5} value={d.uploadMinute} onChange={(e:any)=>set("uploadMinute",+e.target.value)} style={{...I(), textAlign:"center", width: 70, padding: "10px 8px"}} placeholder="MM"/>
             </div>
           </div>
           <div style={GRP}>

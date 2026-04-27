@@ -350,12 +350,12 @@ export function AnalyticsView({content,pillars,platforms,pics,statuses,openEdit,
       2. Analysis of "Winners" vs "Losers" patterns.
       3. Specifically give 3 bulleted actionable NEXT STEP suggestions. KEEP THE FORMAT CLEAN AND PROFESSIONAL.`;
 
-      if(!apiKey) {
+      if(!apiKey || apiKey === "") {
         setAiInsight("Analisis Cepat (Mode Tanpa AI):\n\n" + 
           "* Engagement Rate: " + er + "%\n" +
           "* Pertumbuhan Views: " + (pV||"N/A") + "\n" +
           "* Waktu Terbaik: " + bestTimeStr + "\n\n" +
-          "(Catatan: AI Gemini tidak aktif karena GEMINI_API_KEY tidak terdeteksi. Silakan hubungi admin atau periksa setelan aplikasi).");
+          "(Catatan: AI Gemini tidak aktif karena GEMINI_API_KEY tidak terdeteksi. Gunakan VITE_GEMINI_API_KEY di setelan aplikasi).");
       } else {
         const ai = new GoogleGenAI({ apiKey });
         const resp = await ai.models.generateContent({
