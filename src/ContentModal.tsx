@@ -114,6 +114,15 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
   const activePillar = pillars.find((p:any) => p.name === d.pillar);
   const headerBg = activePillar?.color || "#2C2016";
 
+  const titleRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (titleRef.current) {
+      titleRef.current.style.height = 'auto';
+      titleRef.current.style.height = titleRef.current.scrollHeight + 'px';
+    }
+  }, [d.title, modal.open]);
+
   const set = (k:string,v:any) => setD((p:any)=>({...p,[k]:v}));
   const setM = (k:string,v:any, isAds=false) => {
     const ts = new Date().toLocaleString("id-ID",{dateStyle:"medium",timeStyle:"short"});
@@ -196,10 +205,10 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                   <div style={{flex:1}}>
                      <label style={{...L, color:"rgba(250,247,242,0.4)", fontSize:10}}>Judul Konten</label>
                    <textarea 
+                      ref={titleRef}
                       value={d.title} 
                       onChange={(e:any)=>set("title",e.target.value)} 
                       rows={1}
-                      onInput={(e:any) => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; }}
                       style={{background:"transparent",border:"none",borderBottom:"1.5px solid rgba(250,247,242,0.2)",fontSize:26,fontWeight:800, letterSpacing:"-0.5px",color:"white",width:"100%",outline:"none",padding:"4px 0", resize: "none", overflow: "hidden", lineHeight: 1.2}} 
                       placeholder="Tulis Judul Konten..."/>
                 </div>
