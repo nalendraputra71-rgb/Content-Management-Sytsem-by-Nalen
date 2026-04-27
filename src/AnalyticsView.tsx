@@ -309,49 +309,54 @@ export function AnalyticsView({content,pillars,platforms,pics,statuses,openEdit,
     setAiInsight("");
     try {
       const apiKey = process.env.GEMINI_API_KEY;
-      if(!apiKey) {
-        setAiInsight("Berdasarkan data yang terkumpul, tingkat Engagement Rate berada di level "+er+"%. Rekomendasi Next Step: Tingkatkan produksi pada jam-jam dengan warna gelap di heatmap, dan prioritaskan platform dengan ER tertinggi. (AI Gemini tidak aktif karena GEMINI_API_KEY belum dikonfigurasi di setelan).");
-      } else {
-        // Extract comprehensive data for LLM
-        const topCont = base.filter((c:any)=>c.status==="Published"&&getV(c)>0).sort((a:any,b:any)=>getEng(b)-getEng(a)).slice(0,3);
-        const badCont = base.filter((c:any)=>c.status==="Published"&&getV(c)>0).sort((a:any,b:any)=>getEng(a)-getEng(b)).slice(0,3);
-        
-        // Calculate best time to post
-        let bestDay = 0, bestHour = 0, maxEng = 0;
-        heatmap.forEach((days, dIdx) => {
-          days.forEach((eng, hIdx) => {
-            if(eng > maxEng) { maxEng = eng; bestDay = dIdx; bestHour = hIdx; }
-          });
+      
+      // Extract comprehensive data for LLM
+      const topCont = base.filter((c:any)=>c.status==="Published"&&getV(c)>0).sort((a:any,b:any)=>getEng(b)-getEng(a)).slice(0,3);
+      const badCont = base.filter((c:any)=>c.status==="Published"&&getV(c)>0).sort((a:any,b:any)=>getEng(a)-getEng(b)).slice(0,3);
+      
+      // Calculate best time to post
+      let bestDay = 0, bestHour = 0, maxEng = 0;
+      heatmap.forEach((days, dIdx) => {
+        days.forEach((eng, hIdx) => {
+          if(eng > maxEng) { maxEng = eng; bestDay = dIdx; bestHour = hIdx; }
         });
-        const bestTimeStr = maxEng > 0 ? `${DAYS_ID[bestDay]} pukul ${bestHour}:00` : "Belum cukup data";
-        
-        const picDataStr = picData.map((p:any)=>`${p.name} (${p.total})`).join(", ");
+      });
+      const bestTimeStr = maxEng > 0 ? `${DAYS_ID[bestDay]} pukul ${bestHour}:00` : "Belum cukup data";
+      
+      const picDataStr = picData.map((p:any)=>`${p.name} (${p.total})`).join(", ");
 
-        const prompt = `Act as an expert Social Media Analyst. Review this comprehensive data summary for Your Company CMS:
-        - Date Filter: ${dateFilt} (Quick range: ${adsFilter})
-        - Growth/Trends:
-           * Total Content: ${total} (${pTotal||"N/A"})
-           * Total Views: ${fmt(tV)} (${pV||"N/A"})
-           * Total Reach: ${fmt(tR)} (${pR||"N/A"})
-           * Total Engagement: ${fmt(tE)} (${pE||"N/A"})
-           * Ad Performance: Clicks ${fmt(tClicks)} (${pC||"N/A"}), Conv ${fmt(tConv)} (${pCv||"N/A"})
-        - Engagement Rate Level: ${er}% (vs Prev: ${prevER.toFixed(2)}%)
-        - Best Time to Upload: ${bestTimeStr} (Peak Eng: ${maxEng})
-        - Team Workload (PIC): ${picDataStr}
-        
-        TOP PERFORMING CONTENT (Best 3):
-        ${topCont.map((c:any,i:number)=>`${i+1}. "${c.title}" [Pillar: ${c.pillar}, Platform: ${c.platform}, Eng: ${getEng(c)}]`).join("\n")}
-        
-        WORST PERFORMING CONTENT (Bottom 3):
-        ${badCont.map((c:any,i:number)=>`${i+1}. "${c.title}" [Pillar: ${c.pillar}, Platform: ${c.platform}, Eng: ${getEng(c)}]`).join("\n")}
-        
-        Please provide a comprehensive but concise Executive Summary and Analysis in Indonesian. 
-        Focus on identifying WHY some content works and others don't, based on pillars, timing, and PIC workload.
-        Structure your response with:
-        1. A bulleted summary of growth trends and key performance indicators.
-        2. Analysis of "Winners" vs "Losers" patterns.
-        3. Specifically give 3 bulleted actionable NEXT STEP suggestions. KEEP THE FORMAT CLEAN AND PROFESSIONAL.`;
+      const prompt = `Act as an expert Social Media Analyst. Review this comprehensive data summary for Your Company CMS:
+      - Date Filter: ${dateFilt} (Quick range: ${adsFilter})
+      - Growth/Trends:
+         * Total Content: ${total} (${pTotal||"N/A"})
+         * Total Views: ${fmt(tV)} (${pV||"N/A"})
+         * Total Reach: ${fmt(tR)} (${pR||"N/A"})
+         * Total Engagement: ${fmt(tE)} (${pE||"N/A"})
+         * Ad Performance: Clicks ${fmt(tClicks)} (${pC||"N/A"}), Conv ${fmt(tConv)} (${pCv||"N/A"})
+      - Engagement Rate Level: ${er}% (vs Prev: ${prevER.toFixed(2)}%)
+      - Best Time to Upload: ${bestTimeStr} (Peak Eng: ${maxEng})
+      - Team Workload (PIC): ${picDataStr}
+      
+      TOP PERFORMING CONTENT (Best 3):
+      ${topCont.map((c:any,i:number)=>`${i+1}. "${c.title}" [Pillar: ${c.pillar}, Platform: ${c.platform}, Eng: ${getEng(c)}]`).join("\n")}
+      
+      WORST PERFORMING CONTENT (Bottom 3):
+      ${badCont.map((c:any,i:number)=>`${i+1}. "${c.title}" [Pillar: ${c.pillar}, Platform: ${c.platform}, Eng: ${getEng(c)}]`).join("\n")}
+      
+      Please provide a comprehensive but concise Executive Summary and Analysis in Indonesian. 
+      Focus on identifying WHY some content works and others don't, based on pillars, timing, and PIC workload.
+      Structure your response with:
+      1. A bulleted summary of growth trends and key performance indicators.
+      2. Analysis of "Winners" vs "Losers" patterns.
+      3. Specifically give 3 bulleted actionable NEXT STEP suggestions. KEEP THE FORMAT CLEAN AND PROFESSIONAL.`;
 
+      if(!apiKey) {
+        setAiInsight("Analisis Cepat (Mode Tanpa AI):\n\n" + 
+          "* Engagement Rate: " + er + "%\n" +
+          "* Pertumbuhan Views: " + (pV||"N/A") + "\n" +
+          "* Waktu Terbaik: " + bestTimeStr + "\n\n" +
+          "(Catatan: AI Gemini tidak aktif karena GEMINI_API_KEY tidak terdeteksi. Silakan hubungi admin atau periksa setelan aplikasi).");
+      } else {
         const ai = new GoogleGenAI({ apiKey });
         const resp = await ai.models.generateContent({
           model: "gemini-3-flash-preview",
@@ -360,7 +365,8 @@ export function AnalyticsView({content,pillars,platforms,pics,statuses,openEdit,
         setAiInsight(resp.text || "Tidak ada respon dari AI.");
       }
     } catch(e:any) {
-      setAiInsight("Gagal mengambil data AI: " + e.message);
+      console.error("AI Error:", e);
+      setAiInsight("Gagal mengambil data AI (Executive Summary): " + e.message);
     }
     setAiLoading(false);
   };

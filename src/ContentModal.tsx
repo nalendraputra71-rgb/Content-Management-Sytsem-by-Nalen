@@ -88,14 +88,10 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
         alert("Harap isi caption atau brief terlebih dahulu untuk dianalisis AI.");
         return;
     }
-    const apiKey = process.env.GEMINI_API_KEY;
-    if(!apiKey) {
-        setAiResult("API Key tidak ditemukan. Harap konfigurasi di setelan.");
-        return;
-    }
     setAiLoading(true);
+    setAiResult("");
     try {
-        const ai = new GoogleGenAI({ apiKey });
+        const apiKey = process.env.GEMINI_API_KEY;
         const prompt = `Analisis konten pemasaran berikut ini:
         Judul: ${d.title}
         Pillar: ${d.pillar}
@@ -106,13 +102,19 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
         
         Berikan evaluasi singkat dan 3 poin saran perbaikan untuk meningkatkan engagement. Format dalam Bahasa Indonesia, singkat, padat, dan teknis.`;
         
-        const result = await ai.models.generateContent({
-          model: "gemini-3-flash-preview",
-          contents: prompt
-        });
-        setAiResult(result.text || "Tidak ada respon dari AI.");
-    } catch (e) {
-        setAiResult("Gagal menganalisis konten: " + String(e));
+        if(!apiKey) {
+            setAiResult("API Key Gemini tidak terdeteksi. Silakan periksa setelan aplikasi.");
+        } else {
+            const ai = new GoogleGenAI({ apiKey });
+            const result = await ai.models.generateContent({
+              model: "gemini-3-flash-preview",
+              contents: prompt
+            });
+            setAiResult(result.text || "Tidak ada respon dari AI.");
+        }
+    } catch (e: any) {
+        console.error("AI Error:", e);
+        setAiResult("Gagal menganalisis konten: " + e.message);
     }
     setAiLoading(false);
   };
