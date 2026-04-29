@@ -78,19 +78,13 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
         
         Berikan evaluasi singkat dan 3 poin saran perbaikan untuk meningkatkan engagement. Format dalam Bahasa Indonesia, singkat, padat, dan teknis.`;
         
-        const response = await fetch("/api/gemini", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt, model: "gemini-2.5-flash" })
+        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+        const response = await ai.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: prompt
         });
 
-        const result = await response.json();
-
-        if (!response.ok) {
-          throw new Error(result.error || "Gagal menghubungi server AI.");
-        }
-
-        setAiResult(result.text || "Tidak ada respon dari AI.");
+        setAiResult(response.text || "Tidak ada respon dari AI.");
     } catch (e: any) {
         console.error("AI Error:", e);
         setAiResult("Gagal menganalisis konten: " + e.message + ".\n\nPastikan VITE_GEMINI_API_KEY sudah diset di Settings > Secrets.");
@@ -114,19 +108,13 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
         
         Tuliskan HANYA hasil caption akhirnya saja. Jangan berikan pengantar/penutup eksplanasi. Sertakan hashtag yang relevan sesuai dengan platform.`;
         
-        const response = await fetch("/api/gemini", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt, model: "gemini-2.5-flash" })
+        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt
         });
 
-        const result = await response.json();
-
-        if (!response.ok) {
-          throw new Error(result.error || "Gagal menghubungi server AI.");
-        }
-
-        set("caption", (result.text || "").trim());
+        set("caption", (response.text || "").trim());
     } catch (e: any) {
         console.error("AI Error:", e);
         alert("Gagal menggenerate caption: " + e.message);
