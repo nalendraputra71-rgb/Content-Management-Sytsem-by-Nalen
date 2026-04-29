@@ -273,16 +273,32 @@ function Dashboard({ user, profile }: any) {
   }, [workspace?.id, user?.uid]);
 
   const handleSave = async (data: any) => {
-    if (!workspace) return;
+    console.log("handleSave called with data:", data);
+    if (!workspace) {
+        console.error("Workspace is null");
+        return;
+    }
     if (isRestricted) {
       alert("Akses Terbatas: Fitur ini dikunci.");
       return;
     }
     const isNew = modal.mode === "add";
     const itemId = isNew ? gid() : data.id;
-    const itemData = { ...data, id: itemId, workspaceId: workspace.id, userId: user?.uid || "" };
+    
+    // Clean up undefined values before saving to Firestore to prevent silent or synchronous failures
+    const cleanData = { ...data };
+    Object.keys(cleanData).forEach(key => {
+        if (cleanData[key] === undefined) {
+            delete cleanData[key];
+        }
+    });
+
+    const itemData = { ...cleanData, id: itemId, workspaceId: workspace.id, userId: user?.uid || "" };
+    console.log("Cleaned itemData:", itemData);
+    
     try {
       await setDoc(doc(db, "workspaces", workspace.id, "content", itemId), itemData, { merge: true });
+      console.log("Save successful!");
       setModal(null);
     } catch (e: any) { 
       console.error("Save Error:", e);

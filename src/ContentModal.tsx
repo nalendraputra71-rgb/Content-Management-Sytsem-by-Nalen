@@ -78,7 +78,11 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
         
         Berikan evaluasi singkat dan 3 poin saran perbaikan untuk meningkatkan engagement. Format dalam Bahasa Indonesia, singkat, padat, dan teknis.`;
         
-        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+        const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+        if (!apiKey) {
+          throw new Error("VITE_GEMINI_API_KEY is missing");
+        }
+        const ai = new GoogleGenAI({ apiKey });
         const response = await ai.models.generateContent({
           model: "gemini-2.5-flash",
           contents: prompt
@@ -108,7 +112,11 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
         
         Tuliskan HANYA hasil caption akhirnya saja. Jangan berikan pengantar/penutup eksplanasi. Sertakan hashtag yang relevan sesuai dengan platform.`;
         
-        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+        const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+        if (!apiKey) {
+          throw new Error("VITE_GEMINI_API_KEY is missing");
+        }
+        const ai = new GoogleGenAI({ apiKey });
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",
             contents: prompt
@@ -130,12 +138,21 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
   };
   const modalScrollRef = useRef<HTMLDivElement>(null);
 
-  const handleSave = () => {
-    if(!d.title || !d.title.trim()){
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSave = async () => {
+    if(!d.title || !String(d.title).trim()){
       alert("Judul tidak boleh kosong.");
       return;
     } 
-    onSave(d);
+    setIsSaving(true);
+    try {
+      await onSave(d);
+    } catch(e: any) {
+      console.error("Error in onSave callback:", e);
+      alert("Terjadi kesalahan saat menyimpan: " + e.message);
+    }
+    setIsSaving(false);
   };
 
   const isNew = modal.mode==="add";
@@ -364,10 +381,11 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
             <button onClick={onClose} className="hover-scale" style={{...B(false), padding:"8px 16px", fontSize:12, color: "#666", fontWeight:600}}>Batal</button>
             <button 
               onClick={handleSave} 
+              disabled={isSaving}
               className="hover-scale shadow-orange"
-              style={{...B(true,"#C4622D"), padding:"10px 24px", fontWeight:800, borderRadius: 12, fontSize:13}}
+              style={{...B(true,"#C4622D"), padding:"10px 24px", fontWeight:800, borderRadius: 12, fontSize:13, opacity: isSaving ? 0.7 : 1}}
             >
-              {isNew ? "+ Tambahkan" : "💾 Simpan Brief"}
+              {isSaving ? "Menyimpan..." : (isNew ? "+ Tambahkan" : "💾 Simpan Brief")}
             </button>
           </div>
         </div>
