@@ -273,14 +273,22 @@ function Dashboard({ user, profile }: any) {
   }, [workspace?.id, user?.uid]);
 
   const handleSave = async (data: any) => {
-    if (!workspace || isRestricted) return;
+    if (!workspace) return;
+    if (isRestricted) {
+      alert("Akses Terbatas: Fitur ini dikunci.");
+      return;
+    }
     const isNew = modal.mode === "add";
     const itemId = isNew ? gid() : data.id;
-    const itemData = { ...data, id: itemId, workspaceId: workspace.id, userId: user.uid };
+    const itemData = { ...data, id: itemId, workspaceId: workspace.id, userId: user?.uid || "" };
     try {
       await setDoc(doc(db, "workspaces", workspace.id, "content", itemId), itemData, { merge: true });
       setModal(null);
-    } catch (e) { handleFirestoreError(e, isNew?'create':'update'); }
+    } catch (e: any) { 
+      console.error("Save Error:", e);
+      alert("Gagal menyimpan data: " + e.message);
+      handleFirestoreError(e, isNew?'create':'update'); 
+    }
   };
 
   const openEdit = (item:any) => setModal({mode:"edit",data:{...item,metrics:{...item.metrics}}});

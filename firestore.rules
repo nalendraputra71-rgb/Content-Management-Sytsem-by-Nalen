@@ -127,8 +127,9 @@ service cloud.firestore {
             'status', 'metrics', 'adsMetrics', 'title', 'caption', 
             'pillar', 'platform', 'pic', 'isAds', 'uploadHour', 
             'uploadMinute', 'day', 'month', 'year', 'briefCopywriting',
-            'objective', 'referenceText', 'linkAsset', 'linkUpload',
-            'archived', 'updatedAt', 'metricsUpdatedAt'
+            'objective', 'referenceText', 'referenceLink', 'referenceLinks', 'referenceImage', 'customFields',
+            'linkAsset', 'linkUpload', 'archived', 'updatedAt', 'metricsUpdatedAt',
+            'id', 'workspaceId', 'userId'
           ]))
         );
       }

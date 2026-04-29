@@ -138,8 +138,8 @@ export function CsvModal({onClose, onImport, pillars, platforms, pics, statuses,
   };
 
   return (
-    <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(30,21,9,0.7)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:300,padding:16,backdropFilter:"blur(4px)"}}>
-      <motion.div initial={{scale:0.9, opacity:0, y:20}} animate={{scale:1, opacity:1, y:0}} exit={{scale:0.9, opacity:0, y:20}} onClick={e=>e.stopPropagation()} style={{background:"#FAFAFA",borderRadius:24,padding:32,maxWidth:600,width:"100%",position:"relative", boxShadow:"0 20px 40px rgba(0,0,0,0.2)"}}>
+    <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} transition={{ duration: 0.15 }} onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(30,21,9,0.7)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:300,padding:16}}>
+      <motion.div initial={{scale:0.95, opacity:0, y:15}} animate={{scale:1, opacity:1, y:0}} exit={{scale:0.95, opacity:0, y:15}} transition={{ duration: 0.2, ease: "easeOut" }} onClick={e=>e.stopPropagation()} style={{background:"#FAFAFA",borderRadius:24,padding:32,maxWidth:600,width:"100%",position:"relative", boxShadow:"0 20px 40px rgba(0,0,0,0.2)"}}>
         <button className="hover-scale" onClick={onClose} style={{position:"absolute",top:20,right:20,background:"rgba(44,32,22,0.05)",border:"none",borderRadius:"50%",width:32,height:32,cursor:"pointer",fontSize:18,color:"#2C2016",display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
         <h2 style={{fontSize:24,margin:"0 0 16px",color:"#2C2016", fontWeight:800, letterSpacing:"-0.5px"}}>📥 Bulk Import via CSV</h2>
         
@@ -203,7 +203,7 @@ export function CsvModal({onClose, onImport, pillars, platforms, pics, statuses,
         )}
 
         {showConfirm && (
-          <div style={{position:"absolute",inset:0,background:"rgba(255,255,255,0.9)",display:"flex",alignItems:"center",justifyContent:"center",borderRadius:24,zIndex:100,backdropFilter:"blur(5px)"}}>
+          <div style={{position:"absolute",inset:0,background:"rgba(255,255,255,0.9)",display:"flex",alignItems:"center",justifyContent:"center",borderRadius:24,zIndex:100}}>
             <div style={{background:"white",padding:32,borderRadius:16,maxWidth:400,textAlign:"center",boxShadow:"0 10px 40px rgba(0,0,0,0.15)",border:"1px solid rgba(44,32,22,0.1)"}}>
               <h3 style={{fontSize:18,color:"#9C2B4E",fontWeight:800,marginBottom:12}}>⚠️ Data duplikat terdeteksi</h3>
               <p style={{fontSize:14,color:"rgba(44,32,22,0.7)",marginBottom:24,lineHeight:1.5}}>

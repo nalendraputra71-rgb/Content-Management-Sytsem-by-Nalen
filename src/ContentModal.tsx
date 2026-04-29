@@ -143,7 +143,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
   const modalScrollRef = useRef<HTMLDivElement>(null);
 
   const handleSave = () => {
-    if(!d.title.trim()){
+    if(!d.title || !d.title.trim()){
       alert("Judul tidak boleh kosong.");
       return;
     } 
@@ -155,11 +155,11 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
   const canDelete = !isNew;
 
   return (
-    <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(30,21,9,0.7)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:300,padding:16,backdropFilter:"blur(4px)",overflow:"auto"}}>
+    <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} transition={{ duration: 0.15 }} onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(30,21,9,0.7)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:300,padding:16}}>
       <motion.div 
-        initial={{scale:0.95, opacity:0, y:20}} animate={{scale:1, opacity:1, y:0}} exit={{scale:0.95, opacity:0, y:20}} 
+        initial={{scale:0.97, opacity:0, y:15}} animate={{scale:1, opacity:1, y:0}} exit={{scale:0.97, opacity:0, y:15}} transition={{ duration: 0.2, ease: "easeOut" }}
         onClick={e=>e.stopPropagation()} 
-        style={{background:"#FAFAFA",borderRadius:24,maxWidth:700,width:"100%",maxHeight:"94vh",position:"relative",boxShadow:"0 24px 60px rgba(30,21,9,0.4)", overflow:"hidden", display: "flex", flexDirection: "column"}}
+        style={{background:"#FAFAFA",borderRadius:24,maxWidth:700,width:"100%",maxHeight:"94vh",position:"relative",boxShadow:"0 24px 60px rgba(30,21,9,0.3)", display: "flex", flexDirection: "column"}}
       >
         <div ref={modalScrollRef} style={{padding: 32, overflow: "auto", flex: 1}}>
           <div style={{background:headerBg,color:"#FAFAFA",borderRadius:16,padding:"24px 28px",marginBottom:24, boxShadow:"inset 0 2px 4px rgba(255,255,255,0.05)", position:"relative", transition: "background 0.3s ease"}}>
@@ -176,7 +176,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                       placeholder="Tulis Judul Konten..."/>
                 </div>
                 <div style={{textAlign:"right", flexShrink: 0}}>
-                    <h2 style={{fontSize:16,margin:0,color:"#FF6B00", fontWeight:700}}>{isNew?"✨ Baru":"✏️ Detail Konten"}</h2>
+                    <h2 style={{fontSize:16,margin:0,color:"#ffffff", fontWeight:700}}>{isNew?"✨ Baru":"✏️ Detail Konten"}</h2>
                 </div>
             </div>
             
