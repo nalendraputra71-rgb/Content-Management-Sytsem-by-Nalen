@@ -78,11 +78,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
         
         Berikan evaluasi singkat dan 3 poin saran perbaikan untuk meningkatkan engagement. Format dalam Bahasa Indonesia, singkat, padat, dan teknis.`;
         
-        const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-        if (!apiKey) {
-          throw new Error("VITE_GEMINI_API_KEY is missing");
-        }
-        const ai = new GoogleGenAI({ apiKey });
+        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
         const response = await ai.models.generateContent({
           model: "gemini-2.5-flash",
           contents: prompt
@@ -112,11 +108,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
         
         Tuliskan HANYA hasil caption akhirnya saja. Jangan berikan pengantar/penutup eksplanasi. Sertakan hashtag yang relevan sesuai dengan platform.`;
         
-        const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-        if (!apiKey) {
-          throw new Error("VITE_GEMINI_API_KEY is missing");
-        }
-        const ai = new GoogleGenAI({ apiKey });
+        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",
             contents: prompt
