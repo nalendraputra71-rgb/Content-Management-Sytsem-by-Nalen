@@ -32,8 +32,8 @@ export function CsvModal({onClose, onImport, pillars, platforms, pics, statuses,
   };
 
   const template = [
-    ["Judul Konten", "Tanggal (1-31)", "Bulan (1-12)", "Tahun", "Jam (0-23)", "Menit", "Pillar", "Platform", "PIC", "Status", "Ads (Y/N)", "Views", "Reach", "Likes", "Comments", "Shares", "Saves", "Caption", "Brief Konten"],
-    ["Contoh Konten Instagram", "15", "5", "2025", "10", "30", pillars[0]?.name||"Pillar Utama", platforms[0]?.name||"Instagram", pics[0]||"PIC 1", statuses[0]||"Draft", "N", "100", "80", "10", "2", "1", "5", "Keren banget nih!", "Gunakan nada bicara santai"]
+    ["Judul Konten", "Tanggal (1-31)", "Bulan (1-12)", "Tahun", "Jam (0-23)", "Menit", "Pillar", "Platform", "PIC", "Status", "Ads (Y/N)", "Views", "Reach", "Likes", "Comments", "Shares", "Saves", "Objective", "Brief Konten", "Caption"],
+    ["Contoh Konten Instagram", "15", "5", "2025", "10", "30", pillars[0]?.name||"Pillar Utama", platforms[0]?.name||"Instagram", pics[0]||"PIC 1", statuses[0]||"Draft", "N", "100", "80", "10", "2", "1", "5", "Meningkatkan brand awareness", "Gunakan nada bicara santai", "Keren banget nih!"]
   ];
 
   const handleDownloadTemplate = () => {
@@ -87,8 +87,9 @@ export function CsvModal({onClose, onImport, pillars, platforms, pics, statuses,
                     saves: Number(row[16])||0,
                     reposts: 0
                 };
-                item.caption = cleanStr(row[17]) || "";
+                item.objective = cleanStr(row[17]) || "";
                 item.briefCopywriting = cleanStr(row[18]) || "";
+                item.caption = cleanStr(row[19]) || "";
                 return item;
             });
             
@@ -111,7 +112,7 @@ export function CsvModal({onClose, onImport, pillars, platforms, pics, statuses,
     <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(30,21,9,0.7)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:300,padding:16,backdropFilter:"blur(4px)"}}>
       <motion.div initial={{scale:0.9, opacity:0, y:20}} animate={{scale:1, opacity:1, y:0}} exit={{scale:0.9, opacity:0, y:20}} onClick={e=>e.stopPropagation()} style={{background:"#FAFAFA",borderRadius:24,padding:32,maxWidth:600,width:"100%",position:"relative", boxShadow:"0 20px 40px rgba(0,0,0,0.2)"}}>
         <button className="hover-scale" onClick={onClose} style={{position:"absolute",top:20,right:20,background:"rgba(44,32,22,0.05)",border:"none",borderRadius:"50%",width:32,height:32,cursor:"pointer",fontSize:18,color:"#2C2016",display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
-        <h2 style={{fontSize:24,margin:"0 0 16px",color:"#2C2016", fontWeight:800, letterSpacing:"-0.5px"}}>📥 Bulk Import via CSV</h2>
+        <h2 style={{fontSize:24,margin:"0 0 16px",color:"#ffffff", fontWeight:800, letterSpacing:"-0.5px"}}>📥 Bulk Import via CSV</h2>
         
         {step===1 && (
             <div>

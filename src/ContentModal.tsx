@@ -207,6 +207,10 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
           </div>
         </div>
 
+        <div style={{marginBottom:10}}>
+          <div style={GRP}><label style={L}>Objective</label><TextareaAutosize value={d.objective} onChange={(e:any)=>set("objective",e.target.value)} style={I({resize:"vertical"})} minRows={3} placeholder="Tujuan konten ini..."/></div>
+        </div>
+
         {/* Brief Section with AI Button */}
         <div style={{...GRP,marginBottom:10}}>
             <div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}>
@@ -223,10 +227,6 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
         <div style={{...GRP,marginBottom:10}}>
             <label style={L}>Caption</label>
             <TextareaAutosize value={d.caption} onChange={(e:any)=>set("caption",e.target.value)} style={I({resize:"vertical"})} minRows={3} placeholder="Caption untuk post..."/>
-        </div>
-
-        <div style={{marginBottom:10}}>
-          <div style={GRP}><label style={L}>Objective</label><TextareaAutosize value={d.objective} onChange={(e:any)=>set("objective",e.target.value)} style={I({resize:"vertical"})} minRows={3} placeholder="Tujuan konten ini..."/></div>
         </div>
 
         {/* Asset Link & Social Media Link */}

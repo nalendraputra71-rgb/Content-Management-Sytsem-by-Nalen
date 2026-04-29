@@ -55,8 +55,8 @@ export function Header({
   };
 
   return (
-    <div style={{background:appliedStyle?.bgColor||"#2C2016",color:appliedStyle?.titleColor||"#FAFAFA",padding:"24px 40px",position:"relative",overflow:"hidden",minHeight:160,display:"flex",alignItems:"center",borderBottom:"1px solid rgba(255,255,255,0.05)"}}>
-      {headerImage && <img src={headerImage} alt="header" style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover",opacity:0.3,pointerEvents:"none"}} />}
+    <div style={{background:appliedStyle?.bgColor||"#2C2016",color:appliedStyle?.titleColor||"#FAFAFA",padding:"24px 40px",position:"relative",minHeight:160,display:"flex",alignItems:"center",borderBottom:"1px solid rgba(255,255,255,0.05)", zIndex: 100}}>
+      {headerImage && <div style={{position:"absolute",inset:0,overflow:"hidden",pointerEvents:"none",borderRadius: "inherit"}}><img src={headerImage} alt="header" style={{width:"100%",height:"100%",objectFit:"cover",opacity:0.3}} /></div>}
       
       <div style={{position:"relative",display:"flex",justifyContent:"space-between",alignItems:"center",gap:32,width:"100%"}}>
         <div style={{display:"flex", alignItems:"center", gap:24, flex:1}}>
