@@ -32,7 +32,7 @@ export function CsvModal({onClose, onImport, pillars, platforms, pics, statuses,
   };
 
   const template = [
-    ["Judul Konten", "Tanggal (1-31)", "Bulan (1-12)", "Tahun", "Jam (0-23)", "Menit", "Pillar", "Platform", "PIC", "Status", "Ads (Y/N)", "Views", "Reach", "Likes", "Comments", "Shares", "Saves", "Objective", "Brief Konten", "Caption"],
+    ["Judul Konten", "Tanggal (1-31)", "Bulan (1-12)", "Tahun", "Jam (0-23)", "Menit", "Pillar", "Platform", "PIC", "Status Konten", "Status Ads", "Views", "Reach", "Likes", "Comments", "Shares", "Saves", "Objective", "Brief Konten", "Caption"],
     ["Contoh Konten Instagram", "15", "5", "2025", "10", "30", pillars[0]?.name||"Pillar Utama", platforms[0]?.name||"Instagram", pics[0]||"PIC 1", statuses[0]||"Draft", "N", "100", "80", "10", "2", "1", "5", "Meningkatkan brand awareness", "Gunakan nada bicara santai", "Keren banget nih!"]
   ];
 
@@ -68,28 +68,57 @@ export function CsvModal({onClose, onImport, pillars, platforms, pics, statuses,
                 return;
             }
 
-            const parsedData = json.slice(1).filter(r => r.length > 0 && r[0]).map((row: any) => {
-                const item = emptyItem(Number(row[3])||2025, Number(row[2])||1, Number(row[1])||1, pillars, platforms, pics, statuses);
-                item.title = cleanStr(row[0]);
-                item.uploadHour = Number(row[4])||9;
-                item.uploadMinute = Number(row[5])||0;
-                item.pillar = String(row[6]||item.pillar);
-                item.platform = String(row[7]||item.platform);
-                item.pic = String(row[8]||item.pic);
-                item.status = String(row[9]||item.status);
-                item.isAds = String(row[10]).toUpperCase() === "Y";
+            const headerRow = json[0].map((h: string) => h ? String(h).toLowerCase().trim() : "");
+            const getColIdx = (keys: string[]) => {
+                let idx = headerRow.findIndex(h => keys.some(k => h === k));
+                if (idx === -1) idx = headerRow.findIndex(h => keys.some(k => h.includes(k)));
+                return idx;
+            };
+            
+            const idxTitle = getColIdx(["judul"]);
+            const idxDate = getColIdx(["tanggal"]);
+            const idxMonth = getColIdx(["bulan"]);
+            const idxYear = getColIdx(["tahun"]);
+            const idxHour = getColIdx(["jam"]);
+            const idxMin = getColIdx(["menit"]);
+            const idxPillar = getColIdx(["pillar"]);
+            const idxPlatform = getColIdx(["platform"]);
+            const idxPic = getColIdx(["pic"]);
+            const idxStatus = getColIdx(["status konten", "status"]);
+            const idxAds = getColIdx(["status ads", "ads"]);
+            const idxViews = getColIdx(["views"]);
+            const idxReach = getColIdx(["reach"]);
+            const idxLikes = getColIdx(["likes"]);
+            const idxComments = getColIdx(["comments"]);
+            const idxShares = getColIdx(["share"]);
+            const idxSaves = getColIdx(["save"]);
+            const idxObjective = getColIdx(["objective"]);
+            const idxBrief = getColIdx(["brief"]);
+            const idxCaption = getColIdx(["caption"]);
+
+            const parsedData = json.slice(1).filter(r => r.length > 0 && idxTitle !== -1 && String(r[idxTitle]||"").trim() !== "").map((row: any) => {
+                const item = emptyItem(Number(row[idxYear])||2025, Number(row[idxMonth])||1, Number(row[idxDate])||1, pillars, platforms, pics, statuses);
+                item.title = cleanStr(row[idxTitle]);
+                if (idxHour !== -1) item.uploadHour = Number(row[idxHour])||9;
+                if (idxMin !== -1) item.uploadMinute = Number(row[idxMin])||0;
+                if (idxPillar !== -1) item.pillar = String(row[idxPillar]||item.pillar);
+                if (idxPlatform !== -1) item.platform = String(row[idxPlatform]||item.platform);
+                if (idxPic !== -1) item.pic = String(row[idxPic]||item.pic);
+                if (idxStatus !== -1) item.status = String(row[idxStatus]||item.status);
+                if (idxAds !== -1) item.isAds = String(row[idxAds]).toUpperCase() === "Y";
+                
                 item.metrics = {
-                    views: Number(row[11])||0,
-                    reach: Number(row[12])||0,
-                    likes: Number(row[13])||0,
-                    comments: Number(row[14])||0,
-                    shares: Number(row[15])||0,
-                    saves: Number(row[16])||0,
+                    views: idxViews !== -1 ? Number(row[idxViews])||0 : 0,
+                    reach: idxReach !== -1 ? Number(row[idxReach])||0 : 0,
+                    likes: idxLikes !== -1 ? Number(row[idxLikes])||0 : 0,
+                    comments: idxComments !== -1 ? Number(row[idxComments])||0 : 0,
+                    shares: idxShares !== -1 ? Number(row[idxShares])||0 : 0,
+                    saves: idxSaves !== -1 ? Number(row[idxSaves])||0 : 0,
                     reposts: 0
                 };
-                item.objective = cleanStr(row[17]) || "";
-                item.briefCopywriting = cleanStr(row[18]) || "";
-                item.caption = cleanStr(row[19]) || "";
+                if (idxObjective !== -1) item.objective = cleanStr(row[idxObjective]) || "";
+                if (idxBrief !== -1) item.briefCopywriting = cleanStr(row[idxBrief]) || "";
+                if (idxCaption !== -1) item.caption = cleanStr(row[idxCaption]) || "";
                 return item;
             });
             
@@ -112,7 +141,7 @@ export function CsvModal({onClose, onImport, pillars, platforms, pics, statuses,
     <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(30,21,9,0.7)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:300,padding:16,backdropFilter:"blur(4px)"}}>
       <motion.div initial={{scale:0.9, opacity:0, y:20}} animate={{scale:1, opacity:1, y:0}} exit={{scale:0.9, opacity:0, y:20}} onClick={e=>e.stopPropagation()} style={{background:"#FAFAFA",borderRadius:24,padding:32,maxWidth:600,width:"100%",position:"relative", boxShadow:"0 20px 40px rgba(0,0,0,0.2)"}}>
         <button className="hover-scale" onClick={onClose} style={{position:"absolute",top:20,right:20,background:"rgba(44,32,22,0.05)",border:"none",borderRadius:"50%",width:32,height:32,cursor:"pointer",fontSize:18,color:"#2C2016",display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
-        <h2 style={{fontSize:24,margin:"0 0 16px",color:"#ffffff", fontWeight:800, letterSpacing:"-0.5px"}}>📥 Bulk Import via CSV</h2>
+        <h2 style={{fontSize:24,margin:"0 0 16px",color:"#2C2016", fontWeight:800, letterSpacing:"-0.5px"}}>📥 Bulk Import via CSV</h2>
         
         {step===1 && (
             <div>

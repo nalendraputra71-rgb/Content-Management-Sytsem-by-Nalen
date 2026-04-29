@@ -531,7 +531,29 @@ function Dashboard({ user, profile }: any) {
              <h3 style={{fontSize:20, fontWeight:700, marginBottom:16}}>Ekspor Data (XLSX)</h3>
              <p style={{fontSize:14, color:"rgba(44,32,22,0.6)", marginBottom:24, lineHeight:1.5}}>Unduh seluruh data konten dalam format Excel (XLSX) untuk workspace <strong style={{color:"#FF6B00"}}>{workspace?.name}</strong>.</p>
              <button className="btn-hover hover-scale" onClick={() => {
-                const ws = XLSX.utils.json_to_sheet(content);
+                const exportData = content.map((c: any) => ({
+                    "Judul Konten": c.title || "",
+                    "Tanggal (1-31)": c.day || 1,
+                    "Bulan (1-12)": c.month || 1,
+                    "Tahun": c.year || 2025,
+                    "Jam (0-23)": c.uploadHour || 9,
+                    "Menit": c.uploadMinute || 0,
+                    "Pillar": c.pillar || "",
+                    "Platform": c.platform || "",
+                    "PIC": c.pic || "",
+                    "Status": c.status || "",
+                    "Ads (Y/N)": c.isAds ? "Y" : "N",
+                    "Views": c.metrics?.views || 0,
+                    "Reach": c.metrics?.reach || 0,
+                    "Likes": c.metrics?.likes || 0,
+                    "Comments": c.metrics?.comments || 0,
+                    "Shares": c.metrics?.shares || 0,
+                    "Saves": c.metrics?.saves || 0,
+                    "Objective": c.objective || "",
+                    "Brief Konten": c.briefCopywriting || "",
+                    "Caption": c.caption || ""
+                }));
+                const ws = XLSX.utils.json_to_sheet(exportData);
                 const wb = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(wb, ws, "Content");
                 XLSX.writeFile(wb, `Export_${workspace?.name}.xlsx`);

@@ -27,7 +27,7 @@ const LoadingDots = () => (
 );
 
 import { 
-  MK, MC, eng, fmt, fmtD,
+  MK, MC, eng, fmt, fmtD, gps,
   I, L, B, GRP, CustomDropdown
 } from "./data";
 import { ChevronDown } from "lucide-react";
@@ -36,8 +36,9 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
   const [d,setD] = useState({...modal.data,metrics:{...(modal.data.metrics||{})},adsMetrics:{...(modal.data.adsMetrics||{views:0,reach:0,likes:0,comments:0,shares:0,reposts:0,saves:0,clicks:0,conversions:0})},referenceLinks:modal.data.referenceLinks||[],customFields:modal.data.customFields||[]});
   const [aiResult, setAiResult] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
+  const [captionLoading, setCaptionLoading] = useState(false);
 
-  const activePillar = pillars.find((p:any) => p.name === d.pillar);
+  const activePillar = gps(pillars, d.pillar);
   const headerBg = activePillar?.color || "#2C2016";
 
   const titleRef = useRef<HTMLTextAreaElement>(null);
@@ -95,6 +96,42 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
         setAiResult("Gagal menganalisis konten: " + e.message + ".\n\nPastikan VITE_GEMINI_API_KEY sudah diset di Settings > Secrets.");
     }
     setAiLoading(false);
+  };
+
+  const generateCaption = async () => {
+    if(!d.briefCopywriting) {
+        alert("Harap isi Brief Konten terlebih dahulu agar AI memiliki konteks untuk membuat caption.");
+        return;
+    }
+    setCaptionLoading(true);
+    try {
+        const prompt = `Buatkan caption social media berdasarkan brief berikut:
+        Judul: ${d.title}
+        Pillar: ${d.pillar}
+        Platform: ${d.platform}
+        Brief: ${d.briefCopywriting}
+        Objective: ${d.objective}
+        
+        Tuliskan HANYA hasil caption akhirnya saja. Jangan berikan pengantar/penutup eksplanasi. Sertakan hashtag yang relevan sesuai dengan platform.`;
+        
+        const response = await fetch("/api/gemini", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt, model: "gemini-2.5-flash" })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || "Gagal menghubungi server AI.");
+        }
+
+        set("caption", (result.text || "").trim());
+    } catch (e: any) {
+        console.error("AI Error:", e);
+        alert("Gagal menggenerate caption: " + e.message);
+    }
+    setCaptionLoading(false);
   };
 
   const handleRefImg = (e:any) => {
@@ -225,7 +262,14 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
         </div>
 
         <div style={{...GRP,marginBottom:10}}>
-            <label style={L}>Caption</label>
+            <div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}>
+                <label style={L}>Caption</label>
+                <button onClick={generateCaption} disabled={captionLoading} 
+                  style={{...B(false), fontSize:10, padding:"2px 8px", background:"#f3f4f6", color:"#1f2937", border:"1px solid #d1d5db", display:"flex", alignItems:"center", gap:4}}>
+                  <GeminiIcon size={12} />
+                  {captionLoading ? <LoadingDots /> : "Generate Caption"}
+                </button>
+            </div>
             <TextareaAutosize value={d.caption} onChange={(e:any)=>set("caption",e.target.value)} style={I({resize:"vertical"})} minRows={3} placeholder="Caption untuk post..."/>
         </div>
 
