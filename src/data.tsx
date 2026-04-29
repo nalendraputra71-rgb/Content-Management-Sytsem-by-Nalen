@@ -1,6 +1,84 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid } from "recharts";
 import * as XLSX from "xlsx";
+import { motion, AnimatePresence } from "motion/react";
+import { ChevronDown } from "lucide-react";
+
+export function CustomDropdown({ value, options, onChange, dark = false, style = {}, prefix = "" }: { value: string, options: any[], onChange: (val: string) => void, dark?: boolean, style?: any, prefix?: string }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (ref.current && !ref.current.contains(event.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const activeOption = options.find(o => (typeof o === 'string' ? o : o.id || o.name || o) === value);
+  const displayLabel = activeOption ? (typeof activeOption === 'string' ? activeOption : activeOption.label || activeOption.name || activeOption) : value;
+  const activeColor = (activeOption && typeof activeOption !== 'string') ? activeOption.color : null;
+
+  return (
+    <div ref={ref} style={{ position: "relative", width: "100%" }}>
+      <button 
+        onClick={() => setOpen(!open)} 
+        className="hover-scale"
+        style={{ 
+          width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, 
+          padding: "8px 12px", borderRadius: 8, 
+          border: dark ? "1px solid rgba(255,255,255,0.2)" : "1px solid rgba(44,32,22,0.2)", 
+          background: dark ? (activeColor ? activeColor : "rgba(255,255,255,0.1)") : (activeColor ? activeColor + "15" : "white"), 
+          fontSize: 13, fontWeight: 700, cursor: "pointer", 
+          color: dark ? "white" : (activeColor || "#2C2016"),
+          ...style
+        }}
+      >
+        <div style={{display: "flex", alignItems: "center", gap: 8, overflow: "hidden"}}>
+           {activeColor && !dark && <div style={{width:8, height:8, borderRadius:"50%", background:activeColor, flexShrink:0}}/>}
+           <span style={{overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap"}}>{prefix}{displayLabel}</span>
+        </div>
+        <ChevronDown size={14} style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'all 0.2s', opacity: 0.6, flexShrink: 0 }} />
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div 
+            initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }} transition={{ duration: 0.15 }}
+            style={{ position: "absolute", top: "100%", left: 0, minWidth: "100%", width: "max-content", marginTop: 4, background: "white", border: "1px solid rgba(44,32,22,0.1)", borderRadius: 12, padding: 6, zIndex: 9999, boxShadow: "0 10px 40px rgba(0,0,0,0.15)", maxHeight: 250, overflowY: "auto" }}
+          >
+            {options.map((o, i) => {
+              const val = typeof o === 'string' ? o : o.id || o.name || o;
+              const isSelected = val === value;
+              const label = typeof o === 'string' ? o : o.label || o.name || o;
+              const color = (typeof o !== 'string') ? o.color : null;
+              
+              return (
+                <div 
+                  key={i} 
+                  onClick={() => { onChange(val); setOpen(false); }}
+                  style={{ 
+                    padding: "10px 12px", borderRadius: 8, fontSize: 13, fontWeight: isSelected?800:600, cursor: "pointer", 
+                    background: isSelected ? (color ? color + "20" : "#FDF0EB") : "transparent", 
+                    color: isSelected ? (color || "#FF6B00") : "#2C2016", 
+                    transition: "all 0.1s",
+                    display: "flex", alignItems: "center", gap: 10,
+                    marginBottom: 2
+                  }}
+                  onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = "#FAFAFA"; }}
+                  onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = "transparent"; }}
+                >
+                  {color && <div style={{width:10, height:10, borderRadius:"50%", background:color}}/>}
+                  <span style={{flex: 1, whiteSpace: "nowrap"}}>{prefix}{label}</span>
+                </div>
+              );
+            })}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 // ─── CONSTANTS ───────────────────────────────────────────────────────────────
 export const MONTHS = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
@@ -179,7 +257,7 @@ export const I = (ex:any={}) => ({
   width: "100%",
   boxSizing: "border-box" as any,
   outline: "none",
-  transition: "all 0.2s ease",
+  transition: "border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease",
   ...ex
 });
 export const L = {

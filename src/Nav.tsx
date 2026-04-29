@@ -5,7 +5,7 @@ import {
   Search, Share2, Pencil, Image, LogOut, Menu, Plus, ChevronLeft, ChevronDown, ChevronUp, Bell, Columns, Shield, X, MessageCircle, Activity, BarChart2, MessageSquare
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { eng, fmt, YEARS, B, I, TAB, MONTHS } from "./data";
+import { eng, fmt, YEARS, B, I, TAB, MONTHS, CustomDropdown } from "./data";
 import { useNotifications, NotificationToast, NotificationPanel } from "./NotificationSystem";
 
 export function Header({
@@ -129,14 +129,16 @@ export function Header({
             ))}
           </div>
 
-          <div style={{display:"flex", gap:16, alignItems:"center", background:"rgba(255,255,255,0.1)", padding:"8px 16px", borderRadius:14, border:"1px solid rgba(255,255,255,0.1)"}}>
-             <select className="custom-select-dark focus-ring" value={qNumber} onChange={(e)=>onQNumberChange(+e.target.value)} style={{background:"transparent", border:"none", color:"white", fontSize:13, fontWeight:700, cursor:"pointer", outline:"none", borderRadius: 8}}>
-               <option value={0}>Tahun Ini</option>
-               <option value={1}>Q1 (Jan-Mar)</option>
-               <option value={2}>Q2 (Apr-Jun)</option>
-               <option value={3}>Q3 (Jul-Sep)</option>
-               <option value={4}>Q4 (Okt-Des)</option>
-             </select>
+          <div style={{display:"flex", gap:16, alignItems:"center", background:"rgba(255,255,255,0.1)", padding:"6px 14px", borderRadius:14, border:"1px solid rgba(255,255,255,0.1)"}}>
+             <div style={{minWidth: 170}}>
+               <CustomDropdown dark value={String(qNumber)} options={[
+                 {id: "0", name: "Tahun Ini"},
+                 {id: "1", name: "Q1 (Jan-Mar)"},
+                 {id: "2", name: "Q2 (Apr-Jun)"},
+                 {id: "3", name: "Q3 (Jul-Sep)"},
+                 {id: "4", name: "Q4 (Okt-Des)"}
+               ]} onChange={(v)=>onQNumberChange(+v)} style={{padding: 0, border: "none", background: "transparent"}} />
+             </div>
           </div>
 
           <div style={{display:"flex",gap:12}}>
@@ -298,12 +300,12 @@ function ChatSupportPanel({onClose, userId, userEmail, userProfile}: {onClose:()
          </div>
          <div>
             <label style={{fontSize:11, fontWeight:700, color:"rgba(44,32,22,0.4)", textTransform:"uppercase", display:"block", marginBottom:6}}>Jenis Pesan</label>
-            <select value={ticketSubject} onChange={(e)=>setTicketSubject(e.target.value)} style={{...I({})}}>
-               <option>Pertanyaan/Bantuan Umum</option>
-               <option>Saran & Masukan (Feedback)</option>
-               <option>Laporan Bug/Eror</option>
-               <option>Laporan Pembayaran</option>
-            </select>
+            <CustomDropdown value={ticketSubject} onChange={(v)=>setTicketSubject(v)} options={[
+               "Pertanyaan/Bantuan Umum",
+               "Saran & Masukan (Feedback)",
+               "Laporan Bug/Eror",
+               "Laporan Pembayaran"
+            ]} style={{...I({})}} />
          </div>
          <div>
             <label style={{fontSize:11, fontWeight:700, color:"rgba(44,32,22,0.4)", textTransform:"uppercase", display:"block", marginBottom:6}}>Isi Pesan / Laporan</label>
@@ -615,8 +617,8 @@ export function NavBar({tab,setTab,year,setYear,month,setMonth,onOpenAdd}: any) 
   return (
     <div style={{background:"white",borderBottom:"1px solid rgba(44,32,22,0.06)",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 40px",height:80,position:"sticky",top:0,zIndex:50}}>
       <div style={{display:"flex",gap:16,alignItems:"center"}}>
-        <select className="hover-scale custom-select focus-ring" value={year} onChange={(e:any)=>setYear(+e.target.value)} style={{...I(),width:120,padding:"8px 12px",borderRadius:12}}>{YEARS.map(y=><option key={y}>{y}</option>)}</select>
-        <select className="hover-scale custom-select focus-ring" value={month} onChange={(e:any)=>setMonth(+e.target.value)} style={{...I(),width:140,padding:"8px 12px",borderRadius:12}}>{MONTHS.map((m,i)=><option key={i} value={i+1}>{m}</option>)}</select>
+        <div style={{width: 120}}><CustomDropdown value={String(year)} options={YEARS.map(y=>String(y))} onChange={(v:any)=>setYear(+v)} style={{padding:"8px 12px",borderRadius:12}} /></div>
+        <div style={{width: 140}}><CustomDropdown value={String(month)} options={MONTHS.map((m,i)=>({id:String(i+1), name:m}))} onChange={(v:any)=>setMonth(+v)} style={{padding:"8px 12px",borderRadius:12}} /></div>
         <button className="hover-scale btn-hover shadow-lg" onClick={onOpenAdd} style={{...B(true,"#FF6B00"), height:46, padding:"0 28px", borderRadius:23, fontSize:14, display:"flex", alignItems:"center", gap:10, border:"none", color:"white", fontWeight:700, marginLeft:24, boxShadow:"0 6px 16px rgba(255,107,0,0.3)"}}><Plus size={22}/> Konten Baru</button>
       </div>
     </div>
@@ -629,13 +631,14 @@ export function FilterBar({filters,setFilters,pillars,platforms,pics,statuses,sh
     <div style={{background:"#FAFAFA",borderBottom:"1px solid rgba(44,32,22,0.05)",padding:"16px 40px",display:"flex",gap:24,alignItems:"center"}}>
       <div style={{display:"flex", gap:12, flexWrap:"wrap"}}>
         {[["Pillar",pillars,"pillar"], ["Platform",platforms,"platform"], ["PIC",pics,"pic"]].map(([l,opt,key])=>(
-          <select className="hover-scale custom-select focus-ring" key={key as string} value={filters[key as string]} onChange={(e)=>set(key,e.target.value)} style={{...I(),width:160,padding:"10px 14px",fontSize:13,background:"white",borderColor:"rgba(44,32,22,0.08)",borderRadius:12}}>
-            <option key="all" value="All">Semua {l as string}</option>
-            {(opt as any[]).map((o:any)=>{
-              const name = typeof o === 'string' ? o : o.name;
-              return <option key={name} value={name}>{name}</option>;
-            })}
-          </select>
+          <div key={key as string} style={{width: 160}}>
+            <CustomDropdown 
+              value={filters[key as string]} 
+              options={[{id: "All", name: `Semua ${l}`}, ...(opt as any[])]} 
+              onChange={(v)=>set(key,v)} 
+              style={{padding:"8px 12px",borderRadius:12,fontSize:13,background:"white"}} 
+            />
+          </div>
         ))}
       </div>
       <div style={{display:"flex", gap:12}}>

@@ -122,28 +122,32 @@ export function BoardView({year,month,content,filtered,openEdit,openAdd,statuses
   const items = filtered.filter((c:any)=>c.year===year&&c.month===month&&!c.archived);
   
   const High = ({txt}:any) => {
-    if(!search)return txt;
-    const parts = txt.toString().split(new RegExp(`(${search})`, 'gi'));
-    return parts.map((p:any,i:number)=>p.toLowerCase()===search.toLowerCase()?<mark key={i} style={{background:"#FDF0EB",color:"#C4622D",padding:"0 2px",borderRadius:2}}>{p}</mark>:p);
+    try {
+      if(!search || !txt) return <>{txt}</>;
+      const str = String(txt);
+      const parts = str.split(new RegExp(`(${search})`, 'gi'));
+      return <>{parts.map((p:any,i:number)=>p.toLowerCase()===search.toLowerCase()?<mark key={i} style={{background:"#FDF0EB",color:"#C4622D",padding:"0 2px",borderRadius:2}}>{p}</mark>:p)}</>;
+    } catch(e) { return <>{txt}</>; }
   };
 
   return (
     <div style={{display:"flex",gap:12,overflowX:"auto",paddingBottom:12,minHeight:400}}>
-      {statuses.map((st:any)=>{
-        const cols=items.filter((c:any)=>c.status===st);
-        const ss=gss(st);
+      {Array.isArray(statuses) && statuses.map((st:any)=>{
+        const stName = typeof st === 'string' ? st : (st?.name || st?.id || String(st));
+        const cols=items.filter((c:any)=>c.status===stName);
+        const ss = (typeof st !== 'string' && st?.color) ? {bg: st.color+"20", color: st.color} : gss(stName);
         return (
-          <div key={st} style={{minWidth:220,flex:"0 0 220px",background:"#F5F0E8",borderRadius:12,padding:10}}>
+          <div key={stName} style={{minWidth:220,flex:"0 0 220px",background:"#F5F0E8",borderRadius:12,padding:10}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
               <div style={{display:"flex",alignItems:"center",gap:6}}>
-                <div style={{width:10,height:10,borderRadius:"50%",background:ss.color}}/>
-                <span style={{fontSize:11,fontWeight:700,color:"#2C2016"}}>{st}</span>
+                <div style={{width:10,height:10,borderRadius:"50%",background:ss?.color||"#ccc"}}/>
+                <span style={{fontSize:11,fontWeight:700,color:"#2C2016"}}>{stName}</span>
               </div>
-              <span style={{background:ss.bg,color:ss.color,fontSize:9,fontWeight:700,padding:"1px 6px",borderRadius:8}}>{cols.length}</span>
+              <span style={{background:ss?.bg||"#eee",color:ss?.color||"#333",fontSize:9,fontWeight:700,padding:"1px 6px",borderRadius:8}}>{cols.length}</span>
             </div>
             <div style={{display:"flex",flexDirection:"column",gap:6}}>
               {cols.map((item:any)=>{
-                const ps=gps(pillars,item.pillar);
+                const ps=gps(pillars,item.pillar) || {color:"#ccc", light:"#eee"};
                 return (
                   <div key={item.id} onClick={()=>openEdit(item)} style={{background:"white",borderRadius:8,padding:"10px 12px",cursor:"pointer",boxShadow:"0 1px 3px rgba(44,32,22,0.07)",borderLeft:`3px solid ${ps.color}`}}>
                     <div style={{fontSize:11,fontWeight:600,color:"#2C2016",lineHeight:1.3,marginBottom:5}}><High txt={item.title||"(tanpa judul)"}/></div>
@@ -153,7 +157,7 @@ export function BoardView({year,month,content,filtered,openEdit,openAdd,statuses
                       {item.isAds&&<span style={{fontSize:8,color:"#9C2B4E",fontWeight:700}}>💰 Ads</span>}
                     </div>
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                      <span style={{fontSize:9,color:"rgba(44,32,22,0.4)"}}>PIC: {item.pic}</span>
+                      <span style={{fontSize:9,color:"rgba(44,32,22,0.4)"}}>PIC: {item.pic || "-"}</span>
                       <span style={{fontSize:9,color:"rgba(44,32,22,0.35)"}}>{item.day}/{String(item.month).padStart(2,"0")}</span>
                     </div>
                     {eng(item.metrics)>0&&<div style={{fontSize:9,color:"#C4622D",fontWeight:600,marginTop:3}}>⚡ {fmt(eng(item.metrics))} eng</div>}
@@ -216,6 +220,46 @@ export function TimelineView({year,month,content,filtered,openEdit,openAdd,pilla
 
 export function TableView({filtered,openEdit,archiveItem,unarchiveItem,deleteItem,pillars,platforms,showArchived,search,bulkIds,setBulkIds,onBulk}: any) {
   const [sort,setSort] = useState({col:"day",dir:"asc"});
+
+  const defaultWidths: Record<string, number> = {
+    "Tgl": 60, "Platform": 100, "Pillar": 120, "Judul Konten": 200, "Brief Konten": 250, "PIC": 100, "Status": 120, "Views": 80, "Reach": 80, "Engagement": 100, "Aksi": 160
+  };
+  const [colWidths, setColWidths] = useState<Record<string, number>>(()=>{
+    const saved = localStorage.getItem("socialStudioColWidths");
+    return saved ? JSON.parse(saved) : defaultWidths;
+  });
+
+  const handleResize = (col: string, newWidth: number) => {
+    setColWidths((prev) => {
+      const next = {...prev, [col]: Math.max(50, newWidth)};
+      localStorage.setItem("socialStudioColWidths", JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const Resizer = ({ col, currentWidth }: { col: string, currentWidth: number }) => {
+    const handleMouseDown = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      e.preventDefault();
+      const startX = e.pageX;
+      const startWidth = currentWidth || defaultWidths[col];
+      
+      const onMouseMove = (moveEvent: MouseEvent) => {
+        handleResize(col, startWidth + moveEvent.pageX - startX);
+      };
+      
+      const onMouseUp = () => {
+        document.removeEventListener("mousemove", onMouseMove);
+        document.removeEventListener("mouseup", onMouseUp);
+      };
+      
+      document.addEventListener("mousemove", onMouseMove);
+      document.addEventListener("mouseup", onMouseUp);
+    };
+
+    return <div onMouseDown={handleMouseDown} onClick={e=>e.stopPropagation()} style={{position: "absolute", top: 0, right: -2, width: 6, height: "100%", cursor: "col-resize", zIndex: 10}} />;
+  };
+
   const items = filtered.filter((c:any)=>showArchived?c.archived:!c.archived);
   const sorted = useMemo(()=>{
     return [...items].sort((a,b)=>{
@@ -256,12 +300,15 @@ export function TableView({filtered,openEdit,archiveItem,unarchiveItem,deleteIte
       )}
       {sorted.length===0
         ? <div style={{padding:48,textAlign:"center",color:"rgba(44,32,22,0.3)",fontSize:14}}>Tidak ada konten.</div>
-        : <table style={{width:"100%",borderCollapse:"collapse",minWidth:960}}>
+        : <table style={{minWidth:"100%", width: "max-content", borderCollapse:"collapse", tableLayout: "fixed"}}>
             <thead>
               <tr>
                 <th style={{padding:"10px",borderBottom:"2px solid rgba(44,32,22,0.08)",width:40}}><input type="checkbox" checked={bulkIds.length===sorted.length&&sorted.length>0} onChange={toggleAll}/></th>
                 {[["Tgl","day"],["Platform","platform"],["Pillar","pillar"],["Judul Konten","title"],["Brief Konten","briefCopywriting"],["PIC","pic"],["Status","status"],["Views","views"],["Reach","reach"],["Engagement","engagement"],["Aksi",""]].map(([h,col])=>(
-                  <th key={h} style={th(col)} onClick={()=>col&&setS(col)}>{h}{col&&<span style={{marginLeft:3,opacity:0.5}}>{arrow(col)}</span>}</th>
+                  <th key={h} style={{...th(col), position: "relative", width: colWidths[h] || 100}} onClick={()=>col&&setS(col)}>
+                    {h}{col&&<span style={{marginLeft:3,opacity:0.5}}>{arrow(col)}</span>}
+                    <Resizer col={h} currentWidth={colWidths[h]} />
+                  </th>
                 ))}
               </tr>
             </thead>
@@ -279,7 +326,7 @@ export function TableView({filtered,openEdit,archiveItem,unarchiveItem,deleteIte
                     </td>
                     <td style={td}><PBadge name={item.platform} platforms={platforms}/></td>
                     <td style={td}><span className="pill-tag" style={{background:ps.light,color:ps.color}}>{item.pillar}</span></td>
-                    <td style={{...td,maxWidth:200, verticalAlign:"top"}}>
+                    <td style={{...td, verticalAlign:"top"}}>
                       <div style={{fontWeight:600,lineHeight:1.4, wordBreak:"break-word"}}><High txt={item.title}/></div>
                       <div style={{display:"flex",gap:4,marginTop:6, flexWrap: "wrap"}}>
                         {item.isAds&&<span style={{fontSize:8,color:"#9C2B4E",fontWeight:700}}>💰 Ads</span>}
@@ -287,7 +334,7 @@ export function TableView({filtered,openEdit,archiveItem,unarchiveItem,deleteIte
                         {item.linkAsset&&<a href={item.linkAsset} target="_blank" rel="noopener noreferrer" style={{fontSize:9,color:"#2B4C7E"}}>🔗 Aset</a>}
                       </div>
                     </td>
-                    <td style={{...td,maxWidth:250, verticalAlign:"top"}}>
+                    <td style={{...td, verticalAlign:"top"}}>
                       <div style={{fontSize:12,color:"rgba(44,32,22,0.6)",lineHeight:1.5, wordBreak:"break-word", whiteSpace: "pre-wrap"}}>{item.briefCopywriting||"-"}</div>
                     </td>
                     <td style={td}><span className="pill-tag" style={{background:"rgba(44,32,22,0.06)",color:"#2C2016"}}>{item.pic}</span></td>

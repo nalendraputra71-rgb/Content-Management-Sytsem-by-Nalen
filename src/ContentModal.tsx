@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { GoogleGenAI } from "@google/genai";
 import { motion, AnimatePresence } from "motion/react";
 import Markdown from "react-markdown";
+import TextareaAutosize from "react-textarea-autosize";
 
 const GeminiIcon = ({ size = 18 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -27,87 +28,12 @@ const LoadingDots = () => (
 
 import { 
   MK, MC, eng, fmt, fmtD,
-  I, L, B, GRP 
+  I, L, B, GRP, CustomDropdown
 } from "./data";
 import { ChevronDown } from "lucide-react";
 
-function EditorDropdown({ value, options, onChange, dark = false }: { value: string, options: any[], onChange: (val: string) => void, dark?: boolean }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (ref.current && !ref.current.contains(event.target as Node)) setOpen(false);
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const activeOption = options.find(o => (typeof o === 'string' ? o : o.id || o.name || o) === value);
-  const displayLabel = activeOption ? (typeof activeOption === 'string' ? activeOption : activeOption.label || activeOption.name || activeOption) : value;
-  const activeColor = (activeOption && typeof activeOption !== 'string') ? activeOption.color : null;
-
-  return (
-    <div ref={ref} style={{ position: "relative", width: "100%" }}>
-      <button 
-        onClick={() => setOpen(!open)} 
-        className="hover-scale"
-        style={{ 
-          width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, 
-          padding: "8px 12px", borderRadius: 8, 
-          border: dark ? "1px solid rgba(255,255,255,0.2)" : "1px solid rgba(44,32,22,0.2)", 
-          background: dark ? (activeColor ? activeColor : "rgba(255,255,255,0.1)") : (activeColor ? activeColor + "15" : "white"), 
-          fontSize: 13, fontWeight: 700, cursor: "pointer", 
-          color: dark ? "white" : (activeColor || "#2C2016")
-        }}
-      >
-        <div style={{display: "flex", alignItems: "center", gap: 8, overflow: "hidden"}}>
-           {activeColor && !dark && <div style={{width:8, height:8, borderRadius:"50%", background:activeColor, flexShrink:0}}/>}
-           <span style={{overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap"}}>{displayLabel}</span>
-        </div>
-        <ChevronDown size={14} style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'all 0.2s', opacity: 0.6, flexShrink: 0 }} />
-      </button>
-      <AnimatePresence>
-        {open && (
-          <motion.div 
-            initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }} transition={{ duration: 0.15 }}
-            style={{ position: "absolute", top: "100%", left: 0, right: 0, marginTop: 4, background: "white", border: "1px solid rgba(44,32,22,0.1)", borderRadius: 12, padding: 6, zIndex: 9999, boxShadow: "0 10px 40px rgba(0,0,0,0.15)", maxHeight: 250, overflowY: "auto" }}
-          >
-            {options.map((o, i) => {
-              const val = typeof o === 'string' ? o : o.id || o.name || o;
-              const isSelected = val === value;
-              const label = typeof o === 'string' ? o : o.label || o.name || o;
-              const color = (typeof o !== 'string') ? o.color : null;
-              
-              return (
-                <div 
-                  key={i} 
-                  onClick={() => { onChange(val); setOpen(false); }}
-                  style={{ 
-                    padding: "10px 12px", borderRadius: 8, fontSize: 13, fontWeight: isSelected?800:600, cursor: "pointer", 
-                    background: isSelected ? (color ? color + "20" : "#FDF0EB") : "transparent", 
-                    color: isSelected ? (color || "#FF6B00") : "#2C2016", 
-                    transition: "all 0.1s",
-                    display: "flex", alignItems: "center", gap: 10,
-                    marginBottom: 2
-                  }}
-                  onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = "#FAFAFA"; }}
-                  onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = "transparent"; }}
-                >
-                  {color && <div style={{width:10, height:10, borderRadius:"50%", background:color}}/>}
-                  <span style={{flex: 1, overflow: "hidden", textOverflow: "ellipsis"}}>{label}</span>
-                </div>
-              );
-            })}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
 export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,pillars,platforms,pics,statuses}: any) {
-  const [d,setD] = useState({...modal.data,metrics:{...modal.data.metrics},adsMetrics:{...(modal.data.adsMetrics||{views:0,reach:0,likes:0,comments:0,shares:0,reposts:0,saves:0,clicks:0,conversions:0})},referenceLinks:modal.data.referenceLinks||[],customFields:modal.data.customFields||[]});
+  const [d,setD] = useState({...modal.data,metrics:{...(modal.data.metrics||{})},adsMetrics:{...(modal.data.adsMetrics||{views:0,reach:0,likes:0,comments:0,shares:0,reposts:0,saves:0,clicks:0,conversions:0})},referenceLinks:modal.data.referenceLinks||[],customFields:modal.data.customFields||[]});
   const [aiResult, setAiResult] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
 
@@ -220,15 +146,15 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
             <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(130px, 1fr))", gap:20 }}>
               <div style={GRP}>
                 <label style={{...L, color:"rgba(250,247,242,0.4)", marginBottom:4}}>Content Pillar</label>
-                <EditorDropdown dark value={d.pillar} options={pillars} onChange={(v)=>set("pillar",v)} />
+                <CustomDropdown dark value={d.pillar} options={pillars} onChange={(v)=>set("pillar",v)} />
               </div>
               <div style={GRP}>
                 <label style={{...L, color:"rgba(250,247,242,0.4)", marginBottom:4}}>PIC Pengelola</label>
-                <EditorDropdown dark value={d.pic} options={pics} onChange={(v)=>set("pic",v)} />
+                <CustomDropdown dark value={d.pic} options={pics} onChange={(v)=>set("pic",v)} />
               </div>
               <div style={GRP}>
                 <label style={{...L, color:"rgba(250,247,242,0.4)", marginBottom:4}}>Status Konten</label>
-                <EditorDropdown dark value={d.status} options={statuses} onChange={(v)=>set("status",v)} />
+                <CustomDropdown dark value={d.status} options={statuses} onChange={(v)=>set("status",v)} />
               </div>
             </div>
         </div>
@@ -266,7 +192,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
           </div>
           <div style={GRP}>
             <label style={L}>Platform</label>
-            <EditorDropdown value={d.platform} options={platforms} onChange={(v)=>set("platform",v)} />
+            <CustomDropdown value={d.platform} options={platforms} onChange={(v)=>set("platform",v)} />
           </div>
         </div>
 
@@ -291,16 +217,16 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                   {aiLoading ? <LoadingDots /> : "Analyze with Gemini"}
                 </button>
             </div>
-            <textarea value={d.briefCopywriting} onChange={(e:any)=>set("briefCopywriting",e.target.value)} style={I({minHeight:80,resize:"vertical"})} placeholder="Arah konten, tone, poin utama..."/>
+            <TextareaAutosize value={d.briefCopywriting} onChange={(e:any)=>set("briefCopywriting",e.target.value)} style={I({resize:"vertical"})} minRows={4} placeholder="Arah konten, tone, poin utama..."/>
         </div>
 
         <div style={{...GRP,marginBottom:10}}>
             <label style={L}>Caption</label>
-            <textarea value={d.caption} onChange={(e:any)=>set("caption",e.target.value)} style={I({minHeight:60,resize:"vertical"})} placeholder="Caption untuk post..."/>
+            <TextareaAutosize value={d.caption} onChange={(e:any)=>set("caption",e.target.value)} style={I({resize:"vertical"})} minRows={3} placeholder="Caption untuk post..."/>
         </div>
 
         <div style={{marginBottom:10}}>
-          <div style={GRP}><label style={L}>Objective</label><textarea value={d.objective} onChange={(e:any)=>set("objective",e.target.value)} style={I({minHeight:60,resize:"vertical"})} placeholder="Tujuan konten ini..."/></div>
+          <div style={GRP}><label style={L}>Objective</label><TextareaAutosize value={d.objective} onChange={(e:any)=>set("objective",e.target.value)} style={I({resize:"vertical"})} minRows={3} placeholder="Tujuan konten ini..."/></div>
         </div>
 
         {/* Asset Link & Social Media Link */}
@@ -319,7 +245,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
         <div style={{background:"rgba(44,32,22,0.03)",border:"1px solid rgba(44,32,22,0.08)",borderRadius:10,padding:12,marginBottom:12}}>
           <div style={{...L,marginBottom:8}}>📎 Referensi Konten</div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
-            <div style={GRP}><label style={{...L,marginBottom:2}}>Catatan Referensi</label><textarea value={d.referenceText} onChange={(e:any)=>set("referenceText",e.target.value)} style={I({minHeight:54,resize:"vertical"})} placeholder="Referensi, mood, arahan visual..."/></div>
+            <div style={GRP}><label style={{...L,marginBottom:2}}>Catatan Referensi</label><TextareaAutosize value={d.referenceText} onChange={(e:any)=>set("referenceText",e.target.value)} style={I({resize:"vertical"})} minRows={3} placeholder="Referensi, mood, arahan visual..."/></div>
             <div style={GRP}>
               <label style={{...L,marginBottom:2}}>Link Referensi <button onClick={()=>set("referenceLinks",[...(d.referenceLinks||[]),""])} style={{background:"none",border:"none",color:"#C4622D",cursor:"pointer",fontSize:10}}>(+ Tambah)</button></label>
               {(d.referenceLinks||[]).map((lnk:string,i:number)=>(
@@ -346,7 +272,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
            {(d.customFields||[]).map((cf:any,i:number)=>(
              <div key={i} style={{display:"flex",gap:8,marginBottom:8}}>
                 <input value={cf.name} onChange={(e:any)=>set("customFields",d.customFields.map((f:any,idx:number)=>idx===i?{...f,name:e.target.value}:f))} style={{...I(),width:120}} placeholder="Nama Field..."/>
-                <textarea value={cf.value} onChange={(e:any)=>set("customFields",d.customFields.map((f:any,idx:number)=>idx===i?{...f,value:e.target.value}:f))} style={I({resize:"vertical",minHeight:36})} placeholder="Isi field..."/>
+                <TextareaAutosize value={cf.value} onChange={(e:any)=>set("customFields",d.customFields.map((f:any,idx:number)=>idx===i?{...f,value:e.target.value}:f))} style={I({resize:"vertical"})} minRows={2} placeholder="Isi field..."/>
                 <button onClick={()=>set("customFields", d.customFields.filter((_:any,idx:number)=>idx!==i))} style={{background:"none",border:"none",color:"#9C2B4E",cursor:"pointer"}}>✕</button>
              </div>
            ))}

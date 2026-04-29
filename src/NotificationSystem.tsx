@@ -225,8 +225,12 @@ export function NotificationPanel({ notifications, onClose, onRead, onContactSup
               {n.icon}
             </div>
             <div>
-              <div style={{fontSize: 13, fontWeight: 700, color: "white", marginBottom: 2}}>{n.title}</div>
-              <div style={{fontSize: 12, color: "rgba(255,255,255,0.6)", lineHeight: 1.4, marginBottom: 4}}>{n.desc}</div>
+              <div style={{fontSize: 13, fontWeight: n.unread ? 800 : 600, color: n.unread ? "white" : "rgba(255,255,255,0.7)", marginBottom: 2}}>{n.title}</div>
+              {n.unread ? (
+                <div style={{fontSize: 12, color: "rgba(255,255,255,0.8)", lineHeight: 1.4, marginBottom: 6}}>{n.desc}</div>
+              ) : (
+                <div style={{fontSize: 11, color: "rgba(255,255,255,0.5)", lineHeight: 1.4, marginBottom: 4, display: "-webkit-box", WebkitLineClamp: 1, WebkitBoxOrient: "vertical", overflow: "hidden"}}>{n.desc}</div>
+              )}
               <div style={{fontSize: 10, color: "rgba(255,255,255,0.4)", fontWeight: 600}}>{n.time}</div>
             </div>
           </div>
