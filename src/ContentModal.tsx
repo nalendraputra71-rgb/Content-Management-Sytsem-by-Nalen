@@ -91,7 +91,12 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
         setAiResult(response.text || "Tidak ada respon dari AI.");
     } catch (e: any) {
         console.error("AI Error:", e);
-        setAiResult("Gagal menganalisis konten: " + e.message + ".\n\nPastikan VITE_GEMINI_API_KEY sudah diset di Settings > Secrets.");
+        const errMsg = e.message || "";
+        if (errMsg.includes("429") || errMsg.includes("RESOURCE_EXHAUSTED") || errMsg.includes("Quota exceeded")) {
+          setAiResult("Gagal menganalisis konten: Terlalu banyak permintaan saat ini (Quota Exceeded). Silakan tunggu sekitar 30 detik lalu coba lagi, atau update akun Google AI Studio Anda ke Pay-as-you-go.");
+        } else {
+          setAiResult("Gagal menganalisis konten: " + errMsg + ".\n\nPastikan VITE_GEMINI_API_KEY sudah diset di Settings > Secrets.");
+        }
     }
     setAiLoading(false);
   };
@@ -125,7 +130,12 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
         set("caption", (response.text || "").trim());
     } catch (e: any) {
         console.error("AI Error:", e);
-        alert("Gagal menggenerate caption: " + e.message);
+        const errMsg = e.message || "";
+        if (errMsg.includes("429") || errMsg.includes("RESOURCE_EXHAUSTED") || errMsg.includes("Quota exceeded")) {
+          alert("Gagal menggenerate caption: Terlalu banyak permintaan AI. Silakan tunggu sekitar 30 detik lalu coba lagi.");
+        } else {
+          alert("Gagal menggenerate caption: " + errMsg);
+        }
     }
     setCaptionLoading(false);
   };

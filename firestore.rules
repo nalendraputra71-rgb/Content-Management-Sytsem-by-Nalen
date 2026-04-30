@@ -20,15 +20,15 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/workspaces/$(wsId)/members/$(request.auth.uid));
     }
     function isOwner(wsId) { 
-      return exists(/databases/$(database)/documents/workspaces/$(wsId)/members/$(request.auth.uid)) && 
+      return isSignedIn() && exists(/databases/$(database)/documents/workspaces/$(wsId)/members/$(request.auth.uid)) && 
              get(/databases/$(database)/documents/workspaces/$(wsId)/members/$(request.auth.uid)).data.role == "owner"; 
     }
     function isEditor(wsId) { 
-      return exists(/databases/$(database)/documents/workspaces/$(wsId)/members/$(request.auth.uid)) && 
+      return isSignedIn() && exists(/databases/$(database)/documents/workspaces/$(wsId)/members/$(request.auth.uid)) && 
              get(/databases/$(database)/documents/workspaces/$(wsId)/members/$(request.auth.uid)).data.role in ["owner", "editor"]; 
     }
     function isMember(wsId) { 
-      return exists(/databases/$(database)/documents/workspaces/$(wsId)/members/$(request.auth.uid)); 
+      return isSignedIn() && exists(/databases/$(database)/documents/workspaces/$(wsId)/members/$(request.auth.uid)); 
     }
 
     // ─── DEFAULT DENY ────────────────────────────────────────────────────────

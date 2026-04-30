@@ -383,7 +383,12 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
       setAiInsight(response.text || "Tidak ada respon dari AI.");
     } catch(e:any) {
       console.error("AI Error:", e);
-      setAiInsight("Gagal mendapatkan Executive Summary: " + e.message + ".\n\nPastikan VITE_GEMINI_API_KEY sudah diset di Settings > Secrets.");
+      const errMsg = e.message || "";
+      if (errMsg.includes("429") || errMsg.includes("RESOURCE_EXHAUSTED") || errMsg.includes("Quota exceeded")) {
+        setAiInsight("Gagal mendapatkan Executive Summary: Terlalu banyak permintaan AI secara bersamaan (Quota Exceeded). Silakan tunggu sekitar 30 detik lalu coba lagi.");
+      } else {
+        setAiInsight("Gagal mendapatkan Executive Summary: " + errMsg + ".\n\nPastikan VITE_GEMINI_API_KEY sudah diset di Settings > Secrets.");
+      }
     }
     setAiLoading(false);
   };
@@ -423,13 +428,13 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
   );
 
   const MCard = ({label,val,sub,color="#C4622D", pctStr}: any) => (
-    <div style={CARD({flex:1,minWidth:100,display:"flex",flexDirection:"column"})}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:5}}>
-        <div style={{fontSize:9,fontWeight:600,letterSpacing:1.5,textTransform:"uppercase",color:"rgba(44,32,22,0.4)"}}>{label}</div>
-        {pctStr && <div style={{fontSize:10,fontWeight:600,color:pctColor(pctStr),background:pctColor(pctStr)+"1A",padding:"2px 6px",borderRadius:4}}>{pctStr}</div>}
+    <div style={CARD({flex:1,minWidth:160,display:"flex",flexDirection:"column"})}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8,gap:8,flexWrap:"wrap"}}>
+        <div style={{fontSize:10,fontWeight:600,letterSpacing:1.2,textTransform:"uppercase",color:"rgba(44,32,22,0.5)"}}>{label}</div>
+        {pctStr && <div style={{fontSize:11,fontWeight:700,color:pctColor(pctStr),background:pctColor(pctStr)+"1A",padding:"3px 8px",borderRadius:6,whiteSpace:"nowrap"}}>{pctStr}</div>}
       </div>
-      <div style={{fontSize:24,fontWeight:700,color,lineHeight:1,marginTop:"auto"}}>{val}</div>
-      {sub&&<div style={{fontSize:10,color:"rgba(44,32,22,0.4)",marginTop:3}}>{sub}</div>}
+      <div style={{fontSize:28,fontWeight:800,color,lineHeight:1.1,marginTop:"auto"}}>{val}</div>
+      {sub&&<div style={{fontSize:11,color:"rgba(44,32,22,0.5)",marginTop:6,fontWeight:500}}>{sub}</div>}
     </div>
   );
 
@@ -457,7 +462,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
         </div>
       </div>
 
-      <div style={{display:"grid",flexWrap:"wrap",gap:14,gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))"}}>
+      <div style={{display:"grid",gap:16,gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))"}}>
         <MCard label="Total Konten" val={total} sub={`Dipublikasikan: ${pub}`} color="#2C2016" pctStr={calcPct(total, prevTotal)}/>
         <MCard label="Views (Impression)" val={fmt(tV)} pctStr={calcPct(tV, prevTV)}/>
         <MCard label="Total Reach" val={fmt(tR)} pctStr={calcPct(tR, prevTR)}/>
@@ -479,7 +484,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
             </div>
           </div>
         )}
-        <div style={{filter: isRestricted ? "blur(4px)" : "none", pointerEvents: isRestricted ? "none" : "auto", userSelect: isRestricted ? "none" : "auto"}}>
+        <div style={{display: "flex", flexDirection: "column", gap: 24, filter: isRestricted ? "blur(4px)" : "none", pointerEvents: isRestricted ? "none" : "auto", userSelect: isRestricted ? "none" : "auto"}}>
       <div style={CARD()}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:10}}>
           <h4 style={{fontSize:16,fontWeight:700,margin:0}}>📈 Tren Pertumbuhan</h4>
@@ -560,7 +565,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
       </div>
       
       {/* Heatmap & PIC Workload */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(380px,1fr))",gap:32}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))",gap:24}}>
         <div style={CARD()}>
           <h4 style={{fontSize:16,fontWeight:700,margin:"0 0 16px"}}>📈 Konten per Platform</h4>
           <ResponsiveContainer width="100%" height={260}>
@@ -576,23 +581,25 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
           </ResponsiveContainer>
         </div>
 
-        <div style={CARD()}>
-          <h4 style={{fontSize:16,fontWeight:700,margin:"0 0 16px"}}>🔥 Best Time to Upload (Heatmap)</h4>
-          <div style={{display:"flex",gap:4,marginBottom:6}}>
-            <div style={{width:30}}/>
-            {Array.from({length:24}).map((_,i)=><div key={`h${i}`} style={{flex:1,textAlign:"center",fontSize:10,color:"rgba(44,32,22,0.4)"}}>{i}</div>)}
+        <div style={{...CARD(), overflowX: "auto"}}>
+          <div style={{minWidth: 480}}>
+            <h4 style={{fontSize:16,fontWeight:700,margin:"0 0 16px"}}>🔥 Best Time to Upload (Heatmap)</h4>
+            <div style={{display:"flex",gap:4,marginBottom:6}}>
+              <div style={{width:30}}/>
+              {Array.from({length:24}).map((_,i)=><div key={`h${i}`} style={{flex:1,textAlign:"center",fontSize:10,color:"rgba(44,32,22,0.4)"}}>{i}</div>)}
+            </div>
+            {heatmap.map((row,di) => {
+              const rowMax = Math.max(...row, 1);
+              return (
+                <div key={di} style={{display:"flex",gap:4,marginBottom:4,alignItems:"center"}}>
+                  <div style={{width:30,fontSize:10,fontWeight:600}}>{DAYS_S[di]}</div>
+                  {row.map((val,hi) => (
+                    <div key={hi} title={`${DAYS_ID[di]} Jam ${hi} - ${fmt(val)} Eng`} style={{flex:1,height:22,borderRadius:4,background:`rgba(196,98,45,${val===0?0.03 : Math.max(0.15, val/rowMax)})`}}/>
+                  ))}
+                </div>
+              );
+            })}
           </div>
-          {heatmap.map((row,di) => {
-            const rowMax = Math.max(...row, 1);
-            return (
-              <div key={di} style={{display:"flex",gap:4,marginBottom:4,alignItems:"center"}}>
-                <div style={{width:30,fontSize:10,fontWeight:600}}>{DAYS_S[di]}</div>
-                {row.map((val,hi) => (
-                  <div key={hi} title={`${DAYS_ID[di]} Jam ${hi} - ${fmt(val)} Eng`} style={{flex:1,height:22,borderRadius:4,background:`rgba(196,98,45,${val===0?0.03 : Math.max(0.15, val/rowMax)})`}}/>
-                ))}
-              </div>
-            );
-          })}
         </div>
         
         <div style={CARD()}>
@@ -638,7 +645,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
         </div>
       </div>
 
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(300px,1fr))",gap:20}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))",gap:24}}>
         <div>
           <CDataList 
             title={`🏆 Top 10 Konten${topPlatform!=="All"?" ("+topPlatform+")":""}`} 

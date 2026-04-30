@@ -51,6 +51,8 @@ export default function App() {
           // Listen to profile for real-time updates
           unsubProfile = onSnapshot(doc(db, "users", u.uid), (snap) => {
             if (snap.exists()) setProfile(snap.data());
+          }, (error) => {
+             console.error("Profile onSnapshot error:", error);
           });
           setUser(u);
         } else {
@@ -258,6 +260,8 @@ function Dashboard({ user, profile }: any) {
             if (data.settings.headerStyle) setHeaderStyle(data.settings.headerStyle);
           }
        }
+    }, (error) => {
+       console.error("Workspace details onSnapshot error:", error);
     });
 
     const contentRef = collection(db, "workspaces", workspace.id, "content");
@@ -616,6 +620,8 @@ function PublicView() {
     getDoc(doc(db, "workspaces", wsId)).then(s => setWs(s.data()));
     onSnapshot(collection(db, "workspaces", wsId, "content"), (snap) => {
       setContent(snap.docs.map(d => d.data()));
+    }, (error) => {
+      console.error("PublicView content onSnapshot error:", error);
     });
   }, [wsId]);
 
