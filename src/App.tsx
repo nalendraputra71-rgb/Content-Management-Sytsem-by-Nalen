@@ -111,14 +111,13 @@ function LoadingScreen({ title }: { title?: string }) {
     <div style={{height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#FAFAFA",flexDirection:"column",gap:24}}>
       <motion.div
         animate={{ rotate: 360 }}
-        transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
+        transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
         style={{
-          width: 50, height: 50, borderRadius: "50%",
-          border: "4px solid rgba(255, 107, 0, 0.2)",
-          borderTopColor: "#FF6B00"
+          width: 40, height: 40, borderRadius: "50%",
+          border: "4px solid rgba(var(--theme-primary-rgb), 0.1)",
+          borderTopColor: "var(--theme-primary)"
         }}
       />
-      <div style={{fontFamily:"'Inter', sans-serif",fontSize:24,color:"#2C2016",fontWeight:800}}>{title || "CMS Console"}</div>
     </div>
   );
 }
@@ -480,10 +479,7 @@ function Dashboard({ user, profile, onUpdateProfile }: any) {
   if (workspaces.length === 0) {
     return (
       <div style={{height:"100vh", display:"flex", alignItems:"center", justifyContent:"center", background:"#FAFAFA", flexDirection:"column", gap:20, padding:40, textAlign:"center"}}>
-        <div style={{ fontSize:24, color:"#2C2016", fontWeight:800, letterSpacing:"-0.5px"}}>
-          {errorMsg.includes("index") ? "Indeks Database Sedang Disiapkan..." : "Mempersiapkan Workspace Anda..."}
-        </div>
-        {!errorMsg.includes("index") && <div style={{width:40, height:40, border:"3px solid var(--theme-primary)", borderTopColor:"transparent", borderRadius:"50%", animation:"spin 1s linear infinite"}}/>}
+        <div style={{width:40, height:40, border:"3px solid var(--theme-primary)", borderTopColor:"transparent", borderRadius:"50%", animation:"spin 1s linear infinite"}}/>
         
         {errorMsg && (
           <div style={{maxWidth:500, fontSize:13, color:"#9C2B4E", background:"#F8EAF0", padding:16, borderRadius:12, fontWeight:500}}>

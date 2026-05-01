@@ -4,10 +4,11 @@ import {
   Users, Shield, Settings, Server, TrendingUp, CheckCircle, Activity, 
   Search, Edit2, CreditCard, RefreshCw, AlertCircle, FileText, Globe, 
   Bell, LifeBuoy, ToggleLeft, ToggleRight, ArrowUpRight, ArrowDownRight, 
-  BarChart2, X, Download, MessageSquare
+  BarChart2, X, Download, MessageSquare, ExternalLink, Calendar,
+  DollarSign, Package, Tag, Clock, ChevronRight, UserPlus, Filter
 } from "lucide-react";
-import { db, collection, getDocs, doc, updateDoc, setDoc, deleteDoc } from "./firebase";
-import { fmt, B } from "./data";
+import { db, collection, getDocs, doc, updateDoc, setDoc, deleteDoc, onSnapshot, query, where, addDoc } from "./firebase";
+import { fmt, B, CARD } from "./data";
 
 export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogout: () => void }) {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -16,34 +17,78 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
   const [searchEmail, setSearchEmail] = useState("");
   const [selectedUser, setSelectedUser] = useState<any>(null);
 
-  const fetchUsers = async () => {
-    setLoading(true);
-    try {
-      const snap = await getDocs(collection(db, "users"));
-      const data = snap.docs.map(d => ({id: d.id, ...d.data()}));
-      setUsers(data as any[]);
-    } catch (e) {
-      console.error(e);
-    }
-    setLoading(false);
-  };
-
   const [plans, setPlans] = useState<any[]>([]);
-  const [promos, setPromos] = useState<any[]>([]);
-
-  const fetchPlans = async () => {
-    try {
-      const snap = await getDocs(collection(db, "plans"));
-      setPlans(snap.docs.map(d => ({id: d.id, ...d.data()})));
-      const promoSnap = await getDocs(collection(db, "promos"));
-      setPromos(promoSnap.docs.map(d => ({id: d.id, ...d.data()})));
-    } catch (e) {
-      console.error(e);
-    }
-  };
+  const [promosList, setPromosList] = useState<any[]>([]);
+  const [admins, setAdmins] = useState<any[]>([]);
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [tickets, setTickets] = useState<any[]>([]);
+  const [selectedTicket, setSelectedTicket] = useState<any>(null);
+  const [loadingTickets, setLoadingTickets] = useState(true);
 
   const [showPlanModal, setShowPlanModal] = useState(false);
   const [editingPlan, setEditingPlan] = useState<any>(null);
+  const [financeFilter, setFinanceFilter] = useState({ month: new Date().getMonth() + 1, year: new Date().getFullYear() });
+  const [showPromoModal, setShowPromoModal] = useState(false);
+  const [editingPromo, setEditingPromo] = useState<any>(null);
+  const [deletingItem, setDeletingItem] = useState<any>(null);
+
+  const [systemSettings, setSystemSettings] = useState<any>({
+    maintenanceMode: false,
+    allowRegistration: true,
+    trialDays: 7
+  });
+
+  useEffect(() => {
+    let unsubs: any[] = [];
+    
+    // Real-time synchronization for Users list
+    unsubs.push(onSnapshot(collection(db, "users"), snap => {
+      const data = snap.docs.map(d => ({id: d.id, ...d.data()}));
+      setUsers(data as any[]);
+      setLoading(false);
+      if (selectedUser) {
+          const current = data.find((u: any) => u.id === selectedUser.id);
+          if (current) setSelectedUser(current);
+      }
+    }));
+
+    // Real-time synchronization for Admins
+    unsubs.push(onSnapshot(query(collection(db, "users"), where("role", "==", "admin")), snap => {
+      setAdmins(snap.docs.map(d => ({id: d.id, ...d.data()})));
+    }));
+
+    // Real-time synchronization for Plans & Promos
+    unsubs.push(onSnapshot(collection(db, "plans"), snap => {
+      setPlans(snap.docs.map(d => ({id: d.id, ...d.data()})));
+    }));
+
+    unsubs.push(onSnapshot(collection(db, "promos"), snap => {
+      setPromosList(snap.docs.map(d => ({id: d.id, ...d.data()})));
+    }));
+
+    // Real-time synchronization for Transactions
+    unsubs.push(onSnapshot(collection(db, "transactions"), snap => {
+      setTransactions(snap.docs.map(d => ({id: d.id, ...d.data()})));
+    }));
+
+    // Real-time synchronization for Support
+    unsubs.push(onSnapshot(query(collection(db, "tickets")), snap => {
+      const data = snap.docs.map(d=>({id: d.id, ...d.data()}));
+      setTickets(data.sort((a:any, b:any) => new Date(b.updatedAt||0).getTime() - new Date(a.updatedAt||0).getTime()));
+      setLoadingTickets(false);
+      if (selectedTicket) {
+          const current = data.find((d: any) => d.id === selectedTicket.id);
+          if (current) setSelectedTicket(current);
+      }
+    }));
+
+    // System Settings
+    unsubs.push(onSnapshot(doc(db, "config", "system"), snap => {
+      if (snap.exists()) setSystemSettings(snap.data());
+    }));
+    
+    return () => { unsubs.forEach(u => u()); };
+  }, [selectedUser?.id, selectedTicket?.id]);
 
   const savePlan = async (e: React.FormEvent) => {
      e.preventDefault();
@@ -58,911 +103,881 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
          popular: fd.get("popular") === "on",
          features: (fd.get("features") as string).split("\n").filter(f => f.trim() !== "")
        };
-       if (editingPlan.id) {
+       if (editingPlan?.id) {
          await updateDoc(doc(db, "plans", editingPlan.id), data);
        } else {
-         await setDoc(doc(db, "plans", data.name!.toString().toLowerCase().replace(/\s+/g,'')), data);
+         const id = data.name!.toString().toLowerCase().replace(/\s+/g,'-');
+         await setDoc(doc(db, "plans", id), { ...data, id });
        }
        setShowPlanModal(false);
-     } catch (e: any) {
-       alert(e.message);
-     }
+     } catch (e: any) { alert(e.message); }
   };
 
-  const handleUpdateRole = async (uid: string, newRole: string) => {
+  const fmtRp = (n: number) => "Rp" + (n || 0).toLocaleString("id-ID");
+
+  const savePromo = async (e: React.FormEvent) => {
+    e.preventDefault();
     try {
-      await updateDoc(doc(db, "users", uid), { role: newRole });
-    } catch (e) { console.error(e); }
+      const fd = new FormData(e.target as HTMLFormElement);
+      const code = (fd.get("code") as string).toUpperCase();
+      const data = {
+        code,
+        type: fd.get("type"),
+        value: Number(fd.get("value")),
+        isActive: true,
+        terms: fd.get("terms"),
+        targetType: fd.get("targetType"), // 'all' or 'first_timer'
+        usageLimit: Number(fd.get("usageLimit")) || 0,
+        usageCount: editingPromo?.usageCount || 0,
+        startDate: fd.get("startDate") || null,
+        endDate: fd.get("endDate") || null,
+        createdAt: editingPromo?.createdAt || new Date().toISOString()
+      };
+      await setDoc(doc(db, "promos", code), { ...data, id: code });
+      setShowPromoModal(false);
+    } catch (e: any) { alert(e.message); }
   };
 
-  const handleUpdatePlan = async (uid: string, newPlan: string, daysToAdd: number = 30) => {
+  const updateSystemConfig = async (updates: any) => {
+    try {
+      await setDoc(doc(db, "config", "system"), updates, { merge: true });
+    } catch (e: any) { alert(e.message); }
+  };
+
+  const handleUpdatePlan = async (uid: string, planName: string, daysToAdd: number = 30) => {
     try {
       const activeUntil = new Date();
-      activeUntil.setDate(activeUntil.getDate() + daysToAdd);
-      await updateDoc(doc(db, "users", uid), { plan: newPlan, activeUntil: activeUntil.toISOString() });
-    } catch (e) { console.error(e); }
-  };
-
-  const toggleUserFeature = async (uid: string, feature: string, currentValue: boolean) => {
-    try {
-      const features = selectedUser?.features || {};
-      const newFeatures = { ...features, [feature]: !currentValue };
-      await updateDoc(doc(db, "users", uid), { features: newFeatures });
-    } catch (e) { console.error(e); }
-  };
-
-  const [dashboardDateRange, setDashboardDateRange] = useState({ 
-    month: new Date().getMonth() + 1, 
-    year: new Date().getFullYear() 
-  });
-  const [financeDateRange, setFinanceDateRange] = useState({
-    month: new Date().getMonth() + 1, 
-    year: new Date().getFullYear() 
-  });
-  const [transactions, setTransactions] = useState<any[]>([]);
-  const [promosList, setPromosList] = useState<any[]>([]);
-  const [tickets, setTickets] = useState<any[]>([]);
-  const [selectedTicket, setSelectedTicket] = useState<any>(null);
-  const [loadingTickets, setLoadingTickets] = useState(true);
-
-  useEffect(() => {
-    let unsubs: any[] = [];
-    import("./firebase").then(({ db, collection, onSnapshot, query }) => {
-      // Real-time synchronization for Users list
-      if (["users", "dashboard", "finance", "admins"].includes(activeTab)) {
-        unsubs.push(onSnapshot(collection(db, "users"), snap => {
-          const data = snap.docs.map(d => ({id: d.id, ...d.data()}));
-          setUsers(data as any[]);
-          setLoading(false);
-          if (selectedUser) {
-             const current = data.find((u: any) => u.id === selectedUser.id);
-             if (current) setSelectedUser(current);
-          }
-        }, err => {
-          console.error("Users onSnapshot error", err);
-          setLoading(false);
-        }));
+      if (daysToAdd === 0) {
+        activeUntil.setFullYear(2000); // Expired
+      } else {
+        activeUntil.setDate(activeUntil.getDate() + daysToAdd);
       }
-
-      // Real-time synchronization for Finance
-      if (activeTab === "finance") {
-         unsubs.push(onSnapshot(collection(db, "transactions"), snap => {
-            setTransactions(snap.docs.map(d=>({id: d.id, ...d.data()})));
-         }, err => console.error("Transactions onSnapshot error", err)));
-      }
-
-      // Real-time synchronization for Plans & Promos
-      if (activeTab === "plans") {
-         unsubs.push(onSnapshot(collection(db, "plans"), snap => {
-            setPlans(snap.docs.map(d => ({id: d.id, ...d.data()})));
-         }, err => console.error("Plans onSnapshot error", err)));
-
-         unsubs.push(onSnapshot(collection(db, "promos"), snap => {
-            setPromosList(snap.docs.map(d => ({id: d.id, ...d.data()})));
-         }, err => console.error("Promos onSnapshot error", err)));
-      }
-
-      // Real-time synchronization for Support
-      if (activeTab === "support") {
-         unsubs.push(onSnapshot(query(collection(db, "tickets")), snap => {
-            const data = snap.docs.map(d=>({id: d.id, ...d.data()}));
-            setTickets(data);
-            setLoadingTickets(false);
-            if (selectedTicket) {
-               const current = data.find((d: any) => d.id === selectedTicket.id);
-               if (current) setSelectedTicket(current);
-            }
-         }, err => {
-            console.error("Tickets onSnapshot error", err);
-            setLoadingTickets(false);
-         }));
-      }
-    });
-    return () => { unsubs.forEach(u => u()); };
-  }, [activeTab, selectedUser?.id, selectedTicket?.id]);
-  
-  const filteredUsers = users.filter((u:any) => (u.email || "").toLowerCase().includes(searchEmail.toLowerCase()));
-  const activePaidUsers = users.filter(u => u.plan === "pro" && new Date(u.activeUntil) > new Date()).length;
-  // Ini contoh perhitungan sederhana, idealnya dari log transaksi sesuai rentang waktu:
-  const trialUsers = users.filter(u => u.plan === "trial").length;
-  const mrr = activePaidUsers * 125000; // Asumsi harga core plan Rp125.000
-
-  const TABS = [
-    { id: "dashboard", lb: "Dashboard", ic: <Activity size={18}/> },
-    { id: "users", lb: "Manajemen User", ic: <Users size={18}/> },
-    { id: "admins", lb: "Super Admin", ic: <Shield size={18}/> },
-    { id: "finance", lb: "Keuangan & Billing", ic: <CreditCard size={18}/> },
-    { id: "plans", lb: "Paket & Promo", ic: <FileText size={18}/> },
-    { id: "xendit", lb: "Xendit & Webhook", ic: <Globe size={18}/> },
-    { id: "notifications", lb: "Push Notification", ic: <Bell size={18}/> },
-    { id: "support", lb: "Support & Tiket", ic: <LifeBuoy size={18}/> },
-    { id: "settings", lb: "Pengaturan Sistem", ic: <Settings size={18}/> }
-  ];
-
-  const handleAddPromo = async () => {
-     const code = prompt("Masukkan kode promo (ex: MERDEKA50):");
-     if (!code) return;
-     const discount = prompt("Masukkan nominal diskon/percent:");
-     if (!discount) return;
-     try {
-       const { db, doc, setDoc } = await import("./firebase");
-       await setDoc(doc(db, "promos", code.toUpperCase()), {
-          code: code.toUpperCase(),
-          discount: discount,
-          usageCount: 0,
-          isActive: true,
-          createdAt: new Date().toISOString()
-       });
-     } catch(e:any) { alert(e.message); }
+      await updateDoc(doc(db, "users", uid), { 
+        plan: planName.toLowerCase(), 
+        activeUntil: activeUntil.toISOString() 
+      });
+      alert("Paket berhasil diperbarui secara manual.");
+    } catch (e) { alert("Gagal update paket"); }
   };
 
   const togglePromo = async (p: any) => {
     try {
-       const { db, doc, updateDoc } = await import("./firebase");
        await updateDoc(doc(db, "promos", p.id), { isActive: !p.isActive });
     } catch(e:any) { alert(e.message); }
   };
 
   const handleReply = async () => {
-     const text = (document.getElementById("ticket_reply") as HTMLTextAreaElement).value;
+     const el = (document.getElementById("ticket_reply") as HTMLTextAreaElement);
+     const text = el.value;
      if(!text || !selectedTicket) return;
      try {
-        const { doc, updateDoc, db } = await import("./firebase");
         await updateDoc(doc(db, "tickets", selectedTicket.id), {
            messages: [...(selectedTicket.messages||[]), { sender: "admin", text, timestamp: new Date().toISOString() }],
            status: "open",
            readByUser: false,
            updatedAt: new Date().toISOString()
         });
-        (document.getElementById("ticket_reply") as HTMLTextAreaElement).value = "";
+        el.value = "";
      } catch(e:any) { alert(e.message); }
   };
 
   const isAdminUser = userProfile?.role === "admin" || userProfile?.email?.toLowerCase() === "nalendraputra71@gmail.com";
   if (!userProfile || !isAdminUser) {
-    return (
-      <div style={{flex: 1, display:"flex", alignItems:"center", justifyContent:"center", color:"red", fontSize: 16, fontWeight: 700}}>
-        Akses Ditolak: Anda bukan Admin.
-      </div>
-    );
+    return <div style={{flex: 1, display:"flex", alignItems:"center", justifyContent:"center", color:"#9C2B4E", fontSize: 16, fontWeight: 700}}>Akses Ditolak.</div>;
   }
 
+  const TABS = [
+    { id: "dashboard", lb: "Dashboard", ic: <Activity size={18}/> },
+    { id: "users", lb: "Manajemen User", ic: <Users size={18}/> },
+    { id: "finance", lb: "Keuangan", ic: <DollarSign size={18}/> },
+    { id: "admins", lb: "Super Admin", ic: <Shield size={18}/> },
+    { id: "plans", lb: "Paket & Promo", ic: <Tag size={18}/> },
+    { id: "support", lb: "Support & Tiket", ic: <LifeBuoy size={18}/> },
+    { id: "settings", lb: "Pengaturan", ic: <Settings size={18}/> }
+  ];
+
+  const filteredUsers = users.filter((u:any) => (u.email || "").toLowerCase().includes(searchEmail.toLowerCase()));
+
   return (
-    <div style={{flex:1, display:"flex", flexDirection:"column", height:"100vh", background:"#FAF7F2"}}>
+    <div style={{flex:1, display:"flex", flexDirection:"column", height:"100vh", background:"#FAF7F2", overflow:"hidden"}}>
       {/* Header */}
-      <div style={{background:"#2C2016", padding:"16px 24px", display:"flex", justifyContent:"space-between", alignItems:"center", color:"white"}}>
+      <div style={{background:"#2C2016", padding:"14px 24px", display:"flex", justifyContent:"space-between", alignItems:"center", color:"white", zIndex:10}}>
         <div style={{display:"flex", alignItems:"center", gap: 12}}>
-          <Shield size={24} color="var(--theme-primary)" />
+          <div style={{width:40, height:40, background:"rgba(196,98,45,0.2)", borderRadius:12, display:"flex", alignItems:"center", justifyContent:"center"}}>
+            <Shield size={24} color="#C4622D" />
+          </div>
           <div>
-            <h1 style={{margin:0, fontSize:18, fontWeight:800, letterSpacing:"-0.5px"}}>Admin Panel CMS</h1>
-            <div style={{fontSize:11, color:"rgba(255,255,255,0.6)"}}>Superadmin: {userProfile?.email}</div>
+            <h1 style={{margin:0, fontSize:16, fontWeight:800, letterSpacing:"-0.5px"}}>Admin Central</h1>
+            <div style={{fontSize:10, color:"rgba(255,255,255,0.5)", fontWeight:600}}>{userProfile?.email}</div>
           </div>
         </div>
-        <div>
-          <button onClick={onLogout} style={{background:"rgba(255,255,255,0.1)", border:"1px solid rgba(255,255,255,0.2)", padding:"6px 12px", color:"white", borderRadius:8, cursor:"pointer", fontSize:11, fontWeight:700}}>Keluar Admin</button>
+        <div style={{display:"flex", gap:12}}>
+          <div style={{display:"flex", alignItems:"center", gap:8, background:"rgba(255,255,255,0.05)", padding:"6px 12px", borderRadius:20, fontSize:11, border:"1px solid rgba(255,255,255,0.1)"}}>
+             <div style={{width:6, height:6, borderRadius:"50%", background:"#4CAF50", boxShadow:"0 0 8px #4CAF50"}} />
+             Sistem Operasional
+          </div>
         </div>
       </div>
 
       <div style={{display:"flex", flex:1, overflow:"hidden"}}>
-        {/* Sidebar Mini */}
-        <div style={{width: 220, background:"white", borderRight:"1px solid rgba(44,32,22,0.1)", display:"flex", flexDirection:"column", padding: "16px 12px", gap: 8, overflowY:"auto"}}>
+        {/* Sidebar Nav */}
+        <div style={{width: 240, background:"white", borderRight:"1px solid rgba(44,32,22,0.08)", display:"flex", flexDirection:"column", padding: "20px 12px", gap: 4}}>
           {TABS.map(t => (
-            <button 
-              key={t.id}
-              onClick={() => { setActiveTab(t.id); setSelectedUser(null); }}
+            <button key={t.id} onClick={() => { setActiveTab(t.id); setSelectedUser(null); }} 
               style={{
-                display:"flex", alignItems:"center", gap:10, padding:"10px 12px", borderRadius:10, fontSize:13, fontWeight:600, cursor:"pointer",
-                background: activeTab === t.id ? "rgba(var(--theme-primary-rgb), 0.1)" : "transparent",
-                color: activeTab === t.id ? "var(--theme-primary)" : "rgba(44,32,22,0.6)",
+                display:"flex", alignItems:"center", gap:12, padding:"12px 14px", borderRadius:12, fontSize:13, fontWeight:700, cursor:"pointer", 
+                background: activeTab === t.id ? "rgba(var(--theme-primary-rgb), 0.08)" : "transparent", 
+                color: activeTab === t.id ? "var(--theme-primary)" : "rgba(44,32,22,0.5)", 
                 border: "none", textAlign:"left", transition:"all 0.2s"
               }}
+              className="hover-bg-theme"
             >
               {t.ic} {t.lb}
             </button>
           ))}
+          <div style={{marginTop:"auto", padding:"12px 14px"}}>
+             <button onClick={onLogout} style={{width:"100%", padding:"10px", borderRadius:10, border:"1px solid #EEE", background:"white", fontSize:12, fontWeight:700, cursor:"pointer", color:"#9C2B4E"}}>Sign Out</button>
+          </div>
         </div>
 
-        {/* Content */}
-        <div style={{flex:1, padding: 24, overflowY:"auto"}}>
-          
-          {/* DASHBOARD */}
-          {activeTab === "dashboard" && (
-            <motion.div initial={{opacity:0, y:10}} animate={{opacity:1, y:0}}>
-              <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20}}>
-                <h2 style={{fontSize:22, fontWeight:800, color:"#2C2016", margin:0}}>Ringkasan Eksekutif</h2>
-                <div style={{display:"flex", gap:8}}>
-                  <select value={dashboardDateRange.month} onChange={(e)=>setDashboardDateRange(p=>({...p, month: parseInt(e.target.value)}))} style={{padding:"8px 12px", borderRadius:8, border:"1px solid rgba(44,32,22,0.1)", background:"white"}}>
-                    {Array.from({length:12}).map((_,i) => <option key={i+1} value={i+1}>Bulan {i+1}</option>)}
-                  </select>
-                  <select value={dashboardDateRange.year} onChange={(e)=>setDashboardDateRange(p=>({...p, year: parseInt(e.target.value)}))} style={{padding:"8px 12px", borderRadius:8, border:"1px solid rgba(44,32,22,0.1)", background:"white"}}>
-                    {[2024, 2025, 2026].map((y) => <option key={y} value={y}>{y}</option>)}
-                  </select>
-                </div>
-              </div>
-              <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(200px, 1fr))", gap: 16, marginBottom: 24}}>
-                <div style={{background:"white", borderRadius:12, padding:20, border:"1px solid rgba(44,32,22,0.05)", boxShadow:"0 2px 8px rgba(0,0,0,0.02)"}}>
-                   <div style={{fontSize:12, color:"rgba(44,32,22,0.5)", fontWeight:700, marginBottom:8}}>Estimasi MRR</div>
-                   <div style={{fontSize:28, fontWeight:800, color:"#2C2016"}}>Rp {fmt(mrr)}</div>
-                   <div style={{fontSize:11, color:"#2D7A5E", display:"flex", alignItems:"center", gap:4, marginTop:8}}><ArrowUpRight size={12}/> +5.2% dari bulan lalu</div>
-                </div>
-                <div style={{background:"white", borderRadius:12, padding:20, border:"1px solid rgba(44,32,22,0.05)", boxShadow:"0 2px 8px rgba(0,0,0,0.02)"}}>
-                   <div style={{fontSize:12, color:"rgba(44,32,22,0.5)", fontWeight:700, marginBottom:8}}>Total User Berbayar</div>
-                   <div style={{fontSize:28, fontWeight:800, color:"#2C2016"}}>{activePaidUsers}</div>
-                   <div style={{fontSize:11, color:"#2D7A5E", display:"flex", alignItems:"center", gap:4, marginTop:8}}><ArrowUpRight size={12}/> +12 user baru</div>
-                </div>
-                <div style={{background:"white", borderRadius:12, padding:20, border:"1px solid rgba(44,32,22,0.05)", boxShadow:"0 2px 8px rgba(0,0,0,0.02)"}}>
-                   <div style={{fontSize:12, color:"rgba(44,32,22,0.5)", fontWeight:700, marginBottom:8}}>User Free Trial</div>
-                   <div style={{fontSize:28, fontWeight:800, color:"#2C2016"}}>{trialUsers}</div>
-                   <div style={{fontSize:11, color:"rgba(44,32,22,0.5)", marginTop:8}}>Potensi konversi bulan ini</div>
-                </div>
-                <div style={{background:"white", borderRadius:12, padding:20, border:"1px solid rgba(44,32,22,0.05)", boxShadow:"0 2px 8px rgba(0,0,0,0.02)"}}>
-                   <div style={{fontSize:12, color:"rgba(44,32,22,0.5)", fontWeight:700, marginBottom:8}}>Churn Rate</div>
-                   <div style={{fontSize:28, fontWeight:800, color:"#9C2B4E"}}>2.4%</div>
-                   <div style={{fontSize:11, color:"#9C2B4E", display:"flex", alignItems:"center", gap:4, marginTop:8}}><ArrowDownRight size={12}/> -0.5% dari bulan lalu</div>
-                </div>
-              </div>
-              
-              <div style={{display:"grid", gridTemplateColumns:"2fr 1fr", gap:16}}>
-                 <div style={{background:"white", borderRadius:12, padding:20, border:"1px solid rgba(44,32,22,0.05)"}}>
-                    <h3 style={{fontSize:14, fontWeight:700, marginBottom:16, display:"flex", alignItems:"center", gap:8}}><BarChart2 size={16}/> Grafik Pendapatan 30 Hari Terakhir</h3>
-                    <div style={{height: 200, background:"#FAFAFA", borderRadius:8, display:"flex", alignItems:"center", justifyContent:"center", color:"rgba(44,32,22,0.3)", fontSize:12, border:"1px dashed rgba(44,32,22,0.1)"}}>
-                       [Visualisasi Grafik Pendapatan Harian]
+        {/* Content Area */}
+        <div style={{flex:1, padding: 32, overflowY:"auto", paddingBottom: 100}}>
+          <AnimatePresence mode="wait">
+            
+            {/* DASHBOARD */}
+            {activeTab === "dashboard" && (
+              <motion.div key="db" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0}} style={{maxWidth:1000}}>
+                 <div style={{marginBottom:32}}>
+                   <h2 style={{fontSize:28, fontWeight:800, color:"#2C2016", margin:0, letterSpacing:"-1px"}}>Ringkasan Sistem</h2>
+                   <p style={{fontSize:14, color:"rgba(44,32,22,0.5)", marginTop:4}}>Pantau pertumbuhan dan performa bisnis secara real-time.</p>
+                 </div>
+
+                 <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(240px, 1fr))", gap: 20, marginBottom:32}}>
+                    <div style={CARD({padding:24, borderRadius:20})}>
+                      <div style={{display:"flex", justifyContent:"space-between", marginBottom:16}}>
+                        <div style={{width:40, height:40, background:"rgba(76,175,80,0.1)", borderRadius:12, display:"flex", alignItems:"center", justifyContent:"center"}}>
+                          <Users size={20} color="#4CAF50"/>
+                        </div>
+                        <div style={{fontSize:12, color:"#4CAF50", fontWeight:700, background:"rgba(76,175,80,0.1)", padding:"4px 8px", borderRadius:6}}>+12%</div>
+                      </div>
+                      <div style={{fontSize:12, color:"rgba(44,32,22,0.5)", fontWeight:700}}>Total User Terdaftar</div>
+                      <div style={{fontSize:32, fontWeight:800, marginTop:4}}>{users.length}</div>
+                    </div>
+                    <div style={CARD({padding:24, borderRadius:20})}>
+                      <div style={{display:"flex", justifyContent:"space-between", marginBottom:16}}>
+                        <div style={{width:40, height:40, background:"rgba(33,150,243,0.1)", borderRadius:12, display:"flex", alignItems:"center", justifyContent:"center"}}>
+                          <Package size={20} color="#2196F3"/>
+                        </div>
+                      </div>
+                      <div style={{fontSize:12, color:"rgba(44,32,22,0.5)", fontWeight:700}}>User Premium (Pro)</div>
+                      <div style={{fontSize:32, fontWeight:800, marginTop:4}}>{users.filter(u=>u.plan==="pro").length}</div>
+                    </div>
+                    <div style={CARD({padding:24, borderRadius:20})}>
+                      <div style={{display:"flex", justifyContent:"space-between", marginBottom:16}}>
+                        <div style={{width:40, height:40, background:"rgba(196,98,45,0.1)", borderRadius:12, display:"flex", alignItems:"center", justifyContent:"center"}}>
+                          <DollarSign size={20} color="#C4622D"/>
+                        </div>
+                      </div>
+                      <div style={{fontSize:12, color:"rgba(44,32,22,0.5)", fontWeight:700}}>Total Revenue (Lifetime)</div>
+                      <div style={{fontSize:32, fontWeight:800, marginTop:4}}>{fmtRp(transactions.reduce((acc, t) => acc + (Number(t.amount) || 0), 0))}</div>
                     </div>
                  </div>
-                 <div style={{background:"white", borderRadius:12, padding:20, border:"1px solid rgba(44,32,22,0.05)"}}>
-                    <h3 style={{fontSize:14, fontWeight:700, marginBottom:16}}>Aktivitas Terkini</h3>
+
+                 <div style={{display:"grid", gridTemplateColumns:"2fr 1fr", gap:20}}>
+                    <div style={CARD({padding:24, borderRadius:20})}>
+                       <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20}}>
+                          <h3 style={{fontSize:16, fontWeight:800}}>Tiket Support Terbaru</h3>
+                          <button onClick={()=>setActiveTab("support")} style={{fontSize:12, fontWeight:700, color:"var(--theme-primary)", background:"transparent", border:"none", cursor:"pointer"}}>Lihat Semua</button>
+                       </div>
+                       <div style={{display:"flex", flexDirection:"column", gap:12}}>
+                          {tickets.slice(0, 5).map(t => (
+                            <div key={t.id} style={{display:"flex", alignItems:"center", gap:16, padding:"12px", border:"1px solid #F5F5F5", borderRadius:12}}>
+                               <div style={{width:36, height:36, borderRadius:10, background:"rgba(0,0,0,0.03)", display:"flex", alignItems:"center", justifyContent:"center"}}>
+                                  <MessageSquare size={16} />
+                               </div>
+                               <div style={{flex:1}}>
+                                  <div style={{fontSize:13, fontWeight:700}}>{t.subject}</div>
+                                  <div style={{fontSize:11, color:"rgba(0,0,0,0.4)"}}>{t.userEmail}</div>
+                               </div>
+                               <div style={{fontSize:11, fontWeight:700, color:"var(--theme-primary)", background:"rgba(var(--theme-primary-rgb), 0.1)", padding:"4px 8px", borderRadius:6}}>{t.status}</div>
+                            </div>
+                          ))}
+                       </div>
+                    </div>
+                    <div style={CARD({padding:24, borderRadius:20})}>
+                       <h3 style={{fontSize:16, fontWeight:800, marginBottom:16}}>Quick Settings</h3>
+                       <div style={{display:"flex", flexDirection:"column", gap:16}}>
+                          <div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}>
+                             <div style={{fontSize:13, fontWeight:600}}>Maintenance Mode</div>
+                             <button onClick={()=>updateSystemConfig({maintenanceMode: !systemSettings.maintenanceMode})} style={{background:"transparent", border:"none", cursor:"pointer", color: systemSettings.maintenanceMode ? "#9C2B4E" : "#4CAF50"}}>
+                               {systemSettings.maintenanceMode ? <ToggleRight size={32}/> : <ToggleLeft size={32}/>}
+                             </button>
+                          </div>
+                          <div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}>
+                             <div style={{fontSize:13, fontWeight:600}}>Allow Registration</div>
+                             <button onClick={()=>updateSystemConfig({allowRegistration: !systemSettings.allowRegistration})} style={{background:"transparent", border:"none", cursor:"pointer", color: systemSettings.allowRegistration ? "#4CAF50" : "#CCC"}}>
+                               {systemSettings.allowRegistration ? <ToggleRight size={32}/> : <ToggleLeft size={32}/>}
+                             </button>
+                          </div>
+                       </div>
+                    </div>
+                 </div>
+              </motion.div>
+            )}
+
+            {/* USERS */}
+            {activeTab === "users" && !selectedUser && (
+              <motion.div key="users" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0}}>
+                <div style={{display:"flex", justifyContent:"space-between", alignItems:"flex-end", marginBottom:24}}>
+                  <div>
+                    <h2 style={{fontSize:28, fontWeight:800, margin:0, letterSpacing:"-1px"}}>Manajemen User</h2>
+                    <p style={{fontSize:14, color:"rgba(44,32,22,0.5)", marginTop:4}}>Kelola akses, paket, dan data seluruh pengguna sistem.</p>
+                  </div>
+                  <div style={{display:"flex", alignItems:"center", background:"white", padding:"10px 16px", borderRadius:12, border:"1px solid rgba(44,32,22,0.1)", width: 320, boxShadow:"0 2px 4px rgba(0,0,0,0.02)"}}>
+                    <Search size={18} color="rgba(44,32,22,0.4)" style={{marginRight:10}}/>
+                    <input placeholder="Cari email user..." value={searchEmail} onChange={e=>setSearchEmail(e.target.value)} style={{border:"none", outline:"none", flex:1, fontSize:13, background:"transparent", fontWeight:600}} />
+                  </div>
+                </div>
+
+                <div style={CARD({borderRadius:20, overflow:"hidden", border:"1px solid #EEE"})}>
+                  <table style={{width:"100%", borderCollapse:"collapse", fontSize:13}}>
+                    <thead style={{background:"#FAFAFA", borderBottom:"1px solid #EEE"}}>
+                      <tr>
+                        <th style={{padding:"16px 20px", textAlign:"left", color:"rgba(0,0,0,0.4)", fontWeight:700, fontSize:11, textTransform:"uppercase"}}>Email & Identitas</th>
+                        <th style={{padding:"16px 20px", textAlign:"center", color:"rgba(0,0,0,0.4)", fontWeight:700, fontSize:11, textTransform:"uppercase"}}>Email Verified</th>
+                        <th style={{padding:"16px 20px", textAlign:"center", color:"rgba(0,0,0,0.4)", fontWeight:700, fontSize:11, textTransform:"uppercase"}}>Paket</th>
+                        <th style={{padding:"16px 20px", textAlign:"center", color:"rgba(0,0,0,0.4)", fontWeight:700, fontSize:11, textTransform:"uppercase"}}>Role</th>
+                        <th style={{padding:"16px 20px", textAlign:"center", color:"rgba(0,0,0,0.4)", fontWeight:700, fontSize:11, textTransform:"uppercase"}}>Status</th>
+                        <th style={{padding:"16px 20px", textAlign:"right"}}></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredUsers.map((u:any) => (
+                        <tr key={u.id} style={{borderBottom:"1px solid #FAFAFA"}} className="hover-bg-light">
+                          <td style={{padding:"16px 20px"}}>
+                             <div style={{fontWeight:700}}>{u.email}</div>
+                             <div style={{fontSize:11, color:"rgba(0,0,0,0.3)"}}>ID: {u.id}</div>
+                          </td>
+                          <td style={{padding:"16px 20px", textAlign:"center"}}>
+                             <div style={{display:"flex", alignItems:"center", justifyContent:"center", gap:6}}>
+                               <div style={{width:8, height:8, borderRadius:"50%", background: u.emailVerified ? "#4CAF50" : "#FF9800"}} />
+                               <span style={{fontSize:12, fontWeight:700, color: u.emailVerified ? "#4CAF50" : "#FF9800"}}>{u.emailVerified ? "Verified" : "Unverified"}</span>
+                             </div>
+                          </td>
+                          <td style={{padding:"16px 20px", textAlign:"center"}}>
+                             <div style={{display:"inline-block", background: u.plan==="pro"?"rgba(var(--theme-primary-rgb),0.1)":"#F5F5F5", color:u.plan==="pro"?"var(--theme-primary)":"#666", padding:"4px 10px", borderRadius:20, fontWeight:800, fontSize:11, textTransform:"capitalize"}}>
+                               {u.plan || "Free"}
+                             </div>
+                          </td>
+                          <td style={{padding:"16px 20px", textAlign:"center"}}>
+                             <span style={{fontSize:12, fontWeight:600}}>{u.role || "user"}</span>
+                          </td>
+                          <td style={{padding:"16px 20px", textAlign:"center"}}>
+                             <div style={{display:"flex", alignItems:"center", justifyContent:"center", gap:6}}>
+                               <div style={{width:6, height:6, borderRadius:"50%", background: u.activeUntil && new Date(u.activeUntil) > new Date() ? "#4CAF50" : "#CCC"}} />
+                               <span style={{fontSize:12}}>{u.activeUntil && new Date(u.activeUntil) > new Date() ? "Aktif" : "Expired"}</span>
+                             </div>
+                          </td>
+                          <td style={{padding:"16px 20px", textAlign:"right"}}>
+                            <div style={{display:"flex", gap:8, justifyContent:"flex-end"}}>
+                              <button onClick={() => setSelectedUser(u)} style={{background:"#F0F0F0", border:"none", padding:"8px 12px", borderRadius:8, fontSize:12, fontWeight:800, cursor:"pointer"}}>Open Profile</button>
+                              <button onClick={() => setDeletingItem({id: u.id, type:"users", name: u.email})} style={{background:"rgba(156,43,78,0.1)", border:"1px solid rgba(156,43,78,0.2)", color:"#9C2B4E", borderRadius:8, padding:"8px 12px", fontSize:12, fontWeight:800, cursor:"pointer"}}>Delete</button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {filteredUsers.length === 0 && (
+                    <div style={{padding:60, textAlign:"center", color:"rgba(0,0,0,0.3)", fontWeight:600}}>Tidak ada user ditemukan.</div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+
+            {/* USER DETAIL */}
+            {activeTab === "users" && selectedUser && (
+              <motion.div key="userDetail" initial={{opacity:0, x:20}} animate={{opacity:1, x:0}} exit={{opacity:0}} style={{maxWidth:900}}>
+                <button onClick={()=>setSelectedUser(null)} style={{background:"none", border:"none", display:"flex", alignItems:"center", gap:8, color:"var(--theme-primary)", fontWeight:800, cursor:"pointer", marginBottom:24}}>
+                  <X size={18}/> Back to List
+                </button>
+                
+                <div style={{display:"grid", gridTemplateColumns:"1fr 2fr", gap:20}}>
+                   <div style={CARD({padding:24, borderRadius:24})}>
+                      <div style={{width:80, height:80, background:"rgba(var(--theme-primary-rgb), 0.1)", borderRadius:24, display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 16px"}}>
+                         <Users size={40} color="var(--theme-primary)"/>
+                      </div>
+                      <h3 style={{textAlign:"center", margin:0, fontSize:18, fontWeight:800, wordBreak:"break-all"}}>{selectedUser.email}</h3>
+                      <div style={{textAlign:"center", fontSize:12, color:"rgba(0,0,0,0.4)", marginTop:4}}>Joined: {new Date(selectedUser.createdAt||Date.now()).toLocaleDateString()}</div>
+                      
+                      <div style={{marginTop:24, paddingTop:24, borderTop:"1px solid #F5F5F5"}}>
+                         <div style={{fontSize:11, fontWeight:800, color:"rgba(0,0,0,0.4)", textTransform:"uppercase", marginBottom:12}}>Status Berlangganan</div>
+                         <div style={{background:"#FAFAFA", padding:12, borderRadius:12, border:"1px solid #EEE"}}>
+                            <div style={{display:"flex", justifyContent:"space-between", marginBottom:4}}>
+                               <span style={{fontSize:12, fontWeight:600}}>Plan:</span>
+                               <span style={{fontSize:13, fontWeight:800, color:"var(--theme-primary)"}}>{selectedUser.plan || "Free"}</span>
+                            </div>
+                            <div style={{display:"flex", justifyContent:"space-between"}}>
+                               <span style={{fontSize:12, fontWeight:600}}>Active Until:</span>
+                               <span style={{fontSize:12, fontWeight:700}}>{selectedUser.activeUntil ? new Date(selectedUser.activeUntil).toLocaleDateString() : "-"}</span>
+                            </div>
+                         </div>
+                      </div>
+                   </div>
+
+                   <div style={{display:"flex", flexDirection:"column", gap:20}}>
+                      <div style={CARD({padding:24, borderRadius:24})}>
+                         <h3 style={{fontSize:16, fontWeight:800, marginBottom:16}}>Ubah Paket Manual</h3>
+                         <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:12}}>
+                            <button onClick={()=>handleUpdatePlan(selectedUser.id, "pro", 30)} style={{background:"var(--theme-primary)", color:"white", border:"none", padding:12, borderRadius:12, fontWeight:700, cursor:"pointer"}}>Set PRO (30 Hari)</button>
+                            <button onClick={()=>handleUpdatePlan(selectedUser.id, "free", 0)} style={{background:"#F5F5F5", border:"none", padding:12, borderRadius:12, fontWeight:700, cursor:"pointer"}}>Set FREE (Revoke)</button>
+                         </div>
+                      </div>
+
+                      <div style={CARD({padding:24, borderRadius:24})}>
+                         <h3 style={{fontSize:16, fontWeight:800, marginBottom:16}}>Xendit History</h3>
+                         <div style={{display:"flex", flexDirection:"column", gap:10}}>
+                            {/* In a real app, this would be a filtered list of transactions */}
+                            <div style={{padding:12, border:"1px dashed #DDD", borderRadius:12, textAlign:"center", fontSize:12, color:"#999"}}>
+                               Belum ada riwayat transaksi Xendit untuk user ini.
+                            </div>
+                         </div>
+                      </div>
+                   </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* FINANCE */}
+            {activeTab === "finance" && (
+              <motion.div key="finance" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0}}>
+                 <div style={{display:"flex", justifyContent:"space-between", alignItems:"flex-end", marginBottom:32}}>
+                   <div>
+                     <h2 style={{fontSize:28, fontWeight:800, color:"#2C2016", margin:0, letterSpacing:"-1px"}}>Manajemen Keuangan</h2>
+                     <p style={{fontSize:14, color:"rgba(44,32,22,0.5)", marginTop:4}}>Pantau transaksi, revenue, dan pertumbuhan finansial SaaS.</p>
+                   </div>
+                   <div style={{display:"flex", gap:12}}>
+                      <select 
+                        value={financeFilter.month} 
+                        onChange={e => setFinanceFilter(p => ({...p, month: Number(e.target.value)}))}
+                        style={{padding:"10px 16px", borderRadius:12, border:"1px solid #DDD", fontSize:13, fontWeight:700}}
+                      >
+                        {Array.from({length:12}, (_, i) => i + 1).map(m => (
+                          <option key={m} value={m}>{new Date(2000, m-1).toLocaleString('id-ID', {month:'long'})}</option>
+                        ))}
+                      </select>
+                      <select 
+                        value={financeFilter.year} 
+                        onChange={e => setFinanceFilter(p => ({...p, year: Number(e.target.value)}))}
+                        style={{padding:"10px 16px", borderRadius:12, border:"1px solid #DDD", fontSize:13, fontWeight:700}}
+                      >
+                        {[2024, 2025, 2026, 2027].map(y => (
+                          <option key={y} value={y}>{y}</option>
+                        ))}
+                      </select>
+                   </div>
+                 </div>
+
+                 <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(280px, 1fr))", gap: 20, marginBottom:32}}>
+                    <div style={CARD({padding:24, borderRadius:20})}>
+                       <div style={{fontSize:12, color:"rgba(44,32,22,0.5)", fontWeight:700, textTransform:"uppercase"}}>Total Revenue</div>
+                       <div style={{fontSize:36, fontWeight:800, marginTop:8}}>{fmtRp(transactions.reduce((acc, t) => acc + (Number(t.amount) || 0), 0))}</div>
+                       <div style={{fontSize:12, color:"#4CAF50", fontWeight:700, marginTop:8}}>Lifetime Earnings</div>
+                    </div>
+                    <div style={CARD({padding:24, borderRadius:20})}>
+                       <div style={{fontSize:12, color:"rgba(44,32,22,0.5)", fontWeight:700, textTransform:"uppercase"}}>MRR (Estimated)</div>
+                       <div style={{fontSize:36, fontWeight:800, marginTop:8}}>{fmtRp(users.filter(u=>u.plan==="pro").length * 99000)}</div>
+                       <div style={{fontSize:12, color:"#2196F3", fontWeight:700, marginTop:8}}>Monthly Recurring Revenue</div>
+                    </div>
+                    <div style={CARD({padding:24, borderRadius:20})}>
+                       <div style={{fontSize:12, color:"rgba(44,32,22,0.5)", fontWeight:700, textTransform:"uppercase"}}>Pendapatan Filter Terpilih</div>
+                       <div style={{fontSize:36, fontWeight:800, marginTop:8}}>
+                         {fmtRp(transactions.filter(t => {
+                           const d = new Date(t.timestamp);
+                           return d.getMonth() + 1 === financeFilter.month && d.getFullYear() === financeFilter.year;
+                         }).reduce((acc, t) => acc + (Number(t.amount) || 0), 0))}
+                       </div>
+                       <div style={{fontSize:12, color:"#FF9800", fontWeight:700, marginTop:8}}>Bulan: {new Date(2000, financeFilter.month-1).toLocaleString('id-ID', { month: 'long' })} {financeFilter.year}</div>
+                    </div>
+                 </div>
+
+                 <div style={CARD({borderRadius:20, overflow:"hidden", border:"1px solid #EEE"})}>
+                    <div style={{padding:20, borderBottom:"1px solid #EEE", background:"#FAFAFA", display:"flex", justifyContent:"space-between", alignItems:"center"}}>
+                       <h3 style={{fontSize:16, fontWeight:800, margin:0}}>History Transaksi Berdasarkan Filter</h3>
+                       <button onClick={() => {
+                          const csv = "Date,Email,Plan,Amount,Voucher,Method\n" + transactions.map(t => `${t.timestamp},${t.userEmail},${t.planName},${t.amount},${t.voucherCode || '-'},${t.paymentMethod}`).join("\n");
+                          const blob = new Blob([csv], { type: 'text/csv' });
+                          const url = window.URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.setAttribute('hidden', '');
+                          a.setAttribute('href', url);
+                          a.setAttribute('download', 'transaksi.csv');
+                          document.body.appendChild(a);
+                          a.click();
+                          document.body.removeChild(a);
+                       }} style={{fontSize:12, fontWeight:700, color:"var(--theme-primary)", background:"white", border:"1px solid #EEE", padding:"8px 16px", borderRadius:10, cursor:"pointer"}}>Ekspor CSV</button>
+                    </div>
+                    <table style={{width:"100%", borderCollapse:"collapse", fontSize:13}}>
+                       <thead>
+                          <tr style={{background:"#FAFAFA", textAlign:"left"}}>
+                             <th style={{padding:16, fontSize:11, fontWeight:800, color:"#999"}}>TANGGAL & JAM</th>
+                             <th style={{padding:16, fontSize:11, fontWeight:800, color:"#999"}}>PENGGUNA</th>
+                             <th style={{padding:16, fontSize:11, fontWeight:800, color:"#999"}}>PAKET</th>
+                             <th style={{padding:16, fontSize:11, fontWeight:800, color:"#999"}}>VOUCHER</th>
+                             <th style={{padding:16, fontSize:11, fontWeight:800, color:"#999"}}>NOMINAL</th>
+                             <th style={{padding:16, fontSize:11, fontWeight:800, color:"#999"}}>METODE</th>
+                          </tr>
+                       </thead>
+                       <tbody>
+                          {transactions
+                           .filter(t => {
+                             const d = new Date(t.timestamp);
+                             return d.getMonth() + 1 === financeFilter.month && d.getFullYear() === financeFilter.year;
+                           })
+                           .sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+                           .map(t => (
+                            <tr key={t.id} style={{borderBottom:"1px solid #FAFAFA"}}>
+                               <td style={{padding:16}}>
+                                  <div style={{fontWeight:700}}>{new Date(t.timestamp).toLocaleDateString("id-ID", {dateStyle:"medium"})}</div>
+                                  <div style={{fontSize:10, color:"#999"}}>{new Date(t.timestamp).toLocaleTimeString("id-ID", {hour:"2-digit", minute:"2-digit"})}</div>
+                               </td>
+                               <td style={{padding:16, fontWeight:700}}>{t.userEmail}</td>
+                               <td style={{padding:16}}>
+                                  <span style={{fontSize:11, fontWeight:800, background:"rgba(0,0,0,0.05)", padding:"4px 8px", borderRadius:6}}>{t.planName}</span>
+                               </td>
+                               <td style={{padding:16, color: t.voucherCode ? "#C4622D" : "#999", fontWeight: t.voucherCode ? 800 : 400}}>{t.voucherCode || "-"}</td>
+                               <td style={{padding:16, fontWeight:800, color:"#4CAF50"}}>{fmtRp(t.amount)}</td>
+                               <td style={{padding:16, fontSize:12, color:"#666"}}>{t.paymentMethod}</td>
+                            </tr>
+                          ))}
+                       </tbody>
+                    </table>
+                    {transactions.filter(t => {
+                       const d = new Date(t.timestamp);
+                       return d.getMonth() + 1 === financeFilter.month && d.getFullYear() === financeFilter.year;
+                    }).length === 0 && (
+                      <div style={{padding:60, textAlign:"center", color:"#999"}}>Tidak ada transaksi pada periode ini.</div>
+                    )}
+                 </div>
+              </motion.div>
+            )}
+
+            {/* SUPER ADMINS */}
+            {activeTab === "admins" && (
+              <motion.div key="admins" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0}} style={{maxWidth:800}}>
+                 <h2 style={{fontSize:28, fontWeight:800, marginBottom:24, letterSpacing:"-1px"}}>Super Admin Access</h2>
+                 <div style={CARD({padding:24, borderRadius:24})}>
+                    <p style={{fontSize:14, color:"rgba(0,0,0,0.5)", marginBottom:20}}>Hanya user dengan role <b>admin</b> yang bisa mengakses Admin Central.</p>
                     <div style={{display:"flex", flexDirection:"column", gap:12}}>
-                       {["Pembaruan plan user john@doe.com ke PRO", "Invoice #INV-001 lunas via QRIS", "Tiket support #224 menanti balasan", "Registrasi user baru sarah@mail.com"].map((a,i) => (
-                         <div key={i} style={{fontSize:12, paddingBottom:12, borderBottom:"1px solid rgba(44,32,22,0.05)"}}>
-                           <span style={{color:"var(--theme-primary)", fontWeight:700}}>•</span> {a}
+                       {admins.map(a => (
+                         <div key={a.id} style={{display:"flex", justifyContent:"space-between", alignItems:"center", padding:"16px 20px", background:"#F9F9F9", borderRadius:16, border:"1px solid #EEE"}}>
+                            <div style={{display:"flex", alignItems:"center", gap:12}}>
+                               <div style={{width:32, height:32, background:"rgba(0,0,0,0.05)", borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center"}}>
+                                  <Shield size={16} color="var(--theme-primary)"/>
+                               </div>
+                               <span style={{fontWeight:700, fontSize:14}}>{a.email}</span>
+                            </div>
+                            {a.email !== "nalendraputra71@gmail.com" && (
+                              <button onClick={async () => {
+                                if(window.confirm(`Revoke admin access for ${a.email}?`)) {
+                                   await updateDoc(doc(db, "users", a.id), { role: "user" });
+                                }
+                              }} style={{background:"transparent", border:"none", color:"#9C2B4E", fontSize:12, fontWeight:700, cursor:"pointer"}}>Revoke Access</button>
+                            )}
                          </div>
                        ))}
                     </div>
-                 </div>
-              </div>
-            </motion.div>
-          )}
-
-          {/* MANAJEMEN USER */}
-          {activeTab === "users" && !selectedUser && (
-            <motion.div initial={{opacity:0, y:10}} animate={{opacity:1, y:0}}>
-              <div style={{display:"flex", justifyContent:"space-between", alignItems:"flex-end", marginBottom:20}}>
-                <div>
-                  <h2 style={{fontSize:22, fontWeight:800, marginBottom:4, color:"#2C2016"}}>Manajemen User</h2>
-                  <p style={{fontSize:13, color:"rgba(44,32,22,0.5)", margin:0}}>Total {users.length} user terdaftar.</p>
-                </div>
-                <div style={{display:"flex", alignItems:"center", background:"white", padding:"8px 12px", borderRadius:10, border:"1px solid rgba(44,32,22,0.1)", width: 260}}>
-                  <Search size={16} color="rgba(44,32,22,0.4)" style={{marginRight:8}}/>
-                  <input placeholder="Cari email atau nama..." value={searchEmail} onChange={e=>setSearchEmail(e.target.value)} style={{border:"none", outline:"none", flex:1, fontSize:12, background:"transparent"}} />
-                </div>
-              </div>
-
-              {loading ? (
-                <div style={{textAlign:"center", padding:40, color:"rgba(44,32,22,0.5)", fontSize:13}}>Sedang memuat data...</div>
-              ) : (
-                <div style={{background:"white", borderRadius:12, border:"1px solid rgba(44,32,22,0.05)", overflow:"hidden", boxShadow:"0 2px 12px rgba(0,0,0,0.02)"}}>
-                  <table style={{width:"100%", borderCollapse:"collapse", fontSize:12}}>
-                    <thead style={{background:"#FAFAFA", borderBottom:"1px solid rgba(44,32,22,0.05)"}}>
-                      <tr>
-                        <th style={{padding:"12px 16px", textAlign:"left", color:"rgba(44,32,22,0.5)", fontWeight:700}}>User Info</th>
-                        <th style={{padding:"12px 16px", textAlign:"left", color:"rgba(44,32,22,0.5)", fontWeight:700}}>Tgl Daftar</th>
-                        <th style={{padding:"12px 16px", textAlign:"center", color:"rgba(44,32,22,0.5)", fontWeight:700}}>Status Email</th>
-                        <th style={{padding:"12px 16px", textAlign:"center", color:"rgba(44,32,22,0.5)", fontWeight:700}}>Plan</th>
-                        <th style={{padding:"12px 16px", textAlign:"left", color:"rgba(44,32,22,0.5)", fontWeight:700}}>Aktif Sampai</th>
-                        <th style={{padding:"12px 16px", textAlign:"center", color:"rgba(44,32,22,0.5)", fontWeight:700}}>Aksi</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredUsers.map((u:any) => {
-                         const isExpired = u.activeUntil ? new Date(u.activeUntil) < new Date() : true;
-                         return (
-                          <tr key={u.id} style={{borderBottom:"1px solid rgba(44,32,22,0.03)"}}>
-                            <td style={{padding:"12px 16px"}}>
-                               <div style={{fontWeight:700, color:"#2C2016"}}>{u.fullName || "Tanpa Nama"}</div>
-                               <div style={{color:"rgba(44,32,22,0.5)", fontSize:11}}>@{u.username} • {u.email}</div>
-                            </td>
-                            <td style={{padding:"12px 16px"}}>
-                               <div style={{color:"#2C2016", fontSize:12, fontWeight:500}}>{u.createdAt ? new Date(u.createdAt).toLocaleDateString("id-ID") : "-"}</div>
-                               <div style={{color:"rgba(44,32,22,0.5)", fontSize:11}}>{u.createdAt ? new Date(u.createdAt).toLocaleTimeString("id-ID", {hour:'2-digit', minute:'2-digit'}) : ""}</div>
-                            </td>
-                            <td style={{padding:"12px 16px", textAlign:"center"}}>
-                               {u.emailVerified ? <span style={{color:"#2D7A5E", fontWeight:700}}>Terverifikasi</span> : <span style={{color:"#9C2B4E", fontWeight:700}}>Belum</span>}
-                            </td>
-                            <td style={{padding:"12px 16px", textAlign:"center"}}>
-                              <span style={{background:u.plan==="pro"?"#C4622D":"#EBEBEB", color:u.plan==="pro"?"white":"#2C2016", padding:"4px 8px", borderRadius:4, fontSize:10, fontWeight:800}}>
-                                {(u.plan||"").toUpperCase()}
-                              </span>
-                            </td>
-                            <td style={{padding:"12px 16px", color:isExpired?"#9C2B4E":"#2C2016", fontWeight:isExpired?700:500}}>
-                               {u.activeUntil ? new Date(u.activeUntil).toLocaleDateString('id-ID') : "-"}
-                            </td>
-                            <td style={{padding:"12px 16px", textAlign:"center", display:"flex", gap:8, justifyContent:"center"}}>
-                               <button onClick={() => setSelectedUser(u)} style={{background:"#FAFAFA", border:"1px solid rgba(44,32,22,0.1)", padding:"6px 12px", borderRadius:6, fontSize:11, fontWeight:700, cursor:"pointer", color:"#2C2016"}}>
-                                 Detail Akses
-                               </button>
-                               <button onClick={async () => {
-                                  if (window.confirm(`⚠️ KONFIRMASI PENGHAPUSAN\n\nApakah Anda yakin ingin menghapus user ${u.email} secara permanen?\n\nSeluruh data workspace, konten, dan profil user ini akan hilang dari sistem dan tidak bisa dikembalikan.`)) {
-                                     try {
-                                        const { db, doc, deleteDoc } = await import("./firebase");
-                                        await deleteDoc(doc(db, "users", u.id));
-                                        alert("User successfully deleted.");
-                                     } catch (e:any) {
-                                        alert("Failed to delete user: " + e.message);
-                                     }
-                                  }
-                               }} style={{background:"rgba(156,43,78,0.1)", border:"1px solid rgba(156,43,78,0.2)", padding:"6px 12px", borderRadius:6, fontSize:11, fontWeight:700, cursor:"pointer", color:"#9C2B4E"}}>
-                                 Hapus Akun
-                               </button>
-                            </td>
-                          </tr>
-                         )
-                      })}
-                      {filteredUsers.length === 0 && (
-                        <tr><td colSpan={5} style={{textAlign:"center", padding:20, color:"rgba(44,32,22,0.5)", fontSize:13}}>User tidak ditemukan.</td></tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </motion.div>
-          )}
-
-          {/* USER DETAIL VIEW */}
-          {activeTab === "users" && selectedUser && (
-            <motion.div initial={{opacity:0, x:20}} animate={{opacity:1, x:0}}>
-              <div style={{display:"flex", alignItems:"center", gap:8, marginBottom:24, cursor:"pointer", color:"rgba(44,32,22,0.5)", fontSize:13, fontWeight:600}} onClick={() => setSelectedUser(null)}>
-                <CheckCircle size={14} style={{transform:"rotate(180deg)"}} /> Kembali ke Daftar User
-              </div>
-              
-              <div style={{display:"flex", gap:20}}>
-                 {/* Profil Info & Paket */}
-                 <div style={{flex: 1, display:"flex", flexDirection:"column", gap:16}}>
-                    <div style={{background:"white", borderRadius:12, padding:24, border:"1px solid rgba(44,32,22,0.05)"}}>
-                       <div style={{display:"flex", alignItems:"center", gap:16, marginBottom:20}}>
-                          <img src={selectedUser.avatar} alt="av" style={{width:60, height:60, borderRadius:30}} />
-                          <div>
-                            <div style={{fontSize:18, fontWeight:800, color:"#2C2016"}}>{selectedUser.fullName || "-"}</div>
-                            <div style={{fontSize:13, color:"rgba(44,32,22,0.5)"}}>{selectedUser.email}</div>
-                          </div>
+                    
+                    <div style={{marginTop:32, background:"rgba(var(--theme-primary-rgb), 0.05)", padding:20, borderRadius:16, border:"1px dashed var(--theme-primary)"}}>
+                       <h4 style={{margin:0, fontSize:13, fontWeight:800}}>Push New Admin</h4>
+                       <div style={{display:"flex", gap:10, marginTop:12}}>
+                          <input id="new_admin_email" placeholder="Email user..." style={{flex:1, padding:"10px 14px", borderRadius:10, border:"1px solid #DDD", fontSize:13}} />
+                          <button onClick={async () => {
+                            const email = (document.getElementById("new_admin_email") as HTMLInputElement).value;
+                            const target = users.find(u=>u.email === email);
+                            if (target) {
+                               await updateDoc(doc(db, "users", target.id), { role: "admin" });
+                               (document.getElementById("new_admin_email") as HTMLInputElement).value = "";
+                            } else {
+                               alert("User tidak ditemukan.");
+                            }
+                          }} style={{background:"var(--theme-primary)", color:"white", border:"none", padding:"10px 20px", borderRadius:10, fontWeight:700, cursor:"pointer"}}>Grant Admin</button>
                        </div>
-                       
-                       <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:24}}>
-                          <div style={{background:"#FAFAFA", padding:12, borderRadius:8}}>
-                             <div style={{fontSize:11, color:"rgba(44,32,22,0.5)", fontWeight:700, marginBottom:4}}>Status Paket Saat Ini</div>
-                             <div style={{fontSize:14, fontWeight:700, color:"var(--theme-primary)", textTransform:"uppercase"}}>{selectedUser.plan || "Trial"}</div>
+                    </div>
+                 </div>
+              </motion.div>
+            )}
+
+            {/* PLANS & PROMOS */}
+            {activeTab === "plans" && (
+              <motion.div key="plans" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0}}>
+                <div style={{display:"flex", justifyContent:"space-between", alignItems:"flex-end", marginBottom:32}}>
+                   <div>
+                     <h2 style={{fontSize:28, fontWeight:800, margin:0, letterSpacing:"-1px"}}>Paket & Promosi</h2>
+                     <p style={{fontSize:14, color:"rgba(44,32,22,0.5)", marginTop:4}}>Konfigurasi skema pricing dan kode diskon marketing.</p>
+                   </div>
+                   <div style={{display:"flex", gap:12}}>
+                     <button onClick={() => { setEditingPromo({}); setShowPromoModal(true); }} style={{background:"white", border:"1px solid #DDD", padding:"10px 20px", borderRadius:12, fontSize:13, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", gap:8}}>
+                       <Tag size={16}/> New Promo
+                     </button>
+                     <button onClick={() => { setEditingPlan({}); setShowPlanModal(true); }} style={{background:"var(--theme-primary)", color:"white", border:"none", padding:"10px 24px", borderRadius:12, fontSize:13, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", gap:8}}>
+                       <Package size={16}/> New Plan
+                     </button>
+                   </div>
+                </div>
+
+                <h3 style={{fontSize:18, fontWeight:800, marginBottom:20}}>Subscription Plans</h3>
+                <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(300px, 1fr))", gap:20, marginBottom:40}}>
+                  {plans.map(p => (
+                    <div key={p.id} style={CARD({padding:24, borderRadius:24, border:"1px solid #EEE", borderTop:`4px solid ${p.popular ? 'var(--theme-primary)' : '#EEE'}`})}>
+                       <div style={{display:"flex", justifyContent:"space-between", alignItems:"flex-start"}}>
+                          <div>
+                            <div style={{fontSize:18, fontWeight:800}}>{p.name}</div>
+                            <div style={{fontSize:12, color:"#999", marginTop:4}}>{p.desc}</div>
                           </div>
-                          <div style={{background:"#FAFAFA", padding:12, borderRadius:8}}>
-                             <div style={{fontSize:11, color:"rgba(44,32,22,0.5)", fontWeight:700, marginBottom:4}}>Masa Aktif Berakhir</div>
-                             <div style={{fontSize:14, fontWeight:700, color:new Date(selectedUser.activeUntil) < new Date() ? "#9C2B4E":"#2D7A5E"}}>
-                               {selectedUser.activeUntil ? new Date(selectedUser.activeUntil).toLocaleDateString('id-ID') : "-"}
+                          {p.popular && <span style={{background:"rgba(var(--theme-primary-rgb), 0.1)", color:"var(--theme-primary)", fontSize:10, fontWeight:800, padding:"4px 8px", borderRadius:6, textTransform:"uppercase"}}>Popular</span>}
+                       </div>
+                       <div style={{margin:"20px 0"}}>
+                          <div style={{fontSize:24, fontWeight:800, color:"var(--theme-primary)"}}>Rp{p.price.toLocaleString()}</div>
+                          <div style={{fontSize:11, color:"rgba(0,0,0,0.3)"}}>{p.addMonths} Bulan Akses Penuh</div>
+                       </div>
+                       <div style={{display:"flex", gap:10}}>
+                          <button onClick={() => { setEditingPlan(p); setShowPlanModal(true); }} style={{flex:1, padding:10, borderRadius:12, border:"1px solid #EEE", background:"white", fontWeight:700, cursor:"pointer", fontSize:12}} className="hover-bg-light">Edit Settings</button>
+                          <button onClick={() => setDeletingItem({id: p.id, type:"plans", name: p.name})} style={{background:"rgba(156,43,78,0.1)", color:"#9C2B4E", border:"1px solid rgba(156,43,78,0.1)", padding:10, borderRadius:12, fontWeight:700, cursor:"pointer", fontSize:12}}>Delete</button>
+                       </div>
+                    </div>
+                  ))}
+                  {plans.length === 0 && (
+                    <div style={{gridColumn:"1/-1", padding:60, textAlign:"center", background:"white", borderRadius:24, border:"1px dashed #CCC", color:"#999"}}>Klik "+ New Plan" untuk membuat paket langganan.</div>
+                  )}
+                </div>
+
+                <h3 style={{fontSize:18, fontWeight:800, marginBottom:20}}>Coupon Codes</h3>
+                <div style={CARD({borderRadius:20, overflow:"hidden", border:"1px solid #EEE"})}>
+                   <table style={{width:"100%", borderCollapse:"collapse", fontSize:13}}>
+                      <thead style={{background:"#FAFAFA"}}>
+                        <tr>
+                          <th style={{padding:16, textAlign:"left", fontSize:11, fontWeight:700, textTransform:"uppercase", color:"#999"}}>Kode Promo</th>
+                          <th style={{padding:16, textAlign:"center", fontSize:11, fontWeight:700, textTransform:"uppercase", color:"#999"}}>Diskon</th>
+                          <th style={{padding:16, textAlign:"center", fontSize:11, fontWeight:700, textTransform:"uppercase", color:"#999"}}>Pemakaian</th>
+                          <th style={{padding:16, textAlign:"center", fontSize:11, fontWeight:700, textTransform:"uppercase", color:"#999"}}>Validity Period</th>
+                          <th style={{padding:16, textAlign:"center", fontSize:11, fontWeight:700, textTransform:"uppercase", color:"#999"}}>Status</th>
+                          <th style={{padding:16, textAlign:"right"}}></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {promosList.map(p => (
+                          <tr key={p.id} style={{borderBottom:"1px solid #FAFAFA"}}>
+                             <td style={{padding:16, fontWeight:800}}>{p.code}</td>
+                             <td style={{padding:16, textAlign:"center"}}>
+                               <div style={{background:"rgba(76,175,80,0.1)", color:"#4CAF50", padding:"4px 10px", borderRadius:12, fontWeight:800, display:"inline-block"}}>
+                                 {p.type === "percent" ? `${p.value}%` : fmtRp(p.value)}
+                               </div>
+                             </td>
+                             <td style={{padding:16, textAlign:"center", fontWeight:700}}>{p.usageCount || 0}x</td>
+                             <td style={{padding:16, textAlign:"center"}}>
+                                <div style={{fontSize:10, color:"#666", fontWeight:600}}>
+                                  {p.startDate ? `📅 From: ${p.startDate}` : "⚡ Immediate"} <br/>
+                                  {p.endDate ? `🏁 To: ${p.endDate}` : "♾ No Expiry"}
+                                </div>
+                             </td>
+                             <td style={{padding:16, textAlign:"center"}}>
+                                <button onClick={()=>togglePromo(p)} style={{background:"none", border:"none", cursor:"pointer"}}>
+                                  {p.isActive ? <ToggleRight color="#4CAF50" size={24}/> : <ToggleLeft color="#CCC" size={24}/>}
+                                </button>
+                             </td>
+                             <td style={{padding:16, textAlign:"right"}}>
+                                <div style={{display:"flex", gap:10, justifyContent:"flex-end"}}>
+                                   <button onClick={() => { setEditingPromo(p); setShowPromoModal(true); }} style={{color:"var(--theme-primary)", background:"transparent", border:"none", fontWeight:800, cursor:"pointer", fontSize:12}}>Edit</button>
+                                   <button onClick={() => setDeletingItem({id: p.id, type:"promos", name: p.code})} style={{color:"#9C2B4E", background:"transparent", border:"none", fontWeight:800, cursor:"pointer", fontSize:12}}>Delete</button>
+                                </div>
+                             </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                   </table>
+                   {promosList.length === 0 && (
+                     <div style={{padding:40, textAlign:"center", color:"#999"}}>Belum ada kode promo aktif.</div>
+                   )}
+                </div>
+              </motion.div>
+            )}
+
+            {/* SUPPORT & TICKETS */}
+            {activeTab === "support" && (
+              <motion.div key="support" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0}} style={{height:"calc(100vh - 220px)", display:"flex", flexDirection:"column"}}>
+                 <div style={{marginBottom:24}}>
+                    <h2 style={{fontSize:28, fontWeight:800, margin:0, letterSpacing:"-1px"}}>Support Central</h2>
+                    <p style={{fontSize:14, color:"rgba(44,32,22,0.5)", marginTop:4}}>Tangani keluhan dan masukan pengguna melalui sistem tiket.</p>
+                 </div>
+
+                 <div style={{display:"flex", flex:1, gap:24, overflow:"hidden"}}>
+                    <div style={{width:350, display:"flex", flexDirection:"column", gap:12, overflowY:"auto", paddingRight:4}}>
+                       {tickets.map(t => (
+                         <div key={t.id} onClick={()=>setSelectedTicket(t)} 
+                           style={{
+                             padding:16, background:"white", borderRadius:20, cursor:"pointer", transition:"all 0.2s",
+                             border: selectedTicket?.id === t.id ? "2px solid var(--theme-primary)" : "1px solid #EEE",
+                             boxShadow: selectedTicket?.id === t.id ? "0 4px 20px rgba(var(--theme-primary-rgb), 0.15)" : "none"
+                           }}>
+                            <div style={{display:"flex", justifyContent:"space-between", marginBottom:8}}>
+                               <div style={{fontSize:11, fontWeight:800, color:"rgba(0,0,0,0.3)"}}>#{t.id.slice(-6).toUpperCase()}</div>
+                               <div style={{fontSize:10, fontWeight:700, background: t.status==="open"?"#E3F2FD":"#F5F5F5", color: t.status==="open"?"#2196F3":"#666", padding:"2px 8px", borderRadius:6, textTransform:"uppercase"}}>{t.status}</div>
+                            </div>
+                            <div style={{fontSize:14, fontWeight:800, marginBottom:4}}>{t.subject}</div>
+                            <div style={{fontSize:12, color:"rgba(0,0,0,0.5)"}}>{t.userEmail}</div>
+                            <div style={{fontSize:10, color:"#999", marginTop:12, display:"flex", alignItems:"center", gap:4}}>
+                               <Clock size={10}/> {new Date(t.updatedAt||0).toLocaleString("id-ID", {dateStyle:"short", timeStyle:"short"})}
+                            </div>
+                         </div>
+                       ))}
+                       {tickets.length === 0 && (
+                         <div style={{padding:40, textAlign:"center", background:"#FFF", borderRadius:20, border:"1px dashed #DDD", color:"#999"}}>No tickets found.</div>
+                       )}
+                    </div>
+
+                    <div style={{flex:1, background:"white", borderRadius:24, border:"1px solid #EEE", display:"flex", flexDirection:"column", overflow:"hidden"}}>
+                        {selectedTicket ? (
+                          <div style={{display:"flex", flexDirection:"column", height:"100%"}}>
+                             <div style={{padding:"20px 24px", borderBottom:"1px solid #F5F5F5", display:"flex", justifyContent:"space-between", alignItems:"center"}}>
+                                <div>
+                                   <div style={{fontSize:18, fontWeight:800}}>{selectedTicket.subject}</div>
+                                   <div style={{fontSize:12, color:"#999"}}>{selectedTicket.userEmail}</div>
+                                </div>
+                                <div style={{display:"flex", gap:10}}>
+                                   <button onClick={async () => {
+                                      await updateDoc(doc(db, "tickets", selectedTicket.id), { status: selectedTicket.status === "closed" ? "open" : "closed" });
+                                   }} style={{background:"none", border:"1px solid #EEE", padding:"8px 16px", borderRadius:10, fontSize:12, fontWeight:700, cursor:"pointer"}}>{selectedTicket.status === "closed" ? "Reopen Ticket" : "Close Ticket"}</button>
+                                </div>
+                             </div>
+
+                             <div style={{flex:1, padding:24, overflowY:"auto", display:"flex", flexDirection:"column", gap:16, background:"#FDFDFD"}}>
+                                {(selectedTicket.messages || []).map((m: any, i: number) => (
+                                  <div key={i} style={{alignSelf: m.sender === "admin" ? "flex-end" : "flex-start", maxWidth:"80%"}}>
+                                     <div style={{fontSize:10, fontWeight:700, color:"#999", marginBottom:4, textAlign: m.sender==="admin" ? "right" : "left"}}>
+                                        {m.sender === "admin" ? "Admin Response" : "User Message"} • {new Date(m.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}
+                                     </div>
+                                     <div style={{
+                                        padding:"12px 16px", borderRadius:16, fontSize:13, lineHeight:1.5,
+                                        background: m.sender === "admin" ? "var(--theme-primary)" : "white",
+                                        color: m.sender === "admin" ? "white" : "black",
+                                        border: m.sender === "admin" ? "none" : "1px solid #EEE",
+                                        boxShadow: m.sender === "admin" ? "0 4px 12px rgba(var(--theme-primary-rgb), 0.2)" : "0 2px 4px rgba(0,0,0,0.02)"
+                                     }}>
+                                        {m.text}
+                                     </div>
+                                  </div>
+                                ))}
+                             </div>
+
+                             <div style={{padding:20, background:"white", borderTop:"1px solid #F5F5F5"}}>
+                                <div style={{display:"flex", gap:12}}>
+                                   <textarea id="ticket_reply" placeholder="Tulis balasan support di sini..." 
+                                      style={{flex:1, height:80, padding:16, border:"1px solid #EEE", borderRadius:16, fontSize:13, outline:"none", resize:"none"}} />
+                                   <button onClick={handleReply} 
+                                      style={{width:100, background:"var(--theme-primary)", color:"white", border:"none", borderRadius:16, display:"flex", flexWrap:"wrap", alignItems:"center", justifyContent:"center", fontWeight:800, cursor:"pointer"}}>
+                                      KIRIM REPLY
+                                   </button>
+                                </div>
                              </div>
                           </div>
-                       </div>
-                       
-                       <h4 style={{fontSize:13, fontWeight:700, marginBottom:12, color:"#2C2016"}}>Aksi Manajemen Paket</h4>
-                       <div style={{display:"flex", gap:8, flexWrap:"wrap"}}>
-                          <button onClick={() => handleUpdatePlan(selectedUser.id, "pro", 30)} style={{...B(false), padding:"8px 12px", fontSize:11}}>+ Perpanjang 30 Hari (PRO)</button>
-                          <button onClick={() => handleUpdatePlan(selectedUser.id, "trial", 7)} style={{...B(false), padding:"8px 12px", fontSize:11, background:"white", color:"#2C2016", border:"1px solid rgba(44,32,22,0.1)"}}>Reset 7 Hari Trial</button>
-                          <button onClick={() => handleUpdatePlan(selectedUser.id, "free", -1)} style={{...B(false), padding:"8px 12px", fontSize:11, background:"#9C2B4E", color:"white"}}>Matikan Paket</button>
-                       </div>
-                    </div>
-
-                    <div style={{background:"white", borderRadius:12, padding:24, border:"1px solid rgba(44,32,22,0.05)"}}>
-                       <h3 style={{fontSize:14, fontWeight:700, marginBottom:16, display:"flex", alignItems:"center", gap:8}}><CreditCard size={16}/> Riwayat Transaksi Billing</h3>
-                       <div style={{fontSize:12, color:"rgba(44,32,22,0.5)", textAlign:"center", padding:"20px 0"}}>
-                          Belum ada histori pembayaran untuk user ini.
-                       </div>
-                       {/* Placeholder jika ada: List invoice history via Xendit */}
+                        ) : (
+                          <div style={{flex:1, display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:16, opacity:0.3}}>
+                             <LifeBuoy size={64}/>
+                             <div style={{fontWeight:800}}>Pilih tiket untuk membaca percakapan</div>
+                          </div>
+                        )}
                     </div>
                  </div>
-
-                 {/* Feature Access Control */}
-                 <div style={{width: 320, background:"white", borderRadius:12, border:"1px solid rgba(44,32,22,0.05)", flexShrink:0}}>
-                    <div style={{padding:20, borderBottom:"1px solid rgba(44,32,22,0.05)"}}>
-                      <h3 style={{fontSize:14, fontWeight:700, margin:0}}>Kontrol Akses Fitur</h3>
-                      <div style={{fontSize:11, color:"rgba(44,32,22,0.5)", marginTop:4}}>Kustomisasi fitur yang aktif untuk {selectedUser.fullName}.</div>
-                    </div>
-                    <div style={{padding:20, display:"flex", flexDirection:"column", gap:16}}>
-                       {[
-                         {id:"workspaces", lb:"Manajemen Workspace", desc:"Bisa membuat >1 workspace"},
-                         {id:"social_ig", lb:"Social Studio (Instagram)", desc:"Akses API posting Instagram"},
-                         {id:"social_tiktok", lb:"Social Studio (TikTok)", desc:"Akses API posting TikTok"},
-                         {id:"ai_report", lb:"AI Executive Summary", desc:"Generate report menggunakan Gemini"},
-                         {id:"custom_pillars", lb:"Custom Content Pillars", desc:"Kustomisasi sistem pilar"}
-                       ].map(f => {
-                          const isActive = selectedUser.features ? selectedUser.features[f.id] !== false : true; // Default true if not set
-                          return (
-                            <div key={f.id} style={{display:"flex", alignItems:"center", justifyContent:"space-between"}}>
-                               <div>
-                                 <div style={{fontSize:12, fontWeight:700, color:"#2C2016"}}>{f.lb}</div>
-                                 <div style={{fontSize:10, color:"rgba(44,32,22,0.4)"}}>{f.desc}</div>
-                               </div>
-                               <div onClick={() => toggleUserFeature(selectedUser.id, f.id, isActive)} style={{cursor:"pointer", color: isActive ? "#2D7A5E" : "rgba(44,32,22,0.2)"}}>
-                                 {isActive ? <ToggleRight size={28}/> : <ToggleLeft size={28}/>}
-                               </div>
-                            </div>
-                          )
-                       })}
-                    </div>
-                 </div>
-              </div>
-            </motion.div>
-          )}
-
-          {/* SUPER ADMIN MANAGEMENT */}
-          {activeTab === "admins" && (
-            <motion.div initial={{opacity:0, y:10}} animate={{opacity:1, y:0}}>
-              <h2 style={{fontSize:22, fontWeight:800, marginBottom:20, color:"#2C2016"}}>Manajemen Super Admin</h2>
-              
-              <div style={{display:"grid", gridTemplateColumns:"2fr 1fr", gap:20}}>
-                 <div>
-                    <div style={{background:"white", borderRadius:12, padding:24, border:"1px solid rgba(44,32,22,0.05)", marginBottom:20}}>
-                       <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16}}>
-                          <h3 style={{fontSize:14, fontWeight:700, margin:0}}>Daftar Super Admin</h3>
-                          <button onClick={async () => {
-                              const promptEmail = prompt("Masukkan email user yang ingin dijadikan Super Admin:");
-                              if (!promptEmail) return;
-                              const targetUser = users.find(u => u.email?.toLowerCase() === promptEmail.toLowerCase());
-                              if (targetUser) {
-                                 const confirmInvite = confirm(`Jadikan ${targetUser.email} sebagai Super Admin? Mereka akan mendapatkan akses penuh ke panel ini.`);
-                                 if (confirmInvite) {
-                                    try {
-                                       await updateDoc(doc(db, "users", targetUser.id), { role: "admin" });
-                                       alert(`${targetUser.email} berhasil diundang sebagai Super Admin.`);
-                                       fetchUsers();
-                                    } catch(e:any) { alert("Gagal mengundang: " + e.message); }
-                                 }
-                              } else {
-                                 alert("User tidak ditemukan dalam database. Mereka harus membuat akun terlebih dahulu.");
-                              }
-                          }} style={{background:"#2D7A5E", color:"white", border:"none", padding:"6px 12px", borderRadius:6, fontSize:11, fontWeight:700, cursor:"pointer"}}>+ Undang Admin</button>
-                       </div>
-                       
-                       <table style={{width:"100%", borderCollapse:"collapse", fontSize:12}}>
-                          <thead style={{background:"#FAFAFA", borderBottom:"1px solid rgba(44,32,22,0.05)"}}>
-                            <tr>
-                              <th style={{padding:"12px 16px", textAlign:"left", color:"rgba(44,32,22,0.5)", fontWeight:700}}>Email / Nama</th>
-                              <th style={{padding:"12px 16px", textAlign:"center", color:"rgba(44,32,22,0.5)", fontWeight:700}}>Status</th>
-                              <th style={{padding:"12px 16px", textAlign:"center", color:"rgba(44,32,22,0.5)", fontWeight:700}}>Aksi</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {users.filter(u => u.role === "admin" || u.email?.toLowerCase() === "nalendraputra71@gmail.com").map((u:any) => (
-                              <tr key={u.id} style={{borderBottom:"1px solid rgba(44,32,22,0.03)"}}>
-                                <td style={{padding:"12px 16px"}}>
-                                   <div style={{fontWeight:700, color:"#2C2016"}}>{u.fullName || "Tanpa Nama"}</div>
-                                   <div style={{color:"rgba(44,32,22,0.5)", fontSize:11}}>{u.email}</div>
-                                </td>
-                                <td style={{padding:"12px 16px", textAlign:"center"}}>
-                                   <span style={{background:"#C4622D", color:"white", padding:"4px 8px", borderRadius:4, fontSize:10, fontWeight:800}}>AKTIF</span>
-                                </td>
-                                <td style={{padding:"12px 16px", textAlign:"center"}}>
-                                   {u.email !== userProfile?.email && u.email?.toLowerCase() !== "nalendraputra71@gmail.com" && (
-                                     <button onClick={async () => {
-                                        if (confirm(`Apakah Anda yakin ingin mencabut akses admin dari ${u.email}?`)) {
-                                           try {
-                                              await updateDoc(doc(db, "users", u.id), { role: "user" });
-                                              fetchUsers();
-                                           } catch(e:any) { alert(e.message); }
-                                        }
-                                     }} style={{background:"transparent", border:"1px solid #9C2B4E", color:"#9C2B4E", borderRadius:6, padding:"4px 12px", fontSize:11, cursor:"pointer"}}>Copot</button>
-                                   )}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                       </table>
-                    </div>
-                 </div>
-                 
-                 <div>
-                    <div style={{background:"white", borderRadius:12, padding:24, border:"1px solid rgba(44,32,22,0.05)"}}>
-                       <h3 style={{fontSize:14, fontWeight:700, marginBottom:16}}>Keamanan Akun Saya</h3>
-                       <div style={{fontSize:12, color:"rgba(44,32,22,0.6)", marginBottom:16, lineHeight:1.5}}>
-                          Anda dapat mengubah data diri dan kredensial Anda, serta memicu verifikasi keamanan melalui email.
-                       </div>
-                       
-                       <label style={{fontSize:12, fontWeight:700, marginBottom:6, display:"block"}}>Username Admin</label>
-                       <div style={{display:"flex", gap:8, marginBottom:16}}>
-                          <input id="admin_username_input" defaultValue={userProfile?.username} style={{flex:1, padding:10, borderRadius:8, border:"1px solid rgba(44,32,22,0.1)", fontSize:12}} />
-                          <button onClick={async () => {
-                             const el = document.getElementById("admin_username_input") as HTMLInputElement;
-                             if(el) {
-                                try {
-                                  await updateDoc(doc(db, "users", userProfile.uid), { username: el.value });
-                                  alert("Username berhasil disimpan!");
-                                } catch (e: any) { alert(e.message); }
-                             }
-                          }} style={{background:"var(--theme-primary)", color:"white", border:"none", borderRadius:8, padding:"0 16px", fontWeight:700, cursor:"pointer"}}>Simpan</button>
-                       </div>
-                       
-                       <label style={{fontSize:12, fontWeight:700, marginBottom:6, display:"block"}}>Reset Password</label>
-                       <p style={{fontSize:11, color:"rgba(44,32,22,0.5)", margin:"0 0 12px"}}>Kami akan mengirimkan link untuk mengubah password via email dengan verifikasi autentikasi.</p>
-                       <button onClick={async () => {
-                         try {
-                           const { sendPasswordResetEmail, auth } = await import("./firebase");
-                           await sendPasswordResetEmail(auth, userProfile?.email);
-                           alert("Link reset password telah dikirim ke email " + userProfile?.email);
-                         } catch(e:any) {
-                           alert(e.message);
-                         }
-                       }} style={{width:"100%", background:"#FAFAFA", color:"#2C2016", border:"1px solid rgba(44,32,22,0.1)", borderRadius:8, padding:"10px", fontSize:12, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:8}}>
-                         <Shield size={16}/> Kirim Email Reset Password
-                       </button>
-                    </div>
-                 </div>
-              </div>
-            </motion.div>
-          )}
-
-          {/* FINANCE & BILLING */}
-          {activeTab === "finance" && (
-            <motion.div initial={{opacity:0, y:10}} animate={{opacity:1, y:0}}>
-              <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20}}>
-                <h2 style={{fontSize:22, fontWeight:800, color:"#2C2016", margin:0}}>Keuangan & Log Pembayaran</h2>
-                <div style={{display:"flex", gap:8}}>
-                  <select value={financeDateRange.month} onChange={(e)=>setFinanceDateRange(p=>({...p, month: parseInt(e.target.value)}))} style={{padding:"8px 12px", borderRadius:8, border:"1px solid rgba(44,32,22,0.1)", background:"white"}}>
-                    {Array.from({length:12}).map((_,i) => <option key={i+1} value={i+1}>Bulan {i+1}</option>)}
-                  </select>
-                  <select value={financeDateRange.year} onChange={(e)=>setFinanceDateRange(p=>({...p, year: parseInt(e.target.value)}))} style={{padding:"8px 12px", borderRadius:8, border:"1px solid rgba(44,32,22,0.1)", background:"white"}}>
-                    {[2024, 2025, 2026].map((y) => <option key={y} value={y}>{y}</option>)}
-                  </select>
-                </div>
-              </div>
-              
-              <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginBottom:24}}>
-                 <div style={{background:"white", borderRadius:12, padding:20, border:"1px solid rgba(44,32,22,0.05)"}}>
-                    <h3 style={{fontSize:14, fontWeight:700, marginBottom:16}}>Laporan Net vs Gross (Bulan Ini)</h3>
-                    <div style={{display:"flex", justifyContent:"space-between", marginBottom:8, fontSize:13}}>
-                      <span style={{color:"rgba(44,32,22,0.6)"}}>Gross Revenue (Uang masuk dari user)</span>
-                      <strong style={{color:"#2C2016"}}>Rp {fmt(transactions.filter((t:any) => {
-                const d = new Date(t.timestamp);
-                return d.getMonth() + 1 === financeDateRange.month && d.getFullYear() === financeDateRange.year;
-             }).reduce((acc, t) => acc + (Number(t.amount) || 0), 0))}</strong>
-                    </div>
-                    <div style={{display:"flex", justifyContent:"space-between", marginBottom:12, fontSize:13}}>
-                      <span style={{color:"rgba(44,32,22,0.6)"}}>Biaya Layanan Xendit (Admin Fees)</span>
-                      <strong style={{color:"#9C2B4E"}}>- Rp {fmt(transactions.filter((t:any) => {
-                const d = new Date(t.timestamp);
-                return d.getMonth() + 1 === financeDateRange.month && d.getFullYear() === financeDateRange.year;
-             }).reduce((acc, t) => acc + (Number(t.amount) || 0), 0) * 0.03)}</strong>
-                    </div>
-                    <div style={{borderTop:"1px solid rgba(44,32,22,0.1)", paddingTop:12, display:"flex", justifyContent:"space-between", fontSize:14}}>
-                      <span style={{fontWeight:700, color:"#2C2016"}}>Net Revenue (Bersih)</span>
-                      <strong style={{color:"#2D7A5E", fontWeight:800}}>Rp {fmt(transactions.filter((t:any) => {
-                const d = new Date(t.timestamp);
-                return d.getMonth() + 1 === financeDateRange.month && d.getFullYear() === financeDateRange.year;
-             }).reduce((acc, t) => acc + (Number(t.amount) || 0), 0) * 0.97)}</strong>
-                    </div>
-                 </div>
-                 
-                 <div style={{background:"white", borderRadius:12, padding:20, border:"1px solid rgba(44,32,22,0.05)"}}>
-                    <h3 style={{fontSize:14, fontWeight:700, marginBottom:16}}>Status Saluran Pembayaran (Channels)</h3>
-                    <div style={{display:"flex", flexDirection:"column", gap:8}}>
-                       <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", fontSize:12, padding:8, background:"#FAFAFA", borderRadius:6}}>
-                         <div style={{display:"flex", alignItems:"center", gap:8}}><div style={{width:8,height:8,borderRadius:4,background:"#2D7A5E"}}/> Virtual Account BCA/Mandiri</div>
-                         <ToggleRight size={20} color="#2D7A5E" />
-                       </div>
-                       <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", fontSize:12, padding:8, background:"#FAFAFA", borderRadius:6}}>
-                         <div style={{display:"flex", alignItems:"center", gap:8}}><div style={{width:8,height:8,borderRadius:4,background:"#2D7A5E"}}/> E-Wallet (OVO, DANA)</div>
-                         <ToggleRight size={20} color="#2D7A5E" />
-                       </div>
-                       <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", fontSize:12, padding:8, background:"rgba(156,43,78,0.05)", borderRadius:6}}>
-                         <div style={{display:"flex", alignItems:"center", gap:8}}><div style={{width:8,height:8,borderRadius:4,background:"#9C2B4E"}}/> QRIS (Maintenance)</div>
-                         <ToggleLeft size={20} color="rgba(44,32,22,0.3)" />
-                       </div>
-                    </div>
-                 </div>
-              </div>
-
-              <div style={{background:"white", borderRadius:12, padding:20, border:"1px solid rgba(44,32,22,0.05)"}}>
-                 <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16}}>
-                   <h3 style={{fontSize:14, fontWeight:700, margin:0}}>Log Transaksi Terkini</h3>
-                   <button style={{display:"flex", alignItems:"center", gap:6, background:"transparent", border:"1px solid rgba(44,32,22,0.1)", borderRadius:6, padding:"6px 12px", fontSize:11, fontWeight:700, cursor:"pointer"}}>
-                     <RefreshCw size={12}/> Sync All to Xendit
-                   </button>
-                 </div>
-                 <table style={{width:"100%", borderCollapse:"collapse", fontSize:12}}>
-                    <thead style={{background:"#FAFAFA", borderBottom:"1px solid rgba(44,32,22,0.05)"}}>
-                      <tr>
-                        <th style={{padding:"12px", textAlign:"left", color:"rgba(44,32,22,0.5)", fontWeight:700}}>ID Invoice</th>
-                        <th style={{padding:"12px", textAlign:"left", color:"rgba(44,32,22,0.5)", fontWeight:700}}>Email User</th>
-                        <th style={{padding:"12px", textAlign:"left", color:"rgba(44,32,22,0.5)", fontWeight:700}}>Nominal</th>
-                        <th style={{padding:"12px", textAlign:"left", color:"rgba(44,32,22,0.5)", fontWeight:700}}>Metode</th>
-                        <th style={{padding:"12px", textAlign:"center", color:"rgba(44,32,22,0.5)", fontWeight:700}}>Status</th>
-                        <th style={{padding:"12px", textAlign:"center", color:"rgba(44,32,22,0.5)", fontWeight:700}}>Aksi</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {transactions.filter((t:any) => new Date(t.timestamp).getMonth() + 1 === financeDateRange.month).length === 0 ? 
-                        <tr><td colSpan={6} style={{padding:12, textAlign:"center"}}>Tidak ada transaksi di rentang waktu ini.</td></tr> :
-                        transactions.filter((t:any) => new Date(t.timestamp).getMonth() + 1 === financeDateRange.month).map((t:any, i:number) => (
-                          <tr key={t.id} style={{borderBottom:"1px solid rgba(44,32,22,0.03)"}}>
-                            <td style={{padding:"12px", fontWeight:600, color:"var(--theme-primary)"}}>#INV-{new Date(t.timestamp).getFullYear()}-{i+1}</td>
-                            <td style={{padding:"12px"}}>{t.userEmail}</td>
-                            <td style={{padding:"12px", fontWeight:700}}>Rp {fmt(t.amount || 0)}</td>
-                            <td style={{padding:"12px", color:"rgba(44,32,22,0.6)"}}>{t.paymentMethod || "Xendit QRIS"}</td>
-                            <td style={{padding:"12px", textAlign:"center"}}><span style={{background:"#E5F4EE", color:"#2D7A5E", padding:"4px 8px", borderRadius:4, fontSize:10, fontWeight:800}}>LUNAS</span></td>
-                            <td style={{padding:"12px", textAlign:"center"}}>
-                               <button style={{background:"transparent", border:"none", cursor:"pointer", color:"rgba(44,32,22,0.5)"}} title="Download Invoice"><Download size={14}/></button>
-                            </td>
-                          </tr>
-                        ))
-                      }
-                    </tbody>
-                 </table>
-              </div>
-            </motion.div>
-          )}
-
-          {/* PLANS & PROMO */}
-          {activeTab === "plans" && (
-              <motion.div initial={{opacity:0, y:10}} animate={{opacity:1, y:0}}>
-                <h2 style={{fontSize:22, fontWeight:800, marginBottom:20, color:"#2C2016"}}>Manajemen Paket & Promo</h2>
-                <p style={{fontSize:13, color:"rgba(44,32,22,0.6)", marginBottom:24}}>Kustomisasi harga, durasi, dan jenis paket aktif yang akan ditampilkan di halaman langganan user.</p>
-                
-                <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(280px, 1fr))", gap:16, marginBottom:32}}>
-                   {plans.map((p) => (
-                     <div key={p.id} style={{background:"white", borderRadius:12, padding:20, border: p.popular ? "2px solid var(--theme-primary)" : "1px solid rgba(44,32,22,0.1)", position:"relative"}}>
-                        {p.popular && <div style={{fontSize:11, fontWeight:800, color:"var(--theme-primary)", textTransform:"uppercase", letterSpacing:1, marginBottom:8}}>Terlaris</div>}
-                        <h3 style={{fontSize:16, fontWeight:800, margin:"0 0 4px"}}>{p.name}</h3>
-                        <div style={{fontSize:12, color:"rgba(44,32,22,0.5)", textDecoration:"line-through", marginBottom:2}}>
-                           {p.originalPrice ? `Rp ${p.originalPrice.toLocaleString('id-ID')}` : ''}
-                        </div>
-                        <div style={{fontSize:24, fontWeight:800, color:"#2C2016", marginBottom:16}}>Rp {p.price?.toLocaleString('id-ID')} <span style={{fontSize:12, color:"rgba(44,32,22,0.5)", fontWeight:500}}>/ {p.addMonths} bln</span></div>
-                        <div style={{fontSize:12, color:"rgba(44,32,22,0.6)", height: 40, marginBottom:16}}>{p.desc}</div>
-                        <div style={{display:"flex", gap:8}}>
-                           <button onClick={() => { setEditingPlan(p); setShowPlanModal(true); }} className="hover-scale" style={{flex:1, background:"#FAFAFA", border:"1px solid rgba(44,32,22,0.1)", borderRadius:6, padding:"8px", fontSize:11, fontWeight:700, cursor:"pointer"}}>Edit Paket</button>
-                           <button onClick={async () => {
-                             if (confirm(`Yakin ingin menghapus paket ${p.name}?`)) {
-                               try {
-                                 await deleteDoc(doc(db, "plans", p.id));
-                                 fetchPlans();
-                               } catch(e) { console.error(e); }
-                             }
-                           }} className="hover-scale" style={{background:"transparent", border:"1px solid #9C2B4E", color:"#9C2B4E", borderRadius:6, padding:"8px 12px", fontSize:11, fontWeight:700, cursor:"pointer"}}>Hapus</button>
-                        </div>
-                     </div>
-                   ))}
-                   
-                   <div onClick={() => { setEditingPlan({}); setShowPlanModal(true); }} className="hover-scale" style={{background:"#FAFAFA", borderRadius:12, padding:20, border:"1px dashed rgba(44,32,22,0.2)", display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", cursor:"pointer", minHeight: 180}}>
-                      <div style={{fontSize:24, color:"rgba(44,32,22,0.3)", marginBottom:8}}>+</div>
-                      <div style={{fontSize:13, fontWeight:700, color:"rgba(44,32,22,0.5)"}}>Tambah Paket Baru</div>
-                   </div>
-                </div>
-
-                <div style={{background:"white", borderRadius:12, padding:24, border:"1px solid rgba(44,32,22,0.05)"}}>
-                   <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16}}>
-                     <h3 style={{fontSize:16, fontWeight:800}}>Kode Promo Aktif</h3>
-                     <button onClick={handleAddPromo} style={{background:"rgba(var(--theme-primary-rgb),0.1)", color:"var(--theme-primary)", border:"none", borderRadius:6, padding:"6px 12px", fontSize:11, fontWeight:700, cursor:"pointer"}}>+ Tambah Promo</button>
-                   </div>
-                   {promosList.length === 0 ? <div style={{fontSize:12, color:"rgba(44,32,22,0.5)"}}>Belum ada promo.</div> : promosList.map(p => (
-                     <div key={p.id} style={{display:"flex", alignItems:"center", gap:16, padding:"12px 16px", background:"#FAFAFA", borderRadius:8, marginBottom:8, opacity: p.isActive ? 1 : 0.6}}>
-                        <div style={{flex:1}}>
-                           <div style={{fontSize:14, fontWeight:800, color:"var(--theme-primary)", letterSpacing:1}}>{p.code}</div>
-                           <div style={{fontSize:11, color:"rgba(44,32,22,0.5)"}}>Diskon {p.discount}. (Digunakan: {p.usageCount||0} kali) {p.isActive ? "" : "(Nonaktif)"}</div>
-                        </div>
-                        <div style={{display:"flex", gap:8}}>
-                          <button onClick={()=>togglePromo(p)} style={{background:"transparent", border:"1px solid rgba(44,32,22,0.2)", borderRadius:6, padding:"6px 12px", fontSize:11, fontWeight:700, cursor:"pointer"}}>
-                            {p.isActive ? "Nonaktifkan" : "Aktifkan"}
-                          </button>
-                          <button onClick={async () => {
-                             if (confirm(`Yakin ingin menghapus promo ${p.code}?`)) {
-                               try {
-                                 await deleteDoc(doc(db, "promos", p.id));
-                                 fetchPlans();
-                               } catch(e) { console.error(e); }
-                             }
-                           }} style={{background:"transparent", border:"1px solid #9C2B4E", color:"#9C2B4E", borderRadius:6, padding:"6px 12px", fontSize:11, fontWeight:700, cursor:"pointer"}}>
-                             Hapus
-                           </button>
-                        </div>
-                     </div>
-                   ))}
-                </div>
               </motion.div>
-          )}
+            )}
 
-          {/* XENDIT WEBHOOK & DUNNING */}
-          {activeTab === "xendit" && (
-            <motion.div initial={{opacity:0, y:10}} animate={{opacity:1, y:0}}>
-              <h2 style={{fontSize:22, fontWeight:800, marginBottom:20, color:"#2C2016"}}>Log Webhook & Dunning Xendit</h2>
-              <div style={{display:"flex", gap:16, marginBottom:24}}>
-                 <div style={{flex:2, background:"#1E1509", borderRadius:12, padding:20, color:"white"}}>
-                    <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16}}>
-                      <h3 style={{fontSize:14, fontWeight:700, margin:0, display:"flex", alignItems:"center", gap:8}}><Activity size={16} color="#8AAEF0"/> Live Webhook Listener</h3>
-                      <div style={{fontSize:11, background:"#2D7A5E", padding:"4px 8px", borderRadius:4, fontWeight:700}}>LISTENING PORT 3000</div>
-                    </div>
-                    <div style={{fontFamily:"monospace", fontSize:11, color:"rgba(255,255,255,0.6)", display:"flex", flexDirection:"column", gap:8, background:"rgba(0,0,0,0.3)", padding:16, borderRadius:8, height:150, overflowY:"auto"}}>
-                       <div><span style={{color:"#8AAEF0"}}>[2026-04-25 14:12:02]</span> POST /api/webhook/xendit - 200 OK (invoice_paid)</div>
-                       <div><span style={{color:"#8AAEF0"}}>[2026-04-25 10:05:11]</span> POST /api/webhook/xendit - 200 OK (invoice_created)</div>
-                       <div style={{color:"#F0B18A"}}><span style={{color:"#F0B18A"}}>[2026-04-24 23:59:00]</span> POST /api/webhook/xendit - 500 ERROR (Connection Timeout)</div>
-                    </div>
-                 </div>
-                 <div style={{flex:1, background:"white", borderRadius:12, padding:20, border:"1px dashed #9C2B4E"}}>
-                    <h3 style={{fontSize:14, fontWeight:700, margin:"0 0 8px", color:"#9C2B4E"}}>Dunning Auto-Debit</h3>
-                    <p style={{fontSize:12, color:"rgba(44,32,22,0.6)", marginBottom:16, lineHeight:1.5}}>Ada 3 user yang gagal auto-debit kartu kredit bulan ini karena saldo tidak cukup.</p>
-                    <button style={{width:"100%", background:"#9C2B4E", color:"white", border:"none", padding:"10px", borderRadius:8, fontSize:12, fontWeight:700, cursor:"pointer"}}>
-                      Kirim Email Tagihan Manual
-                    </button>
-                 </div>
-              </div>
-            </motion.div>
-          )}
-
-          {/* SUPPORT TICKETS */}
-          {activeTab === "support" && (
-              <motion.div initial={{opacity:0, y:10}} animate={{opacity:1, y:0}}>
-                <h2 style={{fontSize:22, fontWeight:800, marginBottom:20, color:"#2C2016"}}>Tiket Laporan & Feedback User</h2>
-                <div style={{display:"flex", gap:20}}>
-                   <div style={{flex:1, display:"flex", flexDirection:"column", gap:12}}>
-                      {loadingTickets ? <div style={{fontSize:12, color:"rgba(44,32,22,0.5)"}}>Loading tickets...</div> : 
-                       tickets.length === 0 ? <div style={{fontSize:12, color:"rgba(44,32,22,0.5)"}}>Belum ada tiket masuk.</div> : 
-                       tickets.map((t: any) => {
-                         const isPriority = t.subject?.toLowerCase().includes("pembayaran");
-                         return (
-                        <div key={t.id} onClick={()=>setSelectedTicket(t)} style={{background:"white", borderRadius:12, padding:16, border: selectedTicket?.id === t.id ? "1px solid #FF6B00" : "1px solid rgba(44,32,22,0.05)", borderLeft: isPriority ? "4px solid #9C2B4E" : selectedTicket?.id === t.id ? "4px solid #FF6B00" : "4px solid rgba(44,32,22,0.1)", cursor:"pointer", opacity: selectedTicket?.id === t.id ? 1 : 0.7}}>
-                           <div style={{display:"flex", justifyContent:"space-between", marginBottom:8}}>
-                              <div style={{fontSize:12, fontWeight:800, color:"#2C2016", display:"flex", alignItems:"center", gap:6}}>
-                                 {t.userEmail}
-                                 {isPriority && <span style={{background:"#9C2B4E", color:"white", padding:"2px 6px", borderRadius:4, fontSize:9, fontWeight:800, textTransform:"uppercase"}}>Urgent</span>}
-                              </div>
-                              <div style={{fontSize:11, color:"rgba(44,32,22,0.5)"}}>{new Date(t.updatedAt).toLocaleString("id-ID", {dateStyle:"short", timeStyle:"short"})}</div>
-                           </div>
-                           <div style={{fontSize:14, fontWeight:700, marginBottom:4, color: isPriority ? "#9C2B4E" : "#2C2016"}}>{t.subject}</div>
-                           <div style={{fontSize:12, color:"rgba(44,32,22,0.6)", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis"}}>
-                              {t.messages?.[t.messages.length - 1]?.text || "No message"}
-                           </div>
-                        </div>
-                      )})}
-                   </div>
-
-                   <div style={{flex:2, background:"white", borderRadius:12, padding:24, border:"1px solid rgba(44,32,22,0.05)", display:"flex", flexDirection:"column", minHeight: 400}}>
-                      {selectedTicket ? (
-                        <>
-                          <div style={{borderBottom:"1px solid rgba(44,32,22,0.05)", paddingBottom:16, marginBottom:16}}>
-                             <h3 style={{fontSize:18, fontWeight:800, margin:"0 0 4px"}}>{selectedTicket.subject}</h3>
-                             <div style={{fontSize:12, color:"rgba(44,32,22,0.5)"}}>Dilaporkan oleh {selectedTicket.userEmail}</div>
-                          </div>
-                          <div style={{flex:1, overflowY:"auto", marginBottom:16, fontSize:13, lineHeight:1.6, color:"#2C2016", display:"flex", flexDirection:"column", gap:12}}>
-                             {(selectedTicket.messages||[]).map((m: any, i:number) => (
-                                <div key={i} style={{background: m.sender==="admin" ? "#F8EAF0" : "#FAFAFA", padding: 12, borderRadius: 8, alignSelf: m.sender==="admin" ? "flex-end" : "flex-start", maxWidth:"80%"}}>
-                                   <div style={{display:"flex", alignItems:"center", gap:8, marginBottom:4}}>
-                                      <div style={{fontSize:11, fontWeight:700, color:m.sender==="admin" ? "#9C2B4E" : "rgba(44,32,22,0.5)"}}>{m.sender === "admin" ? "Admin" : selectedTicket.userEmail}</div>
-                                      <div style={{fontSize:10, color:"rgba(44,32,22,0.4)"}}>{new Date(m.timestamp).toLocaleString("id-ID", {dateStyle:"short", timeStyle:"short"})}</div>
-                                   </div>
-                                   <div>{m.text}</div>
-                                </div>
-                             ))}
-                          </div>
-                          <div style={{display:"flex", gap:12}}>
-                             <textarea id="ticket_reply" placeholder="Tulis balasan Anda, user akan menerima notifikasi..." style={{flex:1, padding:12, borderRadius:8, border:"1px solid rgba(44,32,22,0.1)", fontSize:13, resize:"none", height:80, fontFamily:"inherit"}}></textarea>
-                             <button onClick={handleReply} style={{background:"#2D7A5E", color:"white", border:"none", borderRadius:8, padding:"0 20px", fontWeight:700, cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:4}}>
-                               <MessageSquare size={18}/> Balas
+            {/* SETTINGS */}
+            {activeTab === "settings" && (
+              <motion.div key="settings" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0}} style={{maxWidth:600}}>
+                 <h2 style={{fontSize:28, fontWeight:800, marginBottom:24, letterSpacing:"-1px"}}>System Settings</h2>
+                 
+                 <div style={{display:"flex", flexDirection:"column", gap:20}}>
+                    <div style={CARD({padding:24, borderRadius:24})}>
+                       <h3 style={{fontSize:16, fontWeight:800, marginBottom:20, display:"flex", alignItems:"center", gap:8}}><Globe size={18}/> App Toggles</h3>
+                       <div style={{display:"flex", flexDirection:"column", gap:16}}>
+                          <div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}>
+                             <div>
+                                <div style={{fontSize:14, fontWeight:700}}>Maintenance Mode</div>
+                                <div style={{fontSize:12, color:"#999"}}>Tampilkan halaman maintenance ke semua user.</div>
+                             </div>
+                             <button onClick={()=>updateSystemConfig({maintenanceMode: !systemSettings.maintenanceMode})} style={{background:"transparent", border:"none", cursor:"pointer"}}>
+                                {systemSettings.maintenanceMode ? <ToggleRight size={32} color="#9C2B4E"/> : <ToggleLeft size={32} color="#CCC"/>}
                              </button>
                           </div>
-                        </>
-                      ) : (
-                         <div style={{flex:1, display:"flex", alignItems:"center", justifyContent:"center", color:"rgba(44,32,22,0.3)"}}>Pilih tiket untuk membalas</div>
-                      )}
-                   </div>
-                </div>
+                          <div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}>
+                             <div>
+                                <div style={{fontSize:14, fontWeight:700}}>Registrasi Baru</div>
+                                <div style={{fontSize:12, color:"#999"}}>Izinkan pengguna baru untuk mendaftar akun.</div>
+                             </div>
+                             <button onClick={()=>updateSystemConfig({allowRegistration: !systemSettings.allowRegistration})} style={{background:"transparent", border:"none", cursor:"pointer"}}>
+                                {systemSettings.allowRegistration ? <ToggleRight size={32} color="#4CAF50"/> : <ToggleLeft size={32} color="#CCC"/>}
+                             </button>
+                          </div>
+                       </div>
+                    </div>
+
+                    <div style={CARD({padding:24, borderRadius:24})}>
+                       <h3 style={{fontSize:16, fontWeight:800, marginBottom:20, display:"flex", alignItems:"center", gap:8}}><Calendar size={18}/> Billing Logic</h3>
+                       <div style={{display:"flex", flexDirection:"column", gap:16}}>
+                          <div>
+                             <div style={{fontSize:13, fontWeight:700, marginBottom:8}}>Masa Uji Coba (Hari)</div>
+                             <input type="number" defaultValue={systemSettings.trialDays} 
+                               onBlur={(e)=>updateSystemConfig({trialDays: Number(e.target.value)})}
+                               style={{width:"100%", padding:"12px", borderRadius:12, border:"1px solid #EEE", fontSize:14}} />
+                             <div style={{fontSize:11, color:"#999", marginTop:6}}>Default jumlah hari user baru mendapatkan akses PRO gratis.</div>
+                          </div>
+                       </div>
+                    </div>
+                 </div>
               </motion.div>
-          )}
+            )}
 
-          {/* PUSH NOTIFS */}
-          {activeTab === "notifications" && (
-            <motion.div initial={{opacity:0, y:10}} animate={{opacity:1, y:0}}>
-              <h2 style={{fontSize:22, fontWeight:800, marginBottom:20, color:"#2C2016"}}>Kirim Push Notification Aplikasi</h2>
-              <div style={{background:"white", borderRadius:12, padding:24, border:"1px solid rgba(44,32,22,0.05)", maxWidth:600}}>
-                 <label style={{fontSize:12, fontWeight:700, marginBottom:8, display:"block", color:"rgba(44,32,22,0.5)"}}>Pilih Target Audiens</label>
-                 <select id="notif_target" defaultValue="all" style={{width:"100%", padding:12, borderRadius:8, border:"1px solid rgba(44,32,22,0.1)", marginBottom:20, fontSize:13, background:"#FAFAFA"}}>
-                    <option value="all">Semua User (Termasuk Trial & Free)</option>
-                    <option value="pro">Hanya User Akun PRO Aktif</option>
-                    <option value="expired">Hanya User Kadaluarsa / Churned</option>
-                 </select>
-                 
-                 <label style={{fontSize:12, fontWeight:700, marginBottom:8, display:"block", color:"rgba(44,32,22,0.5)"}}>Judul Notifikasi</label>
-                 <input id="notif_title" placeholder="Contoh: Fitur Baru Telah Rilis!" style={{width:"100%", padding:12, borderRadius:8, border:"1px solid rgba(44,32,22,0.1)", marginBottom:20, fontSize:13}} />
-                 
-                 <label style={{fontSize:12, fontWeight:700, marginBottom:8, display:"block", color:"rgba(44,32,22,0.5)"}}>Isi Pesan</label>
-                 <textarea id="notif_desc" placeholder="Pesan singkat maksmial 150 karakter..." style={{width:"100%", padding:12, borderRadius:8, border:"1px solid rgba(44,32,22,0.1)", marginBottom:24, fontSize:13, resize:"none", height:100}}></textarea>
-                 <button onClick={async () => {
-                    const tEl = document.getElementById("notif_title") as HTMLInputElement;
-                    const dEl = document.getElementById("notif_desc") as HTMLTextAreaElement;
-                    const tgEl = document.getElementById("notif_target") as HTMLSelectElement;
-                    if(!tEl.value || !dEl.value) return alert("Penuhi semua kolom");
-                    try {
-                       const { addDoc, collection, db } = await import("./firebase");
-                       await addDoc(collection(db, "global_notifications"), {
-                          title: tEl.value,
-                          desc: dEl.value,
-                          target: tgEl.value,
-                          createdAt: new Date().toISOString()
-                       });
-                       tEl.value = ""; dEl.value = "";
-                       alert("Notifikasi berhasil dikirim!");
-                    } catch(e:any) { alert(e.message); }
-                 }} style={{width:"100%", background:"var(--theme-primary)", color:"white", border:"none", padding:"14px", borderRadius:8, fontSize:14, fontWeight:800, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:8}}>
-                   <Bell size={18}/> Kirim Notifikasi Sekarang
-                 </button>
-              </div>
-            </motion.div>
-          )}
-
-          {/* SETTINGS */}
-          {activeTab === "settings" && (
-            <motion.div initial={{opacity:0, y:10}} animate={{opacity:1, y:0}}>
-              <h2 style={{fontSize:22, fontWeight:800, marginBottom:20, color:"#2C2016"}}>Pengaturan Basis CMS</h2>
-              <div style={{background:"white", borderRadius:12, padding:24, border:"1px solid rgba(44,32,22,0.05)", display:"flex", flexDirection:"column", gap: 20}}>
-                 <div style={{display:"flex", alignItems:"center", justifyContent:"space-between", paddingBottom:16, borderBottom:"1px solid rgba(44,32,22,0.05)"}}>
-                   <div>
-                     <div style={{fontSize:14, fontWeight:700, color:"#2C2016", marginBottom:4}}>Mode Maintenance Keseluruhan</div>
-                     <div style={{fontSize:12, color:"rgba(44,32,22,0.5)"}}>Matikan aplikasi untuk perbaikan. User akan melihat layar Maintenance.</div>
-                   </div>
-                   <button style={{background:"transparent", border:"1px solid rgba(44,32,22,0.2)", padding:"8px 16px", borderRadius:8, fontWeight:700, color:"rgba(44,32,22,0.4)", cursor:"pointer"}}>OFF</button>
-                 </div>
-                 
-                 <div style={{display:"flex", alignItems:"center", justifyContent:"space-between", paddingBottom:16, borderBottom:"1px solid rgba(44,32,22,0.05)"}}>
-                   <div>
-                     <div style={{fontSize:14, fontWeight:700, color:"#2C2016", marginBottom:4}}>Hapus Periode Arsip Otomatis</div>
-                     <div style={{fontSize:12, color:"rgba(44,32,22,0.5)"}}>Berapa lama data terarsip di sistem sebelum dihancurkan selamanya?</div>
-                   </div>
-                   <select style={{background:"#FAFAFA", border:"1px solid rgba(44,32,22,0.1)", padding:"8px 12px", borderRadius:8, fontWeight:700, color:"#2C2016", outline:"none"}}>
-                     <option>90 Hari Terakhir</option>
-                     <option>1 Tahun</option>
-                     <option>Tidak Pernah Hapus</option>
-                   </select>
-                 </div>
-                 
-              </div>
-            </motion.div>
-          )}
-
+          </AnimatePresence>
         </div>
       </div>
+
+      {/* MODALS */}
+      <AnimatePresence>
+        {/* Plan Modal */}
         {showPlanModal && editingPlan && (
-          <div style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.5)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center"}}>
-            <form onSubmit={savePlan} style={{background:"white", padding:30, borderRadius:20, width:500, maxHeight:"90vh", overflowY:"auto"}}>
-               <h3 style={{fontSize:20, fontWeight:700, marginBottom:16}}>{editingPlan.id ? "Edit Paket" : "Tambah Paket"}</h3>
-               <div style={{display:"flex", flexDirection:"column", gap:12, marginBottom:20}}>
-                 <div>
-                    <label style={{fontSize:12, fontWeight:700, color:"rgba(44,32,22,0.5)"}}>Nama Paket</label>
-                    <input name="name" defaultValue={editingPlan.name} required style={{width:"100%", padding:"12px", borderRadius:12, border:"1px solid #EBEBEB"}} />
-                 </div>
-                 <div>
-                    <label style={{fontSize:12, fontWeight:700, color:"rgba(44,32,22,0.5)"}}>Deskripsi Pendek</label>
-                    <input name="desc" defaultValue={editingPlan.desc} required style={{width:"100%", padding:"12px", borderRadius:12, border:"1px solid #EBEBEB"}} />
-                 </div>
-                 <div style={{display:"flex", gap:12}}>
-                   <div style={{flex:1}}>
-                      <label style={{fontSize:12, fontWeight:700, color:"rgba(44,32,22,0.5)"}}>Harga Coret (Original) Rp</label>
-                      <input name="originalPrice" type="number" defaultValue={editingPlan.originalPrice} style={{width:"100%", padding:"12px", borderRadius:12, border:"1px solid #EBEBEB"}} />
-                   </div>
-                   <div style={{flex:1}}>
-                      <label style={{fontSize:12, fontWeight:700, color:"rgba(44,32,22,0.5)"}}>Harga Jual Rp</label>
-                      <input name="price" type="number" defaultValue={editingPlan.price} required style={{width:"100%", padding:"12px", borderRadius:12, border:"1px solid #EBEBEB"}} />
-                   </div>
-                 </div>
-                 <div>
-                    <label style={{fontSize:12, fontWeight:700, color:"rgba(44,32,22,0.5)"}}>Durasi (Bulan)</label>
-                    <input name="addMonths" type="number" defaultValue={editingPlan.addMonths || 1} required style={{width:"100%", padding:"12px", borderRadius:12, border:"1px solid #EBEBEB"}} />
-                 </div>
-                 <div>
-                    <label style={{fontSize:12, fontWeight:700, color:"rgba(44,32,22,0.5)"}}><input type="checkbox" name="popular" defaultChecked={editingPlan.popular} /> Tandai "Terlaris"</label>
-                 </div>
-                 <div>
-                    <label style={{fontSize:12, fontWeight:700, color:"rgba(44,32,22,0.5)"}}>Fitur (1 per baris)</label>
-                    <textarea name="features" defaultValue={editingPlan.features?.join("\n")} style={{width:"100%", minHeight:100, padding:"12px", borderRadius:12, border:"1px solid #EBEBEB"}} />
-                 </div>
+          <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.5)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center", backdropFilter:"blur(4px)", padding:20}}>
+            <motion.form initial={{scale:0.95, opacity:0}} animate={{scale:1, opacity:1}} exit={{scale:0.95, opacity:0}} onSubmit={savePlan} style={{background:"white", padding:32, borderRadius:28, width:480, maxHeight:"90vh", overflowY:"auto"}}>
+               <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:24}}>
+                  <h3 style={{fontSize:20, fontWeight:800}}>{editingPlan.id ? "Edit Plan Details" : "Create New Plan"}</h3>
+                  <button type="button" onClick={()=>setShowPlanModal(false)} style={{background:"#F5F5F5", border:"none", padding:8, borderRadius:10, cursor:"pointer"}}><X size={20}/></button>
+               </div>
+               <div style={{display:"flex", flexDirection:"column", gap:16, marginBottom:24}}>
+                  <div>
+                    <label style={{display:"block", fontSize:11, fontWeight:800, color:"#999", textTransform:"uppercase", marginBottom:6}}>Nama Paket</label>
+                    <input name="name" placeholder="Pro Monthly, etc" defaultValue={editingPlan.name} required style={{width:"100%", padding:12, borderRadius:12, border:"1px solid #EEE", fontSize:14}} />
+                  </div>
+                  <div>
+                    <label style={{display:"block", fontSize:11, fontWeight:800, color:"#999", textTransform:"uppercase", marginBottom:6}}>Keterangan Singkat</label>
+                    <input name="desc" placeholder="Best for professionals" defaultValue={editingPlan.desc} required style={{width:"100%", padding:12, borderRadius:12, border:"1px solid #EEE", fontSize:14}} />
+                  </div>
+                  <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:16}}>
+                    <div>
+                      <label style={{display:"block", fontSize:11, fontWeight:800, color:"#999", textTransform:"uppercase", marginBottom:6}}>Harga (Rp)</label>
+                      <input name="price" type="number" placeholder="99000" defaultValue={editingPlan.price} required style={{width:"100%", padding:12, borderRadius:12, border:"1px solid #EEE", fontSize:14}} />
+                    </div>
+                    <div>
+                      <label style={{display:"block", fontSize:11, fontWeight:800, color:"#999", textTransform:"uppercase", marginBottom:6}}>Harga Coret (Rp)</label>
+                      <input name="originalPrice" type="number" placeholder="149000" defaultValue={editingPlan.originalPrice} style={{width:"100%", padding:12, borderRadius:12, border:"1px solid #EEE", fontSize:14}} />
+                    </div>
+                  </div>
+                  <div>
+                    <label style={{display:"block", fontSize:11, fontWeight:800, color:"#999", textTransform:"uppercase", marginBottom:6}}>Masa Aktif (Bulan)</label>
+                    <input name="addMonths" type="number" placeholder="1" defaultValue={editingPlan.addMonths} required style={{width:"100%", padding:12, borderRadius:12, border:"1px solid #EEE", fontSize:14}} />
+                  </div>
+                  <div>
+                    <label style={{display:"block", fontSize:11, fontWeight:800, color:"#999", textTransform:"uppercase", marginBottom:6}}>Fitur (Pisahkan baris baru)</label>
+                    <textarea name="features" placeholder="Fitur 1\nFitur 2" defaultValue={editingPlan.features?.join("\n")} style={{width:"100%", height:120, padding:12, borderRadius:12, border:"1px solid #EEE", fontSize:14, resize:"none"}} />
+                  </div>
+                  <label style={{display:"flex", alignItems:"center", gap:8, cursor:"pointer"}}>
+                    <input name="popular" type="checkbox" defaultChecked={editingPlan.popular} />
+                    <span style={{fontSize:13, fontWeight:700}}>Tandai sebagai Paket Populer</span>
+                  </label>
                </div>
                <div style={{display:"flex", gap:12}}>
-                 <button type="button" onClick={()=>setShowPlanModal(false)} style={{flex:1, padding:"12px", borderRadius:12, background:"#F5F5F5", border:"none", fontWeight:600, cursor:"pointer"}}>Batal</button>
-                 <button type="submit" style={{flex:1, padding:"12px", borderRadius:12, background:"var(--theme-primary)", color:"white", border:"none", fontWeight:600, cursor:"pointer"}}>Simpan Paket</button>
+                 <button type="submit" style={{flex:1, background:"var(--theme-primary)", color:"white", border:"none", padding:14, borderRadius:16, fontWeight:800, cursor:"pointer"}}>Simpan Perubahan</button>
                </div>
-            </form>
-          </div>
+            </motion.form>
+          </motion.div>
         )}
+
+        {/* Promo Modal */}
+        {showPromoModal && editingPromo && (
+          <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.5)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center", backdropFilter:"blur(4px)", padding:20}}>
+            <motion.form initial={{scale:0.95, opacity:0}} animate={{scale:1, opacity:1}} exit={{scale:0.95, opacity:0}} onSubmit={savePromo} style={{background:"white", padding:32, borderRadius:28, width:400}}>
+               <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:24}}>
+                  <h3 style={{fontSize:20, fontWeight:800}}>Generate Code</h3>
+                  <button type="button" onClick={()=>setShowPromoModal(false)} style={{background:"#F5F5F5", border:"none", padding:8, borderRadius:10, cursor:"pointer"}}><X size={20}/></button>
+               </div>
+               <div style={{display:"flex", flexDirection:"column", gap:16, marginBottom:24}}>
+                  <div>
+                    <label style={{display:"block", fontSize:11, fontWeight:800, color:"#999", textTransform:"uppercase", marginBottom:6}}>Kode Promo</label>
+                    <input name="code" placeholder="DISKON77" defaultValue={editingPromo.code} required style={{width:"100%", padding:12, borderRadius:12, border:"1px solid #EEE", fontSize:16, fontWeight:800, letterSpacing:1}} />
+                  </div>
+                  <div>
+                    <label style={{display:"block", fontSize:11, fontWeight:800, color:"#999", textTransform:"uppercase", marginBottom:6}}>Tipe Diskon</label>
+                    <select name="type" defaultValue={editingPromo.type || "percent"} style={{width:"100%", padding:12, borderRadius:12, border:"1px solid #EEE", fontSize:14}}>
+                      <option value="percent">Persentase (%)</option>
+                      <option value="fixed">Nominal Tetap (Rp)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{display:"block", fontSize:11, fontWeight:800, color:"#999", textTransform:"uppercase", marginBottom:6}}>Nilai Potongan</label>
+                    <input name="value" type="number" placeholder="10" defaultValue={editingPromo.value} required style={{width:"100%", padding:12, borderRadius:12, border:"1px solid #EEE", fontSize:14}} />
+                  </div>
+                  <div>
+                    <label style={{display:"block", fontSize:11, fontWeight:800, color:"#999", textTransform:"uppercase", marginBottom:6}}>Target Pengguna</label>
+                    <select name="targetType" defaultValue={editingPromo.targetType || "all"} style={{width:"100%", padding:12, borderRadius:12, border:"1px solid #EEE", fontSize:14}}>
+                      <option value="all">Semua Pengguna</option>
+                      <option value="first_timer">Hanya User Baru (Pertama Kali perpanjang setelah Trial)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{display:"block", fontSize:11, fontWeight:800, color:"#999", textTransform:"uppercase", marginBottom:6}}>Batas Pemakaian (0=Tanpa Batas)</label>
+                    <input name="usageLimit" type="number" defaultValue={editingPromo.usageLimit || 0} style={{width:"100%", padding:12, borderRadius:12, border:"1px solid #EEE", fontSize:14}} />
+                  </div>
+                  <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:12}}>
+                    <div>
+                      <label style={{display:"block", fontSize:11, fontWeight:800, color:"#999", textTransform:"uppercase", marginBottom:6}}>Mulai Berlaku</label>
+                      <input name="startDate" type="date" defaultValue={editingPromo.startDate} style={{width:"100%", padding:12, borderRadius:12, border:"1px solid #EEE", fontSize:14}} />
+                    </div>
+                    <div>
+                      <label style={{display:"block", fontSize:11, fontWeight:800, color:"#999", textTransform:"uppercase", marginBottom:6}}>Berakhir Pada</label>
+                      <input name="endDate" type="date" defaultValue={editingPromo.endDate} style={{width:"100%", padding:12, borderRadius:12, border:"1px solid #EEE", fontSize:14}} />
+                    </div>
+                  </div>
+                  <div>
+                    <label style={{display:"block", fontSize:11, fontWeight:800, color:"#999", textTransform:"uppercase", marginBottom:6}}>Syarat & Ketentuan (S&K)</label>
+                    <textarea name="terms" placeholder="Tulis syarat voucher di sini..." defaultValue={editingPromo.terms} style={{width:"100%", height:80, padding:12, borderRadius:12, border:"1px solid #EEE", fontSize:13, resize:"none"}} />
+                  </div>
+               </div>
+               <button type="submit" style={{width:"100%", background:"var(--theme-primary)", color:"white", border:"none", padding:14, borderRadius:16, fontWeight:800, cursor:"pointer"}}>Aktifkan Promo</button>
+            </motion.form>
+          </motion.div>
+        )}
+
+        {/* DELETE CONFIRMATION MODAL */}
+        {deletingItem && (
+          <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.7)", zIndex:2000, display:"flex", alignItems:"center", justifyContent:"center", padding:20, backdropFilter:"blur(8px)"}}>
+            <motion.div initial={{scale:0.95, y:20}} animate={{scale:1, y:0}} exit={{scale:0.95, y:20}} 
+              style={{background:"white", borderRadius:32, padding:"40px", textAlign:"center", maxWidth:400, boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
+              <div style={{width:80, height:80, background:"rgba(156,43,78,0.1)", borderRadius:30, display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 24px"}}>
+                <AlertCircle color="#9C2B4E" size={48} />
+              </div>
+              <h3 style={{fontSize:22, fontWeight:800, color:"#2C2016", margin:0, letterSpacing:"-0.5px"}}>Konfirmasi Hapus</h3>
+              <p style={{fontSize:14, color:"rgba(44,32,22,0.6)", margin:"16px 0 32px", lineHeight:1.6}}>
+                Apakah Anda yakin ingin menghapus <b>{deletingItem.type}</b> dengan nama <br/>
+                <span style={{color:"#9C2B4E", fontWeight:800}}>"{deletingItem.name}"</span>? <br/>
+                Tindakan ini tidak bisa dibatalkan.
+              </p>
+              <div style={{display:"flex", gap:14}}>
+                <button onClick={() => setDeletingItem(null)} 
+                  style={{flex:1, padding:"16px", borderRadius:16, border:"1px solid #EEE", background:"white", fontWeight:800, fontSize:14, cursor:"pointer"}} 
+                  className="hover-bg-light">Batal</button>
+                <button onClick={async () => {
+                   try {
+                     await deleteDoc(doc(db, deletingItem.type, deletingItem.id));
+                     setDeletingItem(null);
+                   } catch(e:any) { 
+                     setDeletingItem(null);
+                     alert("Gagal menghapus: " + e.message); 
+                   }
+                }} style={{flex:1, background:"#9C2B4E", color:"white", border:"none", padding:"16px", borderRadius:16, fontWeight:800, fontSize:14, cursor:"pointer", boxShadow:"0 8px 16px rgba(156,43,78,0.2)"}}>Hapus Permanen</button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
