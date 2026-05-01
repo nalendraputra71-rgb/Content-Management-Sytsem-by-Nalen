@@ -9,6 +9,7 @@
         "email": { "type": "string" },
         "username": { "type": "string" },
         "fullName": { "type": "string" },
+        "nickname": { "type": "string" },
         "avatar": { "type": "string" },
         "plan": { "type": "string", "enum": ["free", "pro"] },
         "createdAt": { "type": "string", "format": "date-time" }
@@ -55,6 +56,29 @@
         "metrics": { "type": "object" }
       },
       "required": ["workspaceId", "userId", "title"]
+    },
+    "Todo": {
+      "title": "Dashboard Todo",
+      "description": "Manual tasks for the dashboard todos widget",
+      "type": "object",
+      "properties": {
+        "text": { "type": "string" },
+        "completed": { "type": "boolean" },
+        "userId": { "type": "string" },
+        "dueDate": { "type": "string", "format": "date" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "DashboardConfig": {
+      "title": "Dashboard Configuration",
+      "description": "Sticky notes, layout, and other widget states",
+      "type": "object",
+      "properties": {
+        "stickyNote": { "type": "string" },
+        "layout": { "type": "array" },
+        "clockType": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
     }
   },
   "firestore": {
@@ -73,6 +97,14 @@
     "/workspaces/{workspaceId}/content/{contentId}": {
       "schema": "Content",
       "description": "Posts associated with a specific workspace"
+    },
+    "/workspaces/{workspaceId}/todos/{todoId}": {
+      "schema": "Todo",
+      "description": "Internal tasks for specific workspaces"
+    },
+    "/workspaces/{workspaceId}/dashboard/config": {
+      "schema": "DashboardConfig",
+      "description": "State persistence for dashboard widgets"
     }
   }
 }

@@ -18,7 +18,12 @@ export function BillingView({ userProfile, onUpdate }: { userProfile: any, activ
     const loadPlansAndPromos = async () => {
       const plansSnap = await getDocs(collection(db, "plans"));
       if (plansSnap.empty) {
-        // ... (preserving default plans generation logic if needed)
+        const defaultPlans = [
+          { id: "starter", name: "Starter Pro", price: 49000, desc: "Cocok untuk kreator pemula yang ingin mencoba fitur Pro.", addMonths: 1, popular: false, features: ["Akses Semua Template", "Tanpa Watermark", "Email Support"] },
+          { id: "pro", name: "Ultimate Pro", price: 99000, desc: "Pilihan terbaik untuk profesional dengan fitur terlengkap.", addMonths: 1, popular: true, features: ["Semua Fitur Starter", "Prioritas Render", "Voucher Diskon Bulanan", "Custom Domain"] },
+          { id: "business", name: "Enterprise", price: 249000, desc: "Solusi skala besar untuk tim dan agensi konten.", addMonths: 3, popular: false, features: ["Semua Fitur Pro", "Akun Tim (3 User)", "Dedicated Support", "Analytics Eksklusif"] }
+        ];
+        setPlans(defaultPlans);
       } else {
         setPlans(plansSnap.docs.map(d => ({ ...d.data(), id: d.id })));
       }

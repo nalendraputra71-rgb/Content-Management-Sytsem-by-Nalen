@@ -2,8 +2,9 @@ import { useState, useEffect } from "react";
 import { I, B, CARD, THEMES } from "./data";
 import { Save, CheckCircle2 } from "lucide-react";
 
-export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, profile, onUpdateProfile }: any) {
+export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, profile, onUpdateProfile, onDirty, onLeave, onDelete, isOwner }: any) {
   const [section, setSection] = useState("visual");
+  const [pendingSection, setPendingSection] = useState<string | null>(null);
   
   // Local state for all settings
   const [localPillars, setLocalPillars] = useState(initialSettings.pillars || []);
@@ -11,16 +12,35 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
   const [localPics, setLocalPics] = useState(initialSettings.pics || []);
   const [localStatuses, setLocalStatuses] = useState(initialSettings.statuses || []);
   const [localHolidays, setLocalHolidays] = useState(initialSettings.holidays || {});
+  const [localCustomEvents, setLocalCustomEvents] = useState(initialSettings.customEvents || []);
 
   const [newVal, setNewVal] = useState("");
   const [newColor, setNewColor] = useState("#C4622D");
   const [newHKey, setNewHKey] = useState("");
   const [newHVal, setNewHVal] = useState("");
 
+  const [newEvName, setNewEvName] = useState("");
+  const [newEvColor, setNewEvColor] = useState("#C4622D");
+  const [newEvStart, setNewEvStart] = useState("");
+  const [newEvEnd, setNewEvEnd] = useState("");
+  const [newEvMonthly, setNewEvMonthly] = useState(false);
+
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [savingTheme, setSavingTheme] = useState(false);
   const [themeSuccess, setThemeSuccess] = useState(false);
+
+  // Dirty check logic
+  const isDirty = JSON.stringify(localPillars) !== JSON.stringify(initialSettings.pillars || []) ||
+                  JSON.stringify(localPlatforms) !== JSON.stringify(initialSettings.platforms || []) ||
+                  JSON.stringify(localPics) !== JSON.stringify(initialSettings.pics || []) ||
+                  JSON.stringify(localStatuses) !== JSON.stringify(initialSettings.statuses || []) ||
+                  JSON.stringify(localHolidays) !== JSON.stringify(initialSettings.holidays || {}) ||
+                  JSON.stringify(localCustomEvents) !== JSON.stringify(initialSettings.customEvents || []);
+
+  useEffect(() => {
+    onDirty?.(isDirty);
+  }, [isDirty, onDirty]);
 
   // Sync if initialSettings change (e.g. workspace switch)
   useEffect(() => {
@@ -29,6 +49,7 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
     setLocalPics(initialSettings.pics || []);
     setLocalStatuses(initialSettings.statuses || []);
     setLocalHolidays(initialSettings.holidays || {});
+    setLocalCustomEvents(initialSettings.customEvents || []);
     setSaveSuccess(false);
   }, [initialSettings]);
 
@@ -39,8 +60,18 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
     ["pics", "Team PIC", "👤"],
     ["statuses", "Status Workflow", "📋"],
     ["holidays", "Hari Besar", "📅"],
+    ["customEvents", "Event Kustom", "✨"],
+    ["workspace", "Workspace", "🏢"],
     ["general", "General & Debug", "⚙️"]
   ];
+
+  const handleSectionChange = (id: string) => {
+    if (isDirty) {
+      setPendingSection(id);
+    } else {
+      setSection(id);
+    }
+  };
 
   const handleSaveTheme = async (themeId: string) => {
     setSavingTheme(true);
@@ -65,7 +96,8 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
         platforms: localPlatforms,
         pics: localPics,
         statuses: localStatuses,
-        holidays: localHolidays
+        holidays: localHolidays,
+        customEvents: localCustomEvents
       });
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
@@ -98,6 +130,53 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
 
   const addHoliday = () => { if (!newHKey.trim() || !newHVal.trim()) return; setLocalHolidays((h: any) => ({ ...h, [newHKey]: newHVal })); setNewHKey(""); setNewHVal(""); };
   const delHoliday = (k: any) => setLocalHolidays((h: any) => { const n = { ...h }; delete n[k]; return n; });
+
+  const addCustomEvent = () => {
+    if (!newEvName.trim() || !newEvStart || !newEvEnd) return;
+    setLocalCustomEvents((prev: any) => [...prev, {
+      id: Date.now().toString(),
+      name: newEvName.trim(),
+      color: newEvColor,
+      start: newEvStart,
+      end: newEvEnd,
+      monthly: newEvMonthly
+    }]);
+    setNewEvName(""); setNewEvStart(""); setNewEvEnd(""); setNewEvMonthly(false);
+  };
+  const delCustomEvent = (id: string) => setLocalCustomEvents((prev: any) => prev.filter((ev: any) => ev.id !== id));
+
+  const addMultiEvents = (type: "payday" | "twindate") => {
+    const year = new Date().getFullYear();
+    const newEvents: any[] = [];
+    
+    if (type === "payday") {
+      for (let m = 1; m <= 12; m++) {
+        const dateStr = `${year}-${m}-25`;
+        newEvents.push({
+          id: `payday-${m}-${Date.now()}`,
+          name: "Payday Sale 🛍️",
+          color: "#E57373",
+          start: dateStr,
+          end: dateStr,
+          monthly: false
+        });
+      }
+    } else {
+      for (let d = 1; d <= 12; d++) {
+        const dateStr = `${year}-${d}-${d}`;
+        newEvents.push({
+          id: `twindate-${d}-${Date.now()}`,
+          name: `${d}.${d} Mega Sale ⚡`,
+          color: "#3F51B5",
+          start: dateStr,
+          end: dateStr,
+          monthly: false
+        });
+      }
+    }
+    
+    setLocalCustomEvents((prev: any) => [...prev, ...newEvents]);
+  };
 
   const InputRow = ({ placeholder, value, onChange, onAdd, colorPicker }: any) => (
     <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
@@ -138,7 +217,7 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
       <div style={{ display: "grid", gridTemplateColumns: "200px 1fr", gap: 16, minHeight: 400 }}>
         <div style={{ background: "white", borderRadius: 12, padding: "12px 0", boxShadow: "0 1px 4px rgba(44,32,22,0.08)", height: "fit-content" }}>
           {sections.map(([id, label, ic]) => (
-            <button key={id} onClick={() => setSection(id)} style={{ width: "100%", padding: "10px 16px", textAlign: "left", border: "none", borderLeft: `3px solid ${section === id ? "var(--theme-primary)" : "transparent"}`, background: section === id ? "var(--theme-primary)11" : "transparent", cursor: "pointer", fontSize: 13, fontWeight: section === id ? 600 : 400, color: section === id ? "var(--theme-primary)" : "#2C2016", display: "flex", alignItems: "center", gap: 8 }}>
+            <button key={id} onClick={() => handleSectionChange(id)} style={{ width: "100%", padding: "10px 16px", textAlign: "left", border: "none", borderLeft: `3px solid ${section === id ? "var(--theme-primary)" : "transparent"}`, background: section === id ? "var(--theme-primary)11" : "transparent", cursor: "pointer", fontSize: 13, fontWeight: section === id ? 600 : 400, color: section === id ? "var(--theme-primary)" : "#2C2016", display: "flex", alignItems:"center", gap:8 }}>
               <span>{ic}</span>{label}
             </button>
           ))}
@@ -279,6 +358,99 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
               </div>
             </>
           )}
+          {section === "customEvents" && (
+            <>
+              <h3 style={{ fontSize: 18, margin: "0 0 14px" }}>✨ Event Kustom & Promo</h3>
+              <p style={{ fontSize: 11, color: "rgba(44,32,22,0.4)", marginBottom: 10 }}>Misal: Pay Day Sale, Twin Date, atau Peluncuran Produk.</p>
+              
+              <div style={{display:"flex", gap:10, marginBottom:16}}>
+                <button 
+                  onClick={() => addMultiEvents("payday")}
+                  style={{...B(false), fontSize:11, padding:"6px 12px", background:"#FDF5F8", borderColor:"#E57373", color:"#E57373"}}
+                >
+                  ⚡ Preset Payday (25th)
+                </button>
+                <button 
+                  onClick={() => addMultiEvents("twindate")}
+                  style={{...B(false), fontSize:11, padding:"6px 12px", background:"#E8EAF6", borderColor:"#3F51B5", color:"#3F51B5"}}
+                >
+                  👫 Preset Twin Date (1.1 - 12.12)
+                </button>
+              </div>
+
+              <div style={{ background: "#FAFAF8", padding: 16, borderRadius:16, display: "flex", flexDirection: "column", gap: 10, marginBottom: 20, border:"1px solid rgba(0,0,0,0.05)" }}>
+                <input type="text" value={newEvName} onChange={(e: any) => setNewEvName(e.target.value)} placeholder="Nama Event (e.g., Payday Sale)" style={I({})} />
+                <div style={{ display: "flex", gap: 8 }}>
+                   <div style={{flex: 1}}>
+                     <label style={{fontSize:9, fontWeight:700, marginBottom:4, display:"block", color:"#999"}}>Start Date</label>
+                     <input type="date" value={newEvStart} onChange={(e: any) => setNewEvStart(e.target.value)} style={I({fontSize:11, padding:6})} />
+                   </div>
+                   <div style={{flex: 1}}>
+                     <label style={{fontSize:9, fontWeight:700, marginBottom:4, display:"block", color:"#999"}}>End Date</label>
+                     <input type="date" value={newEvEnd} onChange={(e: any) => setNewEvEnd(e.target.value)} style={I({fontSize:11, padding:6})} />
+                   </div>
+                   <div style={{flex: 0}}>
+                     <label style={{fontSize:9, fontWeight:700, marginBottom:4, display:"block", color:"#999"}}>Color</label>
+                     <input type="color" value={newEvColor} onChange={(e: any) => setNewEvColor(e.target.value)} style={{ width: 32, height: 32, border: "none", borderRadius: 8, cursor: "pointer", background:"none" }} />
+                   </div>
+                </div>
+                <label style={{display:"flex", alignItems:"center", gap:8, fontSize:11, cursor:"pointer", color:"#666"}}>
+                   <input type="checkbox" checked={newEvMonthly} onChange={e=>setNewEvMonthly(e.target.checked)} />
+                   Ulangi Setiap Bulan (Berdasarkan Tgl)
+                </label>
+                <button onClick={addCustomEvent} style={{ ...B(true, "#2C2016"), height: 40, borderRadius: 10, fontSize:12 }}>Tambah Event Kustom</button>
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {localCustomEvents.map((ev: any) => (
+                  <div key={ev.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "white", padding: "10px 14px", borderRadius: 12, border:`1px solid ${ev.color}44` }}>
+                    <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                      <div style={{width:10, height:10, borderRadius:"50%", background:ev.color, boxShadow:`0 0 10px ${ev.color}44` }} />
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color:"#2C2016" }}>{ev.name}</div>
+                        <div style={{ fontSize: 10, color: "#999" }}>
+                          {ev.start} s/d {ev.end} {ev.monthly && "• (Bulanan)"}
+                        </div>
+                      </div>
+                    </div>
+                    <button onClick={() => delCustomEvent(ev.id)} style={{ background: "rgba(156,43,78,0.05)", border: "none", borderRadius: 6, padding: "5px 10px", fontSize: 10, cursor: "pointer", color: "#9C2B4E" }}>Hapus</button>
+                  </div>
+                ))}
+                {localCustomEvents.length === 0 && <div style={{padding:40, textAlign:"center", fontSize:12, color:"#CCC"}}>Belum ada event kustom.</div>}
+              </div>
+            </>
+          )}
+          {section === "workspace" && (
+            <>
+              <h3 style={{ fontSize: 18, margin: "0 0 14px" }}>🏢 Manajemen Workspace</h3>
+              <p style={{ fontSize: 13, color: "rgba(44,32,22,0.6)", marginBottom: 24 }}>Kelola status Anda di workspace ini. Anda dapat keluar dari workspace jika diundang, atau menghapus workspace jika Anda adalah pemiliknya.</p>
+              
+              <div style={{ background: "#FDF0EB", border: "1px solid rgba(196,98,45,0.1)", borderRadius: 16, padding: 24 }}>
+                <h4 style={{ fontSize: 15, fontWeight: 800, color: "#2C2016", marginBottom: 8 }}>{isOwner ? "Hapus Workspace Ini" : "Tinggalkan Workspace Ini"}</h4>
+                <p style={{ fontSize: 13, color: "rgba(44,32,22,0.6)", marginBottom: 20 }}>
+                  {isOwner 
+                    ? "Menghapus workspace akan menghilangkan seluruh data konten, platform, dan anggota di dalamnya secara permanen. Tindakan ini tidak dapat dibatalkan." 
+                    : "Anda akan kehilangan akses ke seluruh konten dan pengaturan di workspace ini. Anda harus diundang kembali oleh pemilik untuk mendapatkan akses lagi."}
+                </p>
+                
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <button 
+                    onClick={isOwner ? onDelete : onLeave}
+                    className="hover-scale"
+                    style={{ 
+                      ...B(true, "#9C2B4E"), 
+                      padding: "10px 24px", borderRadius: 12, fontSize: 13, fontWeight: 800, background: "#9C2B4E", border: "none"
+                    }}
+                  >
+                    {isOwner ? "Hapus Workspace" : "Tinggalkan Workspace"}
+                  </button>
+                  <span style={{ fontSize: 12, color: "rgba(44,32,22,0.4)", fontStyle: "italic" }}>
+                    ({isOwner ? "hapus workspace" : "leave this workspace"})
+                  </span>
+                </div>
+              </div>
+            </>
+          )}
           {section === "general" && (
             <>
               <h3 style={{ fontSize: 18, margin: "0 0 14px" }}>⚙️ General & Debug</h3>
@@ -296,6 +468,19 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
           )}
         </div>
       </div>
+
+      {pendingSection && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(5px)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ background: "white", padding: 32, borderRadius: 24, width: 380, textAlign: "center", boxShadow: "0 20px 50px rgba(0,0,0,0.1)" }}>
+            <h3 style={{ fontSize: 20, fontWeight: 800, color: "#2C2016", marginBottom: 12 }}>Simpan Perubahan?</h3>
+            <p style={{ fontSize: 14, color: "rgba(44,32,22,0.6)", marginBottom: 24, lineHeight: 1.5 }}>Ada perubahan yang belum disimpan. Ingin menyimpannya sekarang sebelum pindah bagian?</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <button onClick={() => setPendingSection(null)} style={{ ...B(true, "#2C2016"), width: "100%", height: 48, borderRadius: 12 }}>Tetap di Sini</button>
+              <button onClick={() => { setSection(pendingSection); setPendingSection(null); }} style={{ background: "none", border: "none", color: "#9C2B4E", fontSize: 13, fontWeight: 700, cursor: "pointer", padding: "10px" }}>Tinggalkan Tanpa Menyimpan</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

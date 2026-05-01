@@ -28,9 +28,9 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
          await setDoc(userRef, {
            uid: user.uid,
            email: user.email,
-           fullName: user.displayName || "New User",
+           fullName: user.displayName || "Your Name",
            username: (user.displayName || "user").replace(/\s+/g, "").toLowerCase() + Math.floor(Math.random()*1000),
-           avatar: user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || "New User"}`,
+           avatar: user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || "Your Name"}`,
            plan: cPlan,
            activeUntil: activeUntil.toISOString(),
            hasUsedPromo: false,
@@ -40,9 +40,12 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
 
          const wsRef = doc(collection(db, "workspaces"));
          await setDoc(wsRef, {
-           name: "Workspace Personal",
+           name: "Your Name Workspace",
            ownerId: user.uid,
-           settings: {}
+           settings: {
+             title: "Your Name",
+             tagline: "Content Management System"
+           }
          });
          await setDoc(doc(db, "workspaces", wsRef.id, "members", user.uid), {
            userId: user.uid,

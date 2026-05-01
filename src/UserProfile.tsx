@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { auth, db, signOut, updatePassword, doc, getDoc, updateDoc, runTransaction, collection, query, where, getDocs } from "./firebase";
-import { User, Mail, Shield, CreditCard, ChevronRight, LogOut, Key, Save, ArrowLeft, Pencil } from "lucide-react";
+import { User, Mail, Shield, CreditCard, ChevronRight, LogOut, Key, Save, ArrowLeft, Pencil, Crown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { I, B, CARD } from "./data";
 import { motion } from "motion/react";
@@ -8,6 +8,7 @@ import { motion } from "motion/react";
 export function UserProfile({ userProfile, activeWorkspace, onUpdate }: { userProfile: any, activeWorkspace: any, onUpdate: (data: any) => void }) {
   const navigate = useNavigate();
   const [name, setName] = useState(userProfile?.fullName || "");
+  const [nickname, setNickname] = useState(userProfile?.nickname || "");
   const [userName, setUserName] = useState(userProfile?.username || "");
   const [oldPass, setOldPass] = useState("");
   const [newPass, setNewPass] = useState("");
@@ -104,14 +105,14 @@ export function UserProfile({ userProfile, activeWorkspace, onUpdate }: { userPr
             }
             
             t.set(ustrRef, { uid: userProfile.uid });
-            t.update(doc(db, "users", userProfile.uid), { fullName: name, username: cleanUsername });
+            t.update(doc(db, "users", userProfile.uid), { fullName: name, username: cleanUsername, nickname: nickname.trim() });
          });
       } else {
          const uRef = doc(db, "users", userProfile.uid);
-         await updateDoc(uRef, { fullName: name, username: cleanUsername });
+         await updateDoc(uRef, { fullName: name, username: cleanUsername, nickname: nickname.trim() });
       }
 
-      onUpdate({ ...userProfile, fullName: name, username: cleanUsername });
+      onUpdate({ ...userProfile, fullName: name, username: cleanUsername, nickname: nickname.trim() });
       setMessage({ text: "Profil berhasil diperbarui", type: "success" });
       setIsEditing(false);
     } catch (e: any) {
@@ -218,8 +219,20 @@ export function UserProfile({ userProfile, activeWorkspace, onUpdate }: { userPr
         <div>
           <h1 style={{ fontSize:28, color:"#2C2016", marginBottom:4, display:"flex", alignItems:"center", gap:10}}>
             {userProfile?.fullName}
-            <span style={{background: (userProfile?.activeUntil && new Date(userProfile.activeUntil) > new Date()) ? "var(--theme-primary)" : "#9C2B4E", color: "white", padding: "4px 8px", borderRadius: 6, fontSize: 11, fontWeight:800, display:"inline-block", verticalAlign:"middle"}}>
-              {(userProfile?.activeUntil && new Date(userProfile.activeUntil) > new Date()) ? "PRO" : "FREE"}
+            <span style={{
+              background: userProfile?.plan === "vip" ? "#FBC02D" : ((userProfile?.activeUntil && new Date(userProfile.activeUntil) > new Date()) ? "var(--theme-primary)" : "#9C2B4E"), 
+              color: userProfile?.plan === "vip" ? "#2C2016" : "white", 
+              padding: "4px 8px", 
+              borderRadius: 6, 
+              fontSize: 11, 
+              fontWeight:800, 
+              display:"inline-flex", 
+              alignItems: "center",
+              gap: 4,
+              verticalAlign:"middle"
+            }}>
+              {userProfile?.plan === "vip" && <Crown size={12} />}
+              {userProfile?.plan === "vip" ? "VIP" : (userProfile?.activeUntil && new Date(userProfile.activeUntil) > new Date()) ? "PRO" : "FREE"}
             </span>
           </h1>
           <p style={{fontSize:14, color:"rgba(44,32,22,0.5)", fontWeight:500}}>@{userProfile?.username} · {userProfile?.email}</p>
@@ -244,6 +257,10 @@ export function UserProfile({ userProfile, activeWorkspace, onUpdate }: { userPr
             <div>
               <label style={{fontSize:11, fontWeight:700, color:"rgba(44,32,22,0.4)", textTransform:"uppercase", display:"block", marginBottom:4}}>Nama Lengkap</label>
               <input disabled={!isEditing} value={name} onChange={e=>setName(e.target.value)} style={I({background:!isEditing?"#F5F5F5":"white"})} />
+            </div>
+            <div>
+              <label style={{fontSize:11, fontWeight:700, color:"rgba(44,32,22,0.4)", textTransform:"uppercase", display:"block", marginBottom:4}}>Nama Panggilan</label>
+              <input disabled={!isEditing} value={nickname} onChange={e=>setNickname(e.target.value)} placeholder="Nama panggilan Anda..." style={I({background:!isEditing?"#F5F5F5":"white"})} />
             </div>
             <div>
               <label style={{fontSize:11, fontWeight:700, color:"rgba(44,32,22,0.4)", textTransform:"uppercase", display:"block", marginBottom:4}}>Username</label>
@@ -305,10 +322,23 @@ export function UserProfile({ userProfile, activeWorkspace, onUpdate }: { userPr
               <div>
                 <h3 style={{fontSize:16, fontWeight:700, display:"flex", alignItems:"center", gap:10, marginBottom:8}}><CreditCard size={18}/> Paket Langganan</h3>
                 <div style={{display:"flex", alignItems:"center", gap:8, marginBottom:16}}>
-                  <span style={{background: (userProfile?.activeUntil && new Date(userProfile.activeUntil) > new Date()) ? "#2D7A5E" : "#9C2B4E", color:"white", fontSize:11, fontWeight:800, padding:"4px 10px", borderRadius:20}}>
-                    {(userProfile?.activeUntil && new Date(userProfile.activeUntil) > new Date()) 
-                      ? `PRO (Aktif s.d ${new Date(userProfile.activeUntil).toLocaleDateString("id-ID", {dateStyle:"medium"})})` 
-                      : "FREE (Uji Coba Berakhir)"}
+                  <span style={{
+                    background: userProfile?.plan === "vip" ? "#FBC02D" : ((userProfile?.activeUntil && new Date(userProfile.activeUntil) > new Date()) ? "#2D7A5E" : "#9C2B4E"), 
+                    color: userProfile?.plan === "vip" ? "#2C2016" : "white", 
+                    fontSize:11, 
+                    fontWeight:800, 
+                    padding:"4px 10px", 
+                    borderRadius:20,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4
+                  }}>
+                    {userProfile?.plan === "vip" && <Crown size={14} />}
+                    {userProfile?.plan === "vip" 
+                      ? "VIP Pass (Lifetime)" 
+                      : (userProfile?.activeUntil && new Date(userProfile.activeUntil) > new Date()) 
+                        ? `PRO (Aktif s.d ${new Date(userProfile.activeUntil).toLocaleDateString("id-ID", {dateStyle:"medium"})})` 
+                        : "FREE (Uji Coba Berakhir)"}
                   </span>
                 </div>
               </div>

@@ -25,6 +25,7 @@ import { AuthScreen } from "./AuthScreen";
 import { UserProfile } from "./UserProfile";
 import { BillingView } from "./BillingView";
 import { ShareWorkspaceModal } from "./ShareWorkspaceModal";
+import { DashboardView } from "./DashboardView";
 
 import { motion, AnimatePresence } from "motion/react";
 
@@ -32,6 +33,7 @@ export default function App() {
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
     testFirestoreConnection();
@@ -42,15 +44,24 @@ export default function App() {
           // Check profile existence first to prevent flicker
           const snap = await getDoc(doc(db, "users", u.uid));
           if (snap.exists()) {
-             setProfile(snap.data());
-             if (snap.data().emailVerified !== u.emailVerified) {
+             const data = snap.data();
+             setProfile(data);
+             if (data.emailVerified !== u.emailVerified) {
                await setDoc(doc(db, "users", u.uid), { emailVerified: u.emailVerified }, { merge: true });
+             }
+             // Check onboarding
+             if (!data.nickname) {
+               setShowOnboarding(true);
              }
           }
           
           // Listen to profile for real-time updates
           unsubProfile = onSnapshot(doc(db, "users", u.uid), (snap) => {
-            if (snap.exists()) setProfile(snap.data());
+            if (snap.exists()) {
+              const data = snap.data();
+              setProfile(data);
+              if (data.nickname) setShowOnboarding(false);
+            }
           }, (error) => {
              console.error("Profile onSnapshot error:", error);
           });
@@ -80,6 +91,11 @@ export default function App() {
     root.style.setProperty("--theme-sidebar", currentTheme.sidebar);
     root.style.setProperty("--theme-header", currentTheme.header || currentTheme.primary);
     root.style.setProperty("--theme-text", currentTheme.text);
+    root.style.setProperty("--theme-gradient", currentTheme.gradient || currentTheme.primary);
+    root.style.setProperty("--theme-bg", currentTheme.bg || "#FAFAF8");
+    root.style.setProperty("--theme-text-main", currentTheme.textMain || "#2C2016");
+    root.style.setProperty("--theme-text-sec", currentTheme.textSec || "rgba(44,32,22,0.6)");
+    root.style.setProperty("--theme-border", currentTheme.border || "rgba(0,0,0,0.05)");
   }, [currentTheme]);
 
   const updateProfileSettings = async (updates: any) => {
@@ -100,9 +116,70 @@ export default function App() {
         <Route path="/login" element={(user && profile) ? <Navigate to="/" /> : <AuthScreen currentUser={user && !profile ? user : null} onUserCreated={(u)=>setUser(u)} />} />
         <Route path="/profile" element={(user && profile) ? <CMSLayout><UserProfile userProfile={profile} activeWorkspace={null} onUpdate={setProfile} /></CMSLayout> : <Navigate to="/login" />} />
         <Route path="/billing" element={(user && profile) ? <CMSLayout><BillingView userProfile={profile} activeWorkspace={null} onUpdate={setProfile} /></CMSLayout> : <Navigate to="/login" />} />
-        <Route path="/*" element={(user && profile) ? <CMSLayout><Dashboard user={user} profile={profile} onUpdateProfile={updateProfileSettings} /></CMSLayout> : <Navigate to="/login" />} />
+        <Route path="/*" element={(user && profile) ? <CMSLayout><Dashboard user={user} profile={profile} onUpdateProfile={updateProfileSettings} currentTheme={currentTheme} /></CMSLayout> : <Navigate to="/login" />} />
       </Routes>
+      <AnimatePresence>
+        {showOnboarding && user && (
+          <OnboardingOverlay 
+            user={user} 
+            profile={profile} 
+            onUpdate={updateProfileSettings} 
+          />
+        )}
+      </AnimatePresence>
     </HashRouter>
+  );
+}
+
+function OnboardingOverlay({ user, profile, onUpdate }: any) {
+  const [nickname, setNickname] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSave = async () => {
+    if (!nickname.trim()) return;
+    setLoading(true);
+    try {
+      await onUpdate({ nickname: nickname.trim() });
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={{position:"fixed", inset:0, background:"rgba(255,255,255,0.9)", backdropFilter:"blur(15px)", zIndex:9999, display:"flex", alignItems:"center", justifyContent:"center", padding:24}}>
+       <motion.div initial={{opacity:0, scale:0.92, y:20}} animate={{opacity:1, scale:1, y:0}} style={{maxWidth:440, width:"100%", background:"white", padding:"48px 40px", borderRadius:40, boxShadow:"0 30px 60px rgba(44,32,22,0.15)", textAlign:"center", border:"1px solid rgba(44,32,22,0.05)"}}>
+          <div style={{fontSize:48, marginBottom:24}}>✨</div>
+          <h2 style={{fontSize:28, fontWeight:900, marginBottom:12, color:"#2C2016", letterSpacing:"-0.5px"}}>Selamat Datang! 👋</h2>
+          <p style={{fontSize:15, color:"rgba(44,32,22,0.6)", marginBottom:32, lineHeight:1.6}}>Senang sekali Anda bergabung. Agar pengalaman mengelola konten jadi lebih akrab, boleh kami tahu siapa nama panggilan Anda?</p>
+          
+          <div style={{position:"relative", marginBottom:24}}>
+            <input 
+              value={nickname} 
+              onChange={e=>setNickname(e.target.value)} 
+              placeholder="Misal: Nalen, Putra, dll." 
+              autoFocus
+              onKeyDown={e=>e.key==="Enter"&&handleSave()}
+              style={{
+                width:"100%", borderRadius:20, border:"2px solid rgba(44,32,22,0.08)", padding:"18px 24px", fontSize:16, fontWeight:600, outline:"none", transition:"all 0.3s ease", textAlign:"center", background:"#FAFAF8"
+              }}
+              className="focus:border-[var(--theme-primary)] focus:bg-white"
+            />
+          </div>
+          
+          <button 
+            onClick={handleSave} 
+            disabled={loading || !nickname.trim()}
+            style={{...B(true), width:"100%", height:60, borderRadius:30, fontSize:15, fontWeight:800, letterSpacing:0.5}}
+            className="hover-scale shadow-lg"
+          >
+            {loading ? "Menyiapkan Workspace..." : "Mulai Gunakan Dashboard"}
+          </button>
+          
+          <p style={{fontSize:11, color:"rgba(44,32,22,0.4)", marginTop:24, fontWeight:600}}>Anda dapat mengubah nama ini kapan saja di pengaturan profil.</p>
+       </motion.div>
+    </div>
   );
 }
 
@@ -124,14 +201,14 @@ function LoadingScreen({ title }: { title?: string }) {
 
 function CMSLayout({ children }: any) {
   return (
-    <div style={{fontFamily:"'Inter', sans-serif",background:"#FAFAFA",minHeight:"100vh",color:"#2C2016"}}>
+    <div style={{fontFamily:"'Inter', sans-serif",background:"var(--theme-bg, #FAFAFA)",minHeight:"100vh",color:"#2C2016"}}>
       {children}
     </div>
   );
 }
 
-function Dashboard({ user, profile, onUpdateProfile }: any) {
-  const [tab, setTab]           = useState("month");
+function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
+  const [tab, setTab]           = useState("dashboard");
   const [workspace, setWorkspace] = useState<any>(null);
   const [workspaces, setWorkspaces] = useState<any[]>([]);
   const [content, setContent]   = useState<any[]>([]);
@@ -145,6 +222,8 @@ function Dashboard({ user, profile, onUpdateProfile }: any) {
   const [confirmAction, setConfirmAction] = useState<{title:string, msg:string, onConfirm:()=>void}|null>(null);
   const [shareModal, setShareModal] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isSettingsDirty, setIsSettingsDirty] = useState(false);
+  const [pendingTab, setPendingTab] = useState<string | null>(null);
   const workspaceRef = useRef(workspace);
 
   useEffect(() => {
@@ -154,7 +233,7 @@ function Dashboard({ user, profile, onUpdateProfile }: any) {
   const [showHolidays, setShowHolidays] = useState(true);
   const [showArchived, setShowArchived] = useState(false);
   const [filters, setFilters]   = useState({pillar:"All",platform:"All",pic:"All",status:"All"});
-  const [title, setTitle]       = useState("Your Company");
+  const [title, setTitle]       = useState("Your Name");
   const [tagline, setTagline]   = useState("Content Management System");
   const [headerImage, setHeaderImage] = useState<string|null>(null);
   const [headerStyle, setHeaderStyle] = useState({
@@ -171,6 +250,12 @@ function Dashboard({ user, profile, onUpdateProfile }: any) {
   const [statuses, setStatuses] = useState(DST);
   const [holidays, setHolidays] = useState(DH);
 
+  useEffect(() => {
+    const handler = () => openAdd(new Date().getDate());
+    window.addEventListener("openContentModal", handler);
+    return () => window.removeEventListener("openContentModal", handler);
+  }, [workspace, user, pillars, platforms, pics, statuses]);
+
   const [bulkIds, setBulkIds] = useState<string[]>([]);
   const [exportModal, setExportModal] = useState(false);
   const [exStart, setExStart] = useState("");
@@ -180,6 +265,66 @@ function Dashboard({ user, profile, onUpdateProfile }: any) {
     if (!profile?.activeUntil) return false;
     return new Date() > new Date(profile.activeUntil);
   }, [profile]);
+
+  const isUnverified = useMemo(() => {
+    return profile && profile.emailVerified === false;
+  }, [profile]);
+
+  const handleLeaveWorkspace = async (ws: any) => {
+    if (!user || !ws) return;
+    const isOwner = workspaces.find(w => w.id === ws.id)?.createdBy === user.uid;
+    if (isOwner) {
+      alert("Anda adalah pemilik workspace ini. Anda tidak bisa keluar, silakan hapus workspace atau pindahkan kepemilikan.");
+      return;
+    }
+
+    setConfirmAction({
+      title: "Keluar dari Workspace?",
+      msg: `Yakin ingin keluar dari workspace "${ws.name}"? Akses Anda akan dicabut.`,
+      onConfirm: async () => {
+        try {
+          const memberRef = doc(db, "workspaces", ws.id, "members", user.uid);
+          await deleteDoc(memberRef);
+          setSaveMsg("Berhasil keluar dari workspace.");
+          setTimeout(() => setSaveMsg(""), 3000);
+        } catch (e: any) {
+          handleFirestoreError(e, 'delete');
+        }
+      }
+    });
+  };
+
+  const handleDeleteWorkspace = async (ws: any) => {
+    if (!user || !ws) return;
+    const isOwner = workspaces.find(w => w.id === ws.id)?.createdBy === user.uid;
+    if (!isOwner) {
+      alert("Hanya pemilik yang dapat menghapus workspace.");
+      return;
+    }
+
+    setConfirmAction({
+      title: "Hapus Workspace?",
+      msg: `Yakin ingin menghapus permanen workspace "${ws.name}"? Semua data di dalamnya akan hilang selamanya.`,
+      onConfirm: async () => {
+        try {
+          // Delete workspace doc
+          await deleteDoc(doc(db, "workspaces", ws.id));
+          setSaveMsg("Workspace berhasil dihapus.");
+          setTimeout(() => setSaveMsg(""), 3000);
+        } catch (e: any) {
+          handleFirestoreError(e, 'delete');
+        }
+      }
+    });
+  };
+
+  const handleTabChange = (newTab: string) => {
+    if (tab === "settings" && isSettingsDirty) {
+      setPendingTab(newTab);
+      return;
+    }
+    setTab(newTab);
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -269,7 +414,7 @@ function Dashboard({ user, profile, onUpdateProfile }: any) {
           });
           
           if (data.settings) {
-            setTitle(data.settings.title !== undefined ? data.settings.title : "Your Company");
+            setTitle(data.settings.title !== undefined ? data.settings.title : "Your Name");
             setTagline(data.settings.tagline !== undefined ? data.settings.tagline : "Content Management System");
             
             // Real-time synchronization for all settings categories
@@ -308,6 +453,10 @@ function Dashboard({ user, profile, onUpdateProfile }: any) {
       alert("Akses Terbatas: Fitur ini dikunci.");
       return;
     }
+    if (isUnverified) {
+      alert("Akses Terbatas: Silakan verifikasi email Anda terlebih dahulu di pengaturan profil.");
+      return;
+    }
     const isNew = modal.mode === "add";
     const itemId = isNew ? gid() : data.id;
     
@@ -336,6 +485,7 @@ function Dashboard({ user, profile, onUpdateProfile }: any) {
   const openEdit = (item:any) => setModal({mode:"edit",data:{...item,metrics:{...item.metrics}}});
   const openAdd  = (day:any) => {
     if (isRestricted) return alert("Akses Terbatas: Fitur ini dikunci pada masa uji coba yang telah habis.");
+    if (isUnverified) return alert("Akses Terbatas: Silakan verifikasi email Anda terlebih dahulu.");
     setModal({mode:"add",data:emptyItem(year,month,day,pillars,platforms,pics,statuses)});
   };
   const deleteItem = async (id:string) => { 
@@ -500,29 +650,36 @@ function Dashboard({ user, profile, onUpdateProfile }: any) {
   }
 
   return (
-    <div style={{display:"flex", minHeight:"100vh", background:"#FAF7F2"}}>
+    <div style={{display:"flex", minHeight:"100vh", background:"var(--theme-bg, #FAFAFA)"}}>
       <Sidebar 
-        open={sidebarOpen} tab={tab} setTab={setTab} 
+        open={sidebarOpen} setOpen={setSidebarOpen} tab={tab} setTab={handleTabChange} 
         workspaces={workspaces} activeWorkspace={workspace} onWorkspaceSelect={setWorkspace} 
         user={user} profile={profile} onLogout={()=>signOut(auth)}
         title={title}
         onOpenSidebar={() => setSidebarOpen(true)}
+        onLeaveWorkspace={handleLeaveWorkspace}
       />
-      <div style={{flex:1, minWidth:0, display:"flex", flexDirection:"column"}}>
-        <Header 
-          title={title} tagline={tagline}
-          onBrandingChange={(v:any)=>updateWsSettings(v)}
-          headerImage={headerImage} onHeaderImageChange={(v:string)=>updateWsSettings({headerImage:v})}
-          headerStyle={headerStyle} setHeaderStyle={(v:any)=>updateWsSettings({headerStyle:v})}
-          content={content} qYear={qYear} onQYearChange={setQYear} qNumber={qNumber} onQNumberChange={setQNumber}
-          onExport={()=>setExportModal(true)} onImportClick={()=>setShowCsv(true)} 
-          user={user} onShare={()=>setShareModal(true)}
-          sidebarOpen={sidebarOpen} onToggleSidebar={()=>setSidebarOpen(!sidebarOpen)}
-          search={search} onSearch={setSearch}
-        />
+      <div style={{flex:1, minWidth:0, display:"flex", flexDirection:"column", height:"100vh", overflow:"auto", position:"relative"}}>
+        {(!["dashboard", "settings", "admin"].includes(tab) && !tab.startsWith("social")) && (
+          <Header 
+            profile={profile}
+          />
+        )}
       
+      {isUnverified && (
+        <div style={{background:"#FBF5E3", borderBottom:"1px solid rgba(166,124,28,0.1)", padding:"12px 24px", display:"flex", alignItems:"center", gap:12, zIndex:50}}>
+          <span style={{fontSize:13, fontWeight:700, color:"#A67C12"}}>⚠️ Email Belum Diverifikasi:</span>
+          <span style={{fontSize:13, color:"rgba(44,32,22,0.6)"}}>Silakan verifikasi email Anda untuk dapat menggunakan fitur penuh.</span>
+          <button onClick={() => window.location.hash="/profile"} style={{background:"#A67C12", color:"white", border:"none", padding:"6px 14px", borderRadius:20, fontSize:12, fontWeight:800, cursor:"pointer"}}>Verifikasi Sekarang</button>
+        </div>
+      )}
+
       {["month", "board", "timeline", "table"].includes(tab) && (
-        <NavBar tab={tab} setTab={setTab} year={year} setYear={setYear} month={month} setMonth={setMonth} onOpenAdd={()=>openAdd(1)} isRestricted={isRestricted}/>
+        <NavBar 
+          tab={tab} setTab={setTab} year={year} setYear={setYear} month={month} setMonth={setMonth} 
+          onOpenAdd={()=>openAdd(1)} isRestricted={isRestricted}
+          search={search} onSearch={setSearch} onShare={()=>setShareModal(true)} sidebarOpen={sidebarOpen}
+        />
       )}
       
       {["month", "board", "timeline", "table"].includes(tab) && (
@@ -545,7 +702,8 @@ function Dashboard({ user, profile, onUpdateProfile }: any) {
         )}
         <AnimatePresence mode="wait">
           <motion.div key={tab} initial={{ opacity: 0, y: 5, scale: 0.99 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -5, scale: 0.99 }} transition={{ duration: 0.15, ease: "easeOut" }}>
-            {tab==="month"&&<MonthView year={year} month={month} monthContent={monthContent} filtered={filtered} openEdit={openEdit} openAdd={openAdd} showHolidays={showHolidays} holidays={holidays} pillars={pillars} platforms={platforms} isRestricted={isRestricted}/>}
+            {tab==="dashboard"&&<DashboardView user={user} profile={profile} activeWorkspace={workspace} content={filtered} theme={currentTheme} setTab={setTab} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} year={year} month={month} />}
+            {tab==="month"&&<MonthView year={year} month={month} monthContent={monthContent} filtered={filtered} openEdit={openEdit} openAdd={openAdd} showHolidays={showHolidays} holidays={holidays} customEvents={workspace?.settings?.customEvents || []} pillars={pillars} platforms={platforms} isRestricted={isRestricted}/>}
             {tab==="week"&&<WeekView year={year} month={month} content={content} filtered={filtered} openEdit={openEdit} openAdd={openAdd} showHolidays={showHolidays} holidays={holidays} pillars={pillars} platforms={platforms} isRestricted={isRestricted}/>}
             {tab==="board"&&<BoardView year={year} month={month} content={content} filtered={filtered} openEdit={openEdit} openAdd={openAdd} statuses={statuses} pillars={pillars} platforms={platforms} search={search} isRestricted={isRestricted}/>}
             {tab==="timeline"&&<TimelineView year={year} month={month} content={content} filtered={filtered} openEdit={openEdit} openAdd={openAdd} pillars={pillars} platforms={platforms} showHolidays={showHolidays} holidays={holidays} isRestricted={isRestricted}/>}
@@ -553,12 +711,19 @@ function Dashboard({ user, profile, onUpdateProfile }: any) {
             {tab.startsWith("social")&&<SocialStudioView tab={tab} />}
             {tab==="analytics"&&<AnalyticsView content={content} pillars={pillars} platforms={platforms} pics={pics} statuses={statuses} openEdit={openEdit} isRestricted={isRestricted}/>}
             {tab==="settings"&&<SettingsPanel 
-              initialSettings={{pillars, platforms, pics, statuses, holidays}} 
-              onSave={updateWsSettings}
+              initialSettings={{pillars, platforms, pics, statuses, holidays, customEvents: workspace?.settings?.customEvents || []}} 
+              onSave={async (d:any) => {
+                await updateWsSettings(d);
+                setIsSettingsDirty(false);
+              }}
               onSeed={() => setContent(makeSeed())} 
               isRestricted={isRestricted}
               profile={profile}
               onUpdateProfile={onUpdateProfile}
+              onDirty={setIsSettingsDirty}
+              onLeave={() => handleLeaveWorkspace(workspace)}
+              onDelete={() => handleDeleteWorkspace(workspace)}
+              isOwner={workspace?.createdBy === user?.uid}
             />}
             {tab==="admin"&&<AdminPanel userProfile={profile} onLogout={()=>signOut(auth)} />}
           </motion.div>
@@ -620,7 +785,30 @@ function Dashboard({ user, profile, onUpdateProfile }: any) {
                <p style={{fontSize:14, color:"rgba(44,32,22,0.6)", marginBottom:24, lineHeight:1.5}}>{confirmAction.msg}</p>
                <div style={{display:"flex",gap:12,justifyContent:"center"}}>
                  <button className="hover-scale" onClick={()=>setConfirmAction(null)} style={{...B(false), flex:1, height:48, fontSize:14, borderRadius:24}}>Batal</button>
-                 <button className="hover-scale btn-hover" onClick={()=>{confirmAction.onConfirm(); setConfirmAction(null);}} style={{...B(true, confirmAction.title.includes("Hapus") ? "#9C2B4E" : "#C4622D"), flex:1, height:48, fontSize:14, borderRadius:24}}>{confirmAction.title.includes("Hapus") ? "Hapus" : "Lanjutkan"}</button>
+                 <button className="hover-scale btn-hover" onClick={()=>{confirmAction.onConfirm(); setConfirmAction(null);}} style={{...B(true, confirmAction.title.includes("Hapus") ? "#9C2B4E" : "#C4622D"), flex:1, height:48, fontSize:14, borderRadius:24}}>{confirmAction.title.includes("Hapus") ? (confirmAction.title.includes("Keluar") ? "Keluar" : "Hapus") : "Lanjutkan"}</button>
+               </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {pendingTab && (
+          <motion.div key="unsaved" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.8)", zIndex:1001, display:"flex", alignItems:"center", justifyContent:"center"}}>
+            <motion.div initial={{scale:0.95, opacity:0, y:20}} animate={{scale:1, opacity:1, y:0}} exit={{scale:0.95, opacity:0, y:20}} style={CARD({width:400, padding:32, borderRadius:24, textAlign:"center"})}>
+               <h3 style={{fontSize:20, fontWeight:700, marginBottom:16}}>Simpan Perubahan?</h3>
+               <p style={{fontSize:14, color:"rgba(44,32,22,0.6)", marginBottom:24, lineHeight:1.5}}>Anda memiliki perubahan yang belum disimpan. Ingin menyimpannya sekarang sebelum meninggalkan halaman ini?</p>
+               <div style={{display:"flex", flexDirection:"column", gap:12}}>
+                 <button className="hover-scale" onClick={async () => {
+                    // We need a way to trigger save from here or assume SettingsPanel handles it if we pass a trigger
+                    // But simpler: just navigate and lose changes or stay
+                    setPendingTab(null);
+                 }} style={{...B(true, "#2C2016"), borderRadius:24, height:48}}>Tetap di Sini</button>
+                 <button className="hover-scale" onClick={() => {
+                    setTab(pendingTab!);
+                    setIsSettingsDirty(false);
+                    setPendingTab(null);
+                 }} style={{...B(false, "#9C2B4E"), borderRadius:24, height:48, border:"none", color:"#9C2B4E", fontWeight:700}}>Tinggalkan Tanpa Menyimpan</button>
                </div>
             </motion.div>
           </motion.div>

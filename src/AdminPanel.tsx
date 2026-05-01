@@ -5,7 +5,7 @@ import {
   Search, Edit2, CreditCard, RefreshCw, AlertCircle, FileText, Globe, 
   Bell, LifeBuoy, ToggleLeft, ToggleRight, ArrowUpRight, ArrowDownRight, 
   BarChart2, X, Download, MessageSquare, ExternalLink, Calendar,
-  DollarSign, Package, Tag, Clock, ChevronRight, UserPlus, Filter
+  DollarSign, Package, Tag, Clock, ChevronRight, UserPlus, Filter, Crown
 } from "lucide-react";
 import { db, collection, getDocs, doc, updateDoc, setDoc, deleteDoc, onSnapshot, query, where, addDoc } from "./firebase";
 import { fmt, B, CARD } from "./data";
@@ -339,49 +339,50 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                   </div>
                 </div>
 
-                <div style={CARD({borderRadius:20, overflow:"hidden", border:"1px solid #EEE"})}>
-                  <table style={{width:"100%", borderCollapse:"collapse", fontSize:13}}>
+                <div style={CARD({borderRadius:20, overflowX:"auto", border:"1px solid #EEE", padding:0})}>
+                  <table style={{width:"100%", minWidth: 1000, borderCollapse:"collapse", fontSize:13}}>
                     <thead style={{background:"#FAFAFA", borderBottom:"1px solid #EEE"}}>
                       <tr>
-                        <th style={{padding:"16px 20px", textAlign:"left", color:"rgba(0,0,0,0.4)", fontWeight:700, fontSize:11, textTransform:"uppercase"}}>Email & Identitas</th>
-                        <th style={{padding:"16px 20px", textAlign:"center", color:"rgba(0,0,0,0.4)", fontWeight:700, fontSize:11, textTransform:"uppercase"}}>Email Verified</th>
-                        <th style={{padding:"16px 20px", textAlign:"center", color:"rgba(0,0,0,0.4)", fontWeight:700, fontSize:11, textTransform:"uppercase"}}>Paket</th>
-                        <th style={{padding:"16px 20px", textAlign:"center", color:"rgba(0,0,0,0.4)", fontWeight:700, fontSize:11, textTransform:"uppercase"}}>Role</th>
-                        <th style={{padding:"16px 20px", textAlign:"center", color:"rgba(0,0,0,0.4)", fontWeight:700, fontSize:11, textTransform:"uppercase"}}>Status</th>
-                        <th style={{padding:"16px 20px", textAlign:"right"}}></th>
+                        <th style={{padding:"18px 24px", textAlign:"left", color:"rgba(0,0,0,0.4)", fontWeight:700, fontSize:10, textTransform:"uppercase", letterSpacing:1, width:280}}>Email & Identitas</th>
+                        <th style={{padding:"18px 24px", textAlign:"center", color:"rgba(0,0,0,0.4)", fontWeight:700, fontSize:10, textTransform:"uppercase", letterSpacing:1, width:140}}>Email Verified</th>
+                        <th style={{padding:"18px 24px", textAlign:"center", color:"rgba(0,0,0,0.4)", fontWeight:700, fontSize:10, textTransform:"uppercase", letterSpacing:1, width:120}}>Paket</th>
+                        <th style={{padding:"18px 24px", textAlign:"center", color:"rgba(0,0,0,0.4)", fontWeight:700, fontSize:10, textTransform:"uppercase", letterSpacing:1, width:100}}>Role</th>
+                        <th style={{padding:"18px 24px", textAlign:"center", color:"rgba(0,0,0,0.4)", fontWeight:700, fontSize:10, textTransform:"uppercase", letterSpacing:1, width:120}}>Status</th>
+                        <th style={{padding:"18px 24px", textAlign:"right"}}></th>
                       </tr>
                     </thead>
                     <tbody>
                       {filteredUsers.map((u:any) => (
-                        <tr key={u.id} style={{borderBottom:"1px solid #FAFAFA"}} className="hover-bg-light">
-                          <td style={{padding:"16px 20px"}}>
-                             <div style={{fontWeight:700}}>{u.email}</div>
-                             <div style={{fontSize:11, color:"rgba(0,0,0,0.3)"}}>ID: {u.id}</div>
+                        <tr key={u.id} style={{borderBottom:"1px solid #F5F5F5", verticalAlign:"middle"}} className="hover-bg-light">
+                          <td style={{padding:"16px 24px"}}>
+                             <div style={{fontWeight:800, color:"#2C2016", fontSize:14}}>{u.email}</div>
+                             <div style={{fontSize:10, color:"#999", marginTop:4, fontFamily:"monospace"}}>UID: {u.id}</div>
                           </td>
-                          <td style={{padding:"16px 20px", textAlign:"center"}}>
-                             <div style={{display:"flex", alignItems:"center", justifyContent:"center", gap:6}}>
-                               <div style={{width:8, height:8, borderRadius:"50%", background: u.emailVerified ? "#4CAF50" : "#FF9800"}} />
-                               <span style={{fontSize:12, fontWeight:700, color: u.emailVerified ? "#4CAF50" : "#FF9800"}}>{u.emailVerified ? "Verified" : "Unverified"}</span>
+                          <td style={{padding:"16px 24px", textAlign:"center"}}>
+                             <div style={{display:"inline-flex", alignItems:"center", gap:6, padding:"4px 10px", borderRadius:20, background: u.emailVerified ? "#E5F4EE" : "#FFF4E5"}}>
+                               <div style={{width:6, height:6, borderRadius:"50%", background: u.emailVerified ? "#2D7A5E" : "#C4622D"}} />
+                               <span style={{fontSize:11, fontWeight:800, color: u.emailVerified ? "#2D7A5E" : "#C4622D"}}>{u.emailVerified ? "Verified" : "Unverified"}</span>
                              </div>
                           </td>
-                          <td style={{padding:"16px 20px", textAlign:"center"}}>
-                             <div style={{display:"inline-block", background: u.plan==="pro"?"rgba(var(--theme-primary-rgb),0.1)":"#F5F5F5", color:u.plan==="pro"?"var(--theme-primary)":"#666", padding:"4px 10px", borderRadius:20, fontWeight:800, fontSize:11, textTransform:"capitalize"}}>
-                               {u.plan || "Free"}
+                          <td style={{padding:"16px 24px", textAlign:"center"}}>
+                             <div style={{display:"inline-flex", alignItems:"center", gap:4, background: u.plan==="vip"?"#FFF8D6":(u.plan==="pro"?"#FDF0EB":"#F5F5F5"), color:u.plan==="vip"?"#FBC02D":(u.plan==="pro"?"#C4622D":"#666"), padding:"4px 12px", borderRadius:10, fontWeight:900, fontSize:10, border:u.plan==="vip"?"1px solid rgba(251,192,45,0.4)":(u.plan==="pro"?"1px solid rgba(196,98,45,0.2)":"1px solid transparent")}}>
+                               {u.plan==="vip" && <Crown size={12} />}
+                               {u.plan ? u.plan.toUpperCase() : "FREE"}
                              </div>
                           </td>
-                          <td style={{padding:"16px 20px", textAlign:"center"}}>
-                             <span style={{fontSize:12, fontWeight:600}}>{u.role || "user"}</span>
+                          <td style={{padding:"16px 24px", textAlign:"center"}}>
+                             <span style={{fontSize:11, fontWeight:700, textTransform:"uppercase", color:"#666"}}>{u.role || "user"}</span>
                           </td>
-                          <td style={{padding:"16px 20px", textAlign:"center"}}>
-                             <div style={{display:"flex", alignItems:"center", justifyContent:"center", gap:6}}>
-                               <div style={{width:6, height:6, borderRadius:"50%", background: u.activeUntil && new Date(u.activeUntil) > new Date() ? "#4CAF50" : "#CCC"}} />
-                               <span style={{fontSize:12}}>{u.activeUntil && new Date(u.activeUntil) > new Date() ? "Aktif" : "Expired"}</span>
+                          <td style={{padding:"16px 24px", textAlign:"center"}}>
+                             <div style={{display:"inline-flex", alignItems:"center", gap:6}}>
+                               <div style={{width:8, height:8, borderRadius:"50%", background: u.activeUntil && new Date(u.activeUntil) > new Date() ? "#4CAF50" : "#CCC", border:"2px solid white", boxShadow:"0 0 0 1px #DDD"}} />
+                               <span style={{fontSize:12, fontWeight:600}}>{u.activeUntil && new Date(u.activeUntil) > new Date() ? "Aktif" : "Expired"}</span>
                              </div>
                           </td>
-                          <td style={{padding:"16px 20px", textAlign:"right"}}>
+                          <td style={{padding:"16px 24px", textAlign:"right"}}>
                             <div style={{display:"flex", gap:8, justifyContent:"flex-end"}}>
-                              <button onClick={() => setSelectedUser(u)} style={{background:"#F0F0F0", border:"none", padding:"8px 12px", borderRadius:8, fontSize:12, fontWeight:800, cursor:"pointer"}}>Open Profile</button>
-                              <button onClick={() => setDeletingItem({id: u.id, type:"users", name: u.email})} style={{background:"rgba(156,43,78,0.1)", border:"1px solid rgba(156,43,78,0.2)", color:"#9C2B4E", borderRadius:8, padding:"8px 12px", fontSize:12, fontWeight:800, cursor:"pointer"}}>Delete</button>
+                              <button onClick={() => setSelectedUser(u)} style={{background:"#2C2016", border:"none", padding:"8px 16px", borderRadius:10, fontSize:11, fontWeight:800, cursor:"pointer", color:"white"}}>Manage</button>
+                              <button onClick={() => setDeletingItem({id: u.id, type:"users", name: u.email})} style={{background:"white", border:"1px solid rgba(156,43,78,0.2)", color:"#9C2B4E", borderRadius:10, padding:"8px 16px", fontSize:11, fontWeight:800, cursor:"pointer"}}>Delete</button>
                             </div>
                           </td>
                         </tr>
@@ -431,6 +432,15 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                          <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:12}}>
                             <button onClick={()=>handleUpdatePlan(selectedUser.id, "pro", 30)} style={{background:"var(--theme-primary)", color:"white", border:"none", padding:12, borderRadius:12, fontWeight:700, cursor:"pointer"}}>Set PRO (30 Hari)</button>
                             <button onClick={()=>handleUpdatePlan(selectedUser.id, "free", 0)} style={{background:"#F5F5F5", border:"none", padding:12, borderRadius:12, fontWeight:700, cursor:"pointer"}}>Set FREE (Revoke)</button>
+                         </div>
+                         
+                         <div style={{marginTop:16, paddingTop:16, borderTop:"1px solid #F5F5F5"}}>
+                            <div style={{fontSize:12, fontWeight:800, marginBottom:12, color:"#6B4E31"}}>Assign VIP (Riset / User Testing)</div>
+                            <div style={{display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8}}>
+                               <button onClick={()=>handleUpdatePlan(selectedUser.id, "vip", 30)} style={{background:"#2C2016", color:"#FAF7F2", border:"none", padding:10, borderRadius:10, fontSize:10, fontWeight:800, cursor:"pointer"}}>1 Bln</button>
+                               <button onClick={()=>handleUpdatePlan(selectedUser.id, "vip", 90)} style={{background:"#2C2016", color:"#FAF7F2", border:"none", padding:10, borderRadius:10, fontSize:10, fontWeight:800, cursor:"pointer"}}>3 Bln</button>
+                               <button onClick={()=>handleUpdatePlan(selectedUser.id, "vip", 180)} style={{background:"#2C2016", color:"#FAF7F2", border:"none", padding:10, borderRadius:10, fontSize:10, fontWeight:800, cursor:"pointer"}}>6 Bln</button>
+                            </div>
                          </div>
                       </div>
 
@@ -518,10 +528,10 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                        }} style={{fontSize:12, fontWeight:700, color:"var(--theme-primary)", background:"white", border:"1px solid #EEE", padding:"8px 16px", borderRadius:10, cursor:"pointer"}}>Ekspor CSV</button>
                     </div>
                     <table style={{width:"100%", borderCollapse:"collapse", fontSize:13}}>
-                       <thead>
+                        <thead>
                           <tr style={{background:"#FAFAFA", textAlign:"left"}}>
                              <th style={{padding:16, fontSize:11, fontWeight:800, color:"#999"}}>TANGGAL & JAM</th>
-                             <th style={{padding:16, fontSize:11, fontWeight:800, color:"#999"}}>PENGGUNA</th>
+                             <th style={{padding:16, fontSize:11, fontWeight:800, color:"#999", minWidth:180}}>PENGGUNA</th>
                              <th style={{padding:16, fontSize:11, fontWeight:800, color:"#999"}}>PAKET</th>
                              <th style={{padding:16, fontSize:11, fontWeight:800, color:"#999"}}>VOUCHER</th>
                              <th style={{padding:16, fontSize:11, fontWeight:800, color:"#999"}}>NOMINAL</th>
@@ -536,12 +546,12 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                            })
                            .sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
                            .map(t => (
-                            <tr key={t.id} style={{borderBottom:"1px solid #FAFAFA"}}>
+                            <tr key={t.id} style={{borderBottom:"1px solid #FAFAFA", verticalAlign:"top"}}>
                                <td style={{padding:16}}>
                                   <div style={{fontWeight:700}}>{new Date(t.timestamp).toLocaleDateString("id-ID", {dateStyle:"medium"})}</div>
                                   <div style={{fontSize:10, color:"#999"}}>{new Date(t.timestamp).toLocaleTimeString("id-ID", {hour:"2-digit", minute:"2-digit"})}</div>
                                </td>
-                               <td style={{padding:16, fontWeight:700}}>{t.userEmail}</td>
+                               <td style={{padding:16, fontWeight:700, whiteSpace:"normal", wordBreak:"break-all", maxWidth:200}}>{t.userEmail}</td>
                                <td style={{padding:16}}>
                                   <span style={{fontSize:11, fontWeight:800, background:"rgba(0,0,0,0.05)", padding:"4px 8px", borderRadius:6}}>{t.planName}</span>
                                </td>
@@ -657,25 +667,25 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                    <table style={{width:"100%", borderCollapse:"collapse", fontSize:13}}>
                       <thead style={{background:"#FAFAFA"}}>
                         <tr>
-                          <th style={{padding:16, textAlign:"left", fontSize:11, fontWeight:700, textTransform:"uppercase", color:"#999"}}>Kode Promo</th>
+                          <th style={{padding:16, textAlign:"left", fontSize:11, fontWeight:700, textTransform:"uppercase", color:"#999", minWidth:120}}>Kode Promo</th>
                           <th style={{padding:16, textAlign:"center", fontSize:11, fontWeight:700, textTransform:"uppercase", color:"#999"}}>Diskon</th>
                           <th style={{padding:16, textAlign:"center", fontSize:11, fontWeight:700, textTransform:"uppercase", color:"#999"}}>Pemakaian</th>
-                          <th style={{padding:16, textAlign:"center", fontSize:11, fontWeight:700, textTransform:"uppercase", color:"#999"}}>Validity Period</th>
+                          <th style={{padding:16, textAlign:"center", fontSize:11, fontWeight:700, textTransform:"uppercase", color:"#999", minWidth:150}}>Validity Period</th>
                           <th style={{padding:16, textAlign:"center", fontSize:11, fontWeight:700, textTransform:"uppercase", color:"#999"}}>Status</th>
                           <th style={{padding:16, textAlign:"right"}}></th>
                         </tr>
                       </thead>
                       <tbody>
                         {promosList.map(p => (
-                          <tr key={p.id} style={{borderBottom:"1px solid #FAFAFA"}}>
-                             <td style={{padding:16, fontWeight:800}}>{p.code}</td>
+                          <tr key={p.id} style={{borderBottom:"1px solid #FAFAFA", verticalAlign:"top"}}>
+                             <td style={{padding:16, fontWeight:800, whiteSpace:"normal", wordBreak:"break-word"}}>{p.code}</td>
                              <td style={{padding:16, textAlign:"center"}}>
                                <div style={{background:"rgba(76,175,80,0.1)", color:"#4CAF50", padding:"4px 10px", borderRadius:12, fontWeight:800, display:"inline-block"}}>
                                  {p.type === "percent" ? `${p.value}%` : fmtRp(p.value)}
                                </div>
                              </td>
                              <td style={{padding:16, textAlign:"center", fontWeight:700}}>{p.usageCount || 0}x</td>
-                             <td style={{padding:16, textAlign:"center"}}>
+                             <td style={{padding:16, textAlign:"center", whiteSpace:"normal"}}>
                                 <div style={{fontSize:10, color:"#666", fontWeight:600}}>
                                   {p.startDate ? `📅 From: ${p.startDate}` : "⚡ Immediate"} <br/>
                                   {p.endDate ? `🏁 To: ${p.endDate}` : "♾ No Expiry"}

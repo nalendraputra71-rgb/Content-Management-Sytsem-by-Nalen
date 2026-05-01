@@ -82,6 +82,7 @@ export function CustomDropdown({ value, options, onChange, dark = false, style =
 
 // ─── CONSTANTS ───────────────────────────────────────────────────────────────
 export const THEMES = [
+  { id: "modern-blue", name: "Modern Blue (Default)", primary: "#1D4D7A", rgb: "29, 77, 122", sidebar: "#0B2A4A", header: "#FFFFFF", text: "#FFFFFF", gradient: "linear-gradient(135deg, #0B2A4A 0%, #1D4D7A 100%)", bg: "#F5F7FB", textMain: "#111827", textSec: "#6B7280", border: "#E5E7EB" },
   { id: "sunset", name: "Sunset Orange", primary: "#FF6B00", rgb: "255, 107, 0", sidebar: "#1A140F", header: "#2C2016", text: "#FFFFFF" },
   { id: "midnight", name: "Midnight Navy", primary: "#3B82F6", rgb: "59, 130, 246", sidebar: "#0F172A", header: "#1E293B", text: "#FFFFFF" },
   { id: "graphite", name: "Slate Graphite", primary: "#64748B", rgb: "100, 116, 139", sidebar: "#18181B", header: "#27272A", text: "#FFFFFF" },
@@ -293,9 +294,8 @@ export const B = (active:any, color = "var(--theme-primary)") => ({
   padding: "8px 18px",
   fontSize: 13,
   cursor: "pointer",
-  
   fontWeight: 600,
-  background: active ? color : "transparent",
+  background: active ? (color === "var(--theme-primary)" || color === "var(--theme-gradient)" ? "var(--theme-gradient)" : color) : "transparent",
   color: active ? "white" : "#2C2016",
   display: "flex",
   alignItems: "center",

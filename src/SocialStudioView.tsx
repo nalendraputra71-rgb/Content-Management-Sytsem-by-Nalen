@@ -536,11 +536,11 @@ export function SocialStudioView({ tab }: { tab: string }) {
                </div>
              </div>
 
-             <div style={{background:"white", borderRadius:20, border:"1px solid rgba(44,32,22,0.05)", overflow:"hidden"}}>
-                <table style={{width:"100%", borderCollapse:"collapse", fontSize:13}}>
+             <div style={{background:"white", borderRadius:20, border:"1px solid rgba(44,32,22,0.05)", overflowX:"auto"}}>
+                <table style={{width:"100%", minWidth: 800, borderCollapse:"collapse", fontSize:13}}>
                   <thead style={{background:"#FAFAFA", borderBottom:"1px solid rgba(44,32,22,0.1)", color:"rgba(44,32,22,0.5)"}}>
                     <tr>
-                      <th style={{padding:"16px 20px", textAlign:"left", fontWeight:800}}>Konten / Judul</th>
+                      <th style={{padding:"16px 20px", textAlign:"left", fontWeight:800, minWidth:250}}>Konten / Judul</th>
                       <th style={{padding:"16px 20px", textAlign:"left", fontWeight:800}}>Platform</th>
                       <th style={{padding:"16px 20px", textAlign:"right", fontWeight:800}}>Views</th>
                       <th style={{padding:"16px 20px", textAlign:"right", fontWeight:800}}>ER</th>
@@ -552,12 +552,12 @@ export function SocialStudioView({ tab }: { tab: string }) {
                   </thead>
                   <tbody>
                     {DISPLAY_CONTENT.map((post, i) => (
-                      <tr key={i} className="hover-fade" style={{borderBottom:"1px solid rgba(44,32,22,0.05)", transition:"background 0.2s"}}>
+                      <tr key={i} className="hover-fade" style={{borderBottom:"1px solid rgba(44,32,22,0.05)", transition:"background 0.2s", verticalAlign:"top"}}>
                         <td style={{padding:"16px 20px"}}>
-                          <div style={{display:"flex", alignItems:"center", gap:12}}>
+                          <div style={{display:"flex", alignItems:"flex-start", gap:12}}>
                             <div style={{width:48, height:48, borderRadius:8, background:"#f0f0f0", flexShrink:0}}></div>
-                            <div>
-                              <div style={{fontWeight:800, color:"#2C2016", marginBottom:4}}>{post.title}</div>
+                            <div style={{maxWidth: 300}}>
+                              <div style={{fontWeight:800, color:"#2C2016", marginBottom:4, whiteSpace:"normal", wordBreak:"break-word", lineHeight:1.4}}>{post.title}</div>
                               <div style={{fontSize:11, color:"rgba(44,32,22,0.5)", fontWeight:600}}>{post.time}</div>
                             </div>
                           </div>

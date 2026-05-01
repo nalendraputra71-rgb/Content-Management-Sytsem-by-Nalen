@@ -5,16 +5,54 @@ import {
   I, B, CARD, PBadge, SBadge, getDynamicEvents 
 } from "./data";
 
-export function MonthView({year,month,monthContent,filtered,openEdit,openAdd,showHolidays,holidays,pillars,platforms}: any) {
+export function MonthView({year,month,monthContent,filtered,openEdit,openAdd,showHolidays,holidays,customEvents,pillars,platforms}: any) {
   const dim = new Date(year,month,0).getDate();
   const sd = new Date(year,month-1,1).getDay();
+  
   const getEv = (d:any) => {
+    let result: {name: string, color: string | null}[] = [];
+    
+    // 1. Static Holidays
     const staticEv = holidays[`${year}-${month}-${d}`];
+    if (staticEv) result.push({ name: staticEv, color: null });
+    
+    // 2. Dynamic Holidays (Launch days etc)
     const dynamicEv = getDynamicEvents(year, month, d);
-    if (!staticEv) return dynamicEv;
-    if (!dynamicEv) return staticEv;
-    return `${staticEv} | ${dynamicEv}`;
+    if (dynamicEv) result.push({ name: dynamicEv, color: "#C4622D" });
+
+    // 3. Custom Events
+    if (customEvents && Array.isArray(customEvents)) {
+      customEvents.forEach((ev: any) => {
+        const start = new Date(ev.start);
+        const end = new Date(ev.end);
+        const current = new Date(year, month - 1, d);
+        
+        let match = false;
+        if (ev.monthly) {
+          // Monthly recurrence check (only day of month)
+          const startDay = start.getDate();
+          const endDay = end.getDate();
+          // Handling multi-day monthly events (e.g. 25-28 every month)
+          if (startDay <= endDay) {
+            if (d >= startDay && d <= endDay) match = true;
+          } else {
+            // Crossing month boundary (not common for monthly setting but possible)
+            if (d >= startDay || d <= endDay) match = true;
+          }
+        } else {
+          // Standard date range check
+          match = current >= start && current <= end;
+        }
+
+        if (match) {
+          result.push({ name: ev.name, color: ev.color });
+        }
+      });
+    }
+
+    return result;
   };
+
   const getF  = (d:any) => filtered.filter((c:any)=>c.day===d&&!c.archived);
   const getA  = (d:any) => monthContent.filter((c:any)=>c.day===d&&!c.archived);
   return (
@@ -25,10 +63,11 @@ export function MonthView({year,month,monthContent,filtered,openEdit,openAdd,sho
       <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:3}}>
         {Array.from({length:sd}).map((_,i)=><div key={`e${i}`} style={{minHeight:100,background:"rgba(44,32,22,0.02)",borderRadius:8}}/>)}
         {Array.from({length:dim}).map((_,i)=>{
-          const day=i+1,items=getF(day),allItems=getA(day),ev=showHolidays?getEv(day):null;
-          const isSpec=ev&&(ev.includes("Launch")||ev.includes("Flash")||ev.includes("Sale"));
+          const day=i+1, items=getF(day), allItems=getA(day), evs=showHolidays?getEv(day):[];
+          const isSpec = evs.some(e => e.name.includes("Launch") || e.name.includes("Flash") || e.name.includes("Sale") || e.name.includes("Promo") || e.name.includes("Payday"));
+          
           return (
-            <div key={day} style={{minHeight:110,background:isSpec?"var(--theme-primary)11":ev?"#F5F0E8":"white",borderRadius:8,padding:6,border:isSpec?"1.5px solid var(--theme-primary)":ev?"1px solid rgba(196,98,45,0.2)":"1px solid rgba(44,32,22,0.06)"}}>
+            <div key={day} style={{minHeight:110, background:isSpec?"var(--theme-primary)11":evs.length>0?"#F5F0E8":"white",borderRadius:8,padding:6,border:isSpec?"1.5px solid var(--theme-primary)":evs.length>0?"1px solid rgba(196,98,45,0.2)":"1px solid rgba(44,32,22,0.06)"}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:3}}>
                 <span style={{fontSize:18,fontWeight:800,lineHeight:1,color:isSpec?"var(--theme-primary)":"#2C2016"}}>{day}</span>
                 <div style={{display:"flex",gap:3,alignItems:"center"}}>
@@ -36,7 +75,26 @@ export function MonthView({year,month,monthContent,filtered,openEdit,openAdd,sho
                   <button onClick={()=>openAdd(day)} style={{background:"rgba(255,255,255,0.2)",border:"none",borderRadius:"50%",width:20,height:20,cursor:"pointer",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",color:isSpec?"var(--theme-primary)":"var(--theme-primary)",padding:0,transition:"all 0.2s"}} className="hover-scale">+</button>
                 </div>
               </div>
-              {ev&&<div style={{fontSize:8,color:isSpec?"#C4622D":"#A67C1C",fontWeight:700,marginBottom:3,lineHeight:1.2,textTransform:"uppercase",letterSpacing:0.3}}>{ev}</div>}
+              
+              <div style={{display:"flex", flexDirection:"column", gap:2, marginBottom:4}}>
+                {evs.map((e, idx) => (
+                  <div key={idx} style={{
+                    fontSize:7, 
+                    color: e.color || (isSpec ? "#C4622D" : "#A67C1C"), 
+                    background: e.color ? `${e.color}15` : "transparent",
+                    padding: e.color ? "1px 4px" : "0",
+                    borderRadius: 4,
+                    fontWeight: 700, 
+                    lineHeight: 1.2, 
+                    textTransform:"uppercase", 
+                    letterSpacing:0.3,
+                    border: e.color ? `1px solid ${e.color}33` : "none"
+                  }}>
+                    {e.name}
+                  </div>
+                ))}
+              </div>
+
               <div style={{display:"flex",flexDirection:"column",gap:2}}>
                 {items.slice(0,4).map((item:any)=>{
                   const ps=gps(pillars,item.pillar);
@@ -273,7 +331,7 @@ export function TableView({filtered,openEdit,archiveItem,unarchiveItem,deleteIte
   },[items,sort]);
   const setS = (col:any) => setSort(s=>s.col===col?{col,dir:s.dir==="asc"?"desc":"asc"}:{col,dir:"asc"});
   const th = (col:any) => ({textAlign:"left" as any,fontSize:10,fontWeight:600,letterSpacing:1,textTransform:"uppercase" as any,color:"rgba(44,32,22,0.4)",padding:"10px 10px",borderBottom:"2px solid rgba(44,32,22,0.08)",whiteSpace:"nowrap" as any,cursor:"pointer",userSelect:"none" as any});
-  const td = {padding:"8px 10px",fontSize:12,borderBottom:"1px solid rgba(44,32,22,0.05)",verticalAlign:"middle"};
+  const td: React.CSSProperties = {padding:"8px 10px",fontSize:12,borderBottom:"1px solid rgba(44,32,22,0.05)",verticalAlign:"top", whiteSpace: "normal", wordBreak: "break-word"};
   const arrow = (col:any) => sort.col===col?(sort.dir==="asc"?"↑":"↓"):"";
 
   const toggleBulk = (id:string) => setBulkIds((p:any)=>p.includes(id)?p.filter((x:any)=>x!==id):[...p,id]);
