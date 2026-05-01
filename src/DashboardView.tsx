@@ -50,10 +50,10 @@ interface LayoutItem {
 }
 
 const DEFAULT_LAYOUT: LayoutItem[] = [
-  { id: "w-goal", type: "goal", w: 2, h: 2 },
-  { id: "w-todos", type: "todos", w: 2, h: 2 },
-  { id: "w-sticky", type: "sticky", w: 2, h: 2 },
-  { id: "w-shortcut", type: "shortcut", w: 2, h: 2 },
+  { id: "w-goal", type: "goal", w: 1, h: 2 },
+  { id: "w-todos", type: "todos", w: 1, h: 2 },
+  { id: "w-sticky", type: "sticky", w: 1, h: 2 },
+  { id: "w-shortcut", type: "shortcut", w: 3, h: 1 },
 ];
 
 export function DashboardView({ user, profile, activeWorkspace, content, theme, setTab, sidebarOpen, setSidebarOpen }: any) {
@@ -301,6 +301,17 @@ export function DashboardView({ user, profile, activeWorkspace, content, theme, 
         collisionDetection={closestCenter} 
         onDragEnd={handleDragEnd}
       >
+        <style>
+          {`
+            @media (max-width: 800px) {
+              .w-widget {
+                grid-column: 1 / -1 !important;
+                grid-row: span 1 !important;
+                min-height: 250px;
+              }
+            }
+          `}
+        </style>
         <div style={{ 
           display: "grid", 
           gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", 
@@ -548,7 +559,7 @@ function DashboardWidget({ item, isEditing, onResize, ...props }: any) {
 
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition,
+    transition: transition ? `${transition}, grid-column 0.3s cubic-bezier(0.25, 1, 0.5, 1), grid-row 0.3s cubic-bezier(0.25, 1, 0.5, 1)` : "grid-column 0.3s cubic-bezier(0.25, 1, 0.5, 1), grid-row 0.3s cubic-bezier(0.25, 1, 0.5, 1)",
     gridColumn: `span ${item.w}`,
     gridRow: `span ${item.h}`,
     opacity: isDragging ? 0.5 : 1,
@@ -558,10 +569,10 @@ function DashboardWidget({ item, isEditing, onResize, ...props }: any) {
 
   const renderContent = () => {
     switch (item.type) {
-      case "todos": return <TodoWidget {...props} />;
-      case "goal": return <DailyProgressWidget {...props} />;
-      case "sticky": return <StickyNoteWidget {...props} />;
-      case "shortcut": return <ShortcutWidget {...props} />;
+      case "todos": return <TodoWidget {...props} item={item} />;
+      case "goal": return <DailyProgressWidget {...props} item={item} />;
+      case "sticky": return <StickyNoteWidget {...props} item={item} />;
+      case "shortcut": return <ShortcutWidget {...props} item={item} />;
       default: return null;
     }
   };
@@ -571,7 +582,15 @@ function DashboardWidget({ item, isEditing, onResize, ...props }: any) {
   if (!content) return null;
 
   return (
-    <div ref={setNodeRef} style={style} className={`group ${isEditing ? 'active:cursor-grabbing' : ''}`}>
+    <div ref={setNodeRef} style={style} className={`w-widget group ${isEditing ? 'active:cursor-grabbing' : ''}`}>
+      <style>
+        {`
+          .widget-content-container {
+            container-type: size;
+            container-name: widget;
+          }
+        `}
+      </style>
       <div style={{ ...CARD({ padding: 0 }), height: "100%", position: "relative", display: "flex", flexDirection: "column", border: isEditing ? "2px dashed var(--theme-primary, #2C2016)" : "1px solid rgba(0,0,0,0.03)" }}>
         
         {isEditing && (
@@ -583,7 +602,7 @@ function DashboardWidget({ item, isEditing, onResize, ...props }: any) {
           </>
         )}
 
-        <div style={{ flex: 1, padding: 24, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+        <div className="widget-content-container" style={{ flex: 1, padding: "clamp(12px, 5cqw, 24px) clamp(12px, 5cqw, 24px)", overflow: "hidden", display: "flex", flexDirection: "column" }}>
           {content || <div style={{flex:1, display:"flex", alignItems:"center", justifyContent:"center", color:"rgba(0,0,0,0.2)", fontSize:12, fontWeight:700}}>Widget Kosong</div>}
         </div>
 
@@ -676,16 +695,16 @@ function TodoWidget({ todos, activeWorkspace, user, content, theme }: any) {
 
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "100%", position: "relative" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid rgba(0,0,0,0.05)", marginBottom: 16 }}>
-        <div style={{ display: "flex", gap: 20 }}>
-          <button onClick={() => setTab("active")} style={{ ...TAB(tab === "active"), padding: "10px 0", marginRight: 10 }}>To Do List</button>
-          <button onClick={() => setTab("history")} style={{ ...TAB(tab === "history"), padding: "10px 0" }}>Riwayat</button>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid rgba(0,0,0,0.05)", marginBottom: "clamp(8px, 4cqh, 16px)" }}>
+        <div style={{ display: "flex", gap: "clamp(8px, 2cqw, 20px)" }}>
+          <button onClick={() => setTab("active")} style={{ ...TAB(tab === "active"), fontSize: "clamp(12px, 5cqw, 15px)", padding: "clamp(6px, 2cqh, 10px) 0" }}>To Do List</button>
+          <button onClick={() => setTab("history")} style={{ ...TAB(tab === "history"), fontSize: "clamp(12px, 5cqw, 15px)", padding: "clamp(6px, 2cqh, 10px) 0" }}>Riwayat</button>
         </div>
         <button 
           onClick={() => setAddingTodo(!addingTodo)}
-          style={{ width: 32, height: 32, borderRadius: "50%", background: addingTodo ? "rgba(0,0,0,0.1)" : theme.primary, color: addingTodo ? "black" : "white", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 8 }}
+          style={{ width: "clamp(24px, 10cqw, 36px)", height: "clamp(24px, 10cqw, 36px)", borderRadius: "50%", background: addingTodo ? "rgba(0,0,0,0.1)" : theme.primary, color: addingTodo ? "black" : "white", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 8 }}
         >
-          {addingTodo ? <X size={18} /> : <Plus size={18} />}
+          {addingTodo ? <X size={"clamp(14px, 5cqw, 18px)"} /> : <Plus size={"clamp(14px, 5cqw, 18px)"} />}
         </button>
       </div>
 
@@ -694,21 +713,21 @@ function TodoWidget({ todos, activeWorkspace, user, content, theme }: any) {
         <AnimatePresence>
           {addingTodo && (
             <motion.div initial={{ opacity: 0, y: -10, height: 0 }} animate={{ opacity: 1, y: 0, height: "auto" }} exit={{ opacity: 0, y: -10, height: 0 }} style={{ overflow: "hidden", marginBottom: 16 }}>
-              <div style={{ background: "#FAFAF8", padding: 16, borderRadius: 16, border: "1px solid rgba(0,0,0,0.05)" }}>
+              <div style={{ background: "#FAFAF8", padding: "clamp(10px, 4cqw, 16px)", borderRadius: 16, border: "1px solid rgba(0,0,0,0.05)" }}>
                 <input 
                   value={newTodo} onChange={(e)=>setNewTodo(e.target.value)}
                   placeholder="Tugas baru..."
                   autoFocus
-                  style={I({ border: "none", background: "white", padding: "12px", borderRadius: 12, marginBottom: 12 })}
+                  style={I({ border: "none", background: "white", padding: "clamp(8px, 3cqh, 12px)", borderRadius: 12, marginBottom: 12, fontSize: "clamp(12px, 5cqw, 14px)" })}
                 />
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                    <input 
                      type="date" 
                      value={newTodoDate} 
                      onChange={(e)=>setNewTodoDate(e.target.value)}
-                     style={I({ padding: "8px 12px", background: "white", border: "none", borderRadius: 12, flex: 1, fontSize: 13 })}
+                     style={I({ padding: "clamp(6px, 2cqh, 8px) 12px", background: "white", border: "none", borderRadius: 12, flex: 1, fontSize: "clamp(11px, 4cqw, 13px)" })}
                    />
-                   <button onClick={addTodo} style={{ ...B(true, theme.primary), padding: "8px 16px", borderRadius: 12, fontSize: 13 }}>Simpan</button>
+                   <button onClick={addTodo} style={{ ...B(true, theme.primary), padding: "clamp(6px, 2cqh, 8px) clamp(10px, 4cqw, 16px)", borderRadius: 12, fontSize: "clamp(11px, 4cqw, 13px)" }}>Simpan</button>
                 </div>
               </div>
             </motion.div>
@@ -718,15 +737,15 @@ function TodoWidget({ todos, activeWorkspace, user, content, theme }: any) {
         {tab === "active" && (
           <>
             {/* HARI INI */}
-            <div style={{ marginBottom: 24 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+            <div style={{ marginBottom: "clamp(12px, 5cqh, 24px)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: "clamp(8px, 4cqh, 16px)" }}>
                 <div style={{ flex: 1, height: 1, background: "rgba(0,0,0,0.05)" }} />
-                <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(0,0,0,0.4)", textTransform: "uppercase" }}>Hari Ini</div>
+                <div style={{ fontSize: "clamp(10px, 3.5cqw, 12px)", fontWeight: 800, color: "rgba(0,0,0,0.4)", textTransform: "uppercase" }}>Hari Ini</div>
                 <div style={{ flex: 1, height: 1, background: "rgba(0,0,0,0.05)" }} />
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
                 <AnimatePresence>
-                  {activeToday.length === 0 && completedToday.length === 0 && <div style={{ fontSize: 13, color: "rgba(0,0,0,0.3)", textAlign: "center", padding: 12 }}>Kosong</div>}
+                  {activeToday.length === 0 && completedToday.length === 0 && <div style={{ fontSize: "clamp(11px, 4cqw, 14px)", color: "rgba(0,0,0,0.3)", textAlign: "center", padding: 12 }}>Kosong</div>}
                   {activeToday.map(t => <TodoItem key={t.id} todo={t} onToggle={toggleTodo} theme={theme} />)}
                   {completedToday.map(t => <TodoItem key={t.id} todo={t} onToggle={toggleTodo} theme={theme} />)}
                 </AnimatePresence>
@@ -735,14 +754,14 @@ function TodoWidget({ todos, activeWorkspace, user, content, theme }: any) {
 
             {/* BESOK */}
             <div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: "clamp(8px, 4cqh, 16px)" }}>
                 <div style={{ flex: 1, height: 1, background: "rgba(0,0,0,0.05)" }} />
-                <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(0,0,0,0.4)", textTransform: "uppercase" }}>Besok</div>
+                <div style={{ fontSize: "clamp(10px, 3.5cqw, 12px)", fontWeight: 800, color: "rgba(0,0,0,0.4)", textTransform: "uppercase" }}>Besok</div>
                 <div style={{ flex: 1, height: 1, background: "rgba(0,0,0,0.05)" }} />
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
                 <AnimatePresence>
-                  {activeTomorrow.length === 0 && completedTomorrow.length === 0 && <div style={{ fontSize: 13, color: "rgba(0,0,0,0.3)", textAlign: "center", padding: 12 }}>Kosong</div>}
+                  {activeTomorrow.length === 0 && completedTomorrow.length === 0 && <div style={{ fontSize: "clamp(11px, 4cqw, 14px)", color: "rgba(0,0,0,0.3)", textAlign: "center", padding: 12 }}>Kosong</div>}
                   {activeTomorrow.map(t => <TodoItem key={t.id} todo={t} onToggle={toggleTodo} theme={theme} />)}
                   {completedTomorrow.map(t => <TodoItem key={t.id} todo={t} onToggle={toggleTodo} theme={theme} />)}
                 </AnimatePresence>
@@ -753,13 +772,13 @@ function TodoWidget({ todos, activeWorkspace, user, content, theme }: any) {
 
         {tab === "history" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            <div style={{ display: "flex", gap: 12, alignItems: "center", background: "#FAFAF8", padding: 12, borderRadius: 16 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(0,0,0,0.6)" }}>Filter Rentang Tanggal:</div>
-              <input type="date" value={histStart} onChange={(e)=>setHistStart(e.target.value)} style={I({fontSize: 12, padding: "8px 12px"})} title="Tanggal Mulai" />
+            <div style={{ display: "flex", gap: "clamp(4px, 2cqw, 12px)", alignItems: "center", background: "#FAFAF8", padding: "clamp(8px, 3cqw, 12px)", borderRadius: 16, flexWrap: "wrap" }}>
+              <div style={{ fontSize: "clamp(10px, 4cqw, 13px)", fontWeight: 700, color: "rgba(0,0,0,0.6)", width: "100%" }}>Filter Rentang Tanggal:</div>
+              <input type="date" value={histStart} onChange={(e)=>setHistStart(e.target.value)} style={I({fontSize: "clamp(10px, 4cqw, 13px)", padding: "clamp(4px, 2cqw, 8px)"})} title="Tanggal Mulai" />
               <span>-</span>
-              <input type="date" value={histEnd} onChange={(e)=>setHistEnd(e.target.value)} style={I({fontSize: 12, padding: "8px 12px"})} title="Tanggal Selesai" />
+              <input type="date" value={histEnd} onChange={(e)=>setHistEnd(e.target.value)} style={I({fontSize: "clamp(10px, 4cqw, 13px)", padding: "clamp(4px, 2cqw, 8px)"})} title="Tanggal Selesai" />
             </div>
-            {completedTodos.length === 0 && <div style={{ textAlign: "center", padding: 20, color: "rgba(0,0,0,0.3)", fontSize: 13 }}>Belum ada riwayat.</div>}
+            {completedTodos.length === 0 && <div style={{ textAlign: "center", padding: 20, color: "rgba(0,0,0,0.3)", fontSize: "clamp(11px, 4cqw, 14px)" }}>Belum ada riwayat.</div>}
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                <AnimatePresence>
                  {completedTodos.map(t => (
@@ -783,7 +802,7 @@ function TodoItem({ todo, onToggle, theme, disableAnimation }: any) {
       exit={{ opacity: 0, scale: 0.9 }}
       transition={{ duration: 0.2 }}
       style={{ 
-        display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", background: todo.completed ? "transparent" : "#FAFAF8", 
+        display: "flex", alignItems: "center", gap: "clamp(8px, 3cqw, 16px)", padding: "clamp(8px, 3cqw, 16px) clamp(12px, 4cqw, 20px)", background: todo.completed ? "transparent" : "#FAFAF8", 
         border: todo.completed ? "1px dashed rgba(0,0,0,0.1)" : "1px solid transparent",
         borderRadius: 16 
       }}
@@ -793,17 +812,17 @@ function TodoItem({ todo, onToggle, theme, disableAnimation }: any) {
         disabled={todo.isAutomated}
         style={{ border: "none", background: "none", cursor: todo.isAutomated ? "default" : "pointer", padding: 0 }}
       >
-        {todo.completed ? <CheckCircle2 size={20} color={theme.primary} /> : <Circle size={20} color="rgba(0,0,0,0.15)" />}
+        {todo.completed ? <CheckCircle2 size={20} color={theme.primary} style={{ width: "clamp(16px, 5cqw, 24px)", height: "clamp(16px, 5cqw, 24px)" }} /> : <Circle size={20} color="rgba(0,0,0,0.15)" style={{ width: "clamp(16px, 5cqw, 24px)", height: "clamp(16px, 5cqw, 24px)" }} />}
       </button>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 14, fontWeight: 600, color: "#2C2016", textDecoration: todo.completed ? "line-through" : "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        <div style={{ fontSize: "clamp(11px, 4.5cqw, 14px)", fontWeight: 600, color: "#2C2016", textDecoration: todo.completed ? "line-through" : "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {todo.text}
         </div>
-        <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
-          <span style={{ fontSize: 10, fontWeight: 800, color: todo.type === "KONTEN" ? "#9C2B4E" : "#C4622D", background: todo.type === "KONTEN" ? "#9C2B4E15" : "#C4622D15", padding: "2px 6px", borderRadius: 4 }}>
+        <div style={{ display: "flex", gap: "clamp(4px, 2cqw, 8px)", marginTop: "clamp(2px, 1cqw, 6px)" }}>
+          <span style={{ fontSize: "clamp(8px, 3cqw, 10px)", fontWeight: 800, color: todo.type === "KONTEN" ? "#9C2B4E" : "#C4622D", background: todo.type === "KONTEN" ? "#9C2B4E15" : "#C4622D15", padding: "2px 6px", borderRadius: 4 }}>
             {todo.type}
           </span>
-          <span style={{ fontSize: 10, fontWeight: 700, color: "rgba(0,0,0,0.3)" }}>
+          <span style={{ fontSize: "clamp(8px, 3cqw, 10px)", fontWeight: 700, color: "rgba(0,0,0,0.3)" }}>
             {todo.dueDate}
           </span>
         </div>
@@ -834,10 +853,10 @@ function DailyProgressWidget({ todos, content, theme }: any) {
 
   return (
     <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ fontSize: 16, fontWeight: 900, color: "rgba(0,0,0,0.3)", letterSpacing: 1, textTransform: "uppercase" }}>
+      <div style={{ fontSize: "clamp(12px, 5cqw, 20px)", fontWeight: 900, color: "rgba(0,0,0,0.3)", letterSpacing: 1, textTransform: "uppercase" }}>
         Daily Progress
       </div>
-      <div style={{ position: "relative", width: "100%", minHeight: 0, flex: 1, display: "flex", alignItems: "center", justifyContent: "center", margin: "16px 0" }}>
+      <div style={{ position: "relative", width: "100%", minHeight: 0, flex: 1, display: "flex", alignItems: "center", justifyContent: "center", margin: "clamp(8px, 4cqh, 24px) 0" }}>
         <svg viewBox="0 0 200 200" preserveAspectRatio="xMidYMid meet" style={{ transform: "rotate(-90deg)", width: "100%", height: "100%", maxHeight: "100%" }}>
           <defs>
             <linearGradient id="progressGrad" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -856,12 +875,12 @@ function DailyProgressWidget({ todos, content, theme }: any) {
           />
         </svg>
         <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ fontSize: 36, fontWeight: 900, color: "#2C2016", letterSpacing: "-2px" }}>{perc}%</div>
-          <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(0,0,0,0.4)" }}>Selesai {displayCompleted}/{displayTotal}</div>
+          <div style={{ fontSize: "clamp(24px, 12cqw, 48px)", fontWeight: 900, color: "#2C2016", letterSpacing: "-2px" }}>{perc}%</div>
+          <div style={{ fontSize: "clamp(10px, 4cqw, 14px)", fontWeight: 700, color: "rgba(0,0,0,0.4)" }}>Selesai {displayCompleted}/{displayTotal}</div>
         </div>
       </div>
-      <div style={{ fontSize: 14, fontWeight: 800, color: perc >= 100 && total > 0 ? "#34A853" : "#2C2016", textAlign: "center", minHeight: 20 }}>
-        {total === 0 ? "Belum ada tugas hari ini." : perc >= 100 ? "Semua Tugas Selesai! 🎉" : "Terus semangat!"}
+      <div style={{ fontSize: "clamp(11px, 4cqw, 16px)", fontWeight: 800, color: perc >= 100 && total > 0 ? "#34A853" : "#2C2016", textAlign: "center", minHeight: 20 }}>
+        {total === 0 ? "Belum tugas." : perc >= 100 ? "Semua Tugas Selesai! 🎉" : "Terus semangat!"}
       </div>
     </div>
   );
@@ -884,20 +903,20 @@ function StickyNoteWidget({ config, updateConfig, theme }: any) {
 
   return (
     <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "clamp(8px, 4cqh, 16px)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <StickyNote size={18} color={theme.primary} />
-          <div style={{ fontSize: 13, fontWeight: 800, textTransform: "uppercase" }}>Sticky Notes</div>
+          <StickyNote color={theme.primary} style={{ width: "clamp(14px, 5cqw, 20px)", height: "clamp(14px, 5cqw, 20px)" }} />
+          <div style={{ fontSize: "clamp(10px, 4cqw, 14px)", fontWeight: 800, textTransform: "uppercase", whiteSpace: "nowrap" }}>Sticky Notes</div>
         </div>
-        <button className="hover-scale" onClick={() => setShowModal(true)} style={{ background: theme.primary+"15", border: "none", color: theme.primary, cursor: "pointer", padding: "6px 12px", borderRadius: 12, fontSize: 12, fontWeight: 800 }}>
+        <button className="hover-scale" onClick={() => setShowModal(true)} style={{ background: theme.primary+"15", border: "none", color: theme.primary, cursor: "pointer", padding: "clamp(4px, 2cqh, 8px) clamp(8px, 3cqw, 12px)", borderRadius: 12, fontSize: "clamp(10px, 3.5cqw, 13px)", fontWeight: 800, whiteSpace: "nowrap" }}>
            Buka Semua ({notes.length})
         </button>
       </div>
       
       {/* Preview max 4 */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gridAutoRows: "1fr", gap: 12, flex: 1 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gridAutoRows: "1fr", gap: "clamp(8px, 3cqw, 16px)", flex: 1 }}>
          {displayNotes.slice(0, 4).map((n: any) => (
-           <div key={n.id} style={{ background: n.color || "#FFF59D", padding: 16, borderRadius: 16, fontSize: 13, color: "#2C2016", overflow: "hidden", position: "relative", boxShadow: "inset 0 0 20px rgba(0,0,0,0.02)" }}>
+           <div key={n.id} style={{ background: n.color || "#FFF59D", padding: "clamp(12px, 5cqw, 20px)", borderRadius: 16, fontSize: "clamp(11px, 4cqw, 14px)", color: "#2C2016", overflow: "hidden", position: "relative", boxShadow: "inset 0 0 20px rgba(0,0,0,0.02)" }}>
               <textarea 
                 value={notes.find((note:any) => note.id === n.id)?.text ?? n.text} 
                 onChange={(e) => {
@@ -907,7 +926,7 @@ function StickyNoteWidget({ config, updateConfig, theme }: any) {
                     updateConfig("stickyNotes", [...notes, { id: n.id, text: e.target.value, color: n.color }]);
                   }
                 }}
-                style={{ width: "100%", height: "100%", background: "transparent", border: "none", resize: "none", outline: "none", fontSize: 13, fontWeight: 600, color: "rgba(0,0,0,0.8)", lineHeight: 1.4 }}
+                style={{ width: "100%", height: "100%", background: "transparent", border: "none", resize: "none", outline: "none", fontSize: "clamp(11px, 4cqw, 14px)", fontWeight: 600, color: "rgba(0,0,0,0.8)", lineHeight: 1.4 }}
                 placeholder="Pesan kosong..."
               />
            </div>
@@ -994,32 +1013,31 @@ function StickyNotesModal({ notes, updateConfig, onClose, theme }: any) {
 
 function ShortcutWidget({ theme, setTab, navigate }: any) {
   return (
-    <div style={{ padding: "0 12px", height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", gap: 16 }}>
-      <div style={{ fontSize: 13, fontWeight: 800, color: "rgba(0,0,0,0.3)", textTransform: "uppercase", textAlign: "center" }}>QUICK ACTION</div>
+    <div style={{ padding: 0, height: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "clamp(8px, 4cqw, 16px)", flexDirection: "row", flexWrap: "wrap", alignContent: "center" }}>
+      <div style={{ fontSize: "clamp(10px, 3.5cqw, 13px)", fontWeight: 800, color: "rgba(0,0,0,0.3)", textTransform: "uppercase", whiteSpace: "nowrap", flexShrink: 0 }}>QUICK ACTION</div>
       
-      <button 
-        className="hover-scale"
-        style={{ ...B(true, theme.primary), width: "100%", flex: 1, borderRadius: 16, fontSize: 14, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", gap: 10, border: "none", color: "white", cursor: "pointer", minHeight: 64, boxShadow: `0 10px 30px ${theme.primary}25` }}
-        onClick={() => window.dispatchEvent(new CustomEvent("openContentModal"))}
-      >
-        <Sparkles size={18} /> Buat Konten Baru
-      </button>
-
-      <div style={{ display: "flex", gap: 12 }}>
-         <button 
-           className="hover-scale"
-           onClick={() => setTab("settings")}
-           style={{ flex: 1, background: "#FAFAF8", border: "1px solid rgba(0,0,0,0.05)", padding: "16px 12px", borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontSize: 12, fontWeight: 800, color: "#2C2016", cursor: "pointer" }}
-         >
-           <Settings size={16} /> Pengaturan
-         </button>
-         <button 
-           className="hover-scale"
-           onClick={() => navigate("/profile")}
-           style={{ flex: 1, background: "#FAFAF8", border: "1px solid rgba(0,0,0,0.05)", padding: "16px 12px", borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontSize: 12, fontWeight: 800, color: "#2C2016", cursor: "pointer" }}
-         >
-           <UserIcon size={16} /> Profil
-         </button>
+      <div style={{ display: "flex", gap: "clamp(8px, 2cqw, 12px)", flex: 1, justifyContent: "flex-end", height: "100%", alignItems: "center" }}>
+        <button 
+          className="hover-scale"
+          onClick={() => setTab("settings")}
+          style={{ background: "#FAFAF8", border: "1px solid rgba(0,0,0,0.05)", padding: "0 clamp(12px, 4cqw, 24px)", borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontSize: "clamp(11px, 4cqw, 13px)", fontWeight: 800, color: "#2C2016", cursor: "pointer", height: "clamp(40px, 15cqh, 56px)", flex: 1, whiteSpace: "nowrap" }}
+        >
+          <Settings size={"clamp(14px, 5cqw, 16px)"} /> <span style={{display: "inline-block", overflow: "hidden", textOverflow: "ellipsis"}}>Pengaturan</span>
+        </button>
+        <button 
+          className="hover-scale"
+          onClick={() => navigate("/profile")}
+          style={{ background: "#FAFAF8", border: "1px solid rgba(0,0,0,0.05)", padding: "0 clamp(12px, 4cqw, 24px)", borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontSize: "clamp(11px, 4cqw, 13px)", fontWeight: 800, color: "#2C2016", cursor: "pointer", height: "clamp(40px, 15cqh, 56px)", flex: 1, whiteSpace: "nowrap" }}
+        >
+          <UserIcon size={"clamp(14px, 5cqw, 16px)"} /> <span style={{display: "inline-block", overflow: "hidden", textOverflow: "ellipsis"}}>Profil</span>
+        </button>
+        <button 
+          className="hover-scale"
+          style={{ ...B(true, theme.primary), padding: "0 clamp(12px, 4cqw, 24px)", borderRadius: 16, fontSize: "clamp(11px, 4cqw, 13px)", fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", gap: 10, border: "none", color: "white", cursor: "pointer", height: "clamp(40px, 15cqh, 56px)", flex: 1.5, boxShadow: `0 10px 30px ${theme.primary}25`, whiteSpace: "nowrap" }}
+          onClick={() => window.dispatchEvent(new CustomEvent("openContentModal"))}
+        >
+          <Sparkles size={"clamp(14px, 5cqw, 18px)"} /> <span style={{display: "inline-block", overflow: "hidden", textOverflow: "ellipsis"}}>Buat Konten</span>
+        </button>
       </div>
     </div>
   );

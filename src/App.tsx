@@ -233,7 +233,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
   const [showHolidays, setShowHolidays] = useState(true);
   const [showArchived, setShowArchived] = useState(false);
   const [filters, setFilters]   = useState({pillar:"All",platform:"All",pic:"All",status:"All"});
-  const [title, setTitle]       = useState("Your Name");
+  const [title, setTitle]       = useState("Content Management");
   const [tagline, setTagline]   = useState("Content Management System");
   const [headerImage, setHeaderImage] = useState<string|null>(null);
   const [headerStyle, setHeaderStyle] = useState({
@@ -267,7 +267,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
   }, [profile]);
 
   const isUnverified = useMemo(() => {
-    return profile && profile.emailVerified === false;
+    return profile && (profile.emailVerified === false || !profile.nickname);
   }, [profile]);
 
   const handleLeaveWorkspace = async (ws: any) => {
@@ -414,7 +414,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
           });
           
           if (data.settings) {
-            setTitle(data.settings.title !== undefined ? data.settings.title : "Your Name");
+            setTitle(data.settings.title !== undefined ? data.settings.title : "Content Management");
             setTagline(data.settings.tagline !== undefined ? data.settings.tagline : "Content Management System");
             
             // Real-time synchronization for all settings categories
@@ -454,7 +454,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
       return;
     }
     if (isUnverified) {
-      alert("Akses Terbatas: Silakan verifikasi email Anda terlebih dahulu di pengaturan profil.");
+      alert("Akses Terbatas: Silakan lengkapi nama panggilan dan verifikasi email Anda terlebih dahulu.");
       return;
     }
     const isNew = modal.mode === "add";
@@ -485,7 +485,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
   const openEdit = (item:any) => setModal({mode:"edit",data:{...item,metrics:{...item.metrics}}});
   const openAdd  = (day:any) => {
     if (isRestricted) return alert("Akses Terbatas: Fitur ini dikunci pada masa uji coba yang telah habis.");
-    if (isUnverified) return alert("Akses Terbatas: Silakan verifikasi email Anda terlebih dahulu.");
+    if (isUnverified) return alert("Akses Terbatas: Silakan lengkapi nama panggilan dan verifikasi email Anda terlebih dahulu.");
     setModal({mode:"add",data:emptyItem(year,month,day,pillars,platforms,pics,statuses)});
   };
   const deleteItem = async (id:string) => { 
@@ -658,6 +658,11 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
         title={title}
         onOpenSidebar={() => setSidebarOpen(true)}
         onLeaveWorkspace={handleLeaveWorkspace}
+        onRenameWorkspace={async (wsId: string, newName: string) => {
+          try {
+            await updateDoc(doc(db, "workspaces", wsId), { name: newName });
+          } catch(e: any) { handleFirestoreError(e, 'update'); }
+        }}
       />
       <div style={{flex:1, minWidth:0, display:"flex", flexDirection:"column", height:"100vh", overflow:"auto", position:"relative"}}>
         {(!["dashboard", "settings", "admin"].includes(tab) && !tab.startsWith("social")) && (
@@ -668,9 +673,9 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
       
       {isUnverified && (
         <div style={{background:"#FBF5E3", borderBottom:"1px solid rgba(166,124,28,0.1)", padding:"12px 24px", display:"flex", alignItems:"center", gap:12, zIndex:50}}>
-          <span style={{fontSize:13, fontWeight:700, color:"#A67C12"}}>⚠️ Email Belum Diverifikasi:</span>
-          <span style={{fontSize:13, color:"rgba(44,32,22,0.6)"}}>Silakan verifikasi email Anda untuk dapat menggunakan fitur penuh.</span>
-          <button onClick={() => window.location.hash="/profile"} style={{background:"#A67C12", color:"white", border:"none", padding:"6px 14px", borderRadius:20, fontSize:12, fontWeight:800, cursor:"pointer"}}>Verifikasi Sekarang</button>
+          <span style={{fontSize:13, fontWeight:700, color:"#A67C12"}}>⚠️ Data Belum Lengkap:</span>
+          <span style={{fontSize:13, color:"rgba(44,32,22,0.6)"}}>Silakan isi nama panggilan terlebih dahulu di awal aplikasi dan verifikasi email Anda untuk dapat menggunakan semua fitur CMS.</span>
+          <button onClick={() => window.location.hash="/profile"} style={{background:"#A67C12", color:"white", border:"none", padding:"6px 14px", borderRadius:20, fontSize:12, fontWeight:800, cursor:"pointer"}}>Lengkapi Sekarang</button>
         </div>
       )}
 

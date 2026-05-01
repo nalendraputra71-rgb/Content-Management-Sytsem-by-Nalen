@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from "motion/react";
 import { useState, useEffect, useRef } from "react";
 import { 
-  Calendar, Layout, List, Clock, PieChart, Settings, Sun, Cloud,
+  Calendar, Layout, List, Clock, PieChart, Settings, Sun, Cloud, Edit2,
   Search, Share2, Pencil, Image, LogOut, Menu, Plus, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Bell, Columns, Shield, X, MessageCircle, Activity, BarChart2, MessageSquare, Crown
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -274,12 +274,14 @@ export function Sidebar({
   open, setOpen, tab, setTab, 
   workspaces, activeWorkspace, onWorkspaceSelect, 
   user, profile, onLogout, title, onOpenSidebar,
-  onLeaveWorkspace
+  onLeaveWorkspace, onRenameWorkspace
 }: any) {
   const navigate = useNavigate();
   const [showViews, setShowViews] = useState(true);
   const [showWorkspaces, setShowWorkspaces] = useState(true);
   const [showSocial, setShowSocial] = useState(true);
+  const [renamingWs, setRenamingWs] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
   
   const VIEWS = [
     {id:"month", ic:<Calendar size={18}/>, lb:"Bulan"},
@@ -403,7 +405,14 @@ export function Sidebar({
                               onClick={() => {
                                 onWorkspaceSelect(ws);
                                 if (!open) setOpen(true);
-                              }} 
+                              }}
+                              onDoubleClick={(e) => {
+                                if (isOwner && onRenameWorkspace) {
+                                  e.stopPropagation();
+                                  setRenamingWs(ws.id);
+                                  setRenameValue(ws.name);
+                                }
+                              }}
                               style={{
                                 width:"100%", textAlign:"left", background:activeWorkspace?.id === ws.id ? "var(--theme-gradient)" : "transparent", 
                                 border:"none", borderRadius:12, padding:open ? "10px 14px" : "10px 8px", color:activeWorkspace?.id === ws.id ? "white" : "#FAFAFA", 
@@ -418,9 +427,49 @@ export function Sidebar({
                               </div>
                               <AnimatePresence>
                                 {open && (
-                                  <motion.span initial={{ opacity: 0, width: 0 }} animate={{ opacity: 1, width: "auto" }} exit={{ opacity: 0, width: 0 }} style={{overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", flex:1}}>
-                                    {ws.name}
-                                  </motion.span>
+                                  <motion.div initial={{ opacity: 0, width: 0 }} animate={{ opacity: 1, width: "auto" }} exit={{ opacity: 0, width: 0 }} style={{overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", flex:1, display: "flex", alignItems: "center"}}>
+                                    {renamingWs === ws.id ? (
+                                      <input 
+                                        autoFocus
+                                        value={renameValue}
+                                        onChange={e => setRenameValue(e.target.value)}
+                                        onBlur={() => {
+                                          if (onRenameWorkspace && renameValue.trim() && renameValue.trim() !== ws.name) {
+                                            onRenameWorkspace(ws.id, renameValue.trim());
+                                          }
+                                          setRenamingWs(null);
+                                        }}
+                                        onKeyDown={(e) => {
+                                          if (e.key === 'Enter') {
+                                            if (onRenameWorkspace && renameValue.trim() && renameValue.trim() !== ws.name) {
+                                              onRenameWorkspace(ws.id, renameValue.trim());
+                                            }
+                                            setRenamingWs(null);
+                                          } else if (e.key === 'Escape') {
+                                            setRenamingWs(null);
+                                          }
+                                        }}
+                                        style={{ width: "100%", background: "rgba(255,255,255,0.2)", color: "white", border: "none", borderRadius: 4, padding: "2px 6px", outline: "none", fontSize: 13, fontWeight: 600 }}
+                                      />
+                                    ) : (
+                                      <>
+                                        <span style={{flex: 1, overflow: "hidden", textOverflow: "ellipsis"}}>{ws.name}</span>
+                                        {isOwner && (
+                                          <div 
+                                            className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setRenamingWs(ws.id);
+                                              setRenameValue(ws.name);
+                                            }}
+                                            style={{ padding: 4, borderRadius: 4, background: "rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center" }}
+                                          >
+                                            <Edit2 size={12} />
+                                          </div>
+                                        )}
+                                      </>
+                                    )}
+                                  </motion.div>
                                 )}
                               </AnimatePresence>
                             </button>
