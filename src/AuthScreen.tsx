@@ -40,10 +40,10 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
 
          const wsRef = doc(collection(db, "workspaces"));
          await setDoc(wsRef, {
-           name: "Your Name Workspace",
+           name: "Content Management",
            ownerId: user.uid,
            settings: {
-             title: "Your Name",
+             title: "Content Management",
              tagline: "Content Management System"
            }
          });

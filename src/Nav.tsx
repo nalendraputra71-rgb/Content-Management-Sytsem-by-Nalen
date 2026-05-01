@@ -359,7 +359,7 @@ export function Sidebar({
               <AnimatePresence>
                 {open && (
                   <motion.div initial={{ opacity: 0, width: 0 }} animate={{ opacity: 1, width: "auto" }} exit={{ opacity: 0, width: 0 }} style={{overflow: "hidden", whiteSpace: "nowrap"}}>
-                    <span style={{fontSize:20, fontWeight:800, letterSpacing:"-1px", color:"#ffffff"}}>{title || "CMS Console"}</span>
+                    <span style={{fontSize:20, fontWeight:800, letterSpacing:"-1px", color:"#ffffff"}}>{title || "Content Management"}</span>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -397,7 +397,7 @@ export function Sidebar({
                   {(showWorkspaces || !open) && (
                     <motion.div initial={{height:0, opacity:0}} animate={{height:"auto", opacity:1}} exit={{height:0, opacity:0}} style={{display:"flex", flexDirection:"column", gap:8, overflow:"hidden"}}>
                       {workspaces.map((ws: any) => {
-                        const isOwner = ws.createdBy === user?.uid;
+                        const isOwner = ws.ownerId === user?.uid || ws.createdBy === user?.uid;
                         return (
                           <div key={ws.id} style={{position:"relative"}} className="group">
                             <button 

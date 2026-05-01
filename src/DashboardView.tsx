@@ -559,7 +559,7 @@ function DashboardWidget({ item, isEditing, onResize, ...props }: any) {
 
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition: transition ? `${transition}, grid-column 0.3s cubic-bezier(0.25, 1, 0.5, 1), grid-row 0.3s cubic-bezier(0.25, 1, 0.5, 1)` : "grid-column 0.3s cubic-bezier(0.25, 1, 0.5, 1), grid-row 0.3s cubic-bezier(0.25, 1, 0.5, 1)",
+    transition,
     gridColumn: `span ${item.w}`,
     gridRow: `span ${item.h}`,
     opacity: isDragging ? 0.5 : 1,
@@ -582,7 +582,7 @@ function DashboardWidget({ item, isEditing, onResize, ...props }: any) {
   if (!content) return null;
 
   return (
-    <div ref={setNodeRef} style={style} className={`w-widget group ${isEditing ? 'active:cursor-grabbing' : ''}`}>
+    <motion.div layout transition={{ type: "spring", stiffness: 300, damping: 30 }} ref={setNodeRef} style={style} className={`w-widget group ${isEditing ? 'active:cursor-grabbing' : ''}`}>
       <style>
         {`
           .widget-content-container {
@@ -591,23 +591,23 @@ function DashboardWidget({ item, isEditing, onResize, ...props }: any) {
           }
         `}
       </style>
-      <div style={{ ...CARD({ padding: 0 }), height: "100%", position: "relative", display: "flex", flexDirection: "column", border: isEditing ? "2px dashed var(--theme-primary, #2C2016)" : "1px solid rgba(0,0,0,0.03)" }}>
+      <motion.div layout style={{ ...CARD({ padding: 0 }), height: "100%", position: "relative", display: "flex", flexDirection: "column", border: isEditing ? "2px dashed var(--theme-primary, #2C2016)" : "1px solid rgba(0,0,0,0.03)" }}>
         
         {isEditing && (
           <>
-            <div {...attributes} {...listeners} style={{ position: "absolute", top: 12, right: 12, zIndex: 20, padding: 8, background: "rgba(0,0,0,0.8)", color: "white", borderRadius: 8, cursor: "grab" }}>
+            <motion.div layout {...attributes} {...listeners} style={{ position: "absolute", top: 12, right: 12, zIndex: 20, padding: 8, background: "rgba(0,0,0,0.8)", color: "white", borderRadius: 8, cursor: "grab" }}>
               <Move size={16} />
-            </div>
+            </motion.div>
             <ResizeHandle item={item} onResize={onResize} />
           </>
         )}
 
-        <div className="widget-content-container" style={{ flex: 1, padding: "clamp(12px, 5cqw, 24px) clamp(12px, 5cqw, 24px)", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+        <motion.div layout className="widget-content-container" style={{ flex: 1, padding: "clamp(12px, 5cqw, 24px) clamp(12px, 5cqw, 24px)", overflow: "hidden", display: "flex", flexDirection: "column" }}>
           {content || <div style={{flex:1, display:"flex", alignItems:"center", justifyContent:"center", color:"rgba(0,0,0,0.2)", fontSize:12, fontWeight:700}}>Widget Kosong</div>}
-        </div>
+        </motion.div>
 
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
 
