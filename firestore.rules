@@ -47,7 +47,7 @@ service cloud.firestore {
       );
       allow create: if isSignedIn() && request.auth.uid == userId && incoming().uid == userId;
       allow update: if isSignedIn() && (
-        (request.auth.uid == userId && incoming().diff(existing()).affectedKeys().hasOnly(['fullName', 'avatar', 'username', 'activeUntil', 'plan', 'hasUsedPromo', 'emailVerified', 'createdAt'])) ||
+        (request.auth.uid == userId && incoming().diff(existing()).affectedKeys().hasOnly(['fullName', 'avatar', 'username', 'activeUntil', 'plan', 'hasUsedPromo', 'emailVerified', 'createdAt', 'themeId'])) ||
         isAdmin()
       );
       allow delete: if isAdmin();
@@ -99,7 +99,8 @@ service cloud.firestore {
 
     // ─── WORKSPACES ──────────────────────────────────────────────────────────
     match /workspaces/{wsId} {
-      allow read: if isMember(wsId) || (isSignedIn() && (resource == null || resource.data.get('publicLinkEnabled', false) == true));
+      allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || resource.data.get('publicLinkEnabled', false) == true);
+      allow get: if isMember(wsId) || (isSignedIn() && (resource == null || resource.data.get('publicLinkEnabled', false) == true));
       allow create: if isSignedIn() && incoming().ownerId == request.auth.uid;
       allow delete: if isOwner(wsId);
       allow update: if isOwner(wsId) && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'publicLinkEnabled', 'settings']);

@@ -140,10 +140,10 @@ export function UserProfile({ userProfile, activeWorkspace, onUpdate }: { userPr
         setLoading(true);
         try {
           const uRef = doc(db, "users", userProfile.uid);
-          await updateDoc(uRef, { photoURL: base64 });
+          await updateDoc(uRef, { avatar: base64 });
           const { updateProfile } = await import("./firebase");
           if (auth.currentUser) await updateProfile(auth.currentUser, { photoURL: base64 });
-          onUpdate({ ...userProfile, photoURL: base64 });
+          onUpdate({ ...userProfile, avatar: base64 });
           setMessage({ text: "Foto profil berhasil diperbarui", type: "success" });
         } catch (e: any) {
           setMessage({ text: e.message, type: "error" });
@@ -207,8 +207,8 @@ export function UserProfile({ userProfile, activeWorkspace, onUpdate }: { userPr
 
       <div style={{display:"flex", alignItems:"center", gap:24}}>
         <label htmlFor="avatarUpload" style={{position:"relative", cursor:"pointer", display:"block"}}>
-          <div style={{width:80, height:80, borderRadius:24, background:"#C4622D", display:"flex", alignItems:"center", justifyContent:"center", color:"white", fontSize:32, fontWeight:600, boxShadow:"0 10px 30px rgba(196, 98, 45, 0.2)", overflow:"hidden", border:"2px solid transparent", transition:"all 0.2s"}} className="hover:border-[#FF6B00]">
-            {userProfile?.photoURL ? <img src={userProfile.photoURL} alt="Avatar" style={{width:"100%",height:"100%",objectFit:"cover"}} /> : userProfile?.fullName?.[0]}
+          <div style={{width:80, height:80, borderRadius:24, background:"var(--theme-primary)", display:"flex", alignItems:"center", justifyContent:"center", color:"white", fontSize:32, fontWeight:600, boxShadow:"0 10px 30px var(--theme-primary)33", overflow:"hidden", border:"2px solid transparent", transition:"all 0.2s"}} className="hover:border-white">
+            {userProfile?.avatar ? <img src={userProfile.avatar} alt="Avatar" style={{width:"100%",height:"100%",objectFit:"cover"}} /> : userProfile?.fullName?.[0]}
           </div>
           <div style={{position:"absolute", bottom:-6, right:-6, background:"#2C2016", color:"white", width:24,height:24,borderRadius:12,display:"flex",alignItems:"center",justifyContent:"center",border:"2px solid white", boxShadow:"0 2px 5px rgba(0,0,0,0.1)"}}>
             <Pencil size={12}/>
@@ -218,7 +218,7 @@ export function UserProfile({ userProfile, activeWorkspace, onUpdate }: { userPr
         <div>
           <h1 style={{ fontSize:28, color:"#2C2016", marginBottom:4, display:"flex", alignItems:"center", gap:10}}>
             {userProfile?.fullName}
-            <span style={{background: (userProfile?.activeUntil && new Date(userProfile.activeUntil) > new Date()) ? "#C4622D" : "#9C2B4E", color: "white", padding: "4px 8px", borderRadius: 6, fontSize: 11, fontWeight:800, display:"inline-block", verticalAlign:"middle"}}>
+            <span style={{background: (userProfile?.activeUntil && new Date(userProfile.activeUntil) > new Date()) ? "var(--theme-primary)" : "#9C2B4E", color: "white", padding: "4px 8px", borderRadius: 6, fontSize: 11, fontWeight:800, display:"inline-block", verticalAlign:"middle"}}>
               {(userProfile?.activeUntil && new Date(userProfile.activeUntil) > new Date()) ? "PRO" : "FREE"}
             </span>
           </h1>
@@ -237,7 +237,7 @@ export function UserProfile({ userProfile, activeWorkspace, onUpdate }: { userPr
         <div style={CARD()}>
           <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20}}>
             <h3 style={{fontSize:16, fontWeight:700, display:"flex", alignItems:"center", gap:10}}><User size={18}/> Informasi Profil</h3>
-            {!isEditing && <button onClick={()=>setIsEditing(true)} style={{fontSize:12, color:"#C4622D", fontWeight:700, background:"none", border:"none", cursor:"pointer"}}>Edit</button>}
+            {!isEditing && <button onClick={()=>setIsEditing(true)} style={{fontSize:12, color:"var(--theme-primary)", fontWeight:700, background:"none", border:"none", cursor:"pointer"}}>Edit</button>}
           </div>
           
           <div style={{display:"flex", flexDirection:"column", gap:16}}>
@@ -363,7 +363,7 @@ export function UserProfile({ userProfile, activeWorkspace, onUpdate }: { userPr
                         </div>
                       </div>
                       <div style={{textAlign:"right"}}>
-                        <div style={{fontWeight:800, color:"#FF6B00", marginBottom:8}}>Rp {tx.amount?.toLocaleString('id-ID')}</div>
+                <div style={{fontWeight:800, color:"var(--theme-primary)", marginBottom:8}}>Rp {tx.amount?.toLocaleString('id-ID')}</div>
                         {tx.status === "success" && (
                           <button onClick={()=>handleDownloadInvoice(tx)} className="hover-scale" style={{background:"#FAFAFA", border:"1px solid rgba(44,32,22,0.2)", borderRadius:6, padding:"4px 8px", fontSize:11, fontWeight:600, cursor:"pointer"}}>Download Invoice</button>
                         )}

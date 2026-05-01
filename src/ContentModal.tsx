@@ -78,7 +78,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
         
         Berikan evaluasi singkat dan 3 poin saran perbaikan untuk meningkatkan engagement. Format dalam Bahasa Indonesia, singkat, padat, dan teknis.`;
         
-        const apiKey = import.meta.env.VITE_GEMINI_API_KEY || (typeof process !== "undefined" ? process.env.GEMINI_API_KEY : undefined);
+        const apiKey = process.env.GEMINI_API_KEY;
         if (!apiKey) {
           throw new Error("API Key is missing.");
         }
@@ -117,7 +117,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
         
         Tuliskan HANYA hasil caption akhirnya saja. Jangan berikan pengantar/penutup eksplanasi. Sertakan hashtag yang relevan sesuai dengan platform.`;
         
-        const apiKey = import.meta.env.VITE_GEMINI_API_KEY || (typeof process !== "undefined" ? process.env.GEMINI_API_KEY : undefined);
+        const apiKey = process.env.GEMINI_API_KEY;
         if (!apiKey) {
           throw new Error("API Key is missing.");
         }
@@ -393,7 +393,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
               onClick={handleSave} 
               disabled={isSaving}
               className="hover-scale shadow-orange"
-              style={{...B(true,"#C4622D"), padding:"10px 24px", fontWeight:800, borderRadius: 12, fontSize:13, opacity: isSaving ? 0.7 : 1}}
+              style={{...B(true,"var(--theme-primary)"), padding:"10px 24px", fontWeight:800, borderRadius: 12, fontSize:13, opacity: isSaving ? 0.7 : 1}}
             >
               {isSaving ? "Menyimpan..." : (isNew ? "+ Tambahkan" : "💾 Simpan Brief")}
             </button>

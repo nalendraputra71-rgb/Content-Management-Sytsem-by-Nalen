@@ -180,7 +180,7 @@ export function BillingView({ userProfile, onUpdate }: { userProfile: any, activ
              </div>
            </div>
            {(!isRestricted && userProfile.plan === "trial" && sisaHari > 0) && (
-             <div style={{background:"#FDF0EB", color:"#FF6B00", padding:"12px 24px", borderRadius:12, fontWeight:700, fontSize:14, textAlign:"center"}}>
+             <div style={{background:"var(--theme-primary)22", color:"var(--theme-primary)", padding:"12px 24px", borderRadius:12, fontWeight:700, fontSize:14, textAlign:"center"}}>
                Sisa {sisaHari} Hari Trial
              </div>
            )}
@@ -222,7 +222,7 @@ export function BillingView({ userProfile, onUpdate }: { userProfile: any, activ
              <motion.div initial={{scale:0.95, y:20}} animate={{scale:1, y:0}} exit={{scale:0.95, y:20}} style={{background:"white", borderRadius:24, padding:40, maxWidth:500, width:"100%", textAlign:"center", boxShadow:"0 20px 40px rgba(0,0,0,0.2)"}}>
                <div style={{width:64, height:64, background:"#F4F6FC", borderRadius:20, display:"flex", alignItems:"center", justifyContent:"center", fontSize:32, margin:"0 auto 24px"}}>💳</div>
                <h3 style={{fontSize:24, fontWeight:800, color:"#2C2016", marginBottom:8}}>Konfirmasi Pembayaran</h3>
-               <p style={{fontSize:15, color:"rgba(44,32,22,0.6)", marginBottom:24, lineHeight:1.5}}>Anda memilih paket <strong style={{color:"#FF6B00"}}>{modal.name}</strong> seharga Rp {modal.price.toLocaleString("id-ID")}.</p>
+               <p style={{fontSize:15, color:"rgba(44,32,22,0.6)", marginBottom:24, lineHeight:1.5}}>Anda memilih paket <strong style={{color:"var(--theme-primary)"}}>{modal.name}</strong> seharga Rp {modal.price.toLocaleString("id-ID")}.</p>
                
                <div style={{background:"#FAFAFA", border:"1px solid rgba(44,32,22,0.05)", borderRadius:16, padding:20, textAlign:"left", marginBottom:32}}>
                  <div style={{display:"flex", justifyContent:"space-between", marginBottom:12, fontSize:14}}><span style={{color:"rgba(44,32,22,0.5)"}}>Durasi</span> <strong>{modal.period}</strong></div>

@@ -232,7 +232,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
       {/* Header */}
       <div style={{background:"#2C2016", padding:"16px 24px", display:"flex", justifyContent:"space-between", alignItems:"center", color:"white"}}>
         <div style={{display:"flex", alignItems:"center", gap: 12}}>
-          <Shield size={24} color="#FF6B00" />
+          <Shield size={24} color="var(--theme-primary)" />
           <div>
             <h1 style={{margin:0, fontSize:18, fontWeight:800, letterSpacing:"-0.5px"}}>Admin Panel CMS</h1>
             <div style={{fontSize:11, color:"rgba(255,255,255,0.6)"}}>Superadmin: {userProfile?.email}</div>
@@ -252,8 +252,8 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
               onClick={() => { setActiveTab(t.id); setSelectedUser(null); }}
               style={{
                 display:"flex", alignItems:"center", gap:10, padding:"10px 12px", borderRadius:10, fontSize:13, fontWeight:600, cursor:"pointer",
-                background: activeTab === t.id ? "rgba(255,107,0,0.1)" : "transparent",
-                color: activeTab === t.id ? "#FF6B00" : "rgba(44,32,22,0.6)",
+                background: activeTab === t.id ? "rgba(var(--theme-primary-rgb), 0.1)" : "transparent",
+                color: activeTab === t.id ? "var(--theme-primary)" : "rgba(44,32,22,0.6)",
                 border: "none", textAlign:"left", transition:"all 0.2s"
               }}
             >
@@ -314,7 +314,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                     <div style={{display:"flex", flexDirection:"column", gap:12}}>
                        {["Pembaruan plan user john@doe.com ke PRO", "Invoice #INV-001 lunas via QRIS", "Tiket support #224 menanti balasan", "Registrasi user baru sarah@mail.com"].map((a,i) => (
                          <div key={i} style={{fontSize:12, paddingBottom:12, borderBottom:"1px solid rgba(44,32,22,0.05)"}}>
-                           <span style={{color:"#FF6B00", fontWeight:700}}>•</span> {a}
+                           <span style={{color:"var(--theme-primary)", fontWeight:700}}>•</span> {a}
                          </div>
                        ))}
                     </div>
@@ -381,17 +381,17 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                                  Detail Akses
                                </button>
                                <button onClick={async () => {
-                                  if (confirm(`Apakah Anda yakin ingin menghapus user ${u.email} secara permanen? Data user ini akan hilang dari database.`)) {
+                                  if (window.confirm(`⚠️ KONFIRMASI PENGHAPUSAN\n\nApakah Anda yakin ingin menghapus user ${u.email} secara permanen?\n\nSeluruh data workspace, konten, dan profil user ini akan hilang dari sistem dan tidak bisa dikembalikan.`)) {
                                      try {
+                                        const { db, doc, deleteDoc } = await import("./firebase");
                                         await deleteDoc(doc(db, "users", u.id));
-                                        alert("User berhasil dihapus");
-                                        fetchUsers();
+                                        alert("User successfully deleted.");
                                      } catch (e:any) {
-                                        alert("Gagal menghapus: " + e.message);
+                                        alert("Failed to delete user: " + e.message);
                                      }
                                   }
-                               }} style={{background:"#FDF0EB", border:"1px solid rgba(196,98,45,0.15)", padding:"6px 12px", borderRadius:6, fontSize:11, fontWeight:700, cursor:"pointer", color:"#9C2B4E"}}>
-                                 Hapus
+                               }} style={{background:"rgba(156,43,78,0.1)", border:"1px solid rgba(156,43,78,0.2)", padding:"6px 12px", borderRadius:6, fontSize:11, fontWeight:700, cursor:"pointer", color:"#9C2B4E"}}>
+                                 Hapus Akun
                                </button>
                             </td>
                           </tr>
@@ -429,7 +429,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                        <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:24}}>
                           <div style={{background:"#FAFAFA", padding:12, borderRadius:8}}>
                              <div style={{fontSize:11, color:"rgba(44,32,22,0.5)", fontWeight:700, marginBottom:4}}>Status Paket Saat Ini</div>
-                             <div style={{fontSize:14, fontWeight:700, color:"#FF6B00", textTransform:"uppercase"}}>{selectedUser.plan || "Trial"}</div>
+                             <div style={{fontSize:14, fontWeight:700, color:"var(--theme-primary)", textTransform:"uppercase"}}>{selectedUser.plan || "Trial"}</div>
                           </div>
                           <div style={{background:"#FAFAFA", padding:12, borderRadius:8}}>
                              <div style={{fontSize:11, color:"rgba(44,32,22,0.5)", fontWeight:700, marginBottom:4}}>Masa Aktif Berakhir</div>
@@ -573,7 +573,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                                   alert("Username berhasil disimpan!");
                                 } catch (e: any) { alert(e.message); }
                              }
-                          }} style={{background:"#FF6B00", color:"white", border:"none", borderRadius:8, padding:"0 16px", fontWeight:700, cursor:"pointer"}}>Simpan</button>
+                          }} style={{background:"var(--theme-primary)", color:"white", border:"none", borderRadius:8, padding:"0 16px", fontWeight:700, cursor:"pointer"}}>Simpan</button>
                        </div>
                        
                        <label style={{fontSize:12, fontWeight:700, marginBottom:6, display:"block"}}>Reset Password</label>
@@ -678,7 +678,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                         <tr><td colSpan={6} style={{padding:12, textAlign:"center"}}>Tidak ada transaksi di rentang waktu ini.</td></tr> :
                         transactions.filter((t:any) => new Date(t.timestamp).getMonth() + 1 === financeDateRange.month).map((t:any, i:number) => (
                           <tr key={t.id} style={{borderBottom:"1px solid rgba(44,32,22,0.03)"}}>
-                            <td style={{padding:"12px", fontWeight:600, color:"#FF6B00"}}>#INV-{new Date(t.timestamp).getFullYear()}-{i+1}</td>
+                            <td style={{padding:"12px", fontWeight:600, color:"var(--theme-primary)"}}>#INV-{new Date(t.timestamp).getFullYear()}-{i+1}</td>
                             <td style={{padding:"12px"}}>{t.userEmail}</td>
                             <td style={{padding:"12px", fontWeight:700}}>Rp {fmt(t.amount || 0)}</td>
                             <td style={{padding:"12px", color:"rgba(44,32,22,0.6)"}}>{t.paymentMethod || "Xendit QRIS"}</td>
@@ -703,8 +703,8 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                 
                 <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(280px, 1fr))", gap:16, marginBottom:32}}>
                    {plans.map((p) => (
-                     <div key={p.id} style={{background:"white", borderRadius:12, padding:20, border: p.popular ? "2px solid rgba(255,107,0,0.2)" : "1px solid rgba(44,32,22,0.1)", position:"relative"}}>
-                        {p.popular && <div style={{fontSize:11, fontWeight:800, color:"#FF6B00", textTransform:"uppercase", letterSpacing:1, marginBottom:8}}>Terlaris</div>}
+                     <div key={p.id} style={{background:"white", borderRadius:12, padding:20, border: p.popular ? "2px solid var(--theme-primary)" : "1px solid rgba(44,32,22,0.1)", position:"relative"}}>
+                        {p.popular && <div style={{fontSize:11, fontWeight:800, color:"var(--theme-primary)", textTransform:"uppercase", letterSpacing:1, marginBottom:8}}>Terlaris</div>}
                         <h3 style={{fontSize:16, fontWeight:800, margin:"0 0 4px"}}>{p.name}</h3>
                         <div style={{fontSize:12, color:"rgba(44,32,22,0.5)", textDecoration:"line-through", marginBottom:2}}>
                            {p.originalPrice ? `Rp ${p.originalPrice.toLocaleString('id-ID')}` : ''}
@@ -734,12 +734,12 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                 <div style={{background:"white", borderRadius:12, padding:24, border:"1px solid rgba(44,32,22,0.05)"}}>
                    <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16}}>
                      <h3 style={{fontSize:16, fontWeight:800}}>Kode Promo Aktif</h3>
-                     <button onClick={handleAddPromo} style={{background:"rgba(255,107,0,0.1)", color:"#FF6B00", border:"none", borderRadius:6, padding:"6px 12px", fontSize:11, fontWeight:700, cursor:"pointer"}}>+ Tambah Promo</button>
+                     <button onClick={handleAddPromo} style={{background:"rgba(var(--theme-primary-rgb),0.1)", color:"var(--theme-primary)", border:"none", borderRadius:6, padding:"6px 12px", fontSize:11, fontWeight:700, cursor:"pointer"}}>+ Tambah Promo</button>
                    </div>
                    {promosList.length === 0 ? <div style={{fontSize:12, color:"rgba(44,32,22,0.5)"}}>Belum ada promo.</div> : promosList.map(p => (
                      <div key={p.id} style={{display:"flex", alignItems:"center", gap:16, padding:"12px 16px", background:"#FAFAFA", borderRadius:8, marginBottom:8, opacity: p.isActive ? 1 : 0.6}}>
                         <div style={{flex:1}}>
-                           <div style={{fontSize:14, fontWeight:800, color:"#FF6B00", letterSpacing:1}}>{p.code}</div>
+                           <div style={{fontSize:14, fontWeight:800, color:"var(--theme-primary)", letterSpacing:1}}>{p.code}</div>
                            <div style={{fontSize:11, color:"rgba(44,32,22,0.5)"}}>Diskon {p.discount}. (Digunakan: {p.usageCount||0} kali) {p.isActive ? "" : "(Nonaktif)"}</div>
                         </div>
                         <div style={{display:"flex", gap:8}}>
@@ -867,7 +867,6 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                  
                  <label style={{fontSize:12, fontWeight:700, marginBottom:8, display:"block", color:"rgba(44,32,22,0.5)"}}>Isi Pesan</label>
                  <textarea id="notif_desc" placeholder="Pesan singkat maksmial 150 karakter..." style={{width:"100%", padding:12, borderRadius:8, border:"1px solid rgba(44,32,22,0.1)", marginBottom:24, fontSize:13, resize:"none", height:100}}></textarea>
-                 
                  <button onClick={async () => {
                     const tEl = document.getElementById("notif_title") as HTMLInputElement;
                     const dEl = document.getElementById("notif_desc") as HTMLTextAreaElement;
@@ -884,7 +883,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                        tEl.value = ""; dEl.value = "";
                        alert("Notifikasi berhasil dikirim!");
                     } catch(e:any) { alert(e.message); }
-                 }} style={{width:"100%", background:"#FF6B00", color:"white", border:"none", padding:"14px", borderRadius:8, fontSize:14, fontWeight:800, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:8}}>
+                 }} style={{width:"100%", background:"var(--theme-primary)", color:"white", border:"none", padding:"14px", borderRadius:8, fontSize:14, fontWeight:800, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:8}}>
                    <Bell size={18}/> Kirim Notifikasi Sekarang
                  </button>
               </div>
@@ -959,7 +958,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                </div>
                <div style={{display:"flex", gap:12}}>
                  <button type="button" onClick={()=>setShowPlanModal(false)} style={{flex:1, padding:"12px", borderRadius:12, background:"#F5F5F5", border:"none", fontWeight:600, cursor:"pointer"}}>Batal</button>
-                 <button type="submit" style={{flex:1, padding:"12px", borderRadius:12, background:"#FF6B00", color:"white", border:"none", fontWeight:600, cursor:"pointer"}}>Simpan Paket</button>
+                 <button type="submit" style={{flex:1, padding:"12px", borderRadius:12, background:"var(--theme-primary)", color:"white", border:"none", fontWeight:600, cursor:"pointer"}}>Simpan Paket</button>
                </div>
             </form>
           </div>

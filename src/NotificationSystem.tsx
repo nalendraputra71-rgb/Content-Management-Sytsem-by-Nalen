@@ -48,7 +48,7 @@ export function useNotifications(userProfile: any) {
     } else if (sisaHari <= 3 && sisaHari > 0) {
       notifs.unshift({
         id: "expiring_soon",
-        icon: <CalendarClock size={20} color="#FF6B00" />,
+        icon: <CalendarClock size={20} color="var(--theme-primary)" />,
         title: `Akses berakhir dalam ${sisaHari} hari!`,
         desc: `Segera perpanjang langganan agar alur kerja tidak terhenti.`,
         time: "Hari ini",

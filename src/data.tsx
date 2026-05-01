@@ -59,8 +59,8 @@ export function CustomDropdown({ value, options, onChange, dark = false, style =
                   onClick={() => { onChange(val); setOpen(false); }}
                   style={{ 
                     padding: "10px 12px", borderRadius: 8, fontSize: 13, fontWeight: isSelected?800:600, cursor: "pointer", 
-                    background: isSelected ? (color ? color + "20" : "#FDF0EB") : "transparent", 
-                    color: isSelected ? (color || "#FF6B00") : "#2C2016", 
+                    background: isSelected ? (color ? color + "20" : "rgba(var(--theme-primary-rgb), 0.1)") : "transparent", 
+                    color: isSelected ? (color || "var(--theme-primary)") : "#2C2016", 
                     transition: "all 0.1s",
                     display: "flex", alignItems: "center", gap: 10,
                     marginBottom: 2
@@ -81,6 +81,19 @@ export function CustomDropdown({ value, options, onChange, dark = false, style =
 }
 
 // ─── CONSTANTS ───────────────────────────────────────────────────────────────
+export const THEMES = [
+  { id: "sunset", name: "Sunset Orange", primary: "#FF6B00", rgb: "255, 107, 0", sidebar: "#1A140F", header: "#2C2016", text: "#FFFFFF" },
+  { id: "midnight", name: "Midnight Navy", primary: "#3B82F6", rgb: "59, 130, 246", sidebar: "#0F172A", header: "#1E293B", text: "#FFFFFF" },
+  { id: "graphite", name: "Slate Graphite", primary: "#64748B", rgb: "100, 116, 139", sidebar: "#18181B", header: "#27272A", text: "#FFFFFF" },
+  { id: "ocean", name: "Deep Ocean", primary: "#0D9488", rgb: "13, 148, 136", sidebar: "#042F2E", header: "#134E4A", text: "#FFFFFF" },
+  { id: "silver", name: "Modern Silver", primary: "#475569", rgb: "71, 85, 105", sidebar: "#1E293B", header: "#334155", text: "#FFFFFF" },
+  { id: "minimal-white", name: "Minimalist White", primary: "#2563EB", rgb: "37, 99, 235", sidebar: "#111827", header: "#1F2937", text: "#FFFFFF" },
+  { id: "business-blue", name: "Business Blue", primary: "#1E40AF", rgb: "30, 64, 175", sidebar: "#111827", header: "#1E3A8A", text: "#FFFFFF" },
+  { id: "coffee", name: "Coffee Mocha", primary: "#A67C1C", rgb: "166, 124, 28", sidebar: "#271B13", header: "#3D2B1E", text: "#FFFFFF" },
+  { id: "charcoal", name: "Charcoal Elite", primary: "#4B5563", rgb: "75, 85, 99", sidebar: "#000000", header: "#111111", text: "#FFFFFF" },
+  { id: "elegant-soft", name: "Elegant Soft", primary: "#7C3AED", rgb: "124, 58, 237", sidebar: "#1A1A1A", header: "#262626", text: "#FFFFFF" },
+];
+
 export const MONTHS = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
 export const MS = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
 export const DAYS_ID = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
@@ -274,7 +287,7 @@ export const L = {
   display: "block",
   marginBottom: 6
 };
-export const B = (active:any, color = "#FF6B00") => ({
+export const B = (active:any, color = "var(--theme-primary)") => ({
   border: active ? `1px solid ${color}` : `1px solid rgba(44,32,22,0.1)`,
   borderRadius: 24,
   padding: "8px 18px",
@@ -292,14 +305,14 @@ export const B = (active:any, color = "#FF6B00") => ({
 
 export const TAB = (active:any) => ({
   border: "none",
-  borderBottom: `2.5px solid ${active ? "#FF6B00" : "transparent"}`,
+  borderBottom: `2.5px solid ${active ? "var(--theme-primary)" : "transparent"}`,
   background: "transparent",
   padding: "12px 20px",
   fontSize: 13,
   fontWeight: active ? 700 : 500,
   cursor: "pointer",
   
-  color: active ? "#FF6B00" : "rgba(44,32,22,0.5)",
+  color: active ? "var(--theme-primary)" : "rgba(44,32,22,0.5)",
   whiteSpace: "nowrap" as any
 });
 export const CARD = (ex:any={}) => ({
@@ -308,6 +321,7 @@ export const CARD = (ex:any={}) => ({
   padding: "24px",
   boxShadow: "0 8px 30px rgba(44,32,22,0.06)",
   border: "1px solid rgba(44,32,22,0.04)",
+  marginBottom: 24,
   ...ex
 });
 export const GRP = {display:"flex",flexDirection:"column" as any,gap:8};

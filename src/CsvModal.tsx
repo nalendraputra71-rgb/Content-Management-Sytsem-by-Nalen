@@ -150,11 +150,11 @@ export function CsvModal({onClose, onImport, pillars, platforms, pics, statuses,
                     Anda dapat mengunggah ratusan konten sekaligus ke dalam kalender Your Company CMS.
                 </p>
                 <div style={{display:"flex",gap:12,marginBottom:24,flexWrap:"wrap"}}>
-                    <button onClick={handleDownloadTemplate} style={{background:"white",border:"1.5px solid #C4622D",color:"#C4622D",padding:"8px 16px",borderRadius:8,fontWeight:600,cursor:"pointer"}}>
-                        1. Download Template
+                    <button onClick={handleDownloadTemplate} style={{background:"white",border:"1.5px solid var(--theme-primary)",color:"var(--theme-primary)",padding:"8px 16px",borderRadius:8,fontWeight:600,cursor:"pointer"}}>
+                        Download Template
                     </button>
-                    <label style={{background:"#C4622D",border:"1.5px solid #C4622D",color:"white",padding:"8px 16px",borderRadius:8,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center"}}>
-                        2. Pilih File CSV
+                    <label style={{background:"var(--theme-primary)",border:"1.5px solid var(--theme-primary)",color:"white",padding:"8px 16px",borderRadius:8,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center"}}>
+                        Pilih File CSV
                         <input type="file" accept=".csv" onChange={handleFile} ref={fileInputRef} style={{display:"none"}}/>
                     </label>
                 </div>

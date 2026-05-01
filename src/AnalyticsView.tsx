@@ -370,7 +370,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
 2. Evaluasi Konten: Analisis pola dari konten yang berhasil (Winners) vs kurang berhasil (Losers), apa yang membedakannya (misalnya topik, pilar, atau platform).
 3. Next Step Pengembangan Konten: Berikan 3-5 saran konkrit dan actionable untuk pembuatan konten berikutnya berdasarkan data di atas.`;
 
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY || (typeof process !== "undefined" ? process.env.GEMINI_API_KEY : undefined);
+      const apiKey = process.env.GEMINI_API_KEY;
       if (!apiKey) {
         throw new Error("API Key is missing.");
       }
@@ -402,8 +402,8 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
       {list.map((item:any,i:number)=>{
         const e=getEng(item),ps=gps(pillars,item.pillar);
         return (
-          <div key={item.id} style={{display:"flex",alignItems:"flex-start",gap:10,padding:"10px 12px",background:i===0&&rank===1?"#FDF0EB":"#FAFAF8",border:"1px solid rgba(44,32,22,0.06)",borderRadius:8,marginBottom:6}}>
-            {rank===1 && <span style={{fontSize:18,fontWeight:700,color:i===0?"#FF6B00":i===1?"#A67C1C":"rgba(44,32,22,0.2)",width:24,flexShrink:0}}>#{i+1}</span>}
+          <div key={item.id} style={{display:"flex",alignItems:"flex-start",gap:10,padding:"10px 12px",background:i===0&&rank===1?"rgba(var(--theme-primary-rgb),0.1)":"#FAFAF8",border:"1px solid rgba(44,32,22,0.06)",borderRadius:8,marginBottom:6}}>
+            {rank===1 && <span style={{fontSize:18,fontWeight:700,color:i===0?"var(--theme-primary)":i===1?"#A67C1C":"rgba(44,32,22,0.2)",width:24,flexShrink:0}}>#{i+1}</span>}
             <div style={{flex:1,minWidth:0}}>
               <div style={{fontSize:13,fontWeight:600,display:"flex",alignItems:"center",gap:6}}>
                 <span onClick={()=>openEdit(item)} style={{cursor:"pointer", color:"inherit", borderBottom:"1px dashed rgba(0,0,0,0.3)"}} title="Buka Detail Brief">{item.title||"(Tanpa judul)"}</span>
@@ -418,7 +418,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
               </div>
             </div>
             <div style={{textAlign:"right",flexShrink:0}}>
-              <div style={{fontSize:16,fontWeight:700,color:"#FF6B00"}}>{fmt(topSort==="engagement"?e:topSort==="reach"?getR(item):getV(item))}</div>
+              <div style={{fontSize:16,fontWeight:700,color:"var(--theme-primary)"}}>{fmt(topSort==="engagement"?e:topSort==="reach"?getR(item):getV(item))}</div>
               <div style={{fontSize:9,color:"rgba(44,32,22,0.4)",textTransform:"capitalize"}}>{topSort}</div>
             </div>
           </div>
@@ -427,7 +427,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
     </div>
   );
 
-  const MCard = ({label,val,sub,color="#C4622D", pctStr}: any) => (
+  const MCard = ({label,val,sub,color="var(--theme-primary)", pctStr}: any) => (
     <div style={CARD({flex:1,minWidth:160,display:"flex",flexDirection:"column"})}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8,gap:8,flexWrap:"wrap"}}>
         <div style={{fontSize:10,fontWeight:600,letterSpacing:1.2,textTransform:"uppercase",color:"rgba(44,32,22,0.5)"}}>{label}</div>
@@ -445,7 +445,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:12}}>
         <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
           {[["all","Sepanjang Waktu"],["tm","Bulan Ini"],["3m","3 Bln Terakhir"],["6m","6 Bln Terakhir"],["1y","1 Thn Ini"],["custom","Custom Range"]].map(([k,l])=>(
-            <button key={k} onClick={()=>setDateFilt(k)} style={{...B(dateFilt===k,"#A67C1C"),fontSize:12}}>{l}</button>
+            <button key={k} onClick={()=>setDateFilt(k)} style={{...B(dateFilt===k,"var(--theme-primary)"),fontSize:12}}>{l}</button>
           ))}
           {dateFilt==="custom" && (
              <div style={{display:"flex",gap:6,alignItems:"center"}}>
@@ -457,7 +457,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
         </div>
         <div style={{display:"flex",gap:6,background:"white",padding:"4px 8px",borderRadius:24,border:"1px solid rgba(44,32,22,0.1)"}}>
           {[["all","Semua Data"],["organic","🌱 Organic"],["ads","💰 Ads Only"]].map(([k,l])=>(
-            <button key={k} onClick={()=>setAdsFilter(k)} style={{background:adsFilter===k?"rgba(196,98,45,0.1)":"transparent",color:adsFilter===k?"#C4622D":"#2C2016",border:"none",borderRadius:16,padding:"6px 12px",fontSize:12,fontWeight:600,cursor:"pointer"}}>{l}</button>
+            <button key={k} onClick={()=>setAdsFilter(k)} style={{background:adsFilter===k?"rgba(var(--theme-primary-rgb),0.1)":"transparent",color:adsFilter===k?"var(--theme-primary)":"#2C2016",border:"none",borderRadius:16,padding:"6px 12px",fontSize:12,fontWeight:600,cursor:"pointer"}}>{l}</button>
           ))}
         </div>
       </div>
@@ -478,19 +478,19 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
         {isRestricted && (
           <div style={{position:"absolute",inset:0,zIndex:10,backdropFilter:"blur(8px)",display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(250, 247, 242, 0.4)",borderRadius:16}}>
             <div style={{background:"white",padding:"24px 32px",borderRadius:16,boxShadow:"0 10px 40px rgba(0,0,0,0.1)",textAlign:"center",maxWidth:400}}>
-              <h3 style={{fontSize:18,fontWeight:800,marginBottom:12,color:"#9C2B4E"}}>Akses Analitik Terkunci</h3>
+              <h3 style={{fontSize:18,fontWeight:800,marginBottom:12,color:"var(--theme-primary)"}}>Akses Analitik Terkunci</h3>
               <p style={{fontSize:14,color:"rgba(44,32,22,0.6)",marginBottom:20}}>Upgrade ke Pro untuk melihat data asli, insight AI, dan laporan lengkap performa konten Anda.</p>
-              <button className="hover-scale" onClick={()=>window.location.hash="/billing"} style={{background:"#9C2B4E",color:"white",padding:"12px 24px",borderRadius:12,fontWeight:600,border:"none",cursor:"pointer",width:"100%"}}>Berlangganan Sekarang</button>
+              <button className="hover-scale" onClick={()=>window.location.hash="/billing"} style={{background:"var(--theme-primary)",color:"white",padding:"12px 24px",borderRadius:12,fontWeight:600,border:"none",cursor:"pointer",width:"100%"}}>Berlangganan Sekarang</button>
             </div>
           </div>
         )}
         <div style={{display: "flex", flexDirection: "column", gap: 24, filter: isRestricted ? "blur(4px)" : "none", pointerEvents: isRestricted ? "none" : "auto", userSelect: isRestricted ? "none" : "auto"}}>
       <div style={CARD()}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:10}}>
-          <h4 style={{fontSize:16,fontWeight:700,margin:0}}>📈 Tren Pertumbuhan</h4>
+          <h4 style={{fontSize:16,fontWeight:700,margin:0,color:"var(--theme-primary)"}}>📈 Tren Pertumbuhan</h4>
           <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
             {["reach","likes","comments","shares","reposts","saves","clicks"].map(k=>(
-              <button key={k} onClick={()=>toggleMetric(k)} style={{background:activeMetrics.includes(k)?`${MC[k]}22`||"rgba(196,98,45,0.1)":"rgba(44,32,22,0.03)",color:activeMetrics.includes(k)?MC[k]||"#C4622D":"rgba(44,32,22,0.4)",border:"none",borderRadius:12,padding:"4px 10px",fontSize:11,fontWeight:600,cursor:"pointer",textTransform:"capitalize"}}>
+              <button key={k} onClick={()=>toggleMetric(k)} style={{background:activeMetrics.includes(k)?`${MC[k]}22`||"rgba(196,98,45,0.1)":"rgba(44,32,22,0.03)",color:activeMetrics.includes(k)?MC[k]||"var(--theme-primary)":"rgba(44,32,22,0.4)",border:"none",borderRadius:12,padding:"4px 10px",fontSize:11,fontWeight:600,cursor:"pointer",textTransform:"capitalize"}}>
                 {activeMetrics.includes(k)?"✓ ":""}{k}
               </button>
             ))}
@@ -526,13 +526,13 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
         </ResponsiveContainer>
       </div>
 
-      <div style={{padding:"18px 22px",background:"#1E1509",color:"#FAF7F2",borderRadius:12}}>
-        <div style={{fontSize:12,fontWeight:600,color:"#C4622D",textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>📊 Executive Summary</div>
+      <div style={{padding:"18px 22px",background:"var(--theme-sidebar)",color:"#FAF7F2",borderRadius:12}}>
+        <div style={{fontSize:12,fontWeight:600,color:"var(--theme-primary)",textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>📊 Executive Summary</div>
         
         <ul style={{fontSize:13,lineHeight:1.8,margin:0,paddingLeft:20,marginBottom:16,opacity:0.95}}>
           <li><strong>Total Konten:</strong> {total} (Dipublikasikan: {pub}) dalam periode & fiter terpilih.</li>
-          <li><strong>Agregasi Views & Reach:</strong> Total views mencapai <strong style={{color:"#F0B18A"}}>{fmt(tV)}</strong> impresi dengan ukuran audiens (reach) sekitar <strong style={{color:"#F0B18A"}}>{fmt(tR)}</strong>.</li>
-          <li><strong>Kualitas Interaksi:</strong> Menghasilkan <strong style={{color:"#F0B18A"}}>{fmt(tE)} total engagement</strong> (Engagement Rate = {er}%).</li>
+          <li><strong>Agregasi Views & Reach:</strong> Total views mencapai <strong style={{color:"var(--theme-primary)"}}>{fmt(tV)}</strong> impresi dengan ukuran audiens (reach) sekitar <strong style={{color:"var(--theme-primary)"}}>{fmt(tR)}</strong>.</li>
+          <li><strong>Kualitas Interaksi:</strong> Menghasilkan <strong style={{color:"var(--theme-primary)"}}>{fmt(tE)} total engagement</strong> (Engagement Rate = {er}%).</li>
           {adsFilter!=="organic" && tClicks>0 && <li><strong>Konversi Iklan:</strong> {fmt(tClicks)} clicks & {fmt(tConv)} conversions.</li>}
         </ul>
 
@@ -565,9 +565,9 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
       </div>
       
       {/* Heatmap & PIC Workload */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))",gap:24}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))",gap:24, marginTop: 12}}>
         <div style={CARD()}>
-          <h4 style={{fontSize:16,fontWeight:700,margin:"0 0 16px"}}>📈 Konten per Platform</h4>
+          <h4 style={{fontSize:16,fontWeight:700,margin:"0 0 16px", color:"var(--theme-primary)"}}>📈 Konten per Platform</h4>
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={platformData} margin={{top:10,right:10,left:-20,bottom:0}}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)"/>
@@ -575,7 +575,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
               <YAxis tick={{fontSize:10,fill:"rgba(44,32,22,0.5)"}} tickLine={false} axisLine={false}/>
               <Tooltip cursor={{fill:"rgba(0,0,0,0.05)"}} contentStyle={{borderRadius:8,fontSize:12,border:"1px solid rgba(0,0,0,0.1)",boxShadow:"0 4px 12px rgba(0,0,0,0.05)"}} itemStyle={{color:"#2C2016",fontWeight:600}} labelStyle={{color:"rgba(44,32,22,0.5)",marginBottom:4}}/>
               <Bar dataKey="count" radius={[4,4,0,0]}>
-                {platformData.map((entry:any, index:number) => <Cell key={`cell-${index}`} fill={entry.color || "#C4622D"} />)}
+                {platformData.map((entry:any, index:number) => <Cell key={`cell-${index}`} fill={entry.color || "var(--theme-primary)"} />)}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
@@ -583,7 +583,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
 
         <div style={{...CARD(), overflowX: "auto"}}>
           <div style={{minWidth: 480}}>
-            <h4 style={{fontSize:16,fontWeight:700,margin:"0 0 16px"}}>🔥 Best Time to Upload (Heatmap)</h4>
+            <h4 style={{fontSize:16,fontWeight:700,margin:"0 0 16px", color:"var(--theme-primary)"}}>🔥 Best Time to Upload (Heatmap)</h4>
             <div style={{display:"flex",gap:4,marginBottom:6}}>
               <div style={{width:30}}/>
               {Array.from({length:24}).map((_,i)=><div key={`h${i}`} style={{flex:1,textAlign:"center",fontSize:10,color:"rgba(44,32,22,0.4)"}}>{i}</div>)}
@@ -594,7 +594,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                 <div key={di} style={{display:"flex",gap:4,marginBottom:4,alignItems:"center"}}>
                   <div style={{width:30,fontSize:10,fontWeight:600}}>{DAYS_S[di]}</div>
                   {row.map((val,hi) => (
-                    <div key={hi} title={`${DAYS_ID[di]} Jam ${hi} - ${fmt(val)} Eng`} style={{flex:1,height:22,borderRadius:4,background:`rgba(196,98,45,${val===0?0.03 : Math.max(0.15, val/rowMax)})`}}/>
+                    <div key={hi} title={`${DAYS_ID[di]} Jam ${hi} - ${fmt(val)} Eng`} style={{flex:1,height:22,borderRadius:4,background:val===0?'rgba(0,0,0,0.03)':`var(--theme-primary)` , opacity: val===0 ? 1 : Math.max(0.15, val/rowMax)}}/>
                   ))}
                 </div>
               );
@@ -603,7 +603,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
         </div>
         
         <div style={CARD()}>
-          <h4 style={{fontSize:16,fontWeight:700,margin:"0 0 16px"}}>👥 Beban Kerja PIC</h4>
+          <h4 style={{fontSize:16,fontWeight:700,margin:"0 0 16px", color:"var(--theme-primary)"}}>👥 Beban Kerja PIC</h4>
           <div style={{display:"flex",flexDirection:"column",gap:8}}>
             {picData.map((p:any) => (
               <div key={p.name} style={{display:"flex",alignItems:"center",gap:10}}>
@@ -627,7 +627,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
         <div style={{display:"flex",gap:10,alignItems:"center"}}>
           <div style={{fontSize:12,fontWeight:600,color:"rgba(44,32,22,0.5)"}}>Sort by:</div>
           {[["engagement","Eng"],["reach","Reach"],["views","Views"]].map(([k,l])=>(
-            <button key={k} onClick={()=>setTopSort(k)} style={{...B(topSort===k,"#C4622D"),padding:"4px 8px"}}>{l}</button>
+            <button key={k} onClick={()=>setTopSort(k)} style={{...B(topSort===k,"var(--theme-primary)"),padding:"4px 8px"}}>{l}</button>
           ))}
         </div>
         <div style={{width:1,height:24,background:"rgba(44,32,22,0.1)"}}/>
@@ -645,7 +645,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
         </div>
       </div>
 
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))",gap:24}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))",gap:24, marginTop: 32}}>
         <div>
           <CDataList 
             title={`🏆 Top 10 Konten${topPlatform!=="All"?" ("+topPlatform+")":""}`} 

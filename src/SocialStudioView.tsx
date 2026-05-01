@@ -44,7 +44,7 @@ function CustomDropdown({ value, options, onChange, renderOption }: { value: str
                 <div 
                   key={i} 
                   onClick={() => { onChange(val); setOpen(false); }}
-                  style={{ padding: "10px 12px", borderRadius: 8, fontSize: 13, fontWeight: isSelected?800:600, cursor: "pointer", background: isSelected ? "#FDF0EB" : "transparent", color: isSelected ? "#FF6B00" : "#2C2016", transition: "all 0.1s" }}
+                  style={{ padding: "10px 12px", borderRadius: 8, fontSize: 13, fontWeight: isSelected?800:600, cursor: "pointer", background: isSelected ? "var(--theme-primary)22" : "transparent", color: isSelected ? "var(--theme-primary)" : "#2C2016", transition: "all 0.1s" }}
                   onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = "#FAFAFA"; }}
                   onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = "transparent"; }}
                 >
@@ -271,7 +271,7 @@ export function SocialStudioView({ tab }: { tab: string }) {
                 </div>
              </div>
              <div style={{padding:20, borderTop:"1px solid rgba(44,32,22,0.1)"}}>
-               <button className="hover-scale" style={{width:"100%", background:"#FF6B00", color:"white", border:"none", padding:"12px", borderRadius:12, fontWeight:700, cursor:"pointer"}}>Buka di Platform Asli</button>
+               <button className="hover-scale" style={{width:"100%", background:"var(--theme-primary)", color:"white", border:"none", padding:"12px", borderRadius:12, fontWeight:700, cursor:"pointer"}}>Buka di Platform Asli</button>
              </div>
            </div>
         </motion.div>
@@ -285,7 +285,7 @@ export function SocialStudioView({ tab }: { tab: string }) {
         {showSoonPopup && (
           <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(44,32,22,0.6)", zIndex:999, display:"flex", alignItems:"center", justifyContent:"center", padding:20, backdropFilter:"blur(5px)"}}>
             <motion.div initial={{scale:0.9, y:20}} animate={{scale:1, y:0}} exit={{scale:0.9, y:20}} style={{background:"white", borderRadius:24, padding:40, maxWidth:500, textAlign:"center", boxShadow:"0 20px 60px rgba(0,0,0,0.15)"}}>
-              <div style={{width:80, height:80, borderRadius:40, background:"#FDF0EB", color:"#FF6B00", display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 24px"}}>
+              <div style={{width:80, height:80, borderRadius:40, background:"var(--theme-primary)22", color:"var(--theme-primary)", display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 24px"}}>
                 <Sparkles size={40}/>
               </div>
               <h2 style={{fontSize:24, fontWeight:800, color:"#2C2016", marginBottom:16}}>Fitur Segera Hadir (Coming Soon)</h2>
@@ -293,7 +293,7 @@ export function SocialStudioView({ tab }: { tab: string }) {
                 Hi! Modul Social Studio ini masih dalam tahap mockup / purwarupa. Kami tidak sabar meluncurkannya secara penuhn untuk Anda.
                 Data dan layar yang Anda lihat sekarang hanyalah **contoh (mockup)** sebagai gambaran fungsi ke depannya. 
               </p>
-              <button className="hover-scale" onClick={() => setShowSoonPopup(false)} style={{background:"#FF6B00", color:"white", border:"none", padding:"14px 32px", borderRadius:12, fontSize:15, fontWeight:800, cursor:"pointer", width:"100%"}}>Saya Mengerti, Lihat Preview</button>
+              <button className="hover-scale" onClick={() => setShowSoonPopup(false)} style={{background:"var(--theme-primary)", color:"white", border:"none", padding:"14px 32px", borderRadius:12, fontSize:15, fontWeight:800, cursor:"pointer", width:"100%"}}>Saya Mengerti, Lihat Preview</button>
             </motion.div>
           </motion.div>
         )}
@@ -354,7 +354,7 @@ export function SocialStudioView({ tab }: { tab: string }) {
                       <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: 'rgba(44,32,22,0.5)', fontWeight:600}} />
                       <RechartsTooltip contentStyle={{borderRadius:12, border:"none", boxShadow:"0 5px 20px rgba(0,0,0,0.1)", fontWeight:700}} />
                       <Legend iconType="circle" wrapperStyle={{fontSize:13, fontWeight:700, color:"#2C2016"}} />
-                      <Line type="monotone" dataKey="views" name="Views" stroke="#FF6B00" strokeWidth={3} dot={{r:4, strokeWidth:2}} activeDot={{r:6}} />
+                      <Line type="monotone" dataKey="views" name="Views" stroke="var(--theme-primary)" strokeWidth={3} dot={{r:4, strokeWidth:2}} activeDot={{r:6}} />
                       <Line type="monotone" dataKey="reach" name="Reach" stroke="#2D7A5E" strokeWidth={3} dot={{r:4, strokeWidth:2}} />
                       <Line type="monotone" dataKey="likes" name="Likes" stroke="#9C2B4E" strokeWidth={3} dot={{r:4, strokeWidth:2}} />
                     </LineChart>
@@ -427,14 +427,14 @@ export function SocialStudioView({ tab }: { tab: string }) {
                       {analyticsMetric === 'all' && <Legend iconType="circle" wrapperStyle={{fontSize:13, fontWeight:700, color:"#2C2016"}} />}
                       {analyticsMetric === 'all' ? (
                         <>
-                          <Line type="monotone" dataKey="views" name="Views" stroke="#FF6B00" strokeWidth={2} dot={false} />
+                          <Line type="monotone" dataKey="views" name="Views" stroke="var(--theme-primary)" strokeWidth={2} dot={false} />
                           <Line type="monotone" dataKey="reach" name="Reach" stroke="#2D7A5E" strokeWidth={2} dot={false} />
                           <Line type="monotone" dataKey="likes" name="Likes" stroke="#9C2B4E" strokeWidth={2} dot={false} />
                           <Line type="monotone" dataKey="comments" name="Komentar" stroke="#1877F2" strokeWidth={2} dot={false} />
                           <Line type="monotone" dataKey="shares" name="Share" stroke="#000" strokeWidth={2} dot={false} />
                         </>
                       ) : (
-                        <Line type="monotone" dataKey={analyticsMetric} name={ANALYTICS_METRICS.find(m=>m.id === analyticsMetric)?.label} stroke="#FF6B00" strokeWidth={3} dot={{r:4, strokeWidth:2}} activeDot={{r:6}} />
+                        <Line type="monotone" dataKey={analyticsMetric} name={ANALYTICS_METRICS.find(m=>m.id === analyticsMetric)?.label} stroke="var(--theme-primary)" strokeWidth={3} dot={{r:4, strokeWidth:2}} activeDot={{r:6}} />
                       )}
                     </LineChart>
                   </ResponsiveContainer>
@@ -453,19 +453,19 @@ export function SocialStudioView({ tab }: { tab: string }) {
                        <div style={{height:200, width:"100%", background:"#E5EDF8", borderRadius:16, display:"flex", alignItems:"center", justifyContent:"center", position:"relative", overflow:"hidden"}}>
                           <div style={{position:"absolute", width:"100%", height:"100%", background:"url('https://upload.wikimedia.org/wikipedia/commons/e/e0/Indonesia_blank_map.svg') center center/contain no-repeat", opacity: 0.5}} />
                           <div className="hover-scale" style={{position:"absolute", top:"55%", left:"30%"}}>
-                            <MapPin size={24} color="#FF6B00" fill="white" />
+                            <MapPin size={24} color="var(--theme-primary)" fill="white" />
                             <div style={{fontSize:10, fontWeight:800, background:"white", padding:"2px 4px", borderRadius:4, color:"#2C2016", position:"absolute", top:24, left:-10, whiteSpace:"nowrap"}}>Jakarta (45%)</div>
                           </div>
                           <div className="hover-scale" style={{position:"absolute", top:"65%", left:"45%"}}>
-                            <MapPin size={16} color="#FF6B00" fill="white" />
+                            <MapPin size={16} color="var(--theme-primary)" fill="white" />
                             <div style={{fontSize:10, fontWeight:800, background:"white", padding:"2px 4px", borderRadius:4, color:"#2C2016", position:"absolute", top:16, left:-10, whiteSpace:"nowrap"}}>Surabaya (15%)</div>
                           </div>
                           <div className="hover-scale" style={{position:"absolute", top:"35%", left:"15%"}}>
-                            <MapPin size={12} color="#FF6B00" fill="white" />
+                            <MapPin size={12} color="var(--theme-primary)" fill="white" />
                             <div style={{fontSize:10, fontWeight:800, background:"white", padding:"2px 4px", borderRadius:4, color:"#2C2016", position:"absolute", top:12, left:-10, whiteSpace:"nowrap"}}>Medan (10%)</div>
                           </div>
                           <div className="hover-scale" style={{position:"absolute", top:"60%", left:"75%"}}>
-                            <MapPin size={12} color="#FF6B00" fill="white" />
+                            <MapPin size={12} color="var(--theme-primary)" fill="white" />
                             <div style={{fontSize:10, fontWeight:800, background:"white", padding:"2px 4px", borderRadius:4, color:"#2C2016", position:"absolute", top:12, left:-10, whiteSpace:"nowrap"}}>Makassar (10%)</div>
                           </div>
                        </div>
@@ -480,7 +480,7 @@ export function SocialStudioView({ tab }: { tab: string }) {
                               <XAxis type="number" hide />
                               <YAxis dataKey="age" type="category" axisLine={false} tickLine={false} tick={{fontSize:11, fontWeight:800}} width={40} />
                               <RechartsTooltip cursor={{fill:"transparent"}} contentStyle={{borderRadius:8, fontWeight:700, border:"none", boxShadow:"0 4px 10px rgba(0,0,0,0.1)"}} />
-                              <Bar dataKey="p" name="Perempuan" fill="#FF6B00" radius={[0,4,4,0]} barSize={12} />
+                              <Bar dataKey="p" name="Perempuan" fill="var(--theme-primary)" radius={[0,4,4,0]} barSize={12} />
                               <Bar dataKey="l" name="Laki-laki" fill="#2C2016" radius={[0,4,4,0]} barSize={12} />
                             </BarChart>
                           </ResponsiveContainer>
@@ -489,11 +489,11 @@ export function SocialStudioView({ tab }: { tab: string }) {
                    </div>
                 </div>
 
-                <div style={{ background: "#FDF0EB", borderRadius: 20, padding: 24, border: "1px solid rgba(255,107,0,0.1)", display:"flex", flexDirection:"column" }}>
+                <div style={{ background: "var(--theme-primary)11", borderRadius: 20, padding: 24, border: "1px solid var(--theme-primary)22", display:"flex", flexDirection:"column" }}>
                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-                      <h3 style={{ fontSize: 18, fontWeight: 800, margin: 0, display: "flex", alignItems: "center", gap: 8, color:"#FF6B00" }}><Sparkles size={18}/> Gemini AI</h3>
+                      <h3 style={{ fontSize: 18, fontWeight: 800, margin: 0, display: "flex", alignItems: "center", gap: 8, color:"var(--theme-primary)" }}><Sparkles size={18}/> Gemini AI</h3>
                    </div>
-                   <button className="hover-scale" onClick={generateReport} disabled={aiLoading} style={{ background: "#FF6B00", color: "white", border: "none", padding: "12px 16px", borderRadius: 12, fontSize: 13, fontWeight: 800, cursor: "pointer", width:"100%", marginBottom:20, flexShrink:0 }}>
+                   <button className="hover-scale" onClick={generateReport} disabled={aiLoading} style={{ background: "var(--theme-primary)", color: "white", border: "none", padding: "12px 16px", borderRadius: 12, fontSize: 13, fontWeight: 800, cursor: "pointer", width:"100%", marginBottom:20, flexShrink:0 }}>
                      {aiLoading ? "Gemini sedang berpikir..." : "Analisis Insight Saat Ini"}
                    </button>
                    <div style={{flex:1, overflowY:"auto"}}>
@@ -569,7 +569,7 @@ export function SocialStudioView({ tab }: { tab: string }) {
                           </div>
                         </td>
                         <td style={{padding:"16px 20px", textAlign:"right", fontWeight:800}}>{post.views > 1000 ? (post.views/1000).toFixed(1) + 'K' : post.views}</td>
-                        <td style={{padding:"16px 20px", textAlign:"right", fontWeight:800, color:"#FF6B00"}}>{post.er}%</td>
+                        <td style={{padding:"16px 20px", textAlign:"right", fontWeight:800, color:"var(--theme-primary)"}}>{post.er}%</td>
                         <td style={{padding:"16px 20px", textAlign:"right", fontWeight:700}}>{post.comments}</td>
                         <td style={{padding:"16px 20px", textAlign:"right", fontWeight:700}}>{post.shares}</td>
                         <td style={{padding:"16px 20px", textAlign:"right", fontWeight:700}}>{post.saves}</td>
@@ -685,7 +685,7 @@ export function SocialStudioView({ tab }: { tab: string }) {
                 </div>
                 <div style={{ padding: 20, borderTop: "1px solid rgba(44,32,22,0.05)", display:"flex", gap:12, background:"white" }}>
                    <input placeholder="Ketik balasan..." style={{ flex: 1, padding: "14px 20px", borderRadius: 24, border: "1px solid rgba(44,32,22,0.1)", fontSize: 14, outline:"none", fontFamily:"inherit", fontWeight:600 }} />
-                   <button className="hover-scale" style={{ width:48, height:48, borderRadius:24, background: "#FF6B00", color: "white", border: "none", display:"flex", alignItems:"center", justifyContent:"center", cursor: "pointer", flexShrink:0 }}><Send size={18}/></button>
+                   <button className="hover-scale" style={{ width:48, height:48, borderRadius:24, background: "var(--theme-primary)", color: "white", border: "none", display:"flex", alignItems:"center", justifyContent:"center", cursor: "pointer", flexShrink:0 }}><Send size={18}/></button>
                 </div>
              </div>
           </motion.div>

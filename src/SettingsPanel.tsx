@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
-import { I, B, CARD } from "./data";
+import { I, B, CARD, THEMES } from "./data";
 import { Save, CheckCircle2 } from "lucide-react";
 
-export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted }: any) {
-  const [section, setSection] = useState("pillars");
+export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, profile, onUpdateProfile }: any) {
+  const [section, setSection] = useState("visual");
   
   // Local state for all settings
   const [localPillars, setLocalPillars] = useState(initialSettings.pillars || []);
@@ -19,6 +19,8 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted }:
 
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [savingTheme, setSavingTheme] = useState(false);
+  const [themeSuccess, setThemeSuccess] = useState(false);
 
   // Sync if initialSettings change (e.g. workspace switch)
   useEffect(() => {
@@ -31,13 +33,28 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted }:
   }, [initialSettings]);
 
   const sections = [
-    ["pillars", "Content Pillars", "🎨"],
+    ["visual", "Tema Visual", "🎨"],
+    ["pillars", "Content Pillars", "🖌️"],
     ["platforms", "Platforms", "📱"],
     ["pics", "Team PIC", "👤"],
     ["statuses", "Status Workflow", "📋"],
     ["holidays", "Hari Besar", "📅"],
     ["general", "General & Debug", "⚙️"]
   ];
+
+  const handleSaveTheme = async (themeId: string) => {
+    setSavingTheme(true);
+    setThemeSuccess(false);
+    try {
+      await onUpdateProfile({ themeId });
+      setThemeSuccess(true);
+      setTimeout(() => setThemeSuccess(false), 3000);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setSavingTheme(false);
+    }
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -109,8 +126,8 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted }:
             disabled={saving}
             className="hover-scale shadow-lg"
             style={{ 
-              ...B(true, saveSuccess ? "#2D7A5E" : "#C4622D"), 
-              display: "flex", alignItems: "center", gap: 8, padding: "10px 24px", borderRadius: 24, fontSize: 14, fontWeight: 800, cursor: saving ? "not-allowed" : "pointer" 
+              ...B(true, saveSuccess ? "#2D7A5E" : "var(--theme-primary)"), 
+              display: "flex", alignItems: "center", gap: 8, padding: "10px 24px", borderRadius: 24, fontSize: 14, fontWeight: 800, cursor: saving ? "not-allowed" : "pointer", border: "none", color: "white"
             }}
           >
             <Save size={18} /> {saving ? "Menyimpan..." : "Simpan Perubahan"}
@@ -121,12 +138,65 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted }:
       <div style={{ display: "grid", gridTemplateColumns: "200px 1fr", gap: 16, minHeight: 400 }}>
         <div style={{ background: "white", borderRadius: 12, padding: "12px 0", boxShadow: "0 1px 4px rgba(44,32,22,0.08)", height: "fit-content" }}>
           {sections.map(([id, label, ic]) => (
-            <button key={id} onClick={() => setSection(id)} style={{ width: "100%", padding: "10px 16px", textAlign: "left", border: "none", borderLeft: `3px solid ${section === id ? "#C4622D" : "transparent"}`, background: section === id ? "#FDF0EB" : "transparent", cursor: "pointer", fontSize: 13, fontWeight: section === id ? 600 : 400, color: "#2C2016", display: "flex", alignItems: "center", gap: 8 }}>
+            <button key={id} onClick={() => setSection(id)} style={{ width: "100%", padding: "10px 16px", textAlign: "left", border: "none", borderLeft: `3px solid ${section === id ? "var(--theme-primary)" : "transparent"}`, background: section === id ? "var(--theme-primary)11" : "transparent", cursor: "pointer", fontSize: 13, fontWeight: section === id ? 600 : 400, color: section === id ? "var(--theme-primary)" : "#2C2016", display: "flex", alignItems: "center", gap: 8 }}>
               <span>{ic}</span>{label}
             </button>
           ))}
         </div>
         <div style={CARD()}>
+          {section === "visual" && (
+            <>
+              <h3 style={{ fontSize: 18, margin: "0 0 8px" }}>🎨 Tema Visual Profesional</h3>
+              <p style={{ fontSize: 13, color: "rgba(44,32,22,0.6)", marginBottom: 20 }}>Pilih salah satu dari 10 tema warna profesional untuk aplikasi Anda. Tema ini akan berlaku untuk seluruh tampilan dashboard secara global.</p>
+              
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 16 }}>
+                {THEMES.map((t) => {
+                  const isActive = profile?.themeId === t.id || (!profile?.themeId && t.id === "sunset");
+                  return (
+                    <button 
+                      key={t.id} 
+                      onClick={() => handleSaveTheme(t.id)}
+                      className="hover-scale"
+                      disabled={savingTheme}
+                      style={{
+                        padding: "16px",
+                        background: "white",
+                        borderRadius: 16,
+                        border: `2.5px solid ${isActive ? t.primary : "rgba(44,32,22,0.05)"}`,
+                        cursor: "pointer",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 12,
+                        alignItems: "center",
+                        transition: "all 0.3s ease",
+                        position: "relative",
+                        overflow: "hidden",
+                        textAlign: "center"
+                      }}
+                    >
+                      {isActive && (
+                        <div style={{ position: "absolute", top: 8, right: 8, background: t.primary, color: "white", borderRadius: "50%", width: 22, height: 22, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 900 }}>
+                          ✓
+                        </div>
+                      )}
+                      <div style={{ display: "flex", width: "100%", height: 32, borderRadius: 8, overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
+                        <div style={{ flex: 1, background: t.primary }} />
+                        <div style={{ flex: 1, background: t.header }} />
+                        <div style={{ flex: 1, background: t.sidebar }} />
+                      </div>
+                      <span style={{ fontSize: 14, fontWeight: 800, color: isActive ? t.primary : "#2C2016" }}>{t.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              
+              {themeSuccess && (
+                <div style={{ marginTop: 24, padding: "12px 16px", background: "#E5F4EE", color: "#2D7A5E", borderRadius: 12, fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
+                   <CheckCircle2 size={18} /> Tema berhasil disimpan dan disinkronkan ke seluruh perangkat Anda.
+                </div>
+              )}
+            </>
+          )}
           {section === "pillars" && (
             <>
               <h3 style={{ fontSize: 18, margin: "0 0 14px" }}>🎨 Content Pillars</h3>
@@ -134,7 +204,7 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted }:
                 <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", background: "#FAFAF8", borderRadius: 8, marginBottom: 6 }}>
                   <input type="color" value={p.color} onChange={(e: any) => editPillar(i, p.name, e.target.value)} title="Warna Pillar" style={{ width: 24, height: 24, padding: 0, border: "none", cursor: "pointer" }} />
                   <input value={p.name} onChange={(e: any) => editPillar(i, e.target.value, p.color)} style={{ flex: 1, fontSize: 13, fontWeight: 500, border: "none", background: "transparent", outline: "none" }} />
-                  <button onClick={() => delPillar(i)} style={{ background: "#FDF5F8", border: "none", borderRadius: 6, padding: "3px 8px", fontSize: 11, cursor: "pointer", color: "#9C2B4E", }}>Hapus</button>
+                  <button onClick={() => delPillar(i)} style={{ background: "rgba(156,43,78,0.1)", border: "none", borderRadius: 6, padding: "3px 8px", fontSize: 11, cursor: "pointer", color: "#9C2B4E", }}>Hapus</button>
                 </div>
               ))}
               <InputRow placeholder="Nama pillar baru..." value={newVal} onChange={setNewVal} onAdd={addPillar} colorPicker />

@@ -55,12 +55,12 @@ export function Header({
   };
 
   return (
-    <div style={{background:appliedStyle?.bgColor||"#2C2016",color:appliedStyle?.titleColor||"#FAFAFA",padding:"24px 40px",position:"relative",minHeight:160,display:"flex",alignItems:"center",borderBottom:"1px solid rgba(255,255,255,0.05)", zIndex: 100}}>
+    <div style={{background:"var(--theme-header)",color:"white",padding:"24px 40px",position:"relative",minHeight:160,display:"flex",alignItems:"center",borderBottom:"1px solid rgba(255,255,255,0.05)", zIndex: 100}}>
       {headerImage && <div style={{position:"absolute",inset:0,overflow:"hidden",pointerEvents:"none",borderRadius: "inherit"}}><img src={headerImage} alt="header" style={{width:"100%",height:"100%",objectFit:"cover",opacity:0.3}} /></div>}
       
       <div style={{position:"relative",display:"flex",justifyContent:"space-between",alignItems:"center",gap:32,width:"100%"}}>
         <div style={{display:"flex", alignItems:"center", gap:24, flex:1}}>
-          <button className="hover-scale" onClick={onToggleSidebar} style={{background:"rgba(255,255,255,0.1)", border:"none", borderRadius:16, width:44, height:44, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", color:"white", transition: "all 0.3s ease"}}>
+          <button className="hover-scale" onClick={onToggleSidebar} style={{background:"rgba(255,255,255,0.15)", border:"none", borderRadius:16, width:44, height:44, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", color:"white", transition: "all 0.3s ease"}}>
             {sidebarOpen ? <ChevronLeft size={22}/> : <Menu size={22}/>}
           </button>
           
@@ -79,14 +79,14 @@ export function Header({
                    <input value={tmpTag} onChange={(e:any)=>setTmpTag(e.target.value)} placeholder="Masukkan tagline..." style={{fontSize:13,background:"white",border:"none",borderRadius:12,color:"#333",padding:"10px 16px",width:"100%"}}/>
                  </div>
                  <div style={{display:"flex",gap:16,marginTop:12}}>
-                   <button className="btn-hover" onClick={()=>{onBrandingChange({title:tmp, tagline:tmpTag, headerStyle:tmpStyle});setEd(false);}} style={{background:"#FF6B00",border:"none",borderRadius:16,padding:"10px 20px",cursor:"pointer",color:"white",fontSize:13,fontWeight:700,flex:1}}>Simpan</button>
+                   <button className="btn-hover" onClick={()=>{onBrandingChange({title:tmp, tagline:tmpTag, headerStyle:tmpStyle});setEd(false);}} style={{background:"var(--theme-primary)",border:"none",borderRadius:16,padding:"10px 20px",cursor:"pointer",color:"white",fontSize:13,fontWeight:700,flex:1}}>Simpan</button>
                    <button className="btn-hover" onClick={()=>{setTmp(title);setTmpTag(tagline);setTmpStyle(headerStyle);setEd(false);}} style={{background:"rgba(255,255,255,0.1)",border:"none",borderRadius:16,padding:"10px 20px",cursor:"pointer",color:"white",fontSize:12}}>Batal</button>
                  </div>
               </div>
             ) : (
               <div onClick={()=>setEd(true)} className="hover-scale" style={{cursor:"pointer"}}>
-                 <h1 style={{fontFamily:appliedStyle?.titleFont||"inherit",fontSize:32,fontWeight:800,letterSpacing:"-1px",margin:0,color:appliedStyle?.titleColor||"#FAFAFA",display:"flex",alignItems:"center",gap:12}}>{title} <Pencil size={18} style={{opacity:0.3}}/></h1>
-                 <p style={{margin:"6px 0 0",color:appliedStyle?.taglineColor||"rgba(250,247,242,0.6)",fontSize:14,fontWeight:500,fontStyle:"italic"}}>{tagline}</p>
+                 <h1 style={{fontFamily:appliedStyle?.titleFont||"inherit",fontSize:32,fontWeight:800,letterSpacing:"-1px",margin:0,color:"white",textShadow:"0 2px 10px rgba(0,0,0,0.1)",display:"flex",alignItems:"center",gap:12}}>{title} <Pencil size={18} style={{opacity:0.5}}/></h1>
+                 <p style={{margin:"6px 0 0",color:"rgba(255,255,255,0.8)",fontSize:14,fontWeight:500,fontStyle:"italic"}}>{tagline}</p>
               </div>
             )}
           </div>
@@ -142,7 +142,7 @@ export function Header({
           </div>
 
           <div style={{display:"flex",gap:12}}>
-            <button className="hover-scale btn-hover shadow-lg" onClick={onShare} style={{background:"#FF6B00",border:"none",borderRadius:14,width:40,height:40,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:"white",boxShadow:"0 8px 16px rgba(255,107,0,0.3)"}} title="Bagikan Link Workspace"><Share2 size={18}/></button>
+            <button className="hover-scale btn-hover shadow-lg" onClick={onShare} style={{background:"var(--theme-primary)",border:"none",borderRadius:14,width:40,height:40,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:"white",boxShadow:"0 8px 16px rgba(0,0,0,0.2)"}} title="Bagikan Link Workspace"><Share2 size={18}/></button>
             <label className="hover-scale btn-hover" style={{background:"rgba(255,255,255,0.1)",border:"none",borderRadius:14,width:40,height:40,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:"white",transition: "all 0.3s ease"}}>
               <Image size={18}/>
               <input type="file" hidden accept="image/*" onChange={handleImg} />
@@ -239,7 +239,7 @@ function ChatSupportPanel({onClose, userId, userEmail, userProfile}: {onClose:()
         <div style={{height:300, background:"#FAFAFA", padding:"20px", overflowY:"auto", display:"flex", flexDirection:"column", gap:12}}>
            {(activeTicket.messages||[]).map((m:any, i:number) => (
              <div key={i} style={{display:"flex", flexDirection:"column", alignItems: m.sender==="user"?"flex-end":"flex-start"}}>
-               <div style={{background:m.sender==="user" ? "#FF6B00" : "white", color:m.sender==="user"?"white":"#2C2016", padding:"10px 14px", borderRadius:m.sender==="user"?"16px 16px 4px 16px":"16px 16px 16px 4px", fontSize:13, boxShadow:"0 2px 10px rgba(0,0,0,0.05)", maxWidth:"90%", lineHeight:1.5}}>
+               <div style={{background:m.sender==="user" ? "var(--theme-primary)" : "white", color:m.sender==="user"?"white":"#2C2016", padding:"10px 14px", borderRadius:m.sender==="user"?"16px 16px 4px 16px":"16px 16px 16px 4px", fontSize:13, boxShadow:"0 2px 10px rgba(0,0,0,0.05)", maxWidth:"90%", lineHeight:1.5}}>
                  {m.text}
                </div>
                <div style={{fontSize:10, color:"rgba(44,32,22,0.4)", marginTop:4}}>{new Date(m.timestamp).toLocaleString("id-ID", {dateStyle:"short", timeStyle:"short"})}</div>
@@ -248,7 +248,7 @@ function ChatSupportPanel({onClose, userId, userEmail, userProfile}: {onClose:()
         </div>
         <div style={{padding:"16px", background:"white", borderTop:"1px solid rgba(44,32,22,0.05)", display:"flex", gap:12}}>
            <input id="chat_input" placeholder="Tulis balasan..." onKeyDown={e=>e.key==='Enter'&&handleSendReply()} style={{flex:1, border:"1px solid rgba(44,32,22,0.1)", borderRadius:20, padding:"10px 16px", fontSize:13, outline:"none"}} />
-           <button onClick={handleSendReply} style={{background:"#FF6B00", color:"white", border:"none", width:38, height:38, borderRadius:19, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center"}} className="hover-scale"><Plus size={18}/></button>
+           <button onClick={handleSendReply} style={{background:"var(--theme-primary)", color:"white", border:"none", width:38, height:38, borderRadius:19, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center"}} className="hover-scale"><Plus size={18}/></button>
         </div>
       </motion.div>
     );
@@ -397,15 +397,15 @@ export function Sidebar({
             animate={{ width: 270, opacity: 1 }} 
             exit={{ width: 0, opacity: 0 }} 
             transition={{ duration: 0.3 }}
-            style={{background:"#2C2016", color:"#FAFAFA", display:"flex", flexDirection:"column", borderRight:"1px solid rgba(255,255,255,0.05)", height:"100vh", position:"sticky", top:0, zIndex:200, overflow:"hidden", whiteSpace: "nowrap"}}
+            style={{background:"var(--theme-sidebar)", color:"#FAFAFA", display:"flex", flexDirection:"column", borderRight:"1px solid rgba(255,255,255,0.05)", height:"100vh", position:"sticky", top:0, zIndex:200, overflow:"hidden", whiteSpace: "nowrap"}}
           >
             <div style={{minWidth: 270, height: "100%", display: "flex", flexDirection: "column", position: "relative"}}>
               <div style={{padding:"24px 20px", borderBottom:"1px solid rgba(255,255,255,0.05)", display:"flex", alignItems:"center", justifyContent:"space-between"}}>
-                <div style={{fontSize:20, fontWeight:800, letterSpacing:"-1px", color:"#FF6B00"}}>{title || "CMS Console"}</div>
+                <div style={{fontSize:20, fontWeight:800, letterSpacing:"-1px", color:"var(--theme-primary)"}}>{title || "CMS Console"}</div>
                 <div style={{position: "relative"}}>
-                  <button onClick={() => setShowNotifPanel(!showNotifPanel)} style={{background:"none", border:"none", color:showNotifPanel ? "#FF6B00" : "rgba(255,255,255,0.6)", cursor:"pointer", display:"flex", position: "relative"}} className="hover-scale">
+                  <button onClick={() => setShowNotifPanel(!showNotifPanel)} style={{background:"none", border:"none", color:showNotifPanel ? "var(--theme-primary)" : "rgba(255,255,255,0.6)", cursor:"pointer", display:"flex", position: "relative"}} className="hover-scale">
                     <Bell size={20} />
-                    {unreadCount > 0 && <div style={{position:"absolute", top:-2, right:-2, background:"#FF6B00", width:8, height:8, borderRadius:4}} />}
+                    {unreadCount > 0 && <div style={{position:"absolute", top:-2, right:-2, background:"var(--theme-primary)", width:8, height:8, borderRadius:4}} />}
                   </button>
                 </div>
               </div>
@@ -435,7 +435,7 @@ export function Sidebar({
                           key={ws.id} 
                           onClick={() => onWorkspaceSelect(ws)} 
                           style={{
-                            width:"100%", textAlign:"left", background:activeWorkspace?.id === ws.id ? "#FF6B00" : "rgba(255,255,255,0.05)", 
+                            width:"100%", textAlign:"left", background:activeWorkspace?.id === ws.id ? "var(--theme-primary)" : "rgba(255,255,255,0.05)", 
                             border:"none", borderRadius:12, padding:"10px 14px", color:activeWorkspace?.id === ws.id ? "white" : "#FAFAFA", 
                             fontSize:13, fontWeight:600, cursor:"pointer", transition: "all 0.3s ease"
                           }}
@@ -468,7 +468,7 @@ export function Sidebar({
                               border:"none", borderRadius:12, color:tab===v.id?"white":"rgba(250,247,242,0.6)", cursor:"pointer", transition: "all 0.3s ease"
                             }}
                         >
-                            <span style={{color:tab===v.id?"#FF6B00":"currentColor"}}>{v.ic}</span>
+                            <span style={{color:tab===v.id?"var(--theme-primary)":"currentColor"}}>{v.ic}</span>
                             <span style={{fontSize:13, fontWeight:tab===v.id?700:500}}>{v.lb}</span>
                         </button>
                       ))}
@@ -499,10 +499,10 @@ export function Sidebar({
                           border:"none", borderRadius:12, color:tab===v.id?"white":"rgba(250,247,242,0.6)", cursor:"pointer", transition: "all 0.3s ease", position:"relative"
                         }}
                     >
-                        <span style={{color:tab===v.id?"#FF6B00":"currentColor", flexShrink: 0}}>{v.ic}</span>
+                        <span style={{color:tab===v.id?"white":"rgba(255,255,255,0.5)", flexShrink: 0}}>{v.ic}</span>
                         <span style={{fontSize:13, fontWeight:tab===v.id?700:500, flex: 1, overflow: "hidden", textOverflow: "ellipsis", textAlign: "left"}}>{v.lb}</span>
                         {v.soon && (
-                          <span style={{background:"rgba(255,107,0,0.2)", color:"#FF6B00", padding:"1px 6px", borderRadius:4, fontSize:8, fontWeight:800, flexShrink: 0}}>SOON</span>
+                          <span style={{background:"rgba(255,255,255,0.2)", color:"white", padding:"2px 6px", borderRadius:4, fontSize:8, fontWeight:900, flexShrink: 0, letterSpacing: 0.5}}>SOON</span>
                         )}
                     </button>
                   ))}
@@ -523,7 +523,7 @@ export function Sidebar({
                         border:"none", borderRadius:12, color:tab===v.id?"white":"rgba(250,247,242,0.6)", cursor:"pointer", transition: "all 0.3s ease", position:"relative"
                       }}
                    >
-                      <span style={{color:tab===v.id?"#FF6B00":"currentColor"}}>{v.ic}</span>
+                      <span style={{color:tab===v.id?"var(--theme-primary)":"currentColor"}}>{v.ic}</span>
                       <span style={{fontSize:13, fontWeight:tab===v.id?700:500}}>{v.lb}</span>
                       {v.beta && <span style={{position:"absolute", right:10, background:"#9C2B4E", color:"white", fontSize:8, padding:"2px 6px", borderRadius:4, fontWeight:800, letterSpacing:0.5}}>BETA</span>}
                       {v.super && <span style={{position:"absolute", right:10, background:"#2D7A5E", color:"white", fontSize:8, padding:"2px 6px", borderRadius:4, fontWeight:800, letterSpacing:0.5}}>SUPER</span>}
@@ -544,14 +544,14 @@ export function Sidebar({
                   display:"flex", alignItems:"center", gap:12, padding:12, borderRadius:16, background:"rgba(255,255,255,0.05)", cursor:"pointer", marginBottom:8
                 }}
               >
-                <img src={profile?.photoURL || user?.photoURL || `https://ui-avatars.com/api/?name=${user?.displayName}`} alt="avatar" style={{width:36, height:36, borderRadius:12, border:"2px solid #FF6B00", objectFit:"cover"}} />
+                <img src={profile?.avatar || user?.photoURL || `https://ui-avatars.com/api/?name=${user?.displayName}`} alt="avatar" style={{width:36, height:36, borderRadius:12, border:"2px solid var(--theme-primary)", objectFit:"cover"}} />
                 <div style={{flex: 1, minWidth: 0}}>
                   <div style={{display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: 4}}>
                     <span style={{fontSize: 13, fontWeight: 800, color: "white", whiteSpace: "normal", wordBreak: "break-word"}}>
                       {profile?.fullName || user?.displayName || "User"}
                     </span>
                     <span style={{
-                      background: (profile?.activeUntil && new Date(profile.activeUntil) > new Date()) ? "#FF6B00" : "#9C2B4E", 
+                      background: (profile?.activeUntil && new Date(profile.activeUntil) > new Date()) ? "var(--theme-primary)" : "#9C2B4E", 
                       color: "white", 
                       padding: "2px 6px", 
                       borderRadius: 4, 
@@ -619,7 +619,7 @@ export function NavBar({tab,setTab,year,setYear,month,setMonth,onOpenAdd}: any) 
       <div style={{display:"flex",gap:16,alignItems:"center"}}>
         <div style={{width: 120}}><CustomDropdown value={String(year)} options={YEARS.map(y=>String(y))} onChange={(v:any)=>setYear(+v)} style={{padding:"8px 12px",borderRadius:12}} /></div>
         <div style={{width: 140}}><CustomDropdown value={String(month)} options={MONTHS.map((m,i)=>({id:String(i+1), name:m}))} onChange={(v:any)=>setMonth(+v)} style={{padding:"8px 12px",borderRadius:12}} /></div>
-        <button className="hover-scale btn-hover shadow-lg" onClick={onOpenAdd} style={{...B(true,"#FF6B00"), height:46, padding:"0 28px", borderRadius:23, fontSize:14, display:"flex", alignItems:"center", gap:10, border:"none", color:"white", fontWeight:700, marginLeft:24, boxShadow:"0 6px 16px rgba(255,107,0,0.3)"}}><Plus size={22}/> Konten Baru</button>
+        <button className="hover-scale btn-hover shadow-lg" onClick={onOpenAdd} style={{...B(true,"var(--theme-primary)"), height:46, padding:"0 28px", borderRadius:23, fontSize:14, display:"flex", alignItems:"center", gap:10, border:"none", color:"white", fontWeight:700, marginLeft:24, boxShadow:"0 6px 16px rgba(0,0,0,0.15)"}}><Plus size={22}/> Konten Baru</button>
       </div>
     </div>
   );
@@ -643,7 +643,7 @@ export function FilterBar({filters,setFilters,pillars,platforms,pics,statuses,sh
       </div>
       <div style={{display:"flex", gap:12}}>
         <button className="hover-scale" onClick={()=>setShowHolidays((v:any)=>!v)} style={{...B(false,"#2C2016"), background: showHolidays ? "rgba(44,32,22,0.05)" : "transparent", borderColor: showHolidays ? "rgba(44,32,22,0.2)" : "rgba(44,32,22,0.1)", fontSize:12, padding:"8px 16px", borderRadius:20}}>{showHolidays?"Tampil":"Sembunyi"} Hari Besar</button>
-        <button className="hover-scale" onClick={()=>setShowArchived((v:any)=>!v)} style={{...B(false,"#FF6B00"), background: showArchived ? "rgba(255,107,0,0.05)" : "transparent", borderColor: showArchived ? "rgba(255,107,0,0.3)" : "rgba(44,32,22,0.1)", fontSize:12, padding:"8px 16px", borderRadius:20}}>📦 Arsip</button>
+        <button className="hover-scale" onClick={()=>setShowArchived((v:any)=>!v)} style={{...B(false,"var(--theme-primary)"), background: showArchived ? "var(--theme-primary)11" : "transparent", borderColor: showArchived ? "var(--theme-primary)44" : "rgba(44,32,22,0.1)", fontSize:12, padding:"8px 16px", borderRadius:20}}>📦 Arsip</button>
       </div>
       <div style={{flex:1}}/>
       <button className="hover-scale btn-hover" onClick={onImportClick} style={{...B(false,"#2C2016"), background:"white", border:"1px solid rgba(44,32,22,0.1)", height:38, padding:"0 16px", fontSize:12, fontWeight:700, display:"flex", alignItems:"center", gap:8}}>

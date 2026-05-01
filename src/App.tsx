@@ -4,7 +4,7 @@ import * as XLSX from "xlsx";
 import { 
   MONTHS, YEARS, DP, DPL, DPIC, DST, DH, 
   gid, eng, fmtD, fmtT, emptyItem, makeSeed, 
-  I, B, CARD
+  I, B, CARD, THEMES
 } from "./data";
 
 import { 
@@ -69,6 +69,29 @@ export default function App() {
     return () => { unsubAuth(); if (unsubProfile) unsubProfile(); };
   }, []);
 
+  const currentTheme = useMemo(() => {
+    return THEMES.find(t => t.id === profile?.themeId) || THEMES[0];
+  }, [profile?.themeId]);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.setProperty("--theme-primary", currentTheme.primary);
+    root.style.setProperty("--theme-primary-rgb", currentTheme.rgb);
+    root.style.setProperty("--theme-sidebar", currentTheme.sidebar);
+    root.style.setProperty("--theme-header", currentTheme.header || currentTheme.primary);
+    root.style.setProperty("--theme-text", currentTheme.text);
+  }, [currentTheme]);
+
+  const updateProfileSettings = async (updates: any) => {
+    if (!user) return;
+    try {
+      await updateDoc(doc(db, "users", user.uid), updates);
+    } catch (e: any) {
+      console.error("Update profile error:", e);
+      handleFirestoreError(e, 'update');
+    }
+  };
+
   if (authLoading) return <LoadingScreen />;
 
   return (
@@ -77,7 +100,7 @@ export default function App() {
         <Route path="/login" element={(user && profile) ? <Navigate to="/" /> : <AuthScreen currentUser={user && !profile ? user : null} onUserCreated={(u)=>setUser(u)} />} />
         <Route path="/profile" element={(user && profile) ? <CMSLayout><UserProfile userProfile={profile} activeWorkspace={null} onUpdate={setProfile} /></CMSLayout> : <Navigate to="/login" />} />
         <Route path="/billing" element={(user && profile) ? <CMSLayout><BillingView userProfile={profile} activeWorkspace={null} onUpdate={setProfile} /></CMSLayout> : <Navigate to="/login" />} />
-        <Route path="/*" element={(user && profile) ? <CMSLayout><Dashboard user={user} profile={profile} /></CMSLayout> : <Navigate to="/login" />} />
+        <Route path="/*" element={(user && profile) ? <CMSLayout><Dashboard user={user} profile={profile} onUpdateProfile={updateProfileSettings} /></CMSLayout> : <Navigate to="/login" />} />
       </Routes>
     </HashRouter>
   );
@@ -108,7 +131,7 @@ function CMSLayout({ children }: any) {
   );
 }
 
-function Dashboard({ user, profile }: any) {
+function Dashboard({ user, profile, onUpdateProfile }: any) {
   const [tab, setTab]           = useState("month");
   const [workspace, setWorkspace] = useState<any>(null);
   const [workspaces, setWorkspaces] = useState<any[]>([]);
@@ -460,7 +483,7 @@ function Dashboard({ user, profile }: any) {
         <div style={{ fontSize:24, color:"#2C2016", fontWeight:800, letterSpacing:"-0.5px"}}>
           {errorMsg.includes("index") ? "Indeks Database Sedang Disiapkan..." : "Mempersiapkan Workspace Anda..."}
         </div>
-        {!errorMsg.includes("index") && <div style={{width:40, height:40, border:"3px solid #FF6B00", borderTopColor:"transparent", borderRadius:"50%", animation:"spin 1s linear infinite"}}/>}
+        {!errorMsg.includes("index") && <div style={{width:40, height:40, border:"3px solid var(--theme-primary)", borderTopColor:"transparent", borderRadius:"50%", animation:"spin 1s linear infinite"}}/>}
         
         {errorMsg && (
           <div style={{maxWidth:500, fontSize:13, color:"#9C2B4E", background:"#F8EAF0", padding:16, borderRadius:12, fontWeight:500}}>
@@ -538,6 +561,8 @@ function Dashboard({ user, profile }: any) {
               onSave={updateWsSettings}
               onSeed={() => setContent(makeSeed())} 
               isRestricted={isRestricted}
+              profile={profile}
+              onUpdateProfile={onUpdateProfile}
             />}
             {tab==="admin"&&<AdminPanel userProfile={profile} onLogout={()=>signOut(auth)} />}
           </motion.div>
@@ -557,7 +582,7 @@ function Dashboard({ user, profile }: any) {
         {exportModal && <motion.div key="export" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.8)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center"}}>
           <motion.div initial={{scale:0.95, opacity:0, y:20}} animate={{scale:1, opacity:1, y:0}} exit={{scale:0.95, opacity:0, y:20}} transition={{ type: "spring", damping: 25, stiffness: 300 }} style={CARD({width:400, padding:32, borderRadius:24, boxShadow:"0 20px 40px rgba(0,0,0,0.2)"})}>
              <h3 style={{fontSize:20, fontWeight:700, marginBottom:16}}>Ekspor Data (XLSX)</h3>
-             <p style={{fontSize:14, color:"rgba(44,32,22,0.6)", marginBottom:24, lineHeight:1.5}}>Unduh seluruh data konten dalam format Excel (XLSX) untuk workspace <strong style={{color:"#FF6B00"}}>{workspace?.name}</strong>.</p>
+             <p style={{fontSize:14, color:"rgba(44,32,22,0.6)", marginBottom:24, lineHeight:1.5}}>Unduh seluruh data konten dalam format Excel (XLSX) untuk workspace <strong style={{color:"var(--theme-primary)"}}>{workspace?.name}</strong>.</p>
              <button className="btn-hover hover-scale" onClick={() => {
                 const exportData = content.map((c: any) => ({
                     "Judul Konten": c.title || "",
@@ -586,7 +611,7 @@ function Dashboard({ user, profile }: any) {
                 XLSX.utils.book_append_sheet(wb, ws, "Content");
                 XLSX.writeFile(wb, `Export_${workspace?.name}.xlsx`);
                 setExportModal(false);
-             }} style={{...B(true, "#FF6B00"), width:"100%", height:48, marginBottom:12, fontSize:14, borderRadius:24}}>Unduh File Excel</button>
+             }} style={{...B(true, "var(--theme-primary)"), width:"100%", height:48, marginBottom:12, fontSize:14, borderRadius:24}}>Unduh File Excel</button>
              <button className="hover-scale" onClick={()=>setExportModal(false)} style={{...B(false), width:"100%", height:48, fontSize:14, borderRadius:24}}>Batal</button>
           </motion.div>
         </motion.div>}

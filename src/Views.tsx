@@ -28,12 +28,12 @@ export function MonthView({year,month,monthContent,filtered,openEdit,openAdd,sho
           const day=i+1,items=getF(day),allItems=getA(day),ev=showHolidays?getEv(day):null;
           const isSpec=ev&&(ev.includes("Launch")||ev.includes("Flash")||ev.includes("Sale"));
           return (
-            <div key={day} style={{minHeight:110,background:isSpec?"#FDF0EB":ev?"#F5F0E8":"white",borderRadius:8,padding:6,border:isSpec?"1.5px solid rgba(196,98,45,0.4)":ev?"1px solid rgba(196,98,45,0.2)":"1px solid rgba(44,32,22,0.06)"}}>
+            <div key={day} style={{minHeight:110,background:isSpec?"var(--theme-primary)11":ev?"#F5F0E8":"white",borderRadius:8,padding:6,border:isSpec?"1.5px solid var(--theme-primary)":ev?"1px solid rgba(196,98,45,0.2)":"1px solid rgba(44,32,22,0.06)"}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:3}}>
-                <span style={{fontSize:18,fontWeight:800,lineHeight:1,color:isSpec?"#FF6B00":"#2C2016"}}>{day}</span>
+                <span style={{fontSize:18,fontWeight:800,lineHeight:1,color:isSpec?"var(--theme-primary)":"#2C2016"}}>{day}</span>
                 <div style={{display:"flex",gap:3,alignItems:"center"}}>
                   {allItems.length>0&&<span style={{background:"#2C2016",color:"#FAF7F2",borderRadius:12,padding:"2px 6px",fontSize:9,fontWeight:700}}>{allItems.length}</span>}
-                  <button onClick={()=>openAdd(day)} style={{background:"rgba(255,107,0,0.1)",border:"none",borderRadius:"50%",width:20,height:20,cursor:"pointer",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",color:"#FF6B00",padding:0,transition:"all 0.2s"}} className="hover-scale">+</button>
+                  <button onClick={()=>openAdd(day)} style={{background:"rgba(255,255,255,0.2)",border:"none",borderRadius:"50%",width:20,height:20,cursor:"pointer",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",color:isSpec?"var(--theme-primary)":"var(--theme-primary)",padding:0,transition:"all 0.2s"}} className="hover-scale">+</button>
                 </div>
               </div>
               {ev&&<div style={{fontSize:8,color:isSpec?"#C4622D":"#A67C1C",fontWeight:700,marginBottom:3,lineHeight:1.2,textTransform:"uppercase",letterSpacing:0.3}}>{ev}</div>}
@@ -88,14 +88,14 @@ export function WeekView({year,month,content,openEdit,openAdd,pillars,platforms,
           const ev = staticEv ? (dynamicEv ? `${staticEv} | ${dynamicEv}` : staticEv) : dynamicEv;
           const isToday=new Date().toDateString()===day.date.toDateString();
           return (
-            <div key={day.d+"-"+day.mo} style={{background:isToday?"#FDF5E8":"white",borderRadius:10,padding:10,border:isToday?"2px solid #C4622D":"1px solid rgba(44,32,22,0.08)",minHeight:180}}>
+            <div key={day.d+"-"+day.mo} style={{background:isToday?"#FDF5E8":"white",borderRadius:10,padding:10,border:isToday?"2px solid var(--theme-primary)":"1px solid rgba(44,32,22,0.08)",minHeight:180}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
                 <div>
                   <div style={{fontSize:9,fontWeight:700,textTransform:"uppercase",color:"rgba(44,32,22,0.4)"}}>{DAYS_S[day.dow]}</div>
-                  <div style={{fontSize:24,fontWeight:800,lineHeight:1,color:isToday?"#FF6B00":"#2C2016"}}>{day.d}</div>
+                  <div style={{fontSize:24,fontWeight:800,lineHeight:1,color:isToday?"var(--theme-primary)":"#2C2016"}}>{day.d}</div>
                   <div style={{fontSize:9,fontWeight:600,color:"rgba(44,32,22,0.3)"}}>{MS[day.mo-1]} {day.y}</div>
                 </div>
-                <button onClick={()=>openAdd(day.d)} className="hover-scale" style={{background:"rgba(255,107,0,0.1)",border:"none",borderRadius:"50%",width:20,height:20,cursor:"pointer",color:"#FF6B00",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",padding:0,transition:"all 0.2s"}}>+</button>
+                <button onClick={()=>openAdd(day.d)} className="hover-scale" style={{background:"rgba(255,255,255,0.2)",border:"none",borderRadius:"50%",width:20,height:20,cursor:"pointer",color:isToday?"var(--theme-primary)":"var(--theme-primary)",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",padding:0,transition:"all 0.2s"}}>+</button>
               </div>
               {ev&&<div style={{fontSize:8,color:"#A67C1C",fontWeight:700,background:"#FBF5E3",borderRadius:4,padding:"2px 5px",marginBottom:5}}>{ev}</div>}
               <div style={{display:"flex",flexDirection:"column",gap:3}}>
@@ -126,7 +126,7 @@ export function BoardView({year,month,content,filtered,openEdit,openAdd,statuses
       if(!search || !txt) return <>{txt}</>;
       const str = String(txt);
       const parts = str.split(new RegExp(`(${search})`, 'gi'));
-      return <>{parts.map((p:any,i:number)=>p.toLowerCase()===search.toLowerCase()?<mark key={i} style={{background:"#FDF0EB",color:"#C4622D",padding:"0 2px",borderRadius:2}}>{p}</mark>:p)}</>;
+      return <>{parts.map((p:any,i:number)=>p.toLowerCase()===search.toLowerCase()?<mark key={i} style={{background:"rgba(var(--theme-primary-rgb),0.1)",color:"var(--theme-primary)",padding:"0 2px",borderRadius:2}}>{p}</mark>:p)}</>;
     } catch(e) { return <>{txt}</>; }
   };
 
@@ -160,7 +160,7 @@ export function BoardView({year,month,content,filtered,openEdit,openAdd,statuses
                       <span style={{fontSize:9,color:"rgba(44,32,22,0.4)"}}>PIC: {item.pic || "-"}</span>
                       <span style={{fontSize:9,color:"rgba(44,32,22,0.35)"}}>{item.day}/{String(item.month).padStart(2,"0")}</span>
                     </div>
-                    {eng(item.metrics)>0&&<div style={{fontSize:9,color:"#C4622D",fontWeight:600,marginTop:3}}>⚡ {fmt(eng(item.metrics))} eng</div>}
+                    {eng(item.metrics)>0&&<div style={{fontSize:9,color:"var(--theme-primary)",fontWeight:600,marginTop:3}}>⚡ {fmt(eng(item.metrics))} eng</div>}
                   </div>
                 );
               })}
@@ -282,7 +282,7 @@ export function TableView({filtered,openEdit,archiveItem,unarchiveItem,deleteIte
   const High = ({txt}:any) => {
     if(!search)return txt;
     const parts = txt.toString().split(new RegExp(`(${search})`, 'gi'));
-    return parts.map((p:any,i:number)=>p.toLowerCase()===search.toLowerCase()?<mark key={i} style={{background:"#FDF0EB",color:"#C4622D",padding:"0 2px",borderRadius:2}}>{p}</mark>:p);
+    return parts.map((p:any,i:number)=>p.toLowerCase()===search.toLowerCase()?<mark key={i} style={{background:"var(--theme-primary)22",color:"var(--theme-primary)",padding:"0 2px",borderRadius:2}}>{p}</mark>:p);
   };
 
   return (
