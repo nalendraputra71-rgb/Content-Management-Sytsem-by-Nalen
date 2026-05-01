@@ -11,7 +11,7 @@ import {
   Users, Eye, MessageSquare, Share2, 
   GripVertical, Layout, Edit3, Save, 
   Calendar, RotateCcw, Target, Sparkles,
-  ArrowRight, Settings, User as UserIcon, X, Maximize2, Move
+  ArrowRight, Settings, User as UserIcon, X, Maximize2, Move, Trash2, Pencil
 } from "lucide-react";
 import { 
   doc, setDoc, updateDoc, onSnapshot, 
@@ -80,14 +80,16 @@ export function DashboardView({ user, profile, activeWorkspace, content, theme, 
   useEffect(() => {
     const fetchTrends = async () => {
       try {
-        const res = await fetch("https://api.allorigins.win/get?url=" + encodeURIComponent("https://trends.google.com/trends/trendingsearches/daily/rss?geo=ID"));
-        const data = await res.json();
+        const res = await fetch("https://corsproxy.io/?" + encodeURIComponent("https://trends.google.com/trends/trendingsearches/daily/rss?geo=ID"));
+        if (!res.ok) throw new Error("Failed to fetch RSS");
+        const text = await res.text();
         const parser = new DOMParser();
-        const xml = parser.parseFromString(data.contents, "text/xml");
+        const xml = parser.parseFromString(text, "text/xml");
         const items = Array.from(xml.querySelectorAll("item title")).slice(0, 5).map(node => node.textContent || "");
         if (items.length > 0) setTrends(items);
       } catch (e) {
-        console.error("Trends fetch error", e);
+        // Fallback to initial dummy data on error, ignoring silently to prevent console spam 
+        // as public CORS proxies are frequently unreliable.
       }
     };
     fetchTrends();
@@ -138,6 +140,9 @@ export function DashboardView({ user, profile, activeWorkspace, content, theme, 
         setConfig((prev: any) => ({ ...prev, ...d, goals: d.goals || prev.goals })); 
       }
       setLoading(false);
+    }, (error) => {
+      console.warn("Config snapshot error:", error);
+      setLoading(false);
     });
     return unsub;
   }, [activeWorkspace?.id]);
@@ -151,6 +156,8 @@ export function DashboardView({ user, profile, activeWorkspace, content, theme, 
     );
     const unsub = onSnapshot(q, (snap) => {
       setTodos(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    }, (error) => {
+      console.warn("Todos snapshot error:", error);
     });
     return unsub;
   }, [activeWorkspace?.id]);
@@ -312,14 +319,42 @@ export function DashboardView({ user, profile, activeWorkspace, content, theme, 
             }
           `}
         </style>
-        <div style={{ 
-          display: "grid", 
-          gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", 
-          gridAutoRows: 160,
-          gridAutoFlow: "dense",
-          gap: 24,
-          flex: 1
-        }}>
+        <style>
+          {`
+            .dashboard-grid {
+              display: grid;
+              grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+              grid-auto-rows: 160px;
+              grid-auto-flow: dense;
+              gap: 24px;
+              flex: 1;
+            }
+            .w-widget {
+              /* Add container queries for widget contents */
+              container-type: size;
+              container-name: widget;
+            }
+            /* Make sure columns don't overflow */
+            @media (max-width: 1200px) {
+              .dashboard-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+              }
+              .w-widget-span-3, .w-widget-span-4 { grid-column: span 2 !important; }
+            }
+            @media (max-width: 768px) {
+              .dashboard-grid {
+                grid-template-columns: repeat(1, minmax(0, 1fr));
+              }
+              .w-widget { grid-column: span 1 !important; }
+            }
+            @media (min-width: 1201px) {
+               .dashboard-grid {
+                 grid-template-columns: repeat(3, minmax(0, 1fr));
+               }
+            }
+          `}
+        </style>
+        <div className="dashboard-grid">
           <SortableContext items={layout.map(w => w.id)} strategy={rectSortingStrategy}>
             {layout.map((w) => (
               <DashboardWidget 
@@ -582,7 +617,7 @@ function DashboardWidget({ item, isEditing, onResize, ...props }: any) {
   if (!content) return null;
 
   return (
-    <motion.div layout transition={{ type: "spring", stiffness: 300, damping: 30 }} ref={setNodeRef} style={style} className={`w-widget group ${isEditing ? 'active:cursor-grabbing' : ''}`}>
+    <motion.div layout transition={{ type: "spring", stiffness: 300, damping: 30 }} ref={setNodeRef} style={style} className={`w-widget w-widget-span-${item.w} group ${isEditing ? 'active:cursor-grabbing' : ''}`}>
       <style>
         {`
           .widget-content-container {
@@ -658,6 +693,10 @@ function TodoWidget({ todos, activeWorkspace, user, content, theme }: any) {
     .filter(t => !t.completed && t.dueDate === tomorrowStr)
     .sort((a,b) => (a.type === "KONTEN" ? -1 : 1));
 
+  const activeLate = allTodos
+    .filter(t => !t.completed && t.dueDate < todayStr && t.dueDate)
+    .sort((a,b) => (a.dueDate > b.dueDate ? 1 : -1));
+
   const completedTodos = allTodos
     .filter(t => t.completed && (!tab || tab === "history"))
     .filter(t => {
@@ -686,10 +725,34 @@ function TodoWidget({ todos, activeWorkspace, user, content, theme }: any) {
   };
 
   const toggleTodo = async (todo: any) => {
-    if (todo.isAutomated) return;
+    if (todo.isAutomated) {
+      if (!activeWorkspace?.id) return;
+      const contentId = todo.id.replace("content-", "");
+      const newStatus = todo.completed ? "In Review" : "Published";
+      
+      const { doc: fDoc, updateDoc } = await import("./firebase");
+      const { db } = await import("./firebase");
+      
+      await updateDoc(fDoc(db, "workspaces", activeWorkspace.id, "content", contentId), {
+        status: newStatus
+      });
+      return;
+    }
     await updateDoc(doc(db, "workspaces", activeWorkspace.id, "todos", todo.id), {
       completed: !todo.completed,
       completedAt: !todo.completed ? serverTimestamp() : null
+    });
+  };
+
+  const deleteTodo = async (todo: any) => {
+    if (todo.isAutomated) return;
+    await deleteDoc(doc(db, "workspaces", activeWorkspace.id, "todos", todo.id));
+  };
+
+  const renameTodo = async (todo: any, newText: string) => {
+    if (todo.isAutomated) return;
+    await updateDoc(doc(db, "workspaces", activeWorkspace.id, "todos", todo.id), {
+      text: newText
     });
   };
 
@@ -736,6 +799,22 @@ function TodoWidget({ todos, activeWorkspace, user, content, theme }: any) {
 
         {tab === "active" && (
           <>
+            {/* LEWAT TENGGAT */}
+            {activeLate.length > 0 && (
+              <div style={{ marginBottom: "clamp(12px, 5cqh, 24px)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: "clamp(8px, 4cqh, 16px)" }}>
+                  <div style={{ flex: 1, height: 1, background: "rgba(0,0,0,0.05)" }} />
+                  <div style={{ fontSize: "clamp(10px, 3.5cqw, 12px)", fontWeight: 800, color: "#9C2B4E", textTransform: "uppercase" }}>Lewat TenggatWaktu</div>
+                  <div style={{ flex: 1, height: 1, background: "rgba(0,0,0,0.05)" }} />
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
+                  <AnimatePresence>
+                    {activeLate.map(t => <TodoItem key={t.id} todo={t} onToggle={toggleTodo} onDelete={deleteTodo} onRename={renameTodo} theme={theme} />)}
+                  </AnimatePresence>
+                </div>
+              </div>
+            )}
+
             {/* HARI INI */}
             <div style={{ marginBottom: "clamp(12px, 5cqh, 24px)" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: "clamp(8px, 4cqh, 16px)" }}>
@@ -746,14 +825,14 @@ function TodoWidget({ todos, activeWorkspace, user, content, theme }: any) {
               <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
                 <AnimatePresence>
                   {activeToday.length === 0 && completedToday.length === 0 && <div style={{ fontSize: "clamp(11px, 4cqw, 14px)", color: "rgba(0,0,0,0.3)", textAlign: "center", padding: 12 }}>Kosong</div>}
-                  {activeToday.map(t => <TodoItem key={t.id} todo={t} onToggle={toggleTodo} theme={theme} />)}
-                  {completedToday.map(t => <TodoItem key={t.id} todo={t} onToggle={toggleTodo} theme={theme} />)}
+                  {activeToday.map(t => <TodoItem key={t.id} todo={t} onToggle={toggleTodo} onDelete={deleteTodo} onRename={renameTodo} theme={theme} />)}
+                  {completedToday.map(t => <TodoItem key={t.id} todo={t} onToggle={toggleTodo} onDelete={deleteTodo} onRename={renameTodo} theme={theme} />)}
                 </AnimatePresence>
               </div>
             </div>
 
             {/* BESOK */}
-            <div>
+            <div style={{ marginBottom: "clamp(12px, 5cqh, 24px)" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: "clamp(8px, 4cqh, 16px)" }}>
                 <div style={{ flex: 1, height: 1, background: "rgba(0,0,0,0.05)" }} />
                 <div style={{ fontSize: "clamp(10px, 3.5cqw, 12px)", fontWeight: 800, color: "rgba(0,0,0,0.4)", textTransform: "uppercase" }}>Besok</div>
@@ -762,11 +841,13 @@ function TodoWidget({ todos, activeWorkspace, user, content, theme }: any) {
               <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
                 <AnimatePresence>
                   {activeTomorrow.length === 0 && completedTomorrow.length === 0 && <div style={{ fontSize: "clamp(11px, 4cqw, 14px)", color: "rgba(0,0,0,0.3)", textAlign: "center", padding: 12 }}>Kosong</div>}
-                  {activeTomorrow.map(t => <TodoItem key={t.id} todo={t} onToggle={toggleTodo} theme={theme} />)}
-                  {completedTomorrow.map(t => <TodoItem key={t.id} todo={t} onToggle={toggleTodo} theme={theme} />)}
+                  {activeTomorrow.map(t => <TodoItem key={t.id} todo={t} onToggle={toggleTodo} onDelete={deleteTodo} onRename={renameTodo} theme={theme} />)}
+                  {completedTomorrow.map(t => <TodoItem key={t.id} todo={t} onToggle={toggleTodo} onDelete={deleteTodo} onRename={renameTodo} theme={theme} />)}
                 </AnimatePresence>
               </div>
             </div>
+
+
           </>
         )}
 
@@ -782,7 +863,7 @@ function TodoWidget({ todos, activeWorkspace, user, content, theme }: any) {
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                <AnimatePresence>
                  {completedTodos.map(t => (
-                   <TodoItem key={t.id} todo={t} onToggle={toggleTodo} theme={theme} disableAnimation />
+                   <TodoItem key={t.id} todo={t} onToggle={toggleTodo} onDelete={deleteTodo} onRename={renameTodo} theme={theme} disableAnimation />
                  ))}
                </AnimatePresence>
             </div>
@@ -793,7 +874,19 @@ function TodoWidget({ todos, activeWorkspace, user, content, theme }: any) {
   );
 }
 
-function TodoItem({ todo, onToggle, theme, disableAnimation }: any) {
+function TodoItem({ todo, onToggle, onRename, onDelete, theme, disableAnimation }: any) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState(todo.text);
+
+  const handleRename = () => {
+    if (editValue.trim() && editValue.trim() !== todo.text) {
+      if (onRename) onRename(todo, editValue.trim());
+    } else {
+      setEditValue(todo.text);
+    }
+    setIsEditing(false);
+  };
+
   return (
     <motion.div 
       layout={!disableAnimation}
@@ -801,23 +894,46 @@ function TodoItem({ todo, onToggle, theme, disableAnimation }: any) {
       animate={{ opacity: todo.completed ? 0.6 : 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.9 }}
       transition={{ duration: 0.2 }}
+      className="group"
       style={{ 
         display: "flex", alignItems: "center", gap: "clamp(8px, 3cqw, 16px)", padding: "clamp(8px, 3cqw, 16px) clamp(12px, 4cqw, 20px)", background: todo.completed ? "transparent" : "#FAFAF8", 
         border: todo.completed ? "1px dashed rgba(0,0,0,0.1)" : "1px solid transparent",
-        borderRadius: 16 
+        borderRadius: 16,
+        position: "relative"
       }}
     >
       <button 
         onClick={() => onToggle(todo)} 
-        disabled={todo.isAutomated}
-        style={{ border: "none", background: "none", cursor: todo.isAutomated ? "default" : "pointer", padding: 0 }}
+        disabled={isEditing}
+        style={{ border: "none", background: "none", cursor: isEditing ? "default" : "pointer", padding: 0 }}
       >
         {todo.completed ? <CheckCircle2 size={20} color={theme.primary} style={{ width: "clamp(16px, 5cqw, 24px)", height: "clamp(16px, 5cqw, 24px)" }} /> : <Circle size={20} color="rgba(0,0,0,0.15)" style={{ width: "clamp(16px, 5cqw, 24px)", height: "clamp(16px, 5cqw, 24px)" }} />}
       </button>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: "clamp(11px, 4.5cqw, 14px)", fontWeight: 600, color: "#2C2016", textDecoration: todo.completed ? "line-through" : "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {todo.text}
-        </div>
+        {isEditing ? (
+           <input
+             autoFocus
+             value={editValue}
+             onChange={e => setEditValue(e.target.value)}
+             onBlur={handleRename}
+             onKeyDown={e => {
+               if (e.key === 'Enter') {
+                 handleRename();
+               } else if (e.key === 'Escape') {
+                 setEditValue(todo.text);
+                 setIsEditing(false);
+               }
+             }}
+             style={{ width: "100%", fontSize: "clamp(11px, 4.5cqw, 14px)", fontWeight: 600, color: "#2C2016", border: `1px solid ${theme.primary}`, borderRadius: 8, padding: "2px 8px", outline: "none", background: "white" }}
+           />
+        ) : (
+          <div 
+            onClick={() => { if(!todo.isAutomated) setIsEditing(true); }}
+            style={{ fontSize: "clamp(11px, 4.5cqw, 14px)", fontWeight: 600, color: "#2C2016", textDecoration: todo.completed ? "line-through" : "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", cursor: todo.isAutomated ? "default" : "text" }}
+          >
+            {todo.text}
+          </div>
+        )}
         <div style={{ display: "flex", gap: "clamp(4px, 2cqw, 8px)", marginTop: "clamp(2px, 1cqw, 6px)" }}>
           <span style={{ fontSize: "clamp(8px, 3cqw, 10px)", fontWeight: 800, color: todo.type === "KONTEN" ? "#9C2B4E" : "#C4622D", background: todo.type === "KONTEN" ? "#9C2B4E15" : "#C4622D15", padding: "2px 6px", borderRadius: 4 }}>
             {todo.type}
@@ -827,6 +943,13 @@ function TodoItem({ todo, onToggle, theme, disableAnimation }: any) {
           </span>
         </div>
       </div>
+      {!todo.isAutomated && !isEditing && (
+        <div className="opacity-0 group-hover:opacity-100 transition-opacity" style={{ display: "flex", gap: 8 }}>
+          <button onClick={() => { if(onDelete) onDelete(todo); }} style={{ border: "none", background: "#fef2f2", borderRadius: 8, padding: 6, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#ef4444" }}>
+            <Trash2 size={14} />
+          </button>
+        </div>
+      )}
     </motion.div>
   );
 }
@@ -914,7 +1037,7 @@ function StickyNoteWidget({ config, updateConfig, theme }: any) {
       </div>
       
       {/* Preview max 4 */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gridAutoRows: "1fr", gap: "clamp(8px, 3cqw, 16px)", flex: 1 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 100px), 1fr))", gridAutoRows: "1fr", gap: "clamp(8px, 3cqw, 16px)", flex: 1 }}>
          {displayNotes.slice(0, 4).map((n: any) => (
            <div key={n.id} style={{ background: n.color || "#FFF59D", padding: "clamp(12px, 5cqw, 20px)", borderRadius: 16, fontSize: "clamp(11px, 4cqw, 14px)", color: "#2C2016", overflow: "hidden", position: "relative", boxShadow: "inset 0 0 20px rgba(0,0,0,0.02)" }}>
               <textarea 

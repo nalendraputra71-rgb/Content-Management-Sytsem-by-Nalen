@@ -663,6 +663,10 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
             await updateDoc(doc(db, "workspaces", wsId), { name: newName });
           } catch(e: any) { handleFirestoreError(e, 'update'); }
         }}
+        onTitleChange={async (newTitle: string) => {
+          setTitle(newTitle);
+          await updateWsSettings({ title: newTitle });
+        }}
       />
       <div style={{flex:1, minWidth:0, display:"flex", flexDirection:"column", height:"100vh", overflow:"auto", position:"relative"}}>
         {(!["dashboard", "settings", "admin"].includes(tab) && !tab.startsWith("social")) && (

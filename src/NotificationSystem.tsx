@@ -86,6 +86,8 @@ export function useNotifications(userProfile: any) {
            // Add "global_" prefix to differentiate
            return [...applicableGlobal.map(ag => ({...ag, id: `global_${ag.id}`})), ...others];
         });
+      }, (err) => {
+        console.warn("Global_notifications onSnapshot error:", err);
       });
 
       // Listen to user tickets too
@@ -121,6 +123,8 @@ export function useNotifications(userProfile: any) {
                 const others = prev.filter(p => !p.id.startsWith("ticket_"));
                 return [...ticketNotifs, ...others];
             });
+         }, (err) => {
+           console.warn("Tickets onSnapshot error:", err);
          });
       }
     });
