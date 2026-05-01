@@ -13,37 +13,19 @@ export function Header({
   profile
 }: any) {
   const [time, setTime] = useState(new Date());
-  const [weather, setWeather] = useState<any>({ temp: "--", desc: "Memuat info...", city: "Mencari lokasi..." });
+  const [clockMenu, setClockMenu] = useState(false);
+  const [clockSettings, setClockSettings] = useState(() => {
+    const saved = localStorage.getItem("workspace_clock");
+    return saved ? JSON.parse(saved) : { type: "analog", format: 24 };
+  });
+
+  useEffect(() => {
+    localStorage.setItem("workspace_clock", JSON.stringify(clockSettings));
+  }, [clockSettings]);
 
   useEffect(() => {
     const t = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(t);
-  }, []);
-
-  useEffect(() => {
-    const fetchWeather = async (lat: number, lon: number) => {
-      try {
-        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
-        const data = await res.json();
-        
-        let city = "Lokasi Tidak Diketahui";
-        try {
-          const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`);
-          const geoData = await geoRes.json();
-          city = geoData.address?.city || geoData.address?.town || geoData.address?.village || geoData.address?.county || "Lokasi Anda";
-        } catch(e) {}
-
-        setWeather({ temp: data.current_weather.temperature, desc: "Cerah & Berawan", city });
-      } catch (e) {
-        console.error("Weather fetch error:", e);
-      }
-    };
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => fetchWeather(pos.coords.latitude, pos.coords.longitude),
-        () => fetchWeather(-6.2088, 106.8456)
-      );
-    } else fetchWeather(-6.2088, 106.8456);
   }, []);
 
   const hour = time.getHours();
@@ -62,22 +44,49 @@ export function Header({
       </motion.div>
 
       <div style={{display:"flex", flexDirection:"column", alignItems:"flex-end", gap: 16}}>
-        <div style={{display:"flex", alignItems:"center", gap: 24}}>
-             <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", textAlign: "right" }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(0,0,0,0.5)", textTransform: "uppercase" }}>{weather.city}</div>
-                <div style={{ display: "flex", alignItems: "center", gap: 6, color: "#2C2016", fontSize: 20, fontWeight: 800 }}>
-                   {weather?.temp > 30 ? <Sun size={20} color="#FF6B00" /> : <Cloud size={20} color="#3F51B5" />}
-                   <span>{weather?.temp}°C</span>
+        <div style={{display:"flex", alignItems:"center", gap: 24, position: "relative"}}>
+              {clockSettings.type === "analog" ? (
+                <div 
+                  onClick={() => setClockMenu(!clockMenu)}
+                  style={{ width: 64, height: 64, borderRadius: "50%", background: "white", border: "4px solid #2C2016", position: "relative", cursor: "pointer", boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}
+                >
+                  <div style={{ position: "absolute", top: "50%", left: "50%", width: 5, height: 5, background: "#FF6B00", borderRadius: "50%", transform: "translate(-50%, -50%)", zIndex: 10 }} />
+                  {/* Hour Hand */}
+                  <div style={{ position: "absolute", top: "25%", left: "calc(50% - 2px)", width: 4, height: "25%", background: "#2C2016", borderRadius: 4, transformOrigin: "bottom center", transform: `rotate(${(time.getHours() % 12) * 30 + time.getMinutes() * 0.5}deg)` }} />
+                  {/* Minute Hand */}
+                  <div style={{ position: "absolute", top: "15%", left: "calc(50% - 1.5px)", width: 3, height: "35%", background: "#666", borderRadius: 3, transformOrigin: "bottom center", transform: `rotate(${time.getMinutes() * 6}deg)` }} />
+                  {/* Second Hand */}
+                  <div style={{ position: "absolute", top: "10%", left: "calc(50% - 1px)", width: 2, height: "40%", background: "#FF6B00", borderRadius: 2, transformOrigin: "bottom center", transform: `rotate(${time.getSeconds() * 6}deg)` }} />
                 </div>
-                <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(0,0,0,0.5)" }}>{weather.desc}</div>
-             </div>
-             <div style={{ width: 1, height: 40, background: "rgba(0,0,0,0.1)", display: "none", "@media (min-width: 600px)": { display: "block" } }} />
-             <div style={{ fontSize: 32, fontWeight: 900, color: "#2C2016", letterSpacing: "-1px", fontVariantNumeric: "tabular-nums", display: "flex", alignItems: "baseline", gap: 4 }}>
-               {time.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", hour12: false }).replace(".",":")}
-               <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(0,0,0,0.4)" }}>
-                 {time.getSeconds().toString().padStart(2, "0")}
-               </span>
-             </div>
+              ) : (
+                <div onClick={() => setClockMenu(!clockMenu)} style={{ fontSize: 32, fontWeight: 900, color: "#2C2016", letterSpacing: "-1px", fontVariantNumeric: "tabular-nums", display: "flex", alignItems: "baseline", gap: 4, cursor: "pointer" }}>
+                  {time.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: clockSettings.format === 12 }).replace(/\s?[APap][mM]/, "").replace("::", ":")}
+                  <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(0,0,0,0.4)" }}>
+                    {clockSettings.format === 12 ? (time.getHours() >= 12 ? ' PM' : ' AM') : time.getSeconds().toString().padStart(2, "0")}
+                  </span>
+                </div>
+              )}
+
+              <AnimatePresence>
+                {clockMenu && (
+                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} style={{ position: "absolute", top: "100%", right: 0, marginTop: 12, background: "white", padding: 16, borderRadius: 16, boxShadow: "0 10px 40px rgba(0,0,0,0.15)", minWidth: 200, zIndex: 100, textAlign: "left" }}>
+                    <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(0,0,0,0.4)", textTransform: "uppercase", marginBottom: 12 }}>Tampilan Jam</div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      <button onClick={() => { setClockSettings({ ...clockSettings, type: "digital" }); setClockMenu(false); }} style={{ ...B(clockSettings.type === "digital", "var(--theme-primary)"), padding: "8px 12px", fontSize: 13, borderRadius: 8 }}>Jam Digital</button>
+                      <button onClick={() => { setClockSettings({ ...clockSettings, type: "analog" }); setClockMenu(false); }} style={{ ...B(clockSettings.type === "analog", "var(--theme-primary)"), padding: "8px 12px", fontSize: 13, borderRadius: 8 }}>Jam Analog</button>
+                    </div>
+                    {clockSettings.type === "digital" && (
+                      <>
+                        <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(0,0,0,0.4)", textTransform: "uppercase", margin: "16px 0 12px 0" }}>Format Waktu</div>
+                        <div style={{ display: "flex", gap: 8 }}>
+                          <button onClick={() => { setClockSettings({ ...clockSettings, format: 24 }); setClockMenu(false); }} style={{ ...B(clockSettings.format === 24, "var(--theme-primary)"), flex: 1, padding: "8px 0", fontSize: 13, borderRadius: 8 }}>24 Jam</button>
+                          <button onClick={() => { setClockSettings({ ...clockSettings, format: 12 }); setClockMenu(false); }} style={{ ...B(clockSettings.format === 12, "var(--theme-primary)"), flex: 1, padding: "8px 0", fontSize: 13, borderRadius: 8 }}>AM/PM</button>
+                        </div>
+                      </>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
         </div>
       </div>
     </div>
@@ -348,7 +357,7 @@ export function Sidebar({
               <AnimatePresence>
                 {open && (
                   <motion.div initial={{ opacity: 0, width: 0 }} animate={{ opacity: 1, width: "auto" }} exit={{ opacity: 0, width: 0 }} style={{overflow: "hidden", whiteSpace: "nowrap"}}>
-                    <span style={{fontSize:20, fontWeight:800, letterSpacing:"-1px", color:"var(--theme-primary)"}}>{title || "CMS Console"}</span>
+                    <span style={{fontSize:20, fontWeight:800, letterSpacing:"-1px", color:"#ffffff"}}>{title || "CMS Console"}</span>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -673,14 +682,14 @@ export function NavBar({tab,setTab,year,setYear,month,setMonth,onOpenAdd, search
   }, [sidebarOpen]);
 
   return (
-    <div style={{background:"white",borderBottom:"1px solid rgba(44,32,22,0.06)",display:"flex",alignItems:"flex-end",justifyContent:"space-between",padding:"24px 24px 16px 24px", minHeight: 88, position:"sticky",top:0,zIndex:50, overflowX:"auto"}}>
+    <div style={{background:"white",borderBottom:"1px solid rgba(44,32,22,0.06)",display:"flex",alignItems:"flex-end",justifyContent:"space-between",padding:"24px 24px 16px 24px", position:"sticky",top:0,zIndex:50}}>
       <div style={{display:"flex",gap:16,alignItems:"flex-end", flexWrap: "wrap"}}>
         <div style={{display:"flex", flexDirection:"column", gap: 6}}>
-           <label style={{fontSize: 10, fontWeight: 700, color: "rgba(0,0,0,0.4)", textTransform: "uppercase", paddingLeft: 4}}>Tahun</label>
+           <label style={{fontSize: 10, fontWeight: 700, color: "rgba(0,0,0,0.4)", textTransform: "uppercase", paddingLeft: 4, marginTop: 4}}>Tahun</label>
            <div style={{width: 120}}><CustomDropdown value={String(year)} options={YEARS.map(y=>String(y))} onChange={(v:any)=>setYear(+v)} style={{padding:"10px 14px",borderRadius:12}} /></div>
         </div>
         <div style={{display:"flex", flexDirection:"column", gap: 6}}>
-           <label style={{fontSize: 10, fontWeight: 700, color: "rgba(0,0,0,0.4)", textTransform: "uppercase", paddingLeft: 4}}>Bulan</label>
+           <label style={{fontSize: 10, fontWeight: 700, color: "rgba(0,0,0,0.4)", textTransform: "uppercase", paddingLeft: 4, marginTop: 4}}>Bulan</label>
            <div style={{width: 140}}><CustomDropdown value={String(month)} options={MONTHS.map((m,i)=>({id:String(i+1), name:m}))} onChange={(v:any)=>setMonth(+v)} style={{padding:"10px 14px",borderRadius:12}} /></div>
         </div>
         <button className="hover-scale btn-hover shadow-lg" onClick={onOpenAdd} style={{...B(true,"var(--theme-primary)"), height:44, padding:"0 24px", borderRadius:22, fontSize:13, display:"flex", alignItems:"center", gap:10, border:"none", color:"white", fontWeight:700, marginLeft: 8, boxShadow:"0 6px 16px rgba(156,43,78,0.2)", flexShrink: 0, marginBottom: 2}}><Plus size={20}/> Konten Baru</button>

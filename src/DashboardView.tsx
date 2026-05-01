@@ -50,10 +50,10 @@ interface LayoutItem {
 }
 
 const DEFAULT_LAYOUT: LayoutItem[] = [
-  { id: "w-goal", type: "goal", w: 1, h: 2 },
+  { id: "w-goal", type: "goal", w: 2, h: 2 },
   { id: "w-todos", type: "todos", w: 2, h: 2 },
-  { id: "w-sticky", type: "sticky", w: 1, h: 2 },
-  { id: "w-shortcut", type: "shortcut", w: 4, h: 1 },
+  { id: "w-sticky", type: "sticky", w: 2, h: 2 },
+  { id: "w-shortcut", type: "shortcut", w: 2, h: 2 },
 ];
 
 export function DashboardView({ user, profile, activeWorkspace, content, theme, setTab, sidebarOpen, setSidebarOpen }: any) {
@@ -204,7 +204,7 @@ export function DashboardView({ user, profile, activeWorkspace, content, theme, 
 
   const [clockMenu, setClockMenu] = useState(false);
   
-  const clockSettings = config.clock || { type: "digital", format: 24 };
+  const clockSettings = config.clock || { type: "analog", format: 24 };
 
   if (loading) return <div style={{padding:40, textAlign:"center", color:"rgba(0,0,0,0.3)"}}>Loading Dashboard...</div>;
 
@@ -225,7 +225,7 @@ export function DashboardView({ user, profile, activeWorkspace, content, theme, 
                 </div>
                 <div style={{ fontSize: 16, fontWeight: 600, color: "rgba(0,0,0,0.5)" }}>{weather.desc}</div>
              </div>
-             <div style={{ width: 1, height: 64, background: "rgba(0,0,0,0.1)", display: "none", "@media (min-width: 600px)": { display: "block" } }} />
+             <div style={{ width: 1, height: 64, background: "rgba(0,0,0,0.1)", display: "block" }} />
              
              <div style={{ position: "relative" }}>
                {clockSettings.type === "analog" ? (
@@ -246,11 +246,11 @@ export function DashboardView({ user, profile, activeWorkspace, content, theme, 
                    onClick={() => setClockMenu(!clockMenu)}
                    style={{ fontSize: 56, fontWeight: 900, color: "#2C2016", letterSpacing: "-2px", fontVariantNumeric: "tabular-nums", cursor: "pointer", display: "flex", alignItems: "baseline", gap: 8 }}
                  >
-                   {time.toLocaleTimeString("id-ID", { 
+                   {time.toLocaleTimeString("en-US", { 
                      hour: "2-digit", 
                      minute: "2-digit", 
                      hour12: clockSettings.format === 12 
-                   })}
+                   }).replace(/\s?[APap][mM]/, "").replace("::", ":")}
                    {clockSettings.format === 12 && (
                      <span style={{ fontSize: 20, fontWeight: 700, color: "rgba(0,0,0,0.4)", letterSpacing: 0 }}>
                        {time.getHours() >= 12 ? 'PM' : 'AM'}
@@ -994,12 +994,12 @@ function StickyNotesModal({ notes, updateConfig, onClose, theme }: any) {
 
 function ShortcutWidget({ theme, setTab, navigate }: any) {
   return (
-    <div style={{ padding: "16px 20px", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between", gap: 12 }}>
-      <div style={{ fontSize: 13, fontWeight: 800, color: "rgba(0,0,0,0.3)", textTransform: "uppercase" }}>QUICK ACTION</div>
+    <div style={{ padding: "0 12px", height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", gap: 16 }}>
+      <div style={{ fontSize: 13, fontWeight: 800, color: "rgba(0,0,0,0.3)", textTransform: "uppercase", textAlign: "center" }}>QUICK ACTION</div>
       
       <button 
         className="hover-scale"
-        style={{ ...B(true, theme.primary), width: "100%", flex: 1, borderRadius: 16, fontSize: 14, fontWeight: 800, gap: 10, boxShadow: `0 10px 30px ${theme.primary}25`, paddingTop: 0, paddingBottom: 0 }}
+        style={{ ...B(true, theme.primary), width: "100%", flex: 1, borderRadius: 16, fontSize: 14, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", gap: 10, border: "none", color: "white", cursor: "pointer", minHeight: 64, boxShadow: `0 10px 30px ${theme.primary}25` }}
         onClick={() => window.dispatchEvent(new CustomEvent("openContentModal"))}
       >
         <Sparkles size={18} /> Buat Konten Baru
@@ -1009,19 +1009,18 @@ function ShortcutWidget({ theme, setTab, navigate }: any) {
          <button 
            className="hover-scale"
            onClick={() => setTab("settings")}
-           style={{ flex: 1, background: "#FAFAF8", border: "1px solid rgba(0,0,0,0.05)", padding: "12px 12px", borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontSize: 12, fontWeight: 800, color: "#2C2016", cursor: "pointer", paddingTop: 8, paddingBottom: 8 }}
+           style={{ flex: 1, background: "#FAFAF8", border: "1px solid rgba(0,0,0,0.05)", padding: "16px 12px", borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontSize: 12, fontWeight: 800, color: "#2C2016", cursor: "pointer" }}
          >
            <Settings size={16} /> Pengaturan
          </button>
          <button 
            className="hover-scale"
            onClick={() => navigate("/profile")}
-           style={{ flex: 1, background: "#FAFAF8", border: "1px solid rgba(0,0,0,0.05)", padding: "12px 16px", borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontSize: 12, fontWeight: 800, color: "#2C2016", cursor: "pointer", paddingTop: 8, paddingBottom: 8 }}
+           style={{ flex: 1, background: "#FAFAF8", border: "1px solid rgba(0,0,0,0.05)", padding: "16px 12px", borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontSize: 12, fontWeight: 800, color: "#2C2016", cursor: "pointer" }}
          >
            <UserIcon size={16} /> Profil
          </button>
       </div>
-
     </div>
   );
 }
