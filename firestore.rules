@@ -45,9 +45,12 @@ service cloud.firestore {
         isAdmin() ||
         (request.query.limit <= 5)
       );
-      allow create: if isSignedIn() && request.auth.uid == userId && incoming().uid == userId;
+      allow create: if isSignedIn() && request.auth.uid == userId && incoming().uid == userId && incoming().keys().hasAll(['email', 'fullName', 'username', 'plan', 'activeUntil', 'role']) && (
+        (incoming().role == 'user' && incoming().plan == 'trial') ||
+        ((request.auth.token.email == 'nalendraputra71@gmail.com' || request.auth.token.email == 'NalendraPutra71@gmail.com') && incoming().role == 'admin')
+      );
       allow update: if isSignedIn() && (
-        (request.auth.uid == userId && incoming().diff(existing()).affectedKeys().hasOnly(['fullName', 'nickname', 'avatar', 'username', 'activeUntil', 'plan', 'hasUsedPromo', 'emailVerified', 'createdAt', 'themeId'])) ||
+        (request.auth.uid == userId && incoming().diff(existing()).affectedKeys().hasOnly(['fullName', 'nickname', 'avatar', 'username', 'themeId'])) ||
         isAdmin()
       );
       allow delete: if isAdmin();
@@ -84,6 +87,13 @@ service cloud.firestore {
     match /promos/{promoId} {
        allow read: if true;
        allow write: if isAdmin();
+    }
+
+    // ─── AUDIT LOGS ───────────────────────────────────────────────────────────
+    match /auditLogs/{logId} {
+       allow create: if isSignedIn();
+       allow read: if isAdmin();
+       allow update, delete: if false; // Immutable audit logs
     }
 
     // ─── TRANSACTIONS ───────────────────────────────────────────────────────────

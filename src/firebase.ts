@@ -105,6 +105,16 @@ export function handleFirestoreError(error: any, op: FirestoreErrorInfo['operati
       })) || []
     }
   };
+  
+  // Asynchronous Audit Logging of Security Events
+  if (user && errorInfo.error.includes("Missing or insufficient permissions")) {
+     addDoc(collection(db, "auditLogs"), {
+        event: "SECURITY_VIOLATION",
+        details: errorInfo,
+        timestamp: new Date().toISOString()
+     }).catch(e => console.error("Audit log failed to write:", e));
+  }
+  
   console.error("Firestore Error:", errorInfo);
   throw new Error(JSON.stringify(errorInfo));
 }

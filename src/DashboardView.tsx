@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
+import DOMPurify from "dompurify";
 import { 
   motion, 
   AnimatePresence, 
@@ -713,7 +714,7 @@ function TodoWidget({ todos, activeWorkspace, user, content, theme }: any) {
   const addTodo = async () => {
     if (!newTodo.trim() || !activeWorkspace?.id) return;
     await addDoc(collection(db, "workspaces", activeWorkspace.id, "todos"), {
-      text: newTodo,
+      text: DOMPurify.sanitize(newTodo.trim()),
       completed: false,
       userId: user.uid,
       dueDate: newTodoDate,
@@ -752,7 +753,7 @@ function TodoWidget({ todos, activeWorkspace, user, content, theme }: any) {
   const renameTodo = async (todo: any, newText: string) => {
     if (todo.isAutomated) return;
     await updateDoc(doc(db, "workspaces", activeWorkspace.id, "todos", todo.id), {
-      text: newText
+      text: DOMPurify.sanitize(newText)
     });
   };
 
@@ -1078,7 +1079,7 @@ function StickyNotesModal({ notes, updateConfig, onClose, theme }: any) {
   };
 
   const updateNote = (id: string, text: string) => {
-    const fresh = notes.map((n: any) => n.id === id ? { ...n, text } : n);
+    const fresh = notes.map((n: any) => n.id === id ? { ...n, text: DOMPurify.sanitize(text) } : n);
     updateConfig("stickyNotes", fresh);
   };
 
