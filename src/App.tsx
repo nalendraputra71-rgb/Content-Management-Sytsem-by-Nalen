@@ -234,8 +234,8 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
   const [showHolidays, setShowHolidays] = useState(true);
   const [showArchived, setShowArchived] = useState(false);
   const [filters, setFilters]   = useState({pillar:"All",platform:"All",pic:"All",status:"All"});
-  const [title, setTitle]       = useState("Content Management");
-  const [tagline, setTagline]   = useState("Content Management System");
+  const [title, setTitle]       = useState("Hubify");
+  const [tagline, setTagline]   = useState("Sistem Manajemen Konten untuk Kreator");
   const [headerImage, setHeaderImage] = useState<string|null>(null);
   const [headerStyle, setHeaderStyle] = useState({
     titleColor: "#C4622D", taglineColor: "#FAF7F2", subtitleColor: "rgba(250,247,242,0.8)",
@@ -415,8 +415,8 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
           });
           
           if (data.settings) {
-            setTitle(data.settings.title !== undefined ? data.settings.title : "Content Management");
-            setTagline(data.settings.tagline !== undefined ? data.settings.tagline : "Content Management System");
+            setTitle(data.settings.title !== undefined ? data.settings.title : "Hubify");
+            setTagline(data.settings.tagline !== undefined ? data.settings.tagline : "Sistem Manajemen Konten untuk Kreator");
             
             // Real-time synchronization for all settings categories
             if (data.settings.pillars) setPillars(data.settings.pillars);

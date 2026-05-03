@@ -40,11 +40,11 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
 
          const wsRef = doc(collection(db, "workspaces"));
          await setDoc(wsRef, {
-           name: "Content Management",
+           name: "Hubify Workspace",
            ownerId: user.uid,
            settings: {
-             title: "Content Management",
-             tagline: "Content Management System"
+             title: "Hubify",
+             tagline: "Sistem Manajemen Konten untuk Kreator"
            }
          });
          await setDoc(doc(db, "workspaces", wsRef.id, "members", user.uid), {
@@ -122,7 +122,7 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
 
         {/* Right: Form */}
         <div className="w-1/2 p-16 flex flex-col justify-center">
-            <h2 className="text-4xl font-extrabold text-gray-950 mb-2">Content Management</h2>
+            <h2 className="text-4xl font-extrabold text-gray-950 mb-2">Hubify</h2>
             <p className="text-sm font-normal text-gray-500 mb-8">By Nalendra Putra Firdaus</p>
 
             <AnimatePresence mode="wait">
