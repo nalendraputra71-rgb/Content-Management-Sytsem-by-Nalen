@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { 
   auth, db, googleProvider, signInWithPopup, signInWithRedirect, getRedirectResult,
   createUserWithEmailAndPassword, signInWithEmailAndPassword,
@@ -37,7 +37,11 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
     });
   }, [currentUser]);
 
+  const checkRef = useRef(false);
+
   const checkUserDocument = async (user: any) => {
+    if (checkRef.current) return;
+    checkRef.current = true;
     try {
       const userRef = doc(db, "users", user.uid);
       const snap = await getDoc(userRef);
@@ -80,15 +84,24 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
       onUserCreated(user);
     } catch (e: any) {
       setError("Error checkUser: " + e.message);
+    } finally {
+      checkRef.current = false;
     }
   };
 
   const handleGoogle = async () => {
     setLoading(true);
     try {
-      const res = await signInWithPopup(auth, googleProvider);
-      await checkUserDocument(res.user);
-      setLoading(false);
+      const isPreview = window.location.hostname === 'localhost' || window.location.hostname.includes('run.app');
+      
+      if (isPreview) {
+        const res = await signInWithPopup(auth, googleProvider);
+        await checkUserDocument(res.user);
+        setLoading(false);
+      } else {
+        // Fallback for custom domains and mobile browsers where popups get frozen or blocked
+        await signInWithRedirect(auth, googleProvider);
+      }
     } catch (e: any) { 
       if (e.code === 'auth/unauthorized-domain') {
         setError(`Domain ini (${window.location.hostname}) belum diizinkan untuk Google Sign-In. Silakan tambahkan domain ini di Firebase Console > Authentication > Settings > Authorized Domains.`);
@@ -106,9 +119,8 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
         e.code === 'auth/internal-error' ||
         e.message.includes("popup")
       ) {
-        // Fallback untuk mobile browser (seperti in-app browser Safari/Instagram yg memblokir popup)
         try {
-           setTimeout(() => { setLoading(false); }, 5000); // Reset loading jika redirect diblokir browser
+           setTimeout(() => { setLoading(false); }, 5000); 
            await signInWithRedirect(auth, googleProvider);
         } catch (redirectErr: any) {
            setError("Gagal mengalihkan ke Google Sign-In: " + redirectErr.message);
