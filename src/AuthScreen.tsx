@@ -7,7 +7,7 @@ import {
 } from "./firebase";
 import { motion, AnimatePresence } from "motion/react";
 
-export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: any) => void, currentUser?: any }) {
+export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: any, p?: any) => void, currentUser?: any }) {
   const [mode, setMode] = useState<"login" | "signup" | "forgot">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -61,7 +61,7 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
 
          const batch = writeBatch(db);
 
-         batch.set(userRef, {
+         const profileData = {
            uid: user.uid,
            email: safeEmail,
            fullName: safeName,
@@ -72,7 +72,8 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
            hasUsedPromo: false,
            role: cRole,
            createdAt: new Date().toISOString()
-         });
+         };
+         batch.set(userRef, profileData);
 
          const wsRef = doc(collection(db, "workspaces"));
          batch.set(wsRef, {
@@ -90,8 +91,10 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
          });
 
          await batch.commit();
+         onUserCreated(user, profileData);
+      } else {
+         onUserCreated(user, snap.data());
       }
-      onUserCreated(user);
     } catch (e: any) {
       console.error("Critical checkUserDocument Error:", e);
       setError("Gagal membuat data pengguna (Firestore): " + e.message);
