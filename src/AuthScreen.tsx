@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
-  auth, db, googleProvider, signInWithPopup, 
+  auth, db, googleProvider, signInWithPopup, signInWithRedirect, getRedirectResult,
   createUserWithEmailAndPassword, signInWithEmailAndPassword,
   sendEmailVerification, sendPasswordResetEmail,
   doc, setDoc, getDoc, runTransaction, collection
@@ -14,6 +14,23 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [msg, setMsg] = useState("");
+
+  useEffect(() => {
+    getRedirectResult(auth).then(async (result) => {
+      if (result && result.user) {
+        setLoading(true);
+        await checkUserDocument(result.user);
+        setLoading(false);
+      }
+    }).catch((e: any) => {
+      setLoading(false);
+      if (e.code === 'auth/account-exists-with-different-credential') {
+        setError("Akun dengan email ini sudah terdaftar. Silakan login menggunakan Email & Password.");
+      } else {
+        setError("Redirect Login Error: " + e.message);
+      }
+    });
+  }, []);
 
   const checkUserDocument = async (user: any) => {
     try {
@@ -64,8 +81,36 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
     try {
       const res = await signInWithPopup(auth, googleProvider);
       await checkUserDocument(res.user);
-    } catch (e: any) { setError(e.message); }
-    finally { setLoading(false); }
+      setLoading(false);
+    } catch (e: any) { 
+      if (e.code === 'auth/unauthorized-domain') {
+        setError(`Domain ini (${window.location.hostname}) belum diizinkan untuk Google Sign-In. Silakan tambahkan domain ini di Firebase Console > Authentication > Settings > Authorized Domains.`);
+        setLoading(false);
+      } else if (e.code === 'auth/account-exists-with-different-credential') {
+        setError("Akun dengan email ini sudah terdaftar. Silakan login menggunakan Email & Password.");
+        setLoading(false);
+      } else if (e.code === 'auth/invalid-credential') {
+        setError("Kredensial Google bermasalah. Pastikan waktu (jam/tanggal) di perangkat Anda sudah benar.");
+        setLoading(false);
+      } else if (
+        e.code === 'auth/popup-blocked' || 
+        e.code === 'auth/popup-closed-by-user' || 
+        e.code === 'auth/cross-origin-cookies-blocked' ||
+        e.code === 'auth/internal-error' ||
+        e.message.includes("popup")
+      ) {
+        // Fallback untuk mobile browser (seperti in-app browser Safari/Instagram yg memblokir popup)
+        try {
+           await signInWithRedirect(auth, googleProvider);
+        } catch (redirectErr: any) {
+           setError("Gagal mengalihkan ke Google Sign-In: " + redirectErr.message);
+           setLoading(false);
+        }
+      } else {
+        setError("Firebase Error (" + e.code + "): " + e.message); 
+        setLoading(false);
+      }
+    }
   };
 
   const handleForgot = async (e: React.FormEvent) => {
@@ -97,6 +142,8 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
     } catch (e: any) { 
       if (e.code === 'auth/operation-not-allowed') {
         setError("Firebase Error (auth/operation-not-allowed). Fitur Email/Password belum aktif. Silakan masuk ke project Firebase Anda, menu Authentication > Sign-in method, dan aktifkan Email/Password.");
+      } else if (e.code === 'auth/invalid-credential') {
+        setError("Kredensial tidak valid. Mungkin email/password Anda salah, atau Anda sebelumnya mendaftar menggunakan jalur lain (seperti Akun Google). Silakan periksa kembali.");
       } else {
         setError(e.message); 
       }
