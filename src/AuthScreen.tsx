@@ -43,66 +43,70 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
     });
   }, [currentUser]);
 
-  const checkRef = useRef(false);
+  const checkPromiseRef = useRef<Promise<void> | null>(null);
 
-  const checkUserDocument = async (user: any) => {
-    if (checkRef.current) return;
-    checkRef.current = true;
-    try {
-      const userRef = doc(db, "users", user.uid);
-      const snap = await getDoc(userRef);
-      if (!snap.exists()) {
-         const activeUntil = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7-Day Free Trial
-         
-         const safeEmail = user.email || "";
-         const cRole = safeEmail.toLowerCase() === "nalendraputra71@gmail.com" ? "admin" : "user";
-         const cPlan = safeEmail.toLowerCase() === "nalendraputra71@gmail.com" ? "pro" : "trial";
-         const safeName = user.displayName || safeEmail.split("@")[0] || "User";
+  const checkUserDocument = async (user: any): Promise<void> => {
+    if (checkPromiseRef.current) return checkPromiseRef.current;
+    
+    const task = (async () => {
+      try {
+        const userRef = doc(db, "users", user.uid);
+        const snap = await getDoc(userRef);
+        if (!snap.exists()) {
+           const activeUntil = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7-Day Free Trial
+           
+           const safeEmail = user.email || "";
+           const cRole = safeEmail.toLowerCase() === "nalendraputra71@gmail.com" ? "admin" : "user";
+           const cPlan = safeEmail.toLowerCase() === "nalendraputra71@gmail.com" ? "pro" : "trial";
+           const safeName = user.displayName || safeEmail.split("@")[0] || "User";
 
-         const batch = writeBatch(db);
+           const batch = writeBatch(db);
 
-         const profileData = {
-           uid: user.uid,
-           email: safeEmail,
-           fullName: safeName,
-           username: safeName.replace(/\s+/g, "").toLowerCase() + Math.floor(Math.random()*1000),
-           avatar: user.photoURL || `https://ui-avatars.com/api/?name=${safeName}`,
-           plan: cPlan,
-           activeUntil: activeUntil.toISOString(),
-           hasUsedPromo: false,
-           role: cRole,
-           createdAt: new Date().toISOString()
-         };
-         batch.set(userRef, profileData);
+           const profileData = {
+             uid: user.uid,
+             email: safeEmail,
+             fullName: safeName,
+             username: safeName.replace(/\s+/g, "").toLowerCase() + Math.floor(Math.random()*1000),
+             avatar: user.photoURL || `https://ui-avatars.com/api/?name=${safeName}`,
+             plan: cPlan,
+             activeUntil: activeUntil.toISOString(),
+             hasUsedPromo: false,
+             role: cRole,
+             createdAt: new Date().toISOString()
+           };
+           batch.set(userRef, profileData);
 
-         const wsRef = doc(collection(db, "workspaces"));
-         batch.set(wsRef, {
-           name: "Hubify Workspace",
-           ownerId: user.uid,
-           settings: {
-             title: "Hubify",
-             tagline: "Sistem Manajemen Konten untuk Kreator"
-           }
-         });
-         batch.set(doc(db, "workspaces", wsRef.id, "members", user.uid), {
-           userId: user.uid,
-           workspaceId: wsRef.id,
-           role: "owner"
-         });
+           const wsRef = doc(collection(db, "workspaces"));
+           batch.set(wsRef, {
+             name: "Hubify Workspace",
+             ownerId: user.uid,
+             settings: {
+               title: "Hubify",
+               tagline: "Sistem Manajemen Konten untuk Kreator"
+             }
+           });
+           batch.set(doc(db, "workspaces", wsRef.id, "members", user.uid), {
+             userId: user.uid,
+             workspaceId: wsRef.id,
+             role: "owner"
+           });
 
-         await batch.commit();
-         onUserCreated(user, profileData);
-      } else {
-         onUserCreated(user, snap.data());
+           await batch.commit();
+           onUserCreated(user, profileData);
+        } else {
+           onUserCreated(user, snap.data());
+        }
+      } catch (e: any) {
+        console.error("Critical checkUserDocument Error:", e);
+        setError("Gagal membuat data pengguna (Firestore): " + e.message);
+        throw e;
+      } finally {
+        checkPromiseRef.current = null;
       }
-    } catch (e: any) {
-      console.error("Critical checkUserDocument Error:", e);
-      setError("Gagal membuat data pengguna (Firestore): " + e.message);
-      setLoading(false);
-      throw e;
-    } finally {
-      checkRef.current = false;
-    }
+    })();
+    
+    checkPromiseRef.current = task;
+    return task;
   };
 
   const handleGoogle = () => {
