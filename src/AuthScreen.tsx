@@ -3,7 +3,7 @@ import {
   auth, db, googleProvider, signInWithPopup, signInWithRedirect, getRedirectResult,
   createUserWithEmailAndPassword, signInWithEmailAndPassword,
   sendEmailVerification, sendPasswordResetEmail,
-  doc, setDoc, getDoc, runTransaction, collection
+  doc, setDoc, getDoc, collection, writeBatch
 } from "./firebase";
 import { motion, AnimatePresence } from "motion/react";
 
@@ -53,7 +53,9 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
          const cPlan = safeEmail.toLowerCase() === "nalendraputra71@gmail.com" ? "pro" : "trial";
          const safeName = user.displayName || safeEmail.split("@")[0] || "User";
 
-         await setDoc(userRef, {
+         const batch = writeBatch(db);
+
+         batch.set(userRef, {
            uid: user.uid,
            email: safeEmail,
            fullName: safeName,
@@ -67,7 +69,7 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
          });
 
          const wsRef = doc(collection(db, "workspaces"));
-         await setDoc(wsRef, {
+         batch.set(wsRef, {
            name: "Hubify Workspace",
            ownerId: user.uid,
            settings: {
@@ -75,11 +77,13 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
              tagline: "Sistem Manajemen Konten untuk Kreator"
            }
          });
-         await setDoc(doc(db, "workspaces", wsRef.id, "members", user.uid), {
+         batch.set(doc(db, "workspaces", wsRef.id, "members", user.uid), {
            userId: user.uid,
            workspaceId: wsRef.id,
            role: "owner"
          });
+
+         await batch.commit();
       }
       onUserCreated(user);
     } catch (e: any) {
@@ -92,14 +96,21 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
   const handleGoogle = async () => {
     setLoading(true);
     try {
-      const isPreview = window.location.hostname === 'localhost' || window.location.hostname.includes('run.app');
-      
-      if (isPreview) {
+      const inIframe = window.self !== window.top;
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      const isLocal = window.location.hostname === 'localhost';
+
+      let usePopup = true;
+      if (!inIframe && isMobile && !isLocal) {
+        usePopup = false;
+      }
+
+      if (usePopup) {
         const res = await signInWithPopup(auth, googleProvider);
         await checkUserDocument(res.user);
         setLoading(false);
       } else {
-        // Fallback for custom domains and mobile browsers where popups get frozen or blocked
+        // Fallback for mobile browsers where popups get frozen or blocked
         await signInWithRedirect(auth, googleProvider);
       }
     } catch (e: any) { 

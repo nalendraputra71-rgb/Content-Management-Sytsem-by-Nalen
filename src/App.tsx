@@ -42,31 +42,23 @@ export default function App() {
     const unsubAuth = onAuthStateChanged(auth, async (u) => {
       try {
         if (u) {
-          // Check profile existence first to prevent flicker
-          const snap = await getDoc(doc(db, "users", u.uid));
-          if (snap.exists()) {
-             const data = snap.data();
-             setProfile(data);
-             if (data.emailVerified !== u.emailVerified) {
-               await setDoc(doc(db, "users", u.uid), { emailVerified: u.emailVerified }, { merge: true });
-             }
-             // Check onboarding
-             if (!data.nickname) {
-               setShowOnboarding(true);
-             }
-          }
+          setUser(u);
           
           // Listen to profile for real-time updates
           unsubProfile = onSnapshot(doc(db, "users", u.uid), (snap) => {
             if (snap.exists()) {
               const data = snap.data();
               setProfile(data);
-              if (data.nickname) setShowOnboarding(false);
+              
+              if (data.emailVerified !== u.emailVerified) {
+                setDoc(doc(db, "users", u.uid), { emailVerified: u.emailVerified }, { merge: true }).catch(console.error);
+              }
+              if (!data.nickname) setShowOnboarding(true);
+              else setShowOnboarding(false);
             }
           }, (error) => {
              console.error("Profile onSnapshot error:", error);
           });
-          setUser(u);
         } else {
           if (unsubProfile) unsubProfile();
           setUser(null);
