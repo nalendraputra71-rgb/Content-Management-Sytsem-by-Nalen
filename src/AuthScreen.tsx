@@ -16,6 +16,11 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
   const [msg, setMsg] = useState("");
 
   useEffect(() => {
+    if (currentUser) {
+      setLoading(true);
+      checkUserDocument(currentUser).finally(() => setLoading(false));
+      return; // If currentUser exists, we process that first
+    }
     getRedirectResult(auth).then(async (result) => {
       if (result && result.user) {
         setLoading(true);
@@ -30,7 +35,7 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
         setError("Redirect Login Error: " + e.message);
       }
     });
-  }, []);
+  }, [currentUser]);
 
   const checkUserDocument = async (user: any) => {
     try {
@@ -39,15 +44,17 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
       if (!snap.exists()) {
          const activeUntil = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7-Day Free Trial
          
-         const cRole = user.email?.toLowerCase() === "nalendraputra71@gmail.com" ? "admin" : "user";
-         const cPlan = user.email?.toLowerCase() === "nalendraputra71@gmail.com" ? "pro" : "trial";
+         const safeEmail = user.email || "";
+         const cRole = safeEmail.toLowerCase() === "nalendraputra71@gmail.com" ? "admin" : "user";
+         const cPlan = safeEmail.toLowerCase() === "nalendraputra71@gmail.com" ? "pro" : "trial";
+         const safeName = user.displayName || safeEmail.split("@")[0] || "User";
 
          await setDoc(userRef, {
            uid: user.uid,
-           email: user.email,
-           fullName: user.displayName || "Your Name",
-           username: (user.displayName || "user").replace(/\s+/g, "").toLowerCase() + Math.floor(Math.random()*1000),
-           avatar: user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || "Your Name"}`,
+           email: safeEmail,
+           fullName: safeName,
+           username: safeName.replace(/\s+/g, "").toLowerCase() + Math.floor(Math.random()*1000),
+           avatar: user.photoURL || `https://ui-avatars.com/api/?name=${safeName}`,
            plan: cPlan,
            activeUntil: activeUntil.toISOString(),
            hasUsedPromo: false,
@@ -101,6 +108,7 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
       ) {
         // Fallback untuk mobile browser (seperti in-app browser Safari/Instagram yg memblokir popup)
         try {
+           setTimeout(() => { setLoading(false); }, 5000); // Reset loading jika redirect diblokir browser
            await signInWithRedirect(auth, googleProvider);
         } catch (redirectErr: any) {
            setError("Gagal mengalihkan ke Google Sign-In: " + redirectErr.message);
