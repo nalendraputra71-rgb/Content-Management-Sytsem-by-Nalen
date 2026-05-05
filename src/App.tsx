@@ -177,6 +177,12 @@ function OnboardingOverlay({ user, profile, onUpdate }: any) {
 }
 
 function LoadingScreen({ title }: { title?: string }) {
+  const [showTimeout, setShowTimeout] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => setShowTimeout(true), 10000);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <div style={{height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#FAFAFA",flexDirection:"column",gap:24}}>
       <motion.div
@@ -188,6 +194,13 @@ function LoadingScreen({ title }: { title?: string }) {
           borderTopColor: "var(--theme-primary)"
         }}
       />
+      {title && <p className="text-gray-600 font-medium">{title}</p>}
+      {showTimeout && (
+        <div className="text-center px-4 mt-4">
+          <p className="text-sm text-red-500 mb-2 font-medium">Membutuhkan waktu lebih lama dari biasanya. Cek koneksi Anda atau muat ulang halaman.</p>
+          <button onClick={() => window.location.reload()} className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded font-bold text-gray-700 text-sm">Muat Ulang Halaman</button>
+        </div>
+      )}
     </div>
   );
 }
