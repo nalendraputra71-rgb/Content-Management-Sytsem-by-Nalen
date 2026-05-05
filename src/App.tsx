@@ -620,22 +620,65 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
   const provLock = useRef(false);
   const [errorMsg, setErrorMsg] = useState("");
 
+  useEffect(() => {
+    if (!wsLoading && workspaces.length === 0 && !errorMsg && !provLock.current && user) {
+      provLock.current = true;
+      const autoProv = async () => {
+        try {
+          const wsRef = doc(collection(db, "workspaces"));
+          const batch = writeBatch(db);
+          batch.set(wsRef, {
+            name: `${profile?.nickname || 'My'} Workspace`,
+            ownerId: user.uid,
+            settings: { domain: "hubify.ws", tagline: "Sistem Manajemen Konten untuk Kreator" }
+          });
+          batch.set(doc(db, "workspaces", wsRef.id, "members", user.uid), {
+            userId: user.uid,
+            workspaceId: wsRef.id,
+            role: "owner"
+          });
+          await batch.commit();
+        } catch (e: any) {
+          setErrorMsg(e.message);
+        }
+      };
+      autoProv();
+    }
+  }, [wsLoading, workspaces.length, errorMsg, user, profile]);
+
   if (wsLoading) return <LoadingScreen title={title} />;
 
   if (workspaces.length === 0) {
+    const defaultIndexUrl = errorMsg.match(/https:\/\/console\.firebase\.google\.com[^\s]+/)?.[0];
     return (
       <div style={{height:"100vh", display:"flex", alignItems:"center", justifyContent:"center", background:"#FAFAFA", flexDirection:"column", gap:20, padding:40, textAlign:"center"}}>
-        <div style={{width:40, height:40, border:"3px solid var(--theme-primary)", borderTopColor:"transparent", borderRadius:"50%", animation:"spin 1s linear infinite"}}/>
+        {!errorMsg && (
+          <>
+            <div style={{width:40, height:40, border:"3px solid var(--theme-primary)", borderTopColor:"transparent", borderRadius:"50%", animation:"spin 1s linear infinite"}}/>
+            <p className="text-sm text-gray-500 font-medium">Sedang menyiapkan workspace Anda...</p>
+          </>
+        )}
         
         {errorMsg && (
-          <div style={{maxWidth:500, fontSize:13, color:"#9C2B4E", background:"#F8EAF0", padding:16, borderRadius:12, fontWeight:500}}>
-             {errorMsg.includes("index") ? 
-               "Firebase sedang membuat indeks untuk pencarian workspace. Proses ini biasanya memakan waktu 1-2 menit. Silakan tunggu sebentar dan refresh halaman ini." : 
-               `Oops! Terjadi kendala: ${errorMsg}`}
+          <div style={{maxWidth:600, fontSize:14, color:"#9C2B4E", background:"#F8EAF0", padding:20, borderRadius:12, fontWeight:500}}>
+             {errorMsg.toLowerCase().includes("index") ? (
+               <div className="flex flex-col gap-3">
+                 <p><strong>Database Index Required!</strong> Firebase sedang membutuhkan indeks untuk mencari workspace Anda.</p>
+                 <p className="text-sm opacity-90">Pembuatan indeks memakan waktu 1-2 menit. Silakan buat menggunakan link berikut:</p>
+                 {defaultIndexUrl && (
+                   <a href={defaultIndexUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline font-bold bg-white/50 p-2 rounded-lg break-all text-xs text-left">
+                     Klik di Sini untuk Membuat Indeks
+                   </a>
+                 )}
+                 <p className="text-xs mt-2 opacity-80">Setelah klik "Create Index" di halaman Firebase, mohon tunggu sekitar 2 menit lalu refersh halaman ini.</p>
+               </div>
+             ) : (
+               `Oops! Terjadi kendala: ${errorMsg}`
+             )}
           </div>
         )}
         
-        {errorMsg.includes("index") && (
+        {errorMsg && (
           <button onClick={()=>window.location.reload()} className="hover-scale" style={{...B(true), padding:"10px 24px", borderRadius:24}}>Coba Refresh Sekarang</button>
         )}
         
