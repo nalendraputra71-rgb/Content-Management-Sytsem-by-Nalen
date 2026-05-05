@@ -19,7 +19,9 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
   useEffect(() => {
     if (currentUser) {
       setLoading(true);
-      checkUserDocument(currentUser).catch((err) => {
+      checkUserDocument(currentUser).then(() => {
+        setLoading(false);
+      }).catch((err) => {
         setError("Gagal menyiapkan akun: " + err.message);
         setLoading(false);
       });
@@ -29,7 +31,7 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
       if (result && result.user) {
         setLoading(true);
         await checkUserDocument(result.user);
-        // Do not setLoading(false) here on success, await App.tsx re-render
+        setLoading(false);
       }
     }).catch((e: any) => {
       setLoading(false);
@@ -91,7 +93,9 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
       }
       onUserCreated(user);
     } catch (e: any) {
-      setError("Error checkUser: " + e.message);
+      console.error("Critical checkUserDocument Error:", e);
+      setError("Gagal membuat data pengguna (Firestore): " + e.message);
+      setLoading(false);
       throw e;
     } finally {
       checkRef.current = false;
@@ -109,6 +113,7 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
     popupPromise
       .then(async (res) => {
         await checkUserDocument(res.user);
+        setLoading(false);
       })
       .catch((e: any) => {
         setLoading(false);
@@ -160,10 +165,12 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
       if (mode === "login") {
          const res = await signInWithEmailAndPassword(auth, email, password);
          await checkUserDocument(res.user);
+         setLoading(false);
       } else if (mode === "signup") {
          const res = await createUserWithEmailAndPassword(auth, email, password);
          await sendEmailVerification(res.user);
          await checkUserDocument(res.user);
+         setLoading(false);
       }
     } catch (e: any) { 
       if (e.code === 'auth/operation-not-allowed') {
