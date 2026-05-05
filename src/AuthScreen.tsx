@@ -19,6 +19,7 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
     if (currentUser) {
       setLoading(true);
       checkUserDocument(currentUser).catch((err) => {
+        setError("Gagal menyiapkan akun: " + err.message);
         setLoading(false);
       });
       return; // If currentUser exists, we process that first
@@ -99,26 +100,11 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
   const handleGoogle = async () => {
     setLoading(true);
     try {
-      const inIframe = window.self !== window.top;
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-      const isLocal = window.location.hostname === 'localhost';
-
-      let usePopup = true;
-      if (!inIframe && isMobile && !isLocal) {
-        usePopup = false;
-      }
-
-      if (usePopup) {
-        const res = await signInWithPopup(auth, googleProvider);
-        await checkUserDocument(res.user);
-        // Do not setLoading(false) here on success, await App.tsx re-render
-      } else {
-        // Fallback for mobile browsers where popups get frozen or blocked
-        await signInWithRedirect(auth, googleProvider);
-      }
+      const res = await signInWithPopup(auth, googleProvider);
+      await checkUserDocument(res.user);
+      // Do not setLoading(false) here on success, await App.tsx re-render
     } catch (e: any) { 
       if (e.code === 'auth/unauthorized-domain') {
-
         setError(`Domain ini (${window.location.hostname}) belum diizinkan untuk Google Sign-In. Silakan tambahkan domain ini di Firebase Console > Authentication > Settings > Authorized Domains.`);
         setLoading(false);
       } else if (e.code === 'auth/account-exists-with-different-credential') {
@@ -131,16 +117,10 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
         e.code === 'auth/popup-blocked' || 
         e.code === 'auth/popup-closed-by-user' || 
         e.code === 'auth/cross-origin-cookies-blocked' ||
-        e.code === 'auth/internal-error' ||
         e.message.includes("popup")
       ) {
-        try {
-           setTimeout(() => { setLoading(false); }, 5000); 
-           await signInWithRedirect(auth, googleProvider);
-        } catch (redirectErr: any) {
-           setError("Gagal mengalihkan ke Google Sign-In: " + redirectErr.message);
-           setLoading(false);
-        }
+        setError("Pop-up diblokir oleh browser. Jika Anda berada di dalam preview, silakan buka aplikasi di tab baru (klik ikon di pojok kanan atas) atau gunakan login Email & Password.");
+        setLoading(false);
       } else {
         setError("Firebase Error (" + e.code + "): " + e.message); 
         setLoading(false);
