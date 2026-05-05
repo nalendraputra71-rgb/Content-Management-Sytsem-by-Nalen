@@ -19,21 +19,28 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
   useEffect(() => {
     if (currentUser) {
       setLoading(true);
-      checkUserDocument(currentUser).then(() => {
-        setLoading(false);
-      }).catch((err) => {
-        setError("Gagal menyiapkan akun: " + err.message);
-        setLoading(false);
-      });
-      return; // If currentUser exists, we process that first
+      const timeoutId = setTimeout(() => {
+         setLoading(false);
+         setError("Sistem sedang menyiapkan ruang kerja Anda, tapi butuh waktu lebih lama. Coba muat ulang halaman.");
+      }, 15000);
+
+      // We wait for App.tsx to catch up and handle the user setup
+      return () => clearTimeout(timeoutId);
     }
+    
+    // Fallback redirect result processing
+    setLoading(true);
+    const redirectTimeoutId = setTimeout(() => setLoading(false), 15000);
     getRedirectResult(auth).then(async (result) => {
+      clearTimeout(redirectTimeoutId);
       if (result && result.user) {
         setLoading(true);
-        await checkUserDocument(result.user);
+        // Do nothing here, wait for App.tsx's onAuthStateChanged
+      } else {
         setLoading(false);
       }
     }).catch((e: any) => {
+      clearTimeout(redirectTimeoutId);
       setLoading(false);
       if (e.code === 'auth/account-exists-with-different-credential') {
         setError("Akun dengan email ini sudah terdaftar. Silakan login menggunakan Email & Password.");
@@ -43,86 +50,30 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
     });
   }, [currentUser]);
 
-  const checkPromiseRef = useRef<Promise<void> | null>(null);
-
-  const checkUserDocument = async (user: any): Promise<void> => {
-    if (checkPromiseRef.current) return checkPromiseRef.current;
-    
-    const task = (async () => {
-      try {
-        const userRef = doc(db, "users", user.uid);
-        const snap = await getDoc(userRef);
-        if (!snap.exists()) {
-           const activeUntil = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7-Day Free Trial
-           
-           const safeEmail = user.email || "";
-           const cRole = safeEmail.toLowerCase() === "nalendraputra71@gmail.com" ? "admin" : "user";
-           const cPlan = safeEmail.toLowerCase() === "nalendraputra71@gmail.com" ? "pro" : "trial";
-           const safeName = user.displayName || safeEmail.split("@")[0] || "User";
-
-           const batch = writeBatch(db);
-
-           const profileData = {
-             uid: user.uid,
-             email: safeEmail,
-             fullName: safeName,
-             username: safeName.replace(/\s+/g, "").toLowerCase() + Math.floor(Math.random()*1000),
-             avatar: user.photoURL || `https://ui-avatars.com/api/?name=${safeName}`,
-             plan: cPlan,
-             activeUntil: activeUntil.toISOString(),
-             hasUsedPromo: false,
-             role: cRole,
-             createdAt: new Date().toISOString()
-           };
-           batch.set(userRef, profileData);
-
-           const wsRef = doc(collection(db, "workspaces"));
-           batch.set(wsRef, {
-             name: "Hubify Workspace",
-             ownerId: user.uid,
-             settings: {
-               title: "Hubify",
-               tagline: "Sistem Manajemen Konten untuk Kreator"
-             }
-           });
-           batch.set(doc(db, "workspaces", wsRef.id, "members", user.uid), {
-             userId: user.uid,
-             workspaceId: wsRef.id,
-             role: "owner"
-           });
-
-           await batch.commit();
-           onUserCreated(user, profileData);
-        } else {
-           onUserCreated(user, snap.data());
-        }
-      } catch (e: any) {
-        console.error("Critical checkUserDocument Error:", e);
-        setError("Gagal membuat data pengguna (Firestore): " + e.message);
-        throw e;
-      } finally {
-        checkPromiseRef.current = null;
-      }
-    })();
-    
-    checkPromiseRef.current = task;
-    return task;
-  };
-
   const handleGoogle = () => {
     setError("");
     setMsg("");
     
+    // PENTING: Jika muncul pesan 'auth/unauthorized-domain' atau login gagal, 
+    // pastikan domain GitHub/Vercel (atau domain aplikasi Anda) ditambahkan 
+    // di Firebase Console -> Authentication -> Settings -> Authorized Domains.
+
     // Call signInWithPopup SYNCHRONOUSLY without any await before it to prevent browsers from blocking it
     const popupPromise = signInWithPopup(auth, googleProvider);
     setLoading(true);
 
+    const timeoutId = setTimeout(() => {
+        setLoading(false);
+        setError("Waktu request habis. Cek kembali koneksi Anda atau pastikan Authorized Domains di Firebase. (15s timeout)");
+    }, 15000);
+
     popupPromise
       .then(async (res) => {
-        await checkUserDocument(res.user);
-        setLoading(false);
+        // Successful login! App.tsx will now catch the state change and provision workspace.
+        clearTimeout(timeoutId);
       })
       .catch((e: any) => {
+        clearTimeout(timeoutId);
         setLoading(false);
         if (e.code === 'auth/popup-closed-by-user') {
           // User deliberately closed it, do nothing.
@@ -168,16 +119,22 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
     e.preventDefault();
     setLoading(true);
     setError("");
+    
+    // Safety check for empty inputs before trying Firebase
+    if (!email || !password) {
+      setError("Silakan lengkapi email dan password.");
+      setLoading(false);
+      return;
+    }
+
     try {
       if (mode === "login") {
-         const res = await signInWithEmailAndPassword(auth, email, password);
-         await checkUserDocument(res.user);
-         setLoading(false);
+         await signInWithEmailAndPassword(auth, email, password);
+         // Do not turn off loading immediately, App.tsx will navigate soon.
       } else if (mode === "signup") {
          const res = await createUserWithEmailAndPassword(auth, email, password);
          await sendEmailVerification(res.user);
-         await checkUserDocument(res.user);
-         setLoading(false);
+         // Keep loading true, App.tsx taking over
       }
     } catch (e: any) { 
       if (e.code === 'auth/operation-not-allowed') {

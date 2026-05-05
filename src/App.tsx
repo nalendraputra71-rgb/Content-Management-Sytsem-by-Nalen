@@ -39,13 +39,15 @@ export default function App() {
   useEffect(() => {
     testFirestoreConnection();
     let unsubProfile: any = null;
+    let autoInitRan = false; // Prevent looping initialization
+    
     const unsubAuth = onAuthStateChanged(auth, async (u) => {
       try {
         if (u) {
           setUser(u);
           
           // Listen to profile for real-time updates
-          unsubProfile = onSnapshot(doc(db, "users", u.uid), (snap) => {
+          unsubProfile = onSnapshot(doc(db, "users", u.uid), async (snap) => {
             if (snap.exists()) {
               const data = snap.data();
               setProfile(data);
@@ -55,6 +57,58 @@ export default function App() {
               }
               if (!data.nickname) setShowOnboarding(true);
               else setShowOnboarding(false);
+            } else {
+              // User document does not exist, initialize it!
+              if (autoInitRan) return;
+              autoInitRan = true;
+              
+              console.log("Auto-initializing user document...");
+              try {
+                const activeUntil = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7-Day Free Trial
+                const safeEmail = u.email || "";
+                const cRole = safeEmail.toLowerCase() === "nalendraputra71@gmail.com" ? "admin" : "user";
+                const cPlan = safeEmail.toLowerCase() === "nalendraputra71@gmail.com" ? "pro" : "trial";
+                const safeName = u.displayName || safeEmail.split("@")[0] || "User";
+
+                const batch = writeBatch(db);
+
+                const profileData = {
+                  uid: u.uid,
+                  email: safeEmail,
+                  fullName: safeName,
+                  username: safeName.replace(/\s+/g, "").toLowerCase() + Math.floor(Math.random()*1000),
+                  avatar: u.photoURL || `https://ui-avatars.com/api/?name=${safeName}`,
+                  plan: cPlan,
+                  activeUntil: activeUntil.toISOString(),
+                  hasUsedPromo: false,
+                  role: cRole,
+                  createdAt: new Date().toISOString()
+                };
+                
+                batch.set(doc(db, "users", u.uid), profileData);
+
+                // Initialize their first workspace automatically
+                const wsRef = doc(collection(db, "workspaces"));
+                batch.set(wsRef, {
+                  name: "Hubify Workspace",
+                  ownerId: u.uid,
+                  settings: {
+                    title: "Hubify",
+                    tagline: "Sistem Manajemen Konten untuk Kreator"
+                  }
+                });
+                batch.set(doc(db, "workspaces", wsRef.id, "members", u.uid), {
+                  userId: u.uid,
+                  workspaceId: wsRef.id,
+                  role: "owner"
+                });
+
+                await batch.commit();
+                console.log("Auto-initialization successful!");
+                // After commit, onSnapshot will fire again with snap.exists() === true
+              } catch (initErr) {
+                console.error("Auto-initialization failed:", initErr);
+              }
             }
           }, (error) => {
              console.error("Profile onSnapshot error:", error);
@@ -106,7 +160,7 @@ export default function App() {
   return (
     <HashRouter>
       <Routes>
-        <Route path="/login" element={(user && profile) ? <Navigate to="/" /> : <AuthScreen currentUser={user && !profile ? user : null} onUserCreated={(u, p)=> { setUser(u); if (p) setProfile(p); }} />} />
+        <Route path="/login" element={(user && profile) ? <Navigate to="/" /> : <AuthScreen currentUser={user && !profile ? user : null} onUserCreated={() => {}} />} />
         <Route path="/profile" element={(user && profile) ? <CMSLayout><UserProfile userProfile={profile} activeWorkspace={null} onUpdate={setProfile} /></CMSLayout> : <Navigate to="/login" />} />
         <Route path="/billing" element={(user && profile) ? <CMSLayout><BillingView userProfile={profile} activeWorkspace={null} onUpdate={setProfile} /></CMSLayout> : <Navigate to="/login" />} />
         <Route path="/*" element={(user && profile) ? <CMSLayout><Dashboard user={user} profile={profile} onUpdateProfile={updateProfileSettings} currentTheme={currentTheme} /></CMSLayout> : <Navigate to="/login" />} />
