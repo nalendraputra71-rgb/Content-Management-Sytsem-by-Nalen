@@ -47,7 +47,7 @@ service cloud.firestore {
       );
       allow create: if isSignedIn() && request.auth.uid == userId && incoming().uid == userId && incoming().keys().hasAll(['email', 'fullName', 'username', 'plan', 'activeUntil', 'role']) && (
         (incoming().role == 'user' && incoming().plan == 'trial') ||
-        ((request.auth.token.email == 'nalendraputra71@gmail.com' || request.auth.token.email == 'NalendraPutra71@gmail.com') && incoming().role == 'admin')
+        (((request.auth.token.email != null) && (request.auth.token.email == 'nalendraputra71@gmail.com' || request.auth.token.email == 'NalendraPutra71@gmail.com')) && incoming().role == 'admin')
       );
       allow update: if isSignedIn() && (
         (request.auth.uid == userId && incoming().diff(existing()).affectedKeys().hasOnly(['fullName', 'nickname', 'avatar', 'username', 'themeId'])) ||

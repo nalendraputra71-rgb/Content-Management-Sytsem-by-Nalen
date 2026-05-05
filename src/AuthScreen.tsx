@@ -18,14 +18,16 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
   useEffect(() => {
     if (currentUser) {
       setLoading(true);
-      checkUserDocument(currentUser).finally(() => setLoading(false));
+      checkUserDocument(currentUser).catch((err) => {
+        setLoading(false);
+      });
       return; // If currentUser exists, we process that first
     }
     getRedirectResult(auth).then(async (result) => {
       if (result && result.user) {
         setLoading(true);
         await checkUserDocument(result.user);
-        setLoading(false);
+        // Do not setLoading(false) here on success, await App.tsx re-render
       }
     }).catch((e: any) => {
       setLoading(false);
@@ -88,6 +90,7 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
       onUserCreated(user);
     } catch (e: any) {
       setError("Error checkUser: " + e.message);
+      throw e;
     } finally {
       checkRef.current = false;
     }
@@ -108,13 +111,14 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
       if (usePopup) {
         const res = await signInWithPopup(auth, googleProvider);
         await checkUserDocument(res.user);
-        setLoading(false);
+        // Do not setLoading(false) here on success, await App.tsx re-render
       } else {
         // Fallback for mobile browsers where popups get frozen or blocked
         await signInWithRedirect(auth, googleProvider);
       }
     } catch (e: any) { 
       if (e.code === 'auth/unauthorized-domain') {
+
         setError(`Domain ini (${window.location.hostname}) belum diizinkan untuk Google Sign-In. Silakan tambahkan domain ini di Firebase Console > Authentication > Settings > Authorized Domains.`);
         setLoading(false);
       } else if (e.code === 'auth/account-exists-with-different-credential') {
@@ -178,8 +182,8 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
       } else {
         setError(e.message); 
       }
+      setLoading(false);
     }
-    finally { setLoading(false); }
   };
 
   return (
