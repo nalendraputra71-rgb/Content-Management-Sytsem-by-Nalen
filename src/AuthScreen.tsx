@@ -14,6 +14,7 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [msg, setMsg] = useState("");
+  const [useRedirectFallback, setUseRedirectFallback] = useState(false);
 
   useEffect(() => {
     if (currentUser) {
@@ -97,35 +98,45 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
     }
   };
 
-  const handleGoogle = async () => {
+  const handleGoogle = () => {
+    setError("");
+    setMsg("");
+    
+    // Call signInWithPopup SYNCHRONOUSLY without any await before it to prevent browsers from blocking it
+    const popupPromise = signInWithPopup(auth, googleProvider);
     setLoading(true);
-    try {
-      const res = await signInWithPopup(auth, googleProvider);
-      await checkUserDocument(res.user);
-      // Do not setLoading(false) here on success, await App.tsx re-render
-    } catch (e: any) { 
-      if (e.code === 'auth/unauthorized-domain') {
-        setError(`Domain ini (${window.location.hostname}) belum diizinkan untuk Google Sign-In. Silakan tambahkan domain ini di Firebase Console > Authentication > Settings > Authorized Domains.`);
+
+    popupPromise
+      .then(async (res) => {
+        await checkUserDocument(res.user);
+      })
+      .catch((e: any) => {
         setLoading(false);
-      } else if (e.code === 'auth/account-exists-with-different-credential') {
-        setError("Akun dengan email ini sudah terdaftar. Silakan login menggunakan Email & Password.");
-        setLoading(false);
-      } else if (e.code === 'auth/invalid-credential') {
-        setError("Kredensial Google bermasalah. Pastikan waktu (jam/tanggal) di perangkat Anda sudah benar.");
-        setLoading(false);
-      } else if (
-        e.code === 'auth/popup-blocked' || 
-        e.code === 'auth/popup-closed-by-user' || 
-        e.code === 'auth/cross-origin-cookies-blocked' ||
-        e.message.includes("popup")
-      ) {
-        setError("Pop-up diblokir oleh browser. Jika Anda berada di dalam preview, silakan buka aplikasi di tab baru (klik ikon di pojok kanan atas) atau gunakan login Email & Password.");
-        setLoading(false);
-      } else {
-        setError("Firebase Error (" + e.code + "): " + e.message); 
-        setLoading(false);
-      }
-    }
+        if (e.code === 'auth/popup-closed-by-user') {
+          // User deliberately closed it, do nothing.
+          return;
+        }
+        if (e.code === 'auth/unauthorized-domain') {
+          setError(`Domain ini (${window.location.hostname}) belum diizinkan untuk Google Sign-In. Silakan tambahkan domain ini di Firebase Console > Authentication > Settings > Authorized Domains.`);
+        } else if (e.code === 'auth/account-exists-with-different-credential') {
+          setError("Akun dengan email ini sudah terdaftar. Silakan login menggunakan Email & Password.");
+        } else if (e.code === 'auth/popup-blocked' || e.code === 'auth/cross-origin-cookies-blocked' || e.message.toLowerCase().includes("popup")) {
+          setError("Login Google tertahan oleh browser (kemungkinan akibat pemblokiran pop-up pihak ketiga atau mode incognito). Solusi: Izinkan pop-up di browser Anda, buka di Jendela Baru, atau gunakan tombol 'Login dengan Redirect' di bawah.");
+          setUseRedirectFallback(true);
+        } else {
+          setError("System auth error: " + e.message);
+        }
+      });
+  };
+
+  const handleGoogleRedirect = () => {
+    setError("");
+    setMsg("");
+    setLoading(true);
+    signInWithRedirect(auth, googleProvider).catch((e: any) => {
+      setError("System auth error: " + e.message);
+      setLoading(false);
+    });
   };
 
   const handleForgot = async (e: React.FormEvent) => {
@@ -227,6 +238,13 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
                       <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" className="w-5" alt="Google" />
                       {mode === "login" ? "Masuk Pake Google" : "Daftar Pake Google (Free Trial 7 Hari)"}
                     </button>
+                    
+                    {useRedirectFallback && (
+                       <button onClick={handleGoogleRedirect} disabled={loading} className="w-full mt-2 flex items-center justify-center gap-3 border border-blue-200 bg-blue-50 text-blue-700 rounded-2xl p-4 font-semibold hover:bg-blue-100 transition-all text-sm">
+                         <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" className="w-5 grayscale opacity-70" alt="Google" />
+                         Login via Redirect (Alternatif Pop-up terblokir)
+                       </button>
+                    )}
 
                     <div className="mt-8 text-center text-sm text-gray-500">
                       {mode === "login" ? (
