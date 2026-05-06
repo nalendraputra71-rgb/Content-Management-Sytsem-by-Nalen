@@ -28,36 +28,47 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
       return () => clearTimeout(timeoutId);
     }
     
-    // Fallback redirect result processing
-    setLoading(true);
-    const redirectTimeoutId = setTimeout(() => setLoading(false), 15000);
-    getRedirectResult(auth).then(async (result) => {
-      clearTimeout(redirectTimeoutId);
-      if (result && result.user) {
-        setLoading(true);
-        // Do nothing here, wait for App.tsx's onAuthStateChanged
-      } else {
+    // Check if we just came from a redirect
+    const didRedirect = sessionStorage.getItem("googleSignInRedirect") === "1";
+    if (didRedirect) {
+      setLoading(true);
+      const redirectTimeoutId = setTimeout(() => {
         setLoading(false);
-      }
-    }).catch((e: any) => {
-      clearTimeout(redirectTimeoutId);
+        sessionStorage.removeItem("googleSignInRedirect");
+        setError("Browser Anda memblokir cookie lintas domain (Third-Party Cookies). Akibatnya login via Redirect gagal. Solusi: Izinkan cookie pihak ketiga di pengaturan browser (Safari/Incognito) atau Login pakai Email & Password.");
+      }, 8000); // 8 seconds max wait for redirect resolution
+      
+      getRedirectResult(auth).then(async (result) => {
+        clearTimeout(redirectTimeoutId);
+        sessionStorage.removeItem("googleSignInRedirect");
+        if (result && result.user) {
+          setLoading(true);
+          // Do nothing here, wait for App.tsx's onAuthStateChanged
+        } else {
+          // If result is null but didRedirect is true, it means it got blocked
+          setLoading(false);
+          setError("Login Google digagalkan oleh browser (Cookie Pihak Ketiga Diblokir). Solusi: Matikan mode Incognito, izinkan 'Cross-site tracking' di Safari/Chrome, atau gunakan Email & Password.");
+        }
+      }).catch((e: any) => {
+        clearTimeout(redirectTimeoutId);
+        sessionStorage.removeItem("googleSignInRedirect");
+        setLoading(false);
+        if (e.code === 'auth/account-exists-with-different-credential') {
+          setError("Akun dengan email ini sudah terdaftar. Silakan login menggunakan Email & Password.");
+        } else {
+          setError("Redirect Login Error: " + e.message);
+        }
+      });
+    } else {
+      // Normal load, fast resolution
       setLoading(false);
-      if (e.code === 'auth/account-exists-with-different-credential') {
-        setError("Akun dengan email ini sudah terdaftar. Silakan login menggunakan Email & Password.");
-      } else {
-        setError("Redirect Login Error: " + e.message);
-      }
-    });
+    }
   }, [currentUser]);
 
   const handleGoogle = () => {
     setError("");
     setMsg("");
     
-    // PENTING: Jika muncul pesan 'auth/unauthorized-domain' atau login gagal, 
-    // pastikan domain GitHub/Vercel (atau domain aplikasi Anda) ditambahkan 
-    // di Firebase Console -> Authentication -> Settings -> Authorized Domains.
-
     // Call signInWithPopup SYNCHRONOUSLY without any await before it to prevent browsers from blocking it
     const popupPromise = signInWithPopup(auth, googleProvider);
     setLoading(true);
@@ -76,8 +87,8 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
           setError(`Domain ini (${window.location.hostname}) belum diizinkan untuk Google Sign-In. Silakan tambahkan domain ini di Firebase Console > Authentication > Settings > Authorized Domains.`);
         } else if (e.code === 'auth/account-exists-with-different-credential') {
           setError("Akun dengan email ini sudah terdaftar. Silakan login menggunakan Email & Password.");
-        } else if (e.code === 'auth/popup-blocked' || e.code === 'auth/cross-origin-cookies-blocked' || e.message.toLowerCase().includes("popup")) {
-          setError("Login Google tertahan oleh browser (kemungkinan akibat pemblokiran pop-up pihak ketiga atau mode incognito). Solusi: Izinkan pop-up di browser Anda, buka di Jendela Baru, atau gunakan tombol 'Login dengan Redirect' di bawah.");
+        } else if (e.code === 'auth/popup-blocked' || e.code === 'auth/cross-origin-cookies-blocked' || e.message.toLowerCase().includes("popup") || e.message.toLowerCase().includes("cross-origin")) {
+          setError("Login Google tertahan oleh browser (pop-up atau third-party cookies diblokir). Solusi: Buka di mode normal (bukan Incognito), izinkan Pop-up/Cross-Site Tracking, atau gunakan tombol 'Login via Redirect' di bawah.");
           setUseRedirectFallback(true);
         } else {
           setError("System auth error: " + e.message);
@@ -89,7 +100,9 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
     setError("");
     setMsg("");
     setLoading(true);
+    sessionStorage.setItem("googleSignInRedirect", "1");
     signInWithRedirect(auth, googleProvider).catch((e: any) => {
+      sessionStorage.removeItem("googleSignInRedirect");
       setError("System auth error: " + e.message);
       setLoading(false);
     });
