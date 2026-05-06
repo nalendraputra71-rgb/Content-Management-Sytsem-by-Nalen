@@ -96,34 +96,53 @@ export function DashboardView({ user, profile, activeWorkspace, content, theme, 
     fetchTrends();
   }, []);
 
-  // Weather API with location
-  useEffect(() => {
-    const fetchWeather = async (lat: number, lon: number) => {
+  const [locDisabled, setLocDisabled] = useState(false);
+  const [weatherMenu, setWeatherMenu] = useState(false);
+
+  const requestWeather = () => {
+    const fetchWeather = async (lat: number, lon: number, isFallback = false) => {
       try {
         const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
         const data = await res.json();
         
         // Reverse geocoding for city
         let city = "Lokasi Tidak Diketahui";
-        try {
-          const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`);
-          const geoData = await geoRes.json();
-          city = geoData.address?.city || geoData.address?.town || geoData.address?.village || geoData.address?.county || "Lokasi Anda";
-        } catch(e) {}
+        if (!isFallback) {
+          try {
+            const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`);
+            const geoData = await geoRes.json();
+            city = geoData.address?.city || geoData.address?.town || geoData.address?.village || geoData.address?.county || "Lokasi Anda";
+          } catch(e) {}
+        } else {
+          city = "Jakarta (Default)";
+        }
 
         setWeather({ temp: data.current_weather.temperature, desc: "Cerah & Berawan", city });
       } catch (e) {
         console.error("Weather fetch error:", e);
       }
     };
+    
+    setWeather({ temp: "--", desc: "Mencari lokasi...", city: "Mohon tunggu..." });
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (pos) => fetchWeather(pos.coords.latitude, pos.coords.longitude),
-        () => fetchWeather(-6.2088, 106.8456) // Fallback Jakarta
+        (pos) => {
+           setLocDisabled(false);
+           fetchWeather(pos.coords.latitude, pos.coords.longitude);
+        },
+        (err) => {
+           setLocDisabled(true);
+           fetchWeather(-6.2088, 106.8456, true); // Fallback Jakarta
+        }
       );
     } else {
-      fetchWeather(-6.2088, 106.8456);
+      fetchWeather(-6.2088, 106.8456, true);
     }
+  };
+
+  // Weather API with location
+  useEffect(() => {
+    requestWeather();
   }, []);
 
   // Sync Layout & Config
@@ -225,13 +244,40 @@ export function DashboardView({ user, profile, activeWorkspace, content, theme, 
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 16, alignItems: "flex-end" }}>
            <div style={{ display: "flex", alignItems: "center", gap: 32, flexWrap: "wrap", justifyContent: "flex-end" }}>
-             <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", textAlign: "right" }}>
-                <div style={{ fontSize: 16, fontWeight: 700, color: "rgba(0,0,0,0.5)", textTransform: "uppercase" }}>{weather.city}</div>
-                <div style={{ display: "flex", alignItems: "center", gap: 12, color: "#2C2016", fontSize: 32, fontWeight: 800 }}>
-                   {weather?.temp > 30 ? <Sun size={32} color="#FF6B00" /> : <Cloud size={32} color="#3F51B5" />}
-                   <span>{weather?.temp}°C</span>
-                </div>
-                <div style={{ fontSize: 16, fontWeight: 600, color: "rgba(0,0,0,0.5)" }}>{weather.desc}</div>
+             <div style={{ position: "relative" }}>
+                 <div 
+                   onClick={() => setWeatherMenu(!weatherMenu)} 
+                   style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", textAlign: "right", cursor: "pointer", padding: "4px 8px", borderRadius: 8, background: weatherMenu ? "rgba(0,0,0,0.05)" : "transparent" }}
+                 >
+                    <div style={{ fontSize: 16, fontWeight: 700, color: "rgba(0,0,0,0.5)", textTransform: "uppercase", display: "flex", alignItems: "center", gap: 6 }}>
+                      {locDisabled && <div style={{ width: 8, height: 8, background: "#EF4444", borderRadius: "50%" }} />}
+                      {weather.city}
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, color: "#2C2016", fontSize: 32, fontWeight: 800 }}>
+                       {weather?.temp > 30 ? <Sun size={32} color="#FF6B00" /> : <Cloud size={32} color="#3F51B5" />}
+                       <span>{weather?.temp}°C</span>
+                    </div>
+                    <div style={{ fontSize: 16, fontWeight: 600, color: "rgba(0,0,0,0.5)" }}>{weather.desc}</div>
+                 </div>
+                 
+                 <AnimatePresence>
+                   {weatherMenu && (
+                     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} style={{ position: "absolute", top: "100%", right: 0, marginTop: 12, background: "white", padding: 16, borderRadius: 16, boxShadow: "0 10px 40px rgba(0,0,0,0.15)", minWidth: 260, zIndex: 100 }}>
+                        <div style={{ fontSize: 12, fontWeight: 800, color: "rgba(0,0,0,0.5)", textTransform: "uppercase", marginBottom: 16 }}>Lokasi & Cuaca</div>
+                        {locDisabled ? (
+                           <div style={{ fontSize: 13, color: "#555", lineHeight: 1.5 }}>
+                             <p style={{ margin: "0 0 16px 0" }}>Nah, ini tuh perlu izin lokasi biar bisa liat cuaca di tempatmu sekarang. Karena belum diizinin, kita kasih liat cuaca default (Jakarta) dulu ya.</p>
+                             <button onClick={() => { setWeatherMenu(false); requestWeather(); }} style={{ ...B(true, theme.primary), width: "100%", padding: 10, fontSize: 13 }}>Gass Izinkan!</button>
+                           </div>
+                        ) : (
+                           <div style={{ fontSize: 13, color: "#555", lineHeight: 1.5 }}>
+                             <p style={{ margin: "0 0 16px 0" }}>Mantap, izin lokasi udah aktif! ✨</p>
+                             <button onClick={() => { setWeatherMenu(false); requestWeather(); }} style={{ ...B(true, theme.primary), width: "100%", padding: 10, fontSize: 13 }}>Update Cuaca</button>
+                           </div>
+                        )}
+                     </motion.div>
+                   )}
+                 </AnimatePresence>
              </div>
              <div style={{ width: 1, height: 64, background: "rgba(0,0,0,0.1)", display: "block" }} />
              

@@ -7,7 +7,7 @@ import {
   BarChart2, X, Download, MessageSquare, ExternalLink, Calendar,
   DollarSign, Package, Tag, Clock, ChevronRight, UserPlus, Filter, Crown
 } from "lucide-react";
-import { db, collection, getDocs, doc, updateDoc, setDoc, deleteDoc, onSnapshot, query, where, addDoc } from "./firebase";
+import { auth, sendPasswordResetEmail, db, collection, getDocs, doc, updateDoc, setDoc, deleteDoc, onSnapshot, query, where, addDoc } from "./firebase";
 import { fmt, B, CARD } from "./data";
 
 export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogout: () => void }) {
@@ -427,6 +427,38 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                    </div>
 
                    <div style={{display:"flex", flexDirection:"column", gap:20}}>
+                      <div style={CARD({padding:24, borderRadius:24})}>
+                         <h3 style={{fontSize:16, fontWeight:800, marginBottom:16}}>Akses & Keamanan</h3>
+                         <button onClick={async (e) => {
+                           const btn = e.currentTarget;
+                           const originalText = btn.innerText;
+                           try {
+                             btn.innerText = "Mengirim...";
+                             btn.disabled = true;
+                             await sendPasswordResetEmail(auth, selectedUser.email);
+                             btn.innerText = "Link Terkirim!";
+                             btn.style.background = "#dcfce7";
+                             btn.style.color = "#166534";
+                             setTimeout(() => {
+                                 btn.innerText = "Kirim Link Reset Password";
+                                 btn.style.background = "white";
+                                 btn.style.color = "inherit";
+                                 btn.disabled = false;
+                             }, 3000);
+                           } catch (err: any) {
+                             btn.innerText = "Gagal: " + err.message;
+                             btn.style.background = "#fee2e2";
+                             btn.style.color = "#991b1b";
+                             setTimeout(() => {
+                                 btn.innerText = "Kirim Link Reset Password";
+                                 btn.style.background = "white";
+                                 btn.style.color = "inherit";
+                                 btn.disabled = false;
+                             }, 5000);
+                           }
+                         }} style={{background:"white", border:"1px solid #CCC", padding:12, borderRadius:12, fontWeight:700, cursor:"pointer", width:"100%", transition:"all 0.2s"}} className="hover-bg-light">Kirim Link Reset Password</button>
+                      </div>
+
                       <div style={CARD({padding:24, borderRadius:24})}>
                          <h3 style={{fontSize:16, fontWeight:800, marginBottom:16}}>Ubah Paket Manual</h3>
                          <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:12}}>
