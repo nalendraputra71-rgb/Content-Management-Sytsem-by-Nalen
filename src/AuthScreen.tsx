@@ -62,18 +62,11 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
     const popupPromise = signInWithPopup(auth, googleProvider);
     setLoading(true);
 
-    const timeoutId = setTimeout(() => {
-        setLoading(false);
-        setError("Waktu request habis. Cek kembali koneksi Anda atau pastikan Authorized Domains di Firebase. (15s timeout)");
-    }, 15000);
-
     popupPromise
       .then(async (res) => {
         // Successful login! App.tsx will now catch the state change and provision workspace.
-        clearTimeout(timeoutId);
       })
       .catch((e: any) => {
-        clearTimeout(timeoutId);
         setLoading(false);
         if (e.code === 'auth/popup-closed-by-user') {
           // User deliberately closed it, do nothing.
