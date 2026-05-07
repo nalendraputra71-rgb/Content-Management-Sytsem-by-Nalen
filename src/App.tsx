@@ -57,6 +57,8 @@ export default function App() {
               }
               if (!data.nickname) setShowOnboarding(true);
               else setShowOnboarding(false);
+              
+              setAuthLoading(false);
             } else {
               // User document does not exist, initialize it!
               if (autoInitRan) return;
@@ -108,19 +110,21 @@ export default function App() {
                 // After commit, onSnapshot will fire again with snap.exists() === true
               } catch (initErr) {
                 console.error("Auto-initialization failed:", initErr);
+                setAuthLoading(false);
               }
             }
           }, (error) => {
              console.error("Profile onSnapshot error:", error);
+             setAuthLoading(false);
           });
         } else {
           if (unsubProfile) unsubProfile();
           setUser(null);
           setProfile(null);
+          setAuthLoading(false);
         }
       } catch (err) {
         console.error("Auth init error:", err);
-      } finally {
         setAuthLoading(false);
       }
     });

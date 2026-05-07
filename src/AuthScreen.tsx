@@ -88,8 +88,11 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
         } else if (e.code === 'auth/account-exists-with-different-credential') {
           setError("Akun dengan email ini sudah terdaftar. Silakan login menggunakan Email & Password.");
         } else if (e.code === 'auth/popup-blocked' || e.code === 'auth/cross-origin-cookies-blocked' || e.message.toLowerCase().includes("popup") || e.message.toLowerCase().includes("cross-origin")) {
-          setError("Login Google tertahan oleh browser (pop-up atau third-party cookies diblokir). Solusi: Buka di mode normal (bukan Incognito), izinkan Pop-up/Cross-Site Tracking, atau gunakan tombol 'Login via Redirect' di bawah.");
-          setUseRedirectFallback(true);
+          // Instead of asking them to manually click, automatically fallback or show a clear button.
+          setError("Memulai ulang login dengan mode Redirect karena pop-up terblokir...");
+          setTimeout(() => {
+             handleGoogleRedirect();
+          }, 1500);
         } else {
           setError("System auth error: " + e.message);
         }
@@ -215,13 +218,6 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
                       <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" className="w-5" alt="Google" />
                       {mode === "login" ? "Masuk Pake Google" : "Daftar Pake Google (Free Trial 7 Hari)"}
                     </button>
-                    
-                    {useRedirectFallback && (
-                       <button onClick={handleGoogleRedirect} disabled={loading} className="w-full mt-2 flex items-center justify-center gap-3 border border-blue-200 bg-blue-50 text-blue-700 rounded-2xl p-4 font-semibold hover:bg-blue-100 transition-all text-sm">
-                         <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" className="w-5 grayscale opacity-70" alt="Google" />
-                         Login via Redirect (Alternatif Pop-up terblokir)
-                       </button>
-                    )}
 
                     <div className="mt-8 text-center text-sm text-gray-500">
                       {mode === "login" ? (
