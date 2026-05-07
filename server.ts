@@ -28,9 +28,7 @@ async function startServer() {
   // Set up Strict CORS (Only allow known origins)
   const allowedOrigins = [
     "http://localhost:3000",
-    "https://kreator.next", // Old domain (can keep or remove, let's keep for safety)
-    "https://hubifysocial.com",
-    "https://www.hubifysocial.com"
+    "https://kreator.next" // Replace with your production domain
   ];
   app.use(cors({
     origin: function(origin, callback) {

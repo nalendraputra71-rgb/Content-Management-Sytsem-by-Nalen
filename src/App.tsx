@@ -39,92 +39,42 @@ export default function App() {
   useEffect(() => {
     testFirestoreConnection();
     let unsubProfile: any = null;
-    let autoInitRan = false; // Prevent looping initialization
-    
     const unsubAuth = onAuthStateChanged(auth, async (u) => {
       try {
         if (u) {
-          setUser(u);
+          // Check profile existence first to prevent flicker
+          const snap = await getDoc(doc(db, "users", u.uid));
+          if (snap.exists()) {
+             const data = snap.data();
+             setProfile(data);
+             if (data.emailVerified !== u.emailVerified) {
+               await setDoc(doc(db, "users", u.uid), { emailVerified: u.emailVerified }, { merge: true });
+             }
+             // Check onboarding
+             if (!data.nickname) {
+               setShowOnboarding(true);
+             }
+          }
           
           // Listen to profile for real-time updates
-          unsubProfile = onSnapshot(doc(db, "users", u.uid), async (snap) => {
+          unsubProfile = onSnapshot(doc(db, "users", u.uid), (snap) => {
             if (snap.exists()) {
               const data = snap.data();
               setProfile(data);
-              
-              if (data.emailVerified !== u.emailVerified) {
-                setDoc(doc(db, "users", u.uid), { emailVerified: u.emailVerified }, { merge: true }).catch(console.error);
-              }
-              if (!data.nickname) setShowOnboarding(true);
-              else setShowOnboarding(false);
-              
-              setAuthLoading(false);
-            } else {
-              // User document does not exist, initialize it!
-              if (autoInitRan) return;
-              autoInitRan = true;
-              
-              console.log("Auto-initializing user document...");
-              try {
-                const activeUntil = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7-Day Free Trial
-                const safeEmail = u.email || "";
-                const cRole = safeEmail.toLowerCase() === "nalendraputra71@gmail.com" ? "admin" : "user";
-                const cPlan = safeEmail.toLowerCase() === "nalendraputra71@gmail.com" ? "pro" : "trial";
-                const safeName = u.displayName || safeEmail.split("@")[0] || "User";
-
-                const batch = writeBatch(db);
-
-                const profileData = {
-                  uid: u.uid,
-                  email: safeEmail,
-                  fullName: safeName,
-                  username: safeName.replace(/\s+/g, "").toLowerCase() + Math.floor(Math.random()*1000),
-                  avatar: u.photoURL || `https://ui-avatars.com/api/?name=${safeName}`,
-                  plan: cPlan,
-                  activeUntil: activeUntil.toISOString(),
-                  hasUsedPromo: false,
-                  role: cRole,
-                  createdAt: new Date().toISOString()
-                };
-                
-                batch.set(doc(db, "users", u.uid), profileData);
-
-                // Initialize their first workspace automatically
-                const wsRef = doc(collection(db, "workspaces"));
-                batch.set(wsRef, {
-                  name: "Hubify Workspace",
-                  ownerId: u.uid,
-                  settings: {
-                    title: "Hubify",
-                    tagline: "Sistem Manajemen Konten untuk Kreator"
-                  }
-                });
-                batch.set(doc(db, "workspaces", wsRef.id, "members", u.uid), {
-                  userId: u.uid,
-                  workspaceId: wsRef.id,
-                  role: "owner"
-                });
-
-                await batch.commit();
-                console.log("Auto-initialization successful!");
-                // After commit, onSnapshot will fire again with snap.exists() === true
-              } catch (initErr) {
-                console.error("Auto-initialization failed:", initErr);
-                setAuthLoading(false);
-              }
+              if (data.nickname) setShowOnboarding(false);
             }
           }, (error) => {
              console.error("Profile onSnapshot error:", error);
-             setAuthLoading(false);
           });
+          setUser(u);
         } else {
           if (unsubProfile) unsubProfile();
           setUser(null);
           setProfile(null);
-          setAuthLoading(false);
         }
       } catch (err) {
         console.error("Auth init error:", err);
+      } finally {
         setAuthLoading(false);
       }
     });
@@ -164,7 +114,7 @@ export default function App() {
   return (
     <HashRouter>
       <Routes>
-        <Route path="/login" element={(user && profile) ? <Navigate to="/" /> : <AuthScreen currentUser={user && !profile ? user : null} onUserCreated={() => {}} />} />
+        <Route path="/login" element={(user && profile) ? <Navigate to="/" /> : <AuthScreen currentUser={user && !profile ? user : null} onUserCreated={(u)=>setUser(u)} />} />
         <Route path="/profile" element={(user && profile) ? <CMSLayout><UserProfile userProfile={profile} activeWorkspace={null} onUpdate={setProfile} /></CMSLayout> : <Navigate to="/login" />} />
         <Route path="/billing" element={(user && profile) ? <CMSLayout><BillingView userProfile={profile} activeWorkspace={null} onUpdate={setProfile} /></CMSLayout> : <Navigate to="/login" />} />
         <Route path="/*" element={(user && profile) ? <CMSLayout><Dashboard user={user} profile={profile} onUpdateProfile={updateProfileSettings} currentTheme={currentTheme} /></CMSLayout> : <Navigate to="/login" />} />
@@ -235,12 +185,6 @@ function OnboardingOverlay({ user, profile, onUpdate }: any) {
 }
 
 function LoadingScreen({ title }: { title?: string }) {
-  const [showTimeout, setShowTimeout] = useState(false);
-  useEffect(() => {
-    const timer = setTimeout(() => setShowTimeout(true), 10000);
-    return () => clearTimeout(timer);
-  }, []);
-
   return (
     <div style={{height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#FAFAFA",flexDirection:"column",gap:24}}>
       <motion.div
@@ -252,13 +196,6 @@ function LoadingScreen({ title }: { title?: string }) {
           borderTopColor: "var(--theme-primary)"
         }}
       />
-      {title && <p className="text-gray-600 font-medium">{title}</p>}
-      {showTimeout && (
-        <div className="text-center px-4 mt-4">
-          <p className="text-sm text-red-500 mb-2 font-medium">Membutuhkan waktu lebih lama dari biasanya. Cek koneksi Anda atau muat ulang halaman.</p>
-          <button onClick={() => window.location.reload()} className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded font-bold text-gray-700 text-sm">Muat Ulang Halaman</button>
-        </div>
-      )}
     </div>
   );
 }
@@ -297,8 +234,8 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
   const [showHolidays, setShowHolidays] = useState(true);
   const [showArchived, setShowArchived] = useState(false);
   const [filters, setFilters]   = useState({pillar:"All",platform:"All",pic:"All",status:"All"});
-  const [title, setTitle]       = useState("Hubify");
-  const [tagline, setTagline]   = useState("Sistem Manajemen Konten untuk Kreator");
+  const [title, setTitle]       = useState("Content Management");
+  const [tagline, setTagline]   = useState("Content Management System");
   const [headerImage, setHeaderImage] = useState<string|null>(null);
   const [headerStyle, setHeaderStyle] = useState({
     titleColor: "#C4622D", taglineColor: "#FAF7F2", subtitleColor: "rgba(250,247,242,0.8)",
@@ -478,8 +415,8 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
           });
           
           if (data.settings) {
-            setTitle(data.settings.title !== undefined ? data.settings.title : "Hubify");
-            setTagline(data.settings.tagline !== undefined ? data.settings.tagline : "Sistem Manajemen Konten untuk Kreator");
+            setTitle(data.settings.title !== undefined ? data.settings.title : "Content Management");
+            setTagline(data.settings.tagline !== undefined ? data.settings.tagline : "Content Management System");
             
             // Real-time synchronization for all settings categories
             if (data.settings.pillars) setPillars(data.settings.pillars);
@@ -691,65 +628,22 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
   const provLock = useRef(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  useEffect(() => {
-    if (!wsLoading && workspaces.length === 0 && !errorMsg && !provLock.current && user) {
-      provLock.current = true;
-      const autoProv = async () => {
-        try {
-          const wsRef = doc(collection(db, "workspaces"));
-          const batch = writeBatch(db);
-          batch.set(wsRef, {
-            name: `${profile?.nickname || 'My'} Workspace`,
-            ownerId: user.uid,
-            settings: { domain: "hubify.ws", tagline: "Sistem Manajemen Konten untuk Kreator" }
-          });
-          batch.set(doc(db, "workspaces", wsRef.id, "members", user.uid), {
-            userId: user.uid,
-            workspaceId: wsRef.id,
-            role: "owner"
-          });
-          await batch.commit();
-        } catch (e: any) {
-          setErrorMsg(e.message);
-        }
-      };
-      autoProv();
-    }
-  }, [wsLoading, workspaces.length, errorMsg, user, profile]);
-
   if (wsLoading) return <LoadingScreen title={title} />;
 
   if (workspaces.length === 0) {
-    const defaultIndexUrl = errorMsg.match(/https:\/\/console\.firebase\.google\.com[^\s]+/)?.[0];
     return (
       <div style={{height:"100vh", display:"flex", alignItems:"center", justifyContent:"center", background:"#FAFAFA", flexDirection:"column", gap:20, padding:40, textAlign:"center"}}>
-        {!errorMsg && (
-          <>
-            <div style={{width:40, height:40, border:"3px solid var(--theme-primary)", borderTopColor:"transparent", borderRadius:"50%", animation:"spin 1s linear infinite"}}/>
-            <p className="text-sm text-gray-500 font-medium">Sedang menyiapkan workspace Anda...</p>
-          </>
-        )}
+        <div style={{width:40, height:40, border:"3px solid var(--theme-primary)", borderTopColor:"transparent", borderRadius:"50%", animation:"spin 1s linear infinite"}}/>
         
         {errorMsg && (
-          <div style={{maxWidth:600, fontSize:14, color:"#9C2B4E", background:"#F8EAF0", padding:20, borderRadius:12, fontWeight:500}}>
-             {errorMsg.toLowerCase().includes("index") ? (
-               <div className="flex flex-col gap-3">
-                 <p><strong>Database Index Required!</strong> Firebase sedang membutuhkan indeks untuk mencari workspace Anda.</p>
-                 <p className="text-sm opacity-90">Pembuatan indeks memakan waktu 1-2 menit. Silakan buat menggunakan link berikut:</p>
-                 {defaultIndexUrl && (
-                   <a href={defaultIndexUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline font-bold bg-white/50 p-2 rounded-lg break-all text-xs text-left">
-                     Klik di Sini untuk Membuat Indeks
-                   </a>
-                 )}
-                 <p className="text-xs mt-2 opacity-80">Setelah klik "Create Index" di halaman Firebase, mohon tunggu sekitar 2 menit lalu refersh halaman ini.</p>
-               </div>
-             ) : (
-               `Oops! Terjadi kendala: ${errorMsg}`
-             )}
+          <div style={{maxWidth:500, fontSize:13, color:"#9C2B4E", background:"#F8EAF0", padding:16, borderRadius:12, fontWeight:500}}>
+             {errorMsg.includes("index") ? 
+               "Firebase sedang membuat indeks untuk pencarian workspace. Proses ini biasanya memakan waktu 1-2 menit. Silakan tunggu sebentar dan refresh halaman ini." : 
+               `Oops! Terjadi kendala: ${errorMsg}`}
           </div>
         )}
         
-        {errorMsg && (
+        {errorMsg.includes("index") && (
           <button onClick={()=>window.location.reload()} className="hover-scale" style={{...B(true), padding:"10px 24px", borderRadius:24}}>Coba Refresh Sekarang</button>
         )}
         

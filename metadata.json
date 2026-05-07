@@ -1,6 +1,6 @@
 {
-  "name": "Hubify",
+  "name": "Nexus Content",
   "description": "Content Management System for Social Media Planning and Analytics.",
-  "requestFramePermissions": ["geolocation"],
+  "requestFramePermissions": [],
   "majorCapabilities": []
 }

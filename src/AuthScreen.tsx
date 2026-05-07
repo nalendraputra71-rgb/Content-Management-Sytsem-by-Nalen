@@ -1,114 +1,71 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState } from "react";
 import { 
-  auth, db, googleProvider, signInWithPopup, signInWithRedirect, getRedirectResult,
+  auth, db, googleProvider, signInWithPopup, 
   createUserWithEmailAndPassword, signInWithEmailAndPassword,
   sendEmailVerification, sendPasswordResetEmail,
-  doc, setDoc, getDoc, collection, writeBatch
+  doc, setDoc, getDoc, runTransaction, collection
 } from "./firebase";
 import { motion, AnimatePresence } from "motion/react";
 
-export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: any, p?: any) => void, currentUser?: any }) {
+export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: any) => void, currentUser?: any }) {
   const [mode, setMode] = useState<"login" | "signup" | "forgot">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [msg, setMsg] = useState("");
-  const [useRedirectFallback, setUseRedirectFallback] = useState(false);
 
-  useEffect(() => {
-    if (currentUser) {
-      setLoading(true);
-      const timeoutId = setTimeout(() => {
-         setLoading(false);
-         setError("Sistem sedang menyiapkan ruang kerja Anda, tapi butuh waktu lebih lama. Coba muat ulang halaman.");
-      }, 15000);
+  const checkUserDocument = async (user: any) => {
+    try {
+      const userRef = doc(db, "users", user.uid);
+      const snap = await getDoc(userRef);
+      if (!snap.exists()) {
+         const activeUntil = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7-Day Free Trial
+         
+         const cRole = user.email?.toLowerCase() === "nalendraputra71@gmail.com" ? "admin" : "user";
+         const cPlan = user.email?.toLowerCase() === "nalendraputra71@gmail.com" ? "pro" : "trial";
 
-      // We wait for App.tsx to catch up and handle the user setup
-      return () => clearTimeout(timeoutId);
+         await setDoc(userRef, {
+           uid: user.uid,
+           email: user.email,
+           fullName: user.displayName || "Your Name",
+           username: (user.displayName || "user").replace(/\s+/g, "").toLowerCase() + Math.floor(Math.random()*1000),
+           avatar: user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || "Your Name"}`,
+           plan: cPlan,
+           activeUntil: activeUntil.toISOString(),
+           hasUsedPromo: false,
+           role: cRole,
+           createdAt: new Date().toISOString()
+         });
+
+         const wsRef = doc(collection(db, "workspaces"));
+         await setDoc(wsRef, {
+           name: "Content Management",
+           ownerId: user.uid,
+           settings: {
+             title: "Content Management",
+             tagline: "Content Management System"
+           }
+         });
+         await setDoc(doc(db, "workspaces", wsRef.id, "members", user.uid), {
+           userId: user.uid,
+           workspaceId: wsRef.id,
+           role: "owner"
+         });
+      }
+      onUserCreated(user);
+    } catch (e: any) {
+      setError("Error checkUser: " + e.message);
     }
-    
-    // Check if we just came from a redirect
-    const didRedirect = sessionStorage.getItem("googleSignInRedirect") === "1";
-    if (didRedirect) {
-      setLoading(true);
-      const redirectTimeoutId = setTimeout(() => {
-        setLoading(false);
-        sessionStorage.removeItem("googleSignInRedirect");
-        setError("Browser Anda memblokir cookie lintas domain (Third-Party Cookies). Akibatnya login via Redirect gagal. Solusi: Izinkan cookie pihak ketiga di pengaturan browser (Safari/Incognito) atau Login pakai Email & Password.");
-      }, 8000); // 8 seconds max wait for redirect resolution
-      
-      getRedirectResult(auth).then(async (result) => {
-        clearTimeout(redirectTimeoutId);
-        sessionStorage.removeItem("googleSignInRedirect");
-        if (result && result.user) {
-          setLoading(true);
-          // Do nothing here, wait for App.tsx's onAuthStateChanged
-        } else {
-          // If result is null but didRedirect is true, it means it got blocked
-          setLoading(false);
-          setError("Login Google digagalkan oleh browser (Cookie Pihak Ketiga Diblokir). Solusi: Matikan mode Incognito, izinkan 'Cross-site tracking' di Safari/Chrome, atau gunakan Email & Password.");
-        }
-      }).catch((e: any) => {
-        clearTimeout(redirectTimeoutId);
-        sessionStorage.removeItem("googleSignInRedirect");
-        setLoading(false);
-        if (e.code === 'auth/account-exists-with-different-credential') {
-          setError("Akun dengan email ini sudah terdaftar. Silakan login menggunakan Email & Password.");
-        } else {
-          setError("Redirect Login Error: " + e.message);
-        }
-      });
-    } else {
-      // Normal load, fast resolution
-      setLoading(false);
-    }
-  }, [currentUser]);
-
-  const handleGoogle = () => {
-    setError("");
-    setMsg("");
-    
-    // Call signInWithPopup SYNCHRONOUSLY without any await before it to prevent browsers from blocking it
-    const popupPromise = signInWithPopup(auth, googleProvider);
-    setLoading(true);
-
-    popupPromise
-      .then(async (res) => {
-        // Successful login! App.tsx will now catch the state change and provision workspace.
-      })
-      .catch((e: any) => {
-        setLoading(false);
-        if (e.code === 'auth/popup-closed-by-user') {
-          // User deliberately closed it, do nothing.
-          return;
-        }
-        if (e.code === 'auth/unauthorized-domain') {
-          setError(`Domain ini (${window.location.hostname}) belum diizinkan untuk Google Sign-In. Silakan tambahkan domain ini di Firebase Console > Authentication > Settings > Authorized Domains.`);
-        } else if (e.code === 'auth/account-exists-with-different-credential') {
-          setError("Akun dengan email ini sudah terdaftar. Silakan login menggunakan Email & Password.");
-        } else if (e.code === 'auth/popup-blocked' || e.code === 'auth/cross-origin-cookies-blocked' || e.message.toLowerCase().includes("popup") || e.message.toLowerCase().includes("cross-origin")) {
-          // Instead of asking them to manually click, automatically fallback or show a clear button.
-          setError("Memulai ulang login dengan mode Redirect karena pop-up terblokir...");
-          setTimeout(() => {
-             handleGoogleRedirect();
-          }, 1500);
-        } else {
-          setError("System auth error: " + e.message);
-        }
-      });
   };
 
-  const handleGoogleRedirect = () => {
-    setError("");
-    setMsg("");
+  const handleGoogle = async () => {
     setLoading(true);
-    sessionStorage.setItem("googleSignInRedirect", "1");
-    signInWithRedirect(auth, googleProvider).catch((e: any) => {
-      sessionStorage.removeItem("googleSignInRedirect");
-      setError("System auth error: " + e.message);
-      setLoading(false);
-    });
+    try {
+      const res = await signInWithPopup(auth, googleProvider);
+      await checkUserDocument(res.user);
+    } catch (e: any) { setError(e.message); }
+    finally { setLoading(false); }
   };
 
   const handleForgot = async (e: React.FormEvent) => {
@@ -128,54 +85,44 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
     e.preventDefault();
     setLoading(true);
     setError("");
-    
-    // Safety check for empty inputs before trying Firebase
-    if (!email || !password) {
-      setError("Silakan lengkapi email dan password.");
-      setLoading(false);
-      return;
-    }
-
     try {
       if (mode === "login") {
-         await signInWithEmailAndPassword(auth, email, password);
-         // Do not turn off loading immediately, App.tsx will navigate soon.
+         const res = await signInWithEmailAndPassword(auth, email, password);
+         await checkUserDocument(res.user);
       } else if (mode === "signup") {
          const res = await createUserWithEmailAndPassword(auth, email, password);
          await sendEmailVerification(res.user);
-         // Keep loading true, App.tsx taking over
+         await checkUserDocument(res.user);
       }
     } catch (e: any) { 
       if (e.code === 'auth/operation-not-allowed') {
         setError("Firebase Error (auth/operation-not-allowed). Fitur Email/Password belum aktif. Silakan masuk ke project Firebase Anda, menu Authentication > Sign-in method, dan aktifkan Email/Password.");
-      } else if (e.code === 'auth/invalid-credential') {
-        setError("Kredensial tidak valid. Mungkin email/password Anda salah, atau Anda sebelumnya mendaftar menggunakan jalur lain (seperti Akun Google). Silakan periksa kembali.");
       } else {
         setError(e.message); 
       }
-      setLoading(false);
     }
+    finally { setLoading(false); }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50 font-sans">
-      <div className="max-w-5xl w-full md:h-[600px] flex flex-col md:flex-row shadow-2xl md:rounded-[32px] rounded-2xl overflow-hidden bg-white">
+      <div className="max-w-5xl w-full h-[600px] flex shadow-2xl rounded-[32px] overflow-hidden bg-white">
         {/* Left: Mesh Gradient */}
-        <div className="w-full md:w-1/2 relative bg-gray-900 overflow-hidden flex flex-col justify-between p-10 text-white min-h-[200px] md:min-h-full">
+        <div className="w-1/2 relative bg-gray-900 overflow-hidden flex flex-col justify-between p-10 text-white">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-blue-600 via-gray-900 to-black opacity-90"></div>
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,_var(--tw-gradient-stops))] from-indigo-900 via-gray-900 to-black opacity-80"></div>
           <div className="absolute w-[500px] h-[500px] rounded-full bg-blue-500/20 blur-[100px] -top-20 -left-20"></div>
           <div className="absolute w-[500px] h-[500px] rounded-full bg-purple-500/20 blur-[100px] -bottom-20 -right-20"></div>
           
-          <div className="hidden md:block relative text-white font-bold text-4xl">*</div>
-          <div className="relative z-10 text-3xl md:text-5xl font-extrabold leading-tight tracking-tighter mt-auto md:mt-0">
+          <div className="relative text-white font-bold text-4xl">*</div>
+          <div className="relative z-10 text-5xl font-extrabold leading-tight tracking-tighter">
             Satu Dashboard.<br/>Semua Konten.
           </div>
         </div>
 
         {/* Right: Form */}
-        <div className="w-full md:w-1/2 p-8 md:p-16 flex flex-col justify-center">
-            <h2 className="text-4xl font-extrabold text-gray-950 mb-2">Hubify</h2>
+        <div className="w-1/2 p-16 flex flex-col justify-center">
+            <h2 className="text-4xl font-extrabold text-gray-950 mb-2">Content Management</h2>
             <p className="text-sm font-normal text-gray-500 mb-8">By Nalendra Putra Firdaus</p>
 
             <AnimatePresence mode="wait">
@@ -221,9 +168,9 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
 
                     <div className="mt-8 text-center text-sm text-gray-500">
                       {mode === "login" ? (
-                        <>Belum punya akun? <button type="button" onClick={() => setMode("signup")} className="text-blue-600 font-bold hover:underline">Daftar</button></>
+                        <>Belum punya akun? <button onClick={() => setMode("signup")} className="text-blue-600 font-bold hover:underline">Daftar</button></>
                       ) : (
-                        <>Sudah punya akun? <button type="button" onClick={() => setMode("login")} className="text-blue-600 font-bold hover:underline">Masuk</button></>
+                        <>Sudah punya akun? <button onClick={() => setMode("login")} className="text-blue-600 font-bold hover:underline">Masuk</button></>
                       )}
                     </div>
                   </>

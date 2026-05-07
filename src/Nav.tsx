@@ -1184,11 +1184,11 @@ export function Sidebar({
                           cursor: "text",
                         }}
                         onClick={() => {
-                          setTitleValue(title || "Hubify");
+                          setTitleValue(title || "Content Management");
                           setEditingTitle(true);
                         }}
                       >
-                        {title || "Hubify"}
+                        {title || "Content Management"}
                       </span>
                     )}
                   </motion.div>

@@ -3,8 +3,6 @@ import {
   getAuth, 
   GoogleAuthProvider, 
   signInWithPopup, 
-  signInWithRedirect,
-  getRedirectResult,
   onAuthStateChanged, 
   signOut,
   createUserWithEmailAndPassword,
@@ -17,8 +15,7 @@ import {
   EmailAuthProvider
 } from 'firebase/auth';
 import { 
-  getFirestore,
-  initializeFirestore, 
+  getFirestore, 
   doc, 
   setDoc, 
   getDoc, 
@@ -41,18 +38,12 @@ import firebaseConfig from '../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-
-// Use experimentalForceLongPolling to prevent connection issues in certain environments
-export const db = initializeFirestore(app, {
-  experimentalForceLongPolling: true
-}, firebaseConfig.firestoreDatabaseId);
+export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 export const googleProvider = new GoogleAuthProvider();
 
 export { 
   initializeApp,
   signInWithPopup, 
-  signInWithRedirect,
-  getRedirectResult,
   onAuthStateChanged, 
   signOut,
   createUserWithEmailAndPassword,
