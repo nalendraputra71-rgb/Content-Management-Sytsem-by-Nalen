@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import DOMPurify from "dompurify";
 import { HashRouter, Routes, Route, Navigate, useParams } from "react-router-dom";
 import * as XLSX from "xlsx";
 import { 
@@ -466,9 +465,6 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
     Object.keys(cleanData).forEach(key => {
         if (cleanData[key] === undefined) {
             delete cleanData[key];
-        } else if (typeof cleanData[key] === 'string') {
-            // Sanitize string inputs to prevent Stored XSS
-            cleanData[key] = DOMPurify.sanitize(cleanData[key]);
         }
     });
 
