@@ -11,7 +11,8 @@ import {
   Users, Eye, MessageSquare, Share2, 
   GripVertical, Layout, Edit3, Save, 
   Calendar, RotateCcw, Target, Sparkles,
-  ArrowRight, Settings, User as UserIcon, X, Maximize2, Move, Trash2, Pencil
+  ArrowRight, Settings, User as UserIcon, X, Maximize2, Move, Trash2, Pencil,
+  Heart, Bookmark, Activity, Award, Zap
 } from "lucide-react";
 import { 
   doc, setDoc, updateDoc, onSnapshot, 
@@ -390,9 +391,17 @@ function GreetingSection({ profile, theme, trends = ["Cara viral di TikTok hari 
   }, []);
   const hour = time.getHours();
   let greeting = "Selamat Malam";
-  if (hour < 11) greeting = "Selamat Pagi";
-  else if (hour < 15) greeting = "Selamat Siang";
-  else if (hour < 19) greeting = "Selamat Sore";
+  let greetingIcon = "🌙";
+  if (hour >= 5 && hour < 11) {
+    greeting = "Selamat Pagi";
+    greetingIcon = "🌅";
+  } else if (hour >= 11 && hour < 15) {
+    greeting = "Selamat Siang";
+    greetingIcon = "☀️";
+  } else if (hour >= 15 && hour < 18) {
+    greeting = "Selamat Sore";
+    greetingIcon = "🌇";
+  }
 
   const [trendIndex, setTrendIndex] = useState(0);
 
@@ -405,7 +414,7 @@ function GreetingSection({ profile, theme, trends = ["Cara viral di TikTok hari 
     <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} style={{ display: "flex", flexDirection: "column", gap: 16, flex: 1, maxWidth: 800 }}>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 24 }}>
         <h1 style={{ fontSize: 48, fontWeight: 900, color: "#2C2016", letterSpacing: "-1.5px", margin: 0, lineHeight: 1.1 }}>
-          {greeting},<br/>
+          {greetingIcon} {greeting},<br/>
           <span style={{ color: theme.primary }}>{profile?.nickname || profile?.fullName?.split(" ")[0] || "Kreator"}! ✨</span>
         </h1>
       </div>
@@ -434,7 +443,7 @@ function GreetingSection({ profile, theme, trends = ["Cara viral di TikTok hari 
 
 function MetricsRow({ content, config, updateConfig, theme }: any) {
   const [showGoals, setShowGoals] = useState(false);
-  const [localGoals, setLocalGoals] = useState(config.goals);
+  const [customGoals, setCustomGoals] = useState<any[]>(config.customGoals || []);
 
   const totals = useMemo(() => {
     return content.reduce((acc: any, c: any) => {
@@ -451,12 +460,39 @@ function MetricsRow({ content, config, updateConfig, theme }: any) {
   const engSum = totals.likes + totals.comments + totals.shares;
   const engRate = totals.views > 0 ? ((engSum / totals.views) * 100) : 0;
 
-  const metrics = [
-    { label: "Total Posts", current: totals.totalPosts, target: config.goals?.posts || 20, icon: <BarChart3 size={18}/>, color: "#2C2016" },
-    { label: "Views", current: totals.views, target: config.goals?.views || 10000, icon: <Eye size={18}/>, color: "#FF6B00" },
-    { label: "Engagement", current: engSum, target: config.goals?.engagement || 1000, icon: <MessageSquare size={18}/>, color: "#9C2B4E" },
-    { label: "ER Analysis (%)", current: engRate, target: config.goals?.er || 5, isPerc: true, icon: <TrendingUp size={18}/>, color: "#2D7A5E" },
+  // Default Standard Metrics Array (used if config.customGoals is empty/undefined)
+  const defaultMetrics = [
+    { id: "cm_1", label: "Total Posts", current: totals.totalPosts, target: config.goals?.posts || 20, icon: "BarChart3", isPerc: false },
+    { id: "cm_2", label: "Views", current: totals.views, target: config.goals?.views || 10000, icon: "Eye", isPerc: false },
+    { id: "cm_3", label: "Engagement", current: engSum, target: config.goals?.engagement || 1000, icon: "MessageSquare", isPerc: false },
+    { id: "cm_4", label: "ER Analysis (%)", current: engRate, target: config.goals?.er || 5, isPerc: true, icon: "TrendingUp" },
   ];
+
+  const displayGoals = config.customGoals && config.customGoals.length > 0 ? config.customGoals : defaultMetrics;
+
+  const ICONS: Record<string, JSX.Element> = {
+    Target: <Target size={18}/>,
+    BarChart3: <BarChart3 size={18}/>,
+    Eye: <Eye size={18}/>,
+    MessageSquare: <MessageSquare size={18}/>,
+    TrendingUp: <TrendingUp size={18}/>,
+    Users: <Users size={18}/>,
+    CheckCircle2: <CheckCircle2 size={18}/>,
+    Sun: <Sun size={18}/>,
+    Cloud: <Cloud size={18}/>,
+  };
+
+  const addGoal = () => {
+    setCustomGoals([...customGoals, { id: "g_"+Date.now(), label: "New Goal", current: 0, target: 100, icon: "Target", isPerc: false }]);
+  };
+
+  const removeGoal = (id: string) => {
+    setCustomGoals(customGoals.filter(g => g.id !== id));
+  };
+
+  const updateGoal = (id: string, key: string, val: any) => {
+    setCustomGoals(customGoals.map(g => g.id === id ? { ...g, [key]: val } : g));
+  };
 
   return (
     <div style={{ background: "var(--theme-gradient)", padding: 24, borderRadius: 24, border: "1px solid rgba(0,0,0,0.03)", boxShadow: "0 10px 30px rgba(0,0,0,0.1)" }}>
@@ -464,29 +500,33 @@ function MetricsRow({ content, config, updateConfig, theme }: any) {
         <h2 style={{ fontSize: 16, fontWeight: 800, color: "rgba(255,255,255,0.9)", letterSpacing: 0.5, margin: 0, textTransform: "uppercase" }}>Goal Metrics Tiap Bulannya</h2>
         <button 
           onClick={() => {
-            setLocalGoals(config.goals || { posts: 20, views: 10000, engagement: 1000, er: 5 });
+            if (!config.customGoals || config.customGoals.length === 0) {
+               setCustomGoals([...defaultMetrics]);
+            } else {
+               setCustomGoals([...config.customGoals]);
+            }
             setShowGoals(true);
           }}
           className="hover-scale"
           style={{ background: "rgba(255,255,255,0.2)", color: "white", border: "none", fontSize: 12, padding: "6px 16px", borderRadius: 12, height: 32, display: "flex", alignItems: "center", gap: 6, fontWeight: 700, cursor: "pointer" }}
         >
-          <Target size={14} /> Atur Goals
+          <Edit3 size={14} /> Kustomisasi Goals
         </button>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 24 }}>
-        {metrics.map((m, i) => (
-          <div key={i} style={{ padding: 16, background: "rgba(255,255,255,0.1)", borderRadius: 16, boxShadow: "0 2px 10px rgba(0,0,0,0.02)", border: "1px solid rgba(255,255,255,0.1)" }}>
+        {displayGoals.map((m: any, i: number) => (
+          <div key={m.id || i} style={{ padding: 16, background: "rgba(255,255,255,0.1)", borderRadius: 16, boxShadow: "0 2px 10px rgba(0,0,0,0.02)", border: "1px solid rgba(255,255,255,0.1)" }}>
              <div style={{ display: "flex", alignItems: "center", gap: 8, color: "rgba(255,255,255,0.9)", marginBottom: 8 }}>
-               {m.icon}
+               {ICONS[m.icon] || <Target size={18}/>}
                <span style={{ fontSize: 13, fontWeight: 700, textTransform: "uppercase", opacity: 0.8 }}>{m.label}</span>
              </div>
              <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
                 <span style={{ fontSize: 32, fontWeight: 900, color: "white" }}>
-                  {m.isPerc ? m.current.toFixed(2) : m.current.toLocaleString()}
+                  {m.isPerc ? Number(m.current).toFixed(2) : Number(m.current).toLocaleString()}
                 </span>
                 <span style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.5)" }}>
-                  / {m.isPerc ? m.target : m.target.toLocaleString()}
+                  / {m.isPerc ? m.target : Number(m.target).toLocaleString()}
                 </span>
              </div>
              <div style={{ marginTop: 12, fontSize: 12, fontWeight: 600, color: m.current >= m.target ? "#A7F3D0" : "#FECACA" }}>
@@ -500,31 +540,71 @@ function MetricsRow({ content, config, updateConfig, theme }: any) {
 
       {showGoals && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ background: "white", padding: 32, borderRadius: 24, width: 400 }}>
-             <h3 style={{ fontSize: 20, fontWeight: 800, marginBottom: 24 }}>Atur Goal Bulanan</h3>
+          <div style={{ background: "white", padding: 32, borderRadius: 24, width: 800, maxHeight: "90vh", overflowY: "auto" }}>
+             <h3 style={{ fontSize: 20, fontWeight: 800, marginBottom: 24 }}>Kustomisasi Goal Bulanan</h3>
+             
              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-               <div>
-                 <label style={{ fontSize: 12, fontWeight: 700 }}>Total Posts</label>
-                 <input type="number" value={localGoals.posts} onChange={e=>setLocalGoals({...localGoals, posts: Number(e.target.value)})} style={I({})} />
-               </div>
-               <div>
-                 <label style={{ fontSize: 12, fontWeight: 700 }}>Total Views</label>
-                 <input type="number" value={localGoals.views} onChange={e=>setLocalGoals({...localGoals, views: Number(e.target.value)})} style={I({})} />
-               </div>
-               <div>
-                 <label style={{ fontSize: 12, fontWeight: 700 }}>Total Engagement</label>
-                 <input type="number" value={localGoals.engagement} onChange={e=>setLocalGoals({...localGoals, engagement: Number(e.target.value)})} style={I({})} />
-               </div>
-               <div>
-                 <label style={{ fontSize: 12, fontWeight: 700 }}>ER Analysis Target (%)</label>
-                 <input type="number" value={localGoals.er} onChange={e=>setLocalGoals({...localGoals, er: Number(e.target.value)})} style={I({})} />
-               </div>
+               {customGoals.map((g, i) => (
+                 <div key={g.id} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 2fr auto", gap: 16, alignItems: "start", background: "#FAFAFA", padding: 16, borderRadius: 16, border: "1px solid rgba(0,0,0,0.05)" }}>
+                    <div>
+                       <label style={{ fontSize: 10, fontWeight: 800, color: "rgba(0,0,0,0.5)", textTransform: "uppercase", marginBottom: 4, display: "block" }}>Label Goal</label>
+                       <input value={g.label} onChange={e=>updateGoal(g.id, 'label', e.target.value)} style={{ ...I({}), padding:"10px 12px", width: "100%", boxSizing: "border-box" }} />
+                    </div>
+                    <div>
+                       <label style={{ fontSize: 10, fontWeight: 800, color: "rgba(0,0,0,0.5)", textTransform: "uppercase", marginBottom: 4, display: "block" }}>Current</label>
+                       <input type="text" value={Number(g.current).toLocaleString('id-ID')} onChange={e=>{
+                         const numStr = e.target.value.replace(/\D/g, "");
+                         const num = parseInt(numStr, 10);
+                         updateGoal(g.id, 'current', isNaN(num) ? 0 : num);
+                       }} style={{ ...I({}), padding:"10px 12px", width: "100%", boxSizing: "border-box" }} />
+                    </div>
+                    <div>
+                       <label style={{ fontSize: 10, fontWeight: 800, color: "rgba(0,0,0,0.5)", textTransform: "uppercase", marginBottom: 4, display: "block" }}>Target</label>
+                       <input type="text" value={Number(g.target).toLocaleString('id-ID')} onChange={e=>{
+                         const numStr = e.target.value.replace(/\D/g, "");
+                         const num = parseInt(numStr, 10);
+                         updateGoal(g.id, 'target', isNaN(num) ? 0 : num);
+                       }} style={{ ...I({}), padding:"10px 12px", width: "100%", boxSizing: "border-box" }} />
+                    </div>
+                    <div>
+                       <label style={{ fontSize: 10, fontWeight: 800, color: "rgba(0,0,0,0.5)", textTransform: "uppercase", marginBottom: 4, display: "block" }}>Pilih Icon</label>
+                       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", background: "white", padding: 8, borderRadius: 12, border: "1px solid rgba(0,0,0,0.1)" }}>
+                         {Object.keys(ICONS).map(k => (
+                           <button 
+                             key={k} 
+                             onClick={() => updateGoal(g.id, 'icon', k)}
+                             style={{ 
+                               width: 32, height: 32, borderRadius: 8, border: "none", 
+                               background: g.icon === k ? "var(--theme-primary)" : "transparent",
+                               color: g.icon === k ? "white" : "rgba(0,0,0,0.5)",
+                               cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                               transition: "all 0.2s"
+                             }}
+                             title={k}
+                             className="hover-scale"
+                           >
+                              {ICONS[k]}
+                           </button>
+                         ))}
+                       </div>
+                    </div>
+                    <div style={{ marginTop: 22 }}>
+                      <button onClick={() => removeGoal(g.id)} className="hover-scale" style={{ width: 40, height: 40, borderRadius: 12, border: "none", background: "rgba(225,29,72,0.1)", color: "#E11D48", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                         <X size={18} />
+                      </button>
+                    </div>
+                 </div>
+               ))}
+               <button onClick={addGoal} style={{ padding: 16, borderRadius: 16, border: "2px dashed #DDD", background: "transparent", color: "#666", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                 <Plus size={16} /> Tambah Goal Baru
+               </button>
              </div>
+
              <div style={{ display: "flex", gap: 12, marginTop: 24 }}>
                 <button onClick={()=>setShowGoals(false)} style={{ ...B(false), flex: 1, padding: 12 }}>Batal</button>
                 <button 
                   onClick={()=>{
-                    updateConfig("goals", localGoals); 
+                    updateConfig("customGoals", customGoals); 
                     setShowGoals(false);
                   }} 
                   style={{ ...B(true, theme.primary), flex: 1, padding: 12 }}

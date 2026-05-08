@@ -657,7 +657,22 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
         user={user} profile={profile} onLogout={()=>signOut(auth)}
         title={title}
         onOpenSidebar={() => setSidebarOpen(true)}
-        onLeaveWorkspace={handleLeaveWorkspace}
+        onLeaveWorkspace={async (ws: any) => {
+          let memberPath;
+          try {
+            memberPath = `workspaces/${ws.id}/members/${user.uid}`;
+            const memberRef = doc(db, "workspaces", ws.id, "members", user.uid);
+            await deleteDoc(memberRef);
+          } catch (e: any) {
+            handleFirestoreError(e, 'delete', memberPath);
+          }
+        }}
+        onDeleteWorkspace={async (wsId: string) => {
+          try {
+             await deleteDoc(doc(db, "workspaces", wsId));
+             if (workspace?.id === wsId) setWorkspace(workspaces[0] || null);
+          } catch(e: any) { alert("Gagal menghapus: " + e.message); }
+        }}
         onRenameWorkspace={async (wsId: string, newName: string) => {
           try {
             await updateDoc(doc(db, "workspaces", wsId), { name: newName });

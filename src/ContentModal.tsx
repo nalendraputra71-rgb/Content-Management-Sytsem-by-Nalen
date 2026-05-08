@@ -226,13 +226,22 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
         )}
 
         {/* Row 1: Date + Time + Platform */}
-        <div style={{display:"grid",gridTemplateColumns:"1.5fr 1fr 1fr",gap:10,marginBottom:12}}>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1.5fr",gap:16,marginBottom:16}}>
           <div style={GRP}>
-            <label style={L}>Tanggal (Hari dd/mm/yyyy)</label>
-            <div style={{display:"flex", gap:4}}>
-                <input type="number" min={1} max={31} value={d.day} onChange={(e:any)=>set("day",+e.target.value)} style={{...I(), width:60}}/>
-                <input type="text" readOnly value={fmtD(d.year, d.month, d.day)} style={{...I({background:"rgba(44,32,22,0.03)"}), flex:1}}/>
-            </div>
+            <label style={L}>Tanggal Update</label>
+            <input 
+              type="date" 
+              value={`${d.year || new Date().getFullYear()}-${String(d.month || new Date().getMonth()+1).padStart(2, '0')}-${String(d.day || new Date().getDate()).padStart(2, '0')}`} 
+              onChange={(e:any) => {
+                const parts = e.target.value.split("-");
+                if (parts.length === 3) {
+                  set("year", parseInt(parts[0], 10));
+                  set("month", parseInt(parts[1], 10));
+                  set("day", parseInt(parts[2], 10));
+                }
+              }} 
+              style={{...I(), width:"100%"}}
+            />
           </div>
           <div style={GRP}>
             <label style={L}>Jam Upload</label>

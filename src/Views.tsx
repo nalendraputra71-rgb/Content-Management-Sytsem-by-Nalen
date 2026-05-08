@@ -65,14 +65,25 @@ export function MonthView({year,month,monthContent,filtered,openEdit,openAdd,sho
         {Array.from({length:dim}).map((_,i)=>{
           const day=i+1, items=getF(day), allItems=getA(day), evs=showHolidays?getEv(day):[];
           const isSpec = evs.some(e => e.name.includes("Launch") || e.name.includes("Flash") || e.name.includes("Sale") || e.name.includes("Promo") || e.name.includes("Payday"));
+          const isToday = new Date().toDateString() === new Date(year, month - 1, day).toDateString();
           
           return (
-            <div key={day} style={{minHeight:110, background:isSpec?"var(--theme-primary)11":evs.length>0?"#F5F0E8":"white",borderRadius:8,padding:6,border:isSpec?"1.5px solid var(--theme-primary)":evs.length>0?"1px solid rgba(196,98,45,0.2)":"1px solid rgba(44,32,22,0.06)"}}>
+            <div key={day} style={{
+              minHeight: 110, 
+              background: isToday ? "rgba(var(--theme-primary-rgb), 0.15)" : isSpec ? "rgba(var(--theme-primary-rgb), 0.05)" : evs.length>0 ? "#F5F0E8" : "white",
+              borderRadius: 8,
+              padding: 6,
+              border: isToday ? "2px solid var(--theme-primary)" : isSpec ? "1.5px solid var(--theme-primary)" : evs.length>0 ? "1px solid rgba(196,98,45,0.2)" : "1px solid rgba(44,32,22,0.06)",
+              boxShadow: isToday ? "0 4px 12px rgba(var(--theme-primary-rgb), 0.2)" : "none"
+            }}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:3}}>
-                <span style={{fontSize:18,fontWeight:800,lineHeight:1,color:isSpec?"var(--theme-primary)":"#2C2016"}}>{day}</span>
+                <div style={{display:"flex",flexDirection:"column",gap:2}}>
+                  <span style={{fontSize:18,fontWeight:900,lineHeight:1,color:(isSpec||isToday)?"var(--theme-primary)":"#2C2016"}}>{day}</span>
+                  {isToday && <span style={{fontSize:9,fontWeight:800,background:"var(--theme-primary)",color:"white",padding:"2px 6px",borderRadius:4}}>HARI INI</span>}
+                </div>
                 <div style={{display:"flex",gap:3,alignItems:"center"}}>
                   {allItems.length>0&&<span style={{background:"#2C2016",color:"#FAF7F2",borderRadius:12,padding:"2px 6px",fontSize:9,fontWeight:700}}>{allItems.length}</span>}
-                  <button onClick={()=>openAdd(day)} style={{background:"rgba(255,255,255,0.2)",border:"none",borderRadius:"50%",width:20,height:20,cursor:"pointer",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",color:isSpec?"var(--theme-primary)":"var(--theme-primary)",padding:0,transition:"all 0.2s"}} className="hover-scale">+</button>
+                  <button onClick={()=>openAdd(day)} style={{background:"rgba(255,255,255,0.4)",border:"none",borderRadius:"50%",width:20,height:20,cursor:"pointer",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",color:isSpec?"var(--theme-primary)":"var(--theme-primary)",padding:0,transition:"all 0.2s"}} className="hover-scale">+</button>
                 </div>
               </div>
               

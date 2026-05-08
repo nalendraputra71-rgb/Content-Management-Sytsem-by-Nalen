@@ -7,7 +7,7 @@ import {
   BarChart2, X, Download, MessageSquare, ExternalLink, Calendar,
   DollarSign, Package, Tag, Clock, ChevronRight, UserPlus, Filter, Crown
 } from "lucide-react";
-import { db, collection, getDocs, doc, updateDoc, setDoc, deleteDoc, onSnapshot, query, where, addDoc } from "./firebase";
+import { db, collection, getDocs, doc, updateDoc, setDoc, deleteDoc, onSnapshot, query, where, addDoc, sendPasswordResetEmail, auth } from "./firebase";
 import { fmt, B, CARD } from "./data";
 
 export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogout: () => void }) {
@@ -31,6 +31,8 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
   const [showPromoModal, setShowPromoModal] = useState(false);
   const [editingPromo, setEditingPromo] = useState<any>(null);
   const [deletingItem, setDeletingItem] = useState<any>(null);
+  const [confirmAction, setConfirmAction] = useState<any>(null);
+  const [saveMsg, setSaveMsg] = useState("");
 
   const [systemSettings, setSystemSettings] = useState<any>({
     maintenanceMode: false,
@@ -50,26 +52,26 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
           const current = data.find((u: any) => u.id === selectedUser.id);
           if (current) setSelectedUser(current);
       }
-    }));
+    }, (err) => console.warn("Admin users snap error:", err)));
 
     // Real-time synchronization for Admins
     unsubs.push(onSnapshot(query(collection(db, "users"), where("role", "==", "admin")), snap => {
       setAdmins(snap.docs.map(d => ({id: d.id, ...d.data()})));
-    }));
+    }, (err) => console.warn("Admin roles snap error:", err)));
 
     // Real-time synchronization for Plans & Promos
     unsubs.push(onSnapshot(collection(db, "plans"), snap => {
       setPlans(snap.docs.map(d => ({id: d.id, ...d.data()})));
-    }));
+    }, (err) => console.warn("Admin plans snap error:", err)));
 
     unsubs.push(onSnapshot(collection(db, "promos"), snap => {
       setPromosList(snap.docs.map(d => ({id: d.id, ...d.data()})));
-    }));
+    }, (err) => console.warn("Admin promos snap error:", err)));
 
     // Real-time synchronization for Transactions
     unsubs.push(onSnapshot(collection(db, "transactions"), snap => {
       setTransactions(snap.docs.map(d => ({id: d.id, ...d.data()})));
-    }));
+    }, (err) => console.warn("Admin transactions snap error:", err)));
 
     // Real-time synchronization for Support
     unsubs.push(onSnapshot(query(collection(db, "tickets")), snap => {
@@ -80,12 +82,12 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
           const current = data.find((d: any) => d.id === selectedTicket.id);
           if (current) setSelectedTicket(current);
       }
-    }));
+    }, (err) => console.warn("Admin tickets snap error:", err)));
 
     // System Settings
     unsubs.push(onSnapshot(doc(db, "config", "system"), snap => {
       if (snap.exists()) setSystemSettings(snap.data());
-    }));
+    }, (err) => console.warn("Admin config snap error:", err)));
     
     return () => { unsubs.forEach(u => u()); };
   }, [selectedUser?.id, selectedTicket?.id]);
@@ -94,6 +96,11 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
      e.preventDefault();
      try {
        const fd = new FormData(e.target as HTMLFormElement);
+       const formDataObj = Object.fromEntries(fd.entries());
+       const features = Object.keys(formDataObj)
+          .filter(k => k.startsWith('feat_') && formDataObj[k] === 'on')
+          .map(k => k.replace('feat_', ''));
+          
        const data = {
          name: fd.get("name"),
          desc: fd.get("desc"),
@@ -101,7 +108,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
          originalPrice: Number(fd.get("originalPrice")) || 0,
          addMonths: Number(fd.get("addMonths")),
          popular: fd.get("popular") === "on",
-         features: (fd.get("features") as string).split("\n").filter(f => f.trim() !== "")
+         features
        };
        if (editingPlan?.id) {
          await updateDoc(doc(db, "plans", editingPlan.id), data);
@@ -145,19 +152,37 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
   };
 
   const handleUpdatePlan = async (uid: string, planName: string, daysToAdd: number = 30) => {
-    try {
-      const activeUntil = new Date();
-      if (daysToAdd === 0) {
-        activeUntil.setFullYear(2000); // Expired
-      } else {
-        activeUntil.setDate(activeUntil.getDate() + daysToAdd);
+    setConfirmAction({
+      title: "Konfirmasi Ubah Paket",
+      msg: `Apakah Anda yakin ingin mengubah paket user ini menjadi ${planName.toUpperCase()}?`,
+      onConfirm: async () => {
+        try {
+          const activeUntil = new Date();
+          if (daysToAdd === 0) {
+            activeUntil.setFullYear(2000); // Expired
+          } else {
+            activeUntil.setDate(activeUntil.getDate() + daysToAdd);
+          }
+          await updateDoc(doc(db, "users", uid), { 
+            plan: planName.toLowerCase(), 
+            activeUntil: activeUntil.toISOString() 
+          });
+          setSaveMsg("Paket berhasil diperbarui secara manual.");
+          setTimeout(() => setSaveMsg(""), 3000);
+        } catch (e) { alert("Gagal update paket"); }
       }
-      await updateDoc(doc(db, "users", uid), { 
-        plan: planName.toLowerCase(), 
-        activeUntil: activeUntil.toISOString() 
-      });
-      alert("Paket berhasil diperbarui secara manual.");
-    } catch (e) { alert("Gagal update paket"); }
+    });
+  };
+
+  const handleResetPassword = async (email: string) => {
+    if (!email) return;
+    try {
+      await sendPasswordResetEmail(auth, email);
+      setSaveMsg("Link reset password berhasil dikirim ke email user.");
+      setTimeout(() => setSaveMsg(""), 3000);
+    } catch (e: any) {
+      alert("Gagal kirim reset email: " + e.message);
+    }
   };
 
   const togglePromo = async (p: any) => {
@@ -423,6 +448,13 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                                <span style={{fontSize:12, fontWeight:700}}>{selectedUser.activeUntil ? new Date(selectedUser.activeUntil).toLocaleDateString() : "-"}</span>
                             </div>
                          </div>
+                      </div>
+                      
+                      <div style={{marginTop:24, paddingTop:24, borderTop:"1px solid #F5F5F5"}}>
+                         <div style={{fontSize:11, fontWeight:800, color:"rgba(0,0,0,0.4)", textTransform:"uppercase", marginBottom:12}}>Keamanan & Akses</div>
+                         <button onClick={()=>handleResetPassword(selectedUser.email)} style={{background:"#F5F5F5", color:"#2C2016", border:"1px solid #DDD", padding:"12px", borderRadius:12, fontSize:12, fontWeight:700, cursor:"pointer", width:"100%", display:"flex", alignItems:"center", justifyContent:"center", gap:8}} className="hover-scale">
+                             <CheckCircle size={16} /> Kirim Link Reset Password
+                         </button>
                       </div>
                    </div>
 
@@ -886,8 +918,27 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                     <input name="addMonths" type="number" placeholder="1" defaultValue={editingPlan.addMonths} required style={{width:"100%", padding:12, borderRadius:12, border:"1px solid #EEE", fontSize:14}} />
                   </div>
                   <div>
-                    <label style={{display:"block", fontSize:11, fontWeight:800, color:"#999", textTransform:"uppercase", marginBottom:6}}>Fitur (Pisahkan baris baru)</label>
-                    <textarea name="features" placeholder="Fitur 1\nFitur 2" defaultValue={editingPlan.features?.join("\n")} style={{width:"100%", height:120, padding:12, borderRadius:12, border:"1px solid #EEE", fontSize:14, resize:"none"}} />
+                    <label style={{display:"block", fontSize:11, fontWeight:800, color:"#999", textTransform:"uppercase", marginBottom:6}}>Fitur Paket (Pilih yang termasuk)</label>
+                    <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, maxHeight: 150, overflowY:"auto", padding: 12, border: "1px solid #EEE", borderRadius: 12}}>
+                      {[
+                        "Content Planner", 
+                        "Full AI Analysis", 
+                        "Multi-platform Export", 
+                        "Advanced Analytics", 
+                        "Team Collaboration (Invite Members)", 
+                        "VIP Support", 
+                        "Custom Event", 
+                        "Priority Server"
+                      ].map(feat => {
+                        const isChecked = editingPlan?.features?.includes(feat);
+                        return (
+                          <label key={feat} style={{display:"flex", alignItems:"center", gap:8, cursor:"pointer", padding:"6px", borderRadius:6, background:isChecked?"rgba(var(--theme-primary-rgb),0.05)":"transparent"}}>
+                            <input name={`feat_${feat}`} type="checkbox" defaultChecked={isChecked} style={{accentColor: "var(--theme-primary)"}} />
+                            <span style={{fontSize:12, fontWeight:600}}>{feat}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
                   </div>
                   <label style={{display:"flex", alignItems:"center", gap:8, cursor:"pointer"}}>
                     <input name="popular" type="checkbox" defaultChecked={editingPlan.popular} />
@@ -985,6 +1036,36 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                 }} style={{flex:1, background:"#9C2B4E", color:"white", border:"none", padding:"16px", borderRadius:16, fontWeight:800, fontSize:14, cursor:"pointer", boxShadow:"0 8px 16px rgba(156,43,78,0.2)"}}>Hapus Permanen</button>
               </div>
             </motion.div>
+          </motion.div>
+        )}
+        
+        {/* CUSTOM CONFIRM ACTION MODAL */}
+        {confirmAction && (
+          <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.7)", zIndex:2000, display:"flex", alignItems:"center", justifyContent:"center", padding:20, backdropFilter:"blur(8px)"}}>
+            <motion.div initial={{scale:0.95, y:20}} animate={{scale:1, y:0}} exit={{scale:0.95, y:20}} 
+              style={{background:"white", borderRadius:32, padding:"40px", textAlign:"center", maxWidth:400, boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
+              <div style={{width:80, height:80, background:"rgba(196,98,45,0.1)", borderRadius:30, display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 24px"}}>
+                <AlertCircle color="var(--theme-primary)" size={48} />
+              </div>
+              <h3 style={{fontSize:22, fontWeight:800, color:"#2C2016", margin:0, letterSpacing:"-0.5px"}}>{confirmAction.title}</h3>
+              <p style={{fontSize:14, color:"rgba(44,32,22,0.6)", margin:"16px 0 32px", lineHeight:1.6}}>
+                {confirmAction.msg}
+              </p>
+              <div style={{display:"flex", gap:12}}>
+                <button type="button" onClick={()=>setConfirmAction(null)} style={{flex:1, padding:"16px 0", borderRadius:20, border:"none", background:"#FAF7F2", color:"#2C2016", fontSize:14, fontWeight:800, cursor:"pointer"}}>Batal</button>
+                <button type="button" onClick={()=>{ confirmAction.onConfirm(); setConfirmAction(null); }} style={{flex:1, padding:"16px 0", borderRadius:20, border:"none", background:"var(--theme-primary)", color:"white", fontSize:14, fontWeight:800, cursor:"pointer"}}>Konfirmasi</button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {saveMsg && (
+          <motion.div initial={{opacity:0, y:50}} animate={{opacity:1, y:0}} exit={{opacity:0, y:50}} 
+            style={{position:"fixed", bottom:40, right:40, background:"#2D7A5E", color:"white", padding:"16px 24px", borderRadius:16, display:"flex", alignItems:"center", gap:12, boxShadow:"0 10px 30px rgba(45,122,94,0.3)", zIndex:3000, fontWeight:700}}>
+            <CheckCircle color="white" size={20} />
+            {saveMsg}
           </motion.div>
         )}
       </AnimatePresence>

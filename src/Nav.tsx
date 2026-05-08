@@ -22,6 +22,8 @@ import {
   ChevronDown,
   ChevronUp,
   Bell,
+  MoreVertical,
+  AlertTriangle,
   Columns,
   Shield,
   X,
@@ -59,9 +61,17 @@ export function Header({ profile }: any) {
 
   const hour = time.getHours();
   let greeting = "Selamat Malam";
-  if (hour < 11) greeting = "Selamat Pagi";
-  else if (hour < 15) greeting = "Selamat Siang";
-  else if (hour < 19) greeting = "Selamat Sore";
+  let greetingIcon = "🌙";
+  if (hour >= 5 && hour < 11) {
+    greeting = "Selamat Pagi";
+    greetingIcon = "🌅";
+  } else if (hour >= 11 && hour < 15) {
+    greeting = "Selamat Siang";
+    greetingIcon = "☀️";
+  } else if (hour >= 15 && hour < 18) {
+    greeting = "Selamat Sore";
+    greetingIcon = "🌇";
+  }
 
   return (
     <div
@@ -97,7 +107,7 @@ export function Header({ profile }: any) {
             lineHeight: 1.1,
           }}
         >
-          {greeting},<br />
+          {greetingIcon} {greeting},<br />
           <span style={{ color: "var(--theme-primary)" }}>
             {profile?.nickname || profile?.fullName?.split(" ")[0] || "Kreator"}
             ! ✨
@@ -950,6 +960,7 @@ export function Sidebar({
   title,
   onOpenSidebar,
   onLeaveWorkspace,
+  onDeleteWorkspace,
   onRenameWorkspace,
   onTitleChange,
 }: any) {
@@ -959,6 +970,7 @@ export function Sidebar({
   const [showSocial, setShowSocial] = useState(true);
   const [renamingWs, setRenamingWs] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
+  const [wsMenuOpen, setWsMenuOpen] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleValue, setTitleValue] = useState("");
 
@@ -1427,7 +1439,7 @@ export function Sidebar({
                                               }}
                                               exit={{ opacity: 0, width: 0 }}
                                               style={{
-                                                overflow: "hidden",
+                                                overflow: "visible",
                                                 textOverflow: "ellipsis",
                                                 whiteSpace: "nowrap",
                                                 flex: 1,
@@ -1502,13 +1514,14 @@ export function Sidebar({
                                                   >
                                                     {ws.name}
                                                   </span>
-                                                  {isOwner && (
+                                                  <div
+                                                    className={(wsMenuOpen === ws.id ? "opacity-100" : "opacity-0 group-hover:opacity-100") + " transition-opacity"}
+                                                    style={{position: "relative"}}
+                                                  >
                                                     <div
-                                                      className="opacity-0 group-hover:opacity-100 transition-opacity"
                                                       onClick={(e) => {
                                                         e.stopPropagation();
-                                                        setRenamingWs(ws.id);
-                                                        setRenameValue(ws.name);
+                                                        setWsMenuOpen(wsMenuOpen === ws.id ? null : ws.id);
                                                       }}
                                                       style={{
                                                         padding: 4,
@@ -1521,9 +1534,30 @@ export function Sidebar({
                                                           "center",
                                                       }}
                                                     >
-                                                      <Edit2 size={12} />
+                                                      <MoreVertical size={14} />
                                                     </div>
-                                                  )}
+                                                    
+                                                    <AnimatePresence>
+                                                      {wsMenuOpen === ws.id && (
+                                                        <motion.div initial={{opacity:0, scale:0.95}} animate={{opacity:1, scale:1}} exit={{opacity:0, scale:0.95}} style={{position:"absolute", top:"100%", right:0, marginTop:4, background:"white", color:"#2C2016", borderRadius:8, boxShadow:"0 4px 12px rgba(0,0,0,0.2)", zIndex:100, minWidth:120, overflow:"hidden"}}>
+                                                           {isOwner && (
+                                                             <div onClick={(e)=>{ e.stopPropagation(); setRenamingWs(ws.id); setRenameValue(ws.name); setWsMenuOpen(null); }} style={{padding:"8px 12px", fontSize:12, fontWeight:600, cursor:"pointer", display:"flex", alignItems:"center", gap:8}} className="hover:bg-gray-50">
+                                                               <Edit2 size={12} /> Edit Nama
+                                                             </div>
+                                                           )}
+                                                           {isOwner ? (
+                                                             <div onClick={(e)=>{ e.stopPropagation(); setLeavingWs({ id: ws.id, type: 'delete', name: ws.name }); setWsMenuOpen(null); }} style={{padding:"8px 12px", fontSize:12, fontWeight:600, color:"#E11D48", cursor:"pointer", display:"flex", alignItems:"center", gap:8}} className="hover:bg-red-50">
+                                                               <AlertTriangle size={12} /> Hapus
+                                                             </div>
+                                                           ) : (
+                                                             <div onClick={(e)=>{ e.stopPropagation(); setLeavingWs({ id: ws.id, type: 'leave', name: ws.name }); setWsMenuOpen(null); }} style={{padding:"8px 12px", fontSize:12, fontWeight:600, color:"#E11D48", cursor:"pointer", display:"flex", alignItems:"center", gap:8}} className="hover:bg-red-50">
+                                                               <AlertTriangle size={12} /> Tinggalkan
+                                                             </div>
+                                                           )}
+                                                        </motion.div>
+                                                      )}
+                                                    </AnimatePresence>
+                                                  </div>
                                                 </>
                                               )}
                                             </motion.div>
@@ -2265,6 +2299,123 @@ export function Sidebar({
                       }}
                     >
                       Keluar
+                    </button>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Delete/Leave Workspace Confirmation */}
+          <AnimatePresence>
+            {leavingWs && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                style={{
+                  position: "fixed",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  background: "rgba(0,0,0,0.85)",
+                  zIndex: 3000,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backdropFilter: "blur(4px)",
+                }}
+              >
+                <motion.div
+                  initial={{ scale: 0.95, opacity: 0, y: 20 }}
+                  animate={{ scale: 1, opacity: 1, y: 0 }}
+                  exit={{ scale: 0.95, opacity: 0, y: 20 }}
+                  style={{
+                    background: "white",
+                    padding: 32,
+                    borderRadius: 24,
+                    width: 400,
+                    textAlign: "center",
+                    boxShadow: "0 20px 40px rgba(0,0,0,0.2)",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 64,
+                      height: 64,
+                      borderRadius: 32,
+                      background: "rgba(225, 29, 72, 0.1)",
+                      color: "#E11D48",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      margin: "0 auto 20px",
+                    }}
+                  >
+                    <AlertTriangle size={32} />
+                  </div>
+                  <h3
+                    style={{
+                      fontSize: 20,
+                      fontWeight: 800,
+                      color: "#2C2016",
+                      marginBottom: 12,
+                      letterSpacing: "-0.5px",
+                    }}
+                  >
+                    {leavingWs.type === "delete" ? "Hapus Workspace?" : "Tinggalkan Workspace?"}
+                  </h3>
+                  <p
+                    style={{
+                      fontSize: 14,
+                      color: "rgba(44,32,22,0.6)",
+                      marginBottom: 24,
+                      whiteSpace: "normal",
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    {leavingWs.type === "delete" 
+                      ? <>Apakah Anda yakin ingin menghapus workspace <b>{leavingWs.name}</b> secara permanen? Tindakan ini tidak dapat dibatalkan.</>
+                      : <>Apakah Anda yakin ingin meninggalkan workspace <b>{leavingWs.name}</b>? Anda akan kehilangan akses ke data di dalamnya.</>}
+                  </p>
+                  <div style={{ display: "flex", gap: 12 }}>
+                    <button
+                      onClick={() => setLeavingWs(null)}
+                      style={{
+                        flex: 1,
+                        padding: 12,
+                        borderRadius: 12,
+                        background: "#FAFAFA",
+                        border: "1px solid rgba(44,32,22,0.1)",
+                        fontWeight: 600,
+                        color: "#2C2016",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Batal
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (leavingWs.type === "delete" && onDeleteWorkspace) {
+                           onDeleteWorkspace(leavingWs.id);
+                        } else if (onLeaveWorkspace) {
+                           onLeaveWorkspace(leavingWs);
+                        }
+                        setLeavingWs(null);
+                      }}
+                      style={{
+                        flex: 1,
+                        padding: 12,
+                        borderRadius: 12,
+                        background: "#E11D48",
+                        border: "none",
+                        fontWeight: 600,
+                        color: "white",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {leavingWs.type === "delete" ? "Tetap Hapus" : "Tinggalkan"}
                     </button>
                   </div>
                 </motion.div>

@@ -92,6 +92,10 @@ service cloud.firestore {
        allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
        allow update, delete: if isAdmin();
     }
+    match /config/system {
+       allow read: if isSignedIn();
+       allow write: if isAdmin();
+    }
     match /usernames/{username} {
       allow read: if isSignedIn();
       allow create: if isSignedIn(); // Validated via transaction in UserProfile

@@ -42,7 +42,7 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
     onDirty?.(isDirty);
   }, [isDirty, onDirty]);
 
-  // Sync if initialSettings change (e.g. workspace switch)
+  // Sync if initialSettings change (e.g. workspace switch strictly from backend)
   useEffect(() => {
     setLocalPillars(initialSettings.pillars || []);
     setLocalPlatforms(initialSettings.platforms || []);
@@ -51,7 +51,7 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
     setLocalHolidays(initialSettings.holidays || {});
     setLocalCustomEvents(initialSettings.customEvents || []);
     setSaveSuccess(false);
-  }, [initialSettings]);
+  }, [JSON.stringify(initialSettings)]);
 
   const sections = [
     ["visual", "Tema Visual", "🎨"],
@@ -178,7 +178,7 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
     setLocalCustomEvents((prev: any) => [...prev, ...newEvents]);
   };
 
-  const InputRow = ({ placeholder, value, onChange, onAdd, colorPicker }: any) => (
+  const renderInputRow = (placeholder: string, value: string, onChange: any, onAdd: any, colorPicker: boolean) => (
     <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
       {colorPicker && <input type="color" value={newColor} onChange={(e: any) => setNewColor(e.target.value)} style={{ width: 36, height: 36, border: "1.5px solid rgba(44,32,22,0.15)", borderRadius: 6, cursor: "pointer", padding: 2 }} />}
       <input value={value} onChange={(e: any) => onChange(e.target.value)} onKeyDown={(e: any) => e.key === "Enter" && onAdd()} placeholder={placeholder} style={I({ flex: 1 })} />
@@ -286,7 +286,7 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
                   <button onClick={() => delPillar(i)} style={{ background: "rgba(156,43,78,0.1)", border: "none", borderRadius: 6, padding: "3px 8px", fontSize: 11, cursor: "pointer", color: "#9C2B4E", }}>Hapus</button>
                 </div>
               ))}
-              <InputRow placeholder="Nama pillar baru..." value={newVal} onChange={setNewVal} onAdd={addPillar} colorPicker />
+              {renderInputRow("Nama pillar baru...", newVal, setNewVal, addPillar, true)}
             </>
           )}
           {section === "platforms" && (
@@ -299,7 +299,7 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
                   <button onClick={() => delPlatform(i)} style={{ background: "#FDF5F8", border: "none", borderRadius: 6, padding: "3px 8px", fontSize: 11, cursor: "pointer", color: "#9C2B4E", }}>Hapus</button>
                 </div>
               ))}
-              <InputRow placeholder="Nama platform baru..." value={newVal} onChange={setNewVal} onAdd={addPlatform} colorPicker />
+              {renderInputRow("Nama platform baru...", newVal, setNewVal, addPlatform, true)}
             </>
           )}
           {section === "pics" && (
@@ -316,7 +316,7 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
                   </div>
                 );
               })}
-              <InputRow placeholder="Nama PIC baru..." value={newVal} onChange={setNewVal} onAdd={addPic} colorPicker />
+              {renderInputRow("Nama PIC baru...", newVal, setNewVal, addPic, true)}
             </>
           )}
           {section === "statuses" && (
@@ -335,7 +335,7 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
                   </div>
                 );
               })}
-              <InputRow placeholder="Status baru (e.g. In Review)..." value={newVal} onChange={setNewVal} onAdd={addStatus} colorPicker />
+              {renderInputRow("Status baru (e.g. In Review)...", newVal, setNewVal, addStatus, true)}
             </>
           )}
           {section === "holidays" && (
