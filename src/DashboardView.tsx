@@ -414,8 +414,8 @@ function GreetingSection({ profile, theme, trends = ["Cara viral di TikTok hari 
     <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} style={{ display: "flex", flexDirection: "column", gap: 16, flex: 1, maxWidth: 800 }}>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 24 }}>
         <h1 style={{ fontSize: 48, fontWeight: 900, color: "#2C2016", letterSpacing: "-1.5px", margin: 0, lineHeight: 1.1 }}>
-          {greetingIcon} {greeting},<br/>
-          <span style={{ color: theme.primary }}>{profile?.nickname || profile?.fullName?.split(" ")[0] || "Kreator"}! ✨</span>
+          {greeting},<br/>
+          <span style={{ color: theme.primary }}>{profile?.nickname || profile?.fullName?.split(" ")[0] || "Kreator"}! {greetingIcon}</span>
         </h1>
       </div>
 

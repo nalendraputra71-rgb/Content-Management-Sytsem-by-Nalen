@@ -107,10 +107,10 @@ export function Header({ profile }: any) {
             lineHeight: 1.1,
           }}
         >
-          {greetingIcon} {greeting},<br />
+          {greeting},<br />
           <span style={{ color: "var(--theme-primary)" }}>
             {profile?.nickname || profile?.fullName?.split(" ")[0] || "Kreator"}
-            ! ✨
+            ! {greetingIcon}
           </span>
         </h1>
       </motion.div>
@@ -1251,7 +1251,7 @@ export function Sidebar({
                 style={{
                   display: "flex",
                   flexDirection: "column",
-                  overflow: "hidden",
+                  overflow: "visible",
                   minHeight: 0,
                 }}
               >
@@ -1261,7 +1261,7 @@ export function Sidebar({
                     overflowY: "auto",
                     display: "flex",
                     flexDirection: "column",
-                    overflowX: "hidden",
+                    overflowX: "visible",
                     transition: "opacity 0.2s ease",
                   }}
                 >
@@ -1350,7 +1350,7 @@ export function Sidebar({
                                   display: "flex",
                                   flexDirection: "column",
                                   gap: 8,
-                                  overflow: "hidden",
+                                  overflow: "visible",
                                 }}
                               >
                                 {workspaces.map((ws: any) => {
@@ -1360,7 +1360,10 @@ export function Sidebar({
                                   return (
                                     <div
                                       key={ws.id}
-                                      style={{ position: "relative" }}
+                                      style={{ 
+                                        position: "relative",
+                                        zIndex: wsMenuOpen === ws.id ? 50 : 1
+                                      }}
                                       className="group"
                                     >
                                       <button
@@ -1524,14 +1527,14 @@ export function Sidebar({
                                                         setWsMenuOpen(wsMenuOpen === ws.id ? null : ws.id);
                                                       }}
                                                       style={{
-                                                        padding: 4,
-                                                        borderRadius: 4,
-                                                        background:
-                                                          "rgba(255,255,255,0.1)",
+                                                        padding: 6,
+                                                        borderRadius: 6,
+                                                        background: wsMenuOpen === ws.id ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.1)",
                                                         display: "flex",
                                                         alignItems: "center",
-                                                        justifyContent:
-                                                          "center",
+                                                        justifyContent: "center",
+                                                        cursor: "pointer",
+                                                        transition: "all 0.2s"
                                                       }}
                                                     >
                                                       <MoreVertical size={14} />
@@ -1539,7 +1542,25 @@ export function Sidebar({
                                                     
                                                     <AnimatePresence>
                                                       {wsMenuOpen === ws.id && (
-                                                        <motion.div initial={{opacity:0, scale:0.95}} animate={{opacity:1, scale:1}} exit={{opacity:0, scale:0.95}} style={{position:"absolute", top:"100%", right:0, marginTop:4, background:"white", color:"#2C2016", borderRadius:8, boxShadow:"0 4px 12px rgba(0,0,0,0.2)", zIndex:100, minWidth:120, overflow:"hidden"}}>
+                                                        <motion.div 
+                                                          initial={{opacity:0, scale:0.95, y: -10}} 
+                                                          animate={{opacity:1, scale:1, y: 0}} 
+                                                          exit={{opacity:0, scale:0.95, y: -10}} 
+                                                          style={{
+                                                            position:"absolute", 
+                                                            bottom:"100%", 
+                                                            right:0, 
+                                                            marginBottom:8, 
+                                                            background:"white", 
+                                                            color:"#2C2016", 
+                                                            borderRadius:12, 
+                                                            boxShadow:"0 10px 25px rgba(0,0,0,0.2)", 
+                                                            zIndex:2000, 
+                                                            minWidth:140, 
+                                                            overflow:"hidden",
+                                                            border: "1px solid rgba(0,0,0,0.05)"
+                                                          }}
+                                                        >
                                                            {isOwner && (
                                                              <div onClick={(e)=>{ e.stopPropagation(); setRenamingWs(ws.id); setRenameValue(ws.name); setWsMenuOpen(null); }} style={{padding:"8px 12px", fontSize:12, fontWeight:600, cursor:"pointer", display:"flex", alignItems:"center", gap:8}} className="hover:bg-gray-50">
                                                                <Edit2 size={12} /> Edit Nama
