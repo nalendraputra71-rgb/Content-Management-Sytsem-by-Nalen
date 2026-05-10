@@ -70,6 +70,46 @@ export function LandingPage() {
           />
         </div>
 
+        {/* Animated Floating Elements */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden z-0 hidden md:block">
+          <motion.div 
+            animate={{ y: [0, -15, 0], rotate: [-12, -8, -12] }} 
+            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute top-[15%] left-[15%] bg-white text-pink-500 p-4 rounded-3xl shadow-xl border border-slate-100"
+          >
+            <Instagram size={32} strokeWidth={2.5} />
+          </motion.div>
+
+          <motion.div 
+            animate={{ y: [0, 20, 0], rotate: [15, 20, 15] }} 
+            transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+            className="absolute top-[25%] right-[15%] bg-white text-blue-600 p-4 rounded-3xl shadow-xl border border-slate-100"
+          >
+            <Facebook size={32} strokeWidth={2.5} />
+          </motion.div>
+
+          <motion.div 
+            animate={{ y: [0, -10, 0], x: [0, 10, 0], rotate: [-5, 0, -5] }} 
+            transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+            className="absolute bottom-[10%] left-[20%] bg-black text-white p-4 rounded-3xl shadow-xl border border-slate-800"
+          >
+            <Twitter size={32} strokeWidth={2.5} />
+          </motion.div>
+
+          <motion.div 
+            animate={{ scale: [1, 1.1, 1], rotate: [8, 12, 8] }} 
+            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+            className="absolute bottom-[15%] right-[20%] bg-white text-green-500 p-4 rounded-3xl shadow-xl border border-slate-100"
+          >
+            <Sparkles size={32} strokeWidth={2.5} />
+          </motion.div>
+          
+          {/* Small decorative dots/shapes */}
+          <motion.div animate={{ opacity: [0.3, 0.8, 0.3] }} transition={{ duration: 3, repeat: Infinity }} className="absolute top-[30%] left-[30%] w-3 h-3 bg-yellow-400 rounded-full" />
+          <motion.div animate={{ opacity: [0.3, 0.8, 0.3] }} transition={{ duration: 4, repeat: Infinity, delay: 1 }} className="absolute top-[40%] right-[30%] w-4 h-4 bg-purple-400 rounded-full" />
+          <motion.div animate={{ opacity: [0.3, 0.8, 0.3] }} transition={{ duration: 3.5, repeat: Infinity, delay: 2 }} className="absolute bottom-[25%] left-[45%] w-2.5 h-2.5 bg-blue-400 rounded-full" />
+        </div>
+
         <div className="max-w-4xl mx-auto text-center z-10 relative">
           <motion.h1 
             initial={{ opacity: 0, y: 20 }}
