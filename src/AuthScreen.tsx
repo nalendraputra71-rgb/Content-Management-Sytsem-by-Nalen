@@ -121,11 +121,17 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
         </div>
 
         {/* Right: Form */}
-        <div className="w-1/2 p-16 flex flex-col justify-center">
-            <h2 className="text-4xl font-extrabold text-gray-950 mb-2">Content Management</h2>
-            <p className="text-sm font-normal text-gray-500 mb-8">By Nalendra Putra Firdaus</p>
+        <div className="w-1/2 p-12 flex flex-col relative overflow-y-auto bg-white">
+            <button onClick={() => window.location.href = '/'} className="flex items-center gap-2 text-sm font-semibold text-gray-400 hover:text-gray-900 transition-colors mb-8 shrink-0">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+              Kembali ke Beranda
+            </button>
+            
+            <div className="flex-1 flex flex-col justify-center">
+              <h2 className="text-4xl font-extrabold text-gray-950 mb-2">Content Management</h2>
+              <p className="text-sm font-normal text-gray-500 mb-8">By Nalendra Putra Firdaus</p>
 
-            <AnimatePresence mode="wait">
+              <AnimatePresence mode="wait">
               <motion.div key={mode} initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-10}}>
                 {error && <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-xl text-sm font-semibold">{error}</div>}
                 {msg && <div className="mb-4 p-3 bg-green-50 text-green-600 rounded-xl text-sm font-semibold">{msg}</div>}
@@ -177,6 +183,7 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
                 )}
               </motion.div>
             </AnimatePresence>
+            </div>
         </div>
       </div>
     </div>

@@ -477,11 +477,11 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                       </div>
 
                       <div style={CARD({padding:24, borderRadius:24})}>
-                         <h3 style={{fontSize:16, fontWeight:800, marginBottom:16}}>Xendit History</h3>
+                         <h3 style={{fontSize:16, fontWeight:800, marginBottom:16}}>Midtrans History</h3>
                          <div style={{display:"flex", flexDirection:"column", gap:10}}>
                             {/* In a real app, this would be a filtered list of transactions */}
                             <div style={{padding:12, border:"1px dashed #DDD", borderRadius:12, textAlign:"center", fontSize:12, color:"#999"}}>
-                               Belum ada riwayat transaksi Xendit untuk user ini.
+                               Belum ada riwayat transaksi Midtrans untuk user ini.
                             </div>
                          </div>
                       </div>

@@ -1519,8 +1519,34 @@ export function Sidebar({
                                                   </span>
                                                   <div
                                                     className={(wsMenuOpen === ws.id ? "opacity-100" : "opacity-0 group-hover:opacity-100") + " transition-opacity"}
-                                                    style={{position: "relative"}}
+                                                    style={{ display: "flex", gap: 4, alignItems: "center" }}
                                                   >
+                                                    <AnimatePresence>
+                                                      {wsMenuOpen === ws.id && (
+                                                        <motion.div
+                                                          initial={{ opacity: 0, width: 0, marginRight: 0 }}
+                                                          animate={{ opacity: 1, width: "auto", marginRight: 4 }}
+                                                          exit={{ opacity: 0, width: 0, marginRight: 0 }}
+                                                          style={{ display: "flex", gap: 4, overflow: "hidden" }}
+                                                        >
+                                                           {isOwner && (
+                                                             <div onClick={(e)=>{ e.stopPropagation(); setRenamingWs(ws.id); setRenameValue(ws.name); setWsMenuOpen(null); }} style={{padding:6, borderRadius:6, background:"rgba(255,255,255,0.15)", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center"}} title="Edit Nama">
+                                                               <Edit2 size={12} color="white" />
+                                                             </div>
+                                                           )}
+                                                           {isOwner ? (
+                                                             <div onClick={(e)=>{ e.stopPropagation(); setLeavingWs({ id: ws.id, type: 'delete', name: ws.name }); setWsMenuOpen(null); }} style={{padding:6, borderRadius:6, background:"rgba(225,29,72,0.8)", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center"}} title="Hapus Workspace">
+                                                               <AlertTriangle size={12} color="white" />
+                                                             </div>
+                                                           ) : (
+                                                             <div onClick={(e)=>{ e.stopPropagation(); setLeavingWs({ id: ws.id, type: 'leave', name: ws.name }); setWsMenuOpen(null); }} style={{padding:6, borderRadius:6, background:"rgba(225,29,72,0.8)", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center"}} title="Tinggalkan Workspace">
+                                                               <AlertTriangle size={12} color="white" />
+                                                             </div>
+                                                           )}
+                                                        </motion.div>
+                                                      )}
+                                                    </AnimatePresence>
+                                                    
                                                     <div
                                                       onClick={(e) => {
                                                         e.stopPropagation();
@@ -1537,47 +1563,8 @@ export function Sidebar({
                                                         transition: "all 0.2s"
                                                       }}
                                                     >
-                                                      <MoreVertical size={14} />
+                                                      {wsMenuOpen === ws.id ? <X size={14} /> : <MoreVertical size={14} />}
                                                     </div>
-                                                    
-                                                    <AnimatePresence>
-                                                      {wsMenuOpen === ws.id && (
-                                                        <motion.div 
-                                                          initial={{opacity:0, scale:0.95, y: -10}} 
-                                                          animate={{opacity:1, scale:1, y: 0}} 
-                                                          exit={{opacity:0, scale:0.95, y: -10}} 
-                                                          style={{
-                                                            position:"absolute", 
-                                                            bottom:"100%", 
-                                                            right:0, 
-                                                            marginBottom:8, 
-                                                            background:"white", 
-                                                            color:"#2C2016", 
-                                                            borderRadius:12, 
-                                                            boxShadow:"0 10px 25px rgba(0,0,0,0.2)", 
-                                                            zIndex:2000, 
-                                                            minWidth:140, 
-                                                            overflow:"hidden",
-                                                            border: "1px solid rgba(0,0,0,0.05)"
-                                                          }}
-                                                        >
-                                                           {isOwner && (
-                                                             <div onClick={(e)=>{ e.stopPropagation(); setRenamingWs(ws.id); setRenameValue(ws.name); setWsMenuOpen(null); }} style={{padding:"8px 12px", fontSize:12, fontWeight:600, cursor:"pointer", display:"flex", alignItems:"center", gap:8}} className="hover:bg-gray-50">
-                                                               <Edit2 size={12} /> Edit Nama
-                                                             </div>
-                                                           )}
-                                                           {isOwner ? (
-                                                             <div onClick={(e)=>{ e.stopPropagation(); setLeavingWs({ id: ws.id, type: 'delete', name: ws.name }); setWsMenuOpen(null); }} style={{padding:"8px 12px", fontSize:12, fontWeight:600, color:"#E11D48", cursor:"pointer", display:"flex", alignItems:"center", gap:8}} className="hover:bg-red-50">
-                                                               <AlertTriangle size={12} /> Hapus
-                                                             </div>
-                                                           ) : (
-                                                             <div onClick={(e)=>{ e.stopPropagation(); setLeavingWs({ id: ws.id, type: 'leave', name: ws.name }); setWsMenuOpen(null); }} style={{padding:"8px 12px", fontSize:12, fontWeight:600, color:"#E11D48", cursor:"pointer", display:"flex", alignItems:"center", gap:8}} className="hover:bg-red-50">
-                                                               <AlertTriangle size={12} /> Tinggalkan
-                                                             </div>
-                                                           )}
-                                                        </motion.div>
-                                                      )}
-                                                    </AnimatePresence>
                                                   </div>
                                                 </>
                                               )}
@@ -1749,7 +1736,7 @@ export function Sidebar({
                                         flexShrink: 0,
                                         color:
                                           tab === v.id
-                                            ? "var(--theme-primary)"
+                                            ? "white"
                                             : "currentColor",
                                       }}
                                     >
@@ -2001,7 +1988,7 @@ export function Sidebar({
                                   flexShrink: 0,
                                   color:
                                     tab === v.id
-                                      ? "var(--theme-primary)"
+                                      ? "white"
                                       : "currentColor",
                                 }}
                               >

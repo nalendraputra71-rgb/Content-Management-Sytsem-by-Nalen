@@ -201,7 +201,7 @@ export function UserProfile({ userProfile, activeWorkspace, onUpdate }: { userPr
   return (
     <motion.div initial={{opacity:0, y: 20}} animate={{opacity:1, y: 0}} exit={{opacity:0, y: -20}} transition={{ duration: 0.3 }} style={{maxWidth:800, margin:"0 auto", padding:"40px 24px", display:"flex", flexDirection:"column", gap:32}}>
       <div>
-        <button className="hover-scale" onClick={() => navigate("/")} style={{...B(false), border:"none", background:"#FAFAFA", borderBottom:"1px solid rgba(44,32,22,0.1)", color:"#2C2016", fontSize:12, fontWeight:700, padding:"8px 16px", borderRadius:10, display:"flex", alignItems:"center", gap:8, cursor:"pointer"}}>
+        <button className="hover-scale" onClick={() => navigate("/")} style={{...B(false), border:"none", background:"var(--theme-bg, #FAFAFA)", borderBottom:"1px solid rgba(44,32,22,0.1)", color:"var(--theme-text-main, #2C2016)", fontSize:12, fontWeight:700, padding:"8px 16px", borderRadius:10, display:"flex", alignItems:"center", gap:8, cursor:"pointer"}}>
           <ArrowLeft size={16}/> Kembali ke Beranda
         </button>
       </div>
@@ -211,13 +211,13 @@ export function UserProfile({ userProfile, activeWorkspace, onUpdate }: { userPr
           <div style={{width:80, height:80, borderRadius:24, background:"var(--theme-primary)", display:"flex", alignItems:"center", justifyContent:"center", color:"white", fontSize:32, fontWeight:600, boxShadow:"0 10px 30px var(--theme-primary)33", overflow:"hidden", border:"2px solid transparent", transition:"all 0.2s"}} className="hover:border-white">
             {userProfile?.avatar ? <img src={userProfile.avatar} alt="Avatar" style={{width:"100%",height:"100%",objectFit:"cover"}} /> : userProfile?.fullName?.[0]}
           </div>
-          <div style={{position:"absolute", bottom:-6, right:-6, background:"#2C2016", color:"white", width:24,height:24,borderRadius:12,display:"flex",alignItems:"center",justifyContent:"center",border:"2px solid white", boxShadow:"0 2px 5px rgba(0,0,0,0.1)"}}>
+          <div style={{position:"absolute", bottom:-6, right:-6, background:"var(--theme-text-main, #2C2016)", color:"white", width:24,height:24,borderRadius:12,display:"flex",alignItems:"center",justifyContent:"center",border:"2px solid white", boxShadow:"0 2px 5px rgba(0,0,0,0.1)"}}>
             <Pencil size={12}/>
           </div>
           <input type="file" id="avatarUpload" style={{display:"none"}} accept="image/*" onChange={handleImageUpload} />
         </label>
         <div>
-          <h1 style={{ fontSize:28, color:"#2C2016", marginBottom:4, display:"flex", alignItems:"center", gap:10}}>
+          <h1 style={{ fontSize:28, color:"var(--theme-text-main, #2C2016)", marginBottom:4, display:"flex", alignItems:"center", gap:10}}>
             {userProfile?.fullName}
             <span style={{
               background: userProfile?.plan === "vip" ? "#FBC02D" : ((userProfile?.activeUntil && new Date(userProfile.activeUntil) > new Date()) ? "var(--theme-primary)" : "#9C2B4E"), 
@@ -347,10 +347,10 @@ export function UserProfile({ userProfile, activeWorkspace, onUpdate }: { userPr
            
            <div style={{background:"#FAFAF8", padding:16, borderRadius:12, border:"1px solid rgba(44,32,22,0.06)", display:"flex", justifyContent:"space-between", alignItems:"center"}}>
               <div>
-                 <p style={{fontSize:13, fontWeight:600, color:"#2C2016"}}>Workspace Aktif: {activeWorkspace?.name || "Personal Workspace"}</p>
+                 <p style={{fontSize:13, fontWeight:600, color:"var(--theme-text-main, #2C2016)"}}>Workspace Aktif: {activeWorkspace?.name || "Personal Workspace"}</p>
                  <p style={{fontSize:12, color:"rgba(44,32,22,0.5)"}}>Anda adalah Owner dari workspace ini.</p>
               </div>
-              <button onClick={() => navigate("/billing")} className="hover-scale" style={{...B(true), background:"#2C2016", border:"none", color:"white", fontSize:11, display:"flex", alignItems:"center", gap:6}}>Upgrade / Ganti Plan <ChevronRight size={14}/></button>
+              <button onClick={() => navigate("/billing")} className="hover-scale" style={{...B(true), background:"var(--theme-text-main, #2C2016)", border:"none", color:"white", fontSize:11, display:"flex", alignItems:"center", gap:6}}>Upgrade / Ganti Plan <ChevronRight size={14}/></button>
            </div>
         </div>
       </div>
@@ -359,11 +359,11 @@ export function UserProfile({ userProfile, activeWorkspace, onUpdate }: { userPr
       {showLogoutConfirm && (
         <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.6)", backdropFilter:"blur(5px)", zIndex:999, display:"flex", alignItems:"center", justifyContent:"center"}}>
           <motion.div initial={{scale:0.95, opacity:0}} animate={{scale:1, opacity:1}} exit={{scale:0.95, opacity:0}} style={{background:"white", padding:30, borderRadius:20, width:320, textAlign:"center"}}>
-            <h3 style={{fontSize:20, fontWeight:800, color:"#2C2016", marginBottom:12}}>Keluar dari sistem?</h3>
+            <h3 style={{fontSize:20, fontWeight:800, color:"var(--theme-text-main, #2C2016)", marginBottom:12}}>Keluar dari sistem?</h3>
             <p style={{fontSize:14, color:"rgba(44,32,22,0.6)", marginBottom:24}}>Apakah Anda yakin ingin keluar dari akun Anda?</p>
             <div style={{display:"flex", gap:12}}>
-              <button onClick={()=>setShowLogoutConfirm(false)} style={{flex:1, padding:12, borderRadius:12, background:"#FAFAFA", border:"1px solid rgba(44,32,22,0.1)", fontWeight:600, color:"#2C2016", cursor:"pointer"}}>Batal</button>
-              <button onClick={() => { setShowLogoutConfirm(false); signOut(auth); }} style={{flex:1, padding:12, borderRadius:12, background:"#9C2B4E", border:"none", fontWeight:600, color:"white", cursor:"pointer"}}>Keluar</button>
+              <button onClick={()=>setShowLogoutConfirm(false)} style={{flex:1, padding:12, borderRadius:12, background:"var(--theme-bg, #FAFAFA)", border:"1px solid rgba(44,32,22,0.1)", fontWeight:600, color:"var(--theme-text-main, #2C2016)", cursor:"pointer"}}>Batal</button>
+              <button onClick={() => { setShowLogoutConfirm(false); signOut(auth).then(() => window.location.hash = "#/login"); }} style={{flex:1, padding:12, borderRadius:12, background:"#9C2B4E", border:"none", fontWeight:600, color:"white", cursor:"pointer"}}>Keluar</button>
             </div>
           </motion.div>
         </div>
@@ -395,7 +395,7 @@ export function UserProfile({ userProfile, activeWorkspace, onUpdate }: { userPr
                       <div style={{textAlign:"right"}}>
                 <div style={{fontWeight:800, color:"var(--theme-primary)", marginBottom:8}}>Rp {tx.amount?.toLocaleString('id-ID')}</div>
                         {tx.status === "success" && (
-                          <button onClick={()=>handleDownloadInvoice(tx)} className="hover-scale" style={{background:"#FAFAFA", border:"1px solid rgba(44,32,22,0.2)", borderRadius:6, padding:"4px 8px", fontSize:11, fontWeight:600, cursor:"pointer"}}>Download Invoice</button>
+                          <button onClick={()=>handleDownloadInvoice(tx)} className="hover-scale" style={{background:"var(--theme-bg, #FAFAFA)", border:"1px solid rgba(44,32,22,0.2)", borderRadius:6, padding:"4px 8px", fontSize:11, fontWeight:600, cursor:"pointer"}}>Download Invoice</button>
                         )}
                       </div>
                    </div>

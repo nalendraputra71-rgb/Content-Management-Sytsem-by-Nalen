@@ -111,7 +111,7 @@ export function BillingView({ userProfile, onUpdate }: { userProfile: any, activ
           originalAmount: modal.price,
           voucherCode: appliedVoucher?.code || null,
           planName: modal.name,
-          paymentMethod: "Xendit QRIS",
+          paymentMethod: "Midtrans",
           timestamp: new Date().toISOString()
         });
 
@@ -133,7 +133,7 @@ export function BillingView({ userProfile, onUpdate }: { userProfile: any, activ
         setLoading(false);
         setModal(null);
         setAppliedVoucher(null);
-        alert(`Simulasi Xendit Berhasil! Pembayaran Rp ${finalPrice.toLocaleString()} dikonfirmasi.`);
+        alert(`Simulasi Midtrans Berhasil! Pembayaran Rp ${finalPrice.toLocaleString()} dikonfirmasi.`);
       }, 1500);
     } catch(e) {
       alert("Error memproses pembayaran.");
@@ -146,7 +146,7 @@ export function BillingView({ userProfile, onUpdate }: { userProfile: any, activ
   const sisaHari = Math.ceil((profileActiveUntil.getTime() - new Date().getTime()) / (1000 * 3600 * 24));
 
   return (
-    <div style={{minHeight:"100vh", padding:40, background:"#FAFAFA", fontFamily:"'Inter', sans-serif"}}>
+    <div style={{minHeight:"100vh", padding:40, background:"var(--theme-bg, #FAFAFA)", fontFamily:"'Inter', sans-serif"}}>
       <div style={{maxWidth:1100, margin:"0 auto"}}>
         <button 
           onClick={() => window.location.hash = "/profile"} 
@@ -178,18 +178,18 @@ export function BillingView({ userProfile, onUpdate }: { userProfile: any, activ
              </div>
            </div>
            
-           <button onClick={() => setShowVoucherList(true)} style={{background:"white", border:"1px solid #C4622D", color:"#C4622D", padding:"12px 24px", borderRadius:12, fontWeight:700, fontSize:14, display:"flex", alignItems:"center", gap:8, cursor:"pointer"}}>
+           <button onClick={() => setShowVoucherList(true)} style={{background:"white", border:"1px solid var(--theme-primary)", color:"var(--theme-primary)", padding:"12px 24px", borderRadius:12, fontWeight:700, fontSize:14, display:"flex", alignItems:"center", gap:8, cursor:"pointer"}}>
              🎟️ Lihat Voucher Aktif
            </button>
         </div>
 
         <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(280px, 1fr))", gap:24}}>
           {plans.map(p => (
-            <div key={p.id} style={{background:"white", border:`2px solid ${p.popular ? "rgba(196,98,45,0.3)" : "rgba(44,32,22,0.05)"}`, borderRadius:24, padding:32, display:"flex", flexDirection:"column", position:"relative", boxShadow: p.popular ? "0 15px 35px rgba(196,98,45,0.08)" : "0 8px 24px rgba(0,0,0,0.02)"}}>
-              {p.popular && <div style={{position:"absolute", top:-12, left:"50%", transform:"translateX(-50%)", background:"#C4622D", color:"white", padding:"4px 12px", borderRadius:16, fontSize:10, fontWeight:700, letterSpacing:0.5, textTransform:"uppercase"}}>Best Value</div>}
-              <div style={{fontSize:18, fontWeight:800, color:"#2C2016", marginBottom:8}}>{p.name}</div>
+            <div key={p.id} style={{background:"white", border:`2px solid ${p.popular ? "rgba(var(--theme-primary-rgb),0.3)" : "rgba(44,32,22,0.05)"}`, borderRadius:24, padding:32, display:"flex", flexDirection:"column", position:"relative", boxShadow: p.popular ? "0 15px 35px rgba(var(--theme-primary-rgb),0.08)" : "0 8px 24px rgba(0,0,0,0.02)"}}>
+              {p.popular && <div style={{position:"absolute", top:-12, left:"50%", transform:"translateX(-50%)", background:"var(--theme-primary)", color:"white", padding:"4px 12px", borderRadius:16, fontSize:10, fontWeight:700, letterSpacing:0.5, textTransform:"uppercase"}}>Best Value</div>}
+              <div style={{fontSize:18, fontWeight:800, color:"var(--theme-text-main, #2C2016)", marginBottom:8}}>{p.name}</div>
               <div style={{display:"flex", alignItems:"flex-end", gap:6, marginBottom:16}}>
-                 <div style={{fontSize:28, fontWeight:800, color:"#2C2016", letterSpacing:"-0.5px"}}>
+                 <div style={{fontSize:28, fontWeight:800, color:"var(--theme-text-main, #2C2016)", letterSpacing:"-0.5px"}}>
                    Rp {p.price.toLocaleString("id-ID")}
                  </div>
                  {p.originalPrice > 0 && <div style={{fontSize:14, fontWeight:600, color:"rgba(44,32,22,0.4)", textDecoration:"line-through", marginBottom:4}}>Rp {p.originalPrice.toLocaleString("id-ID")}</div>}
@@ -205,7 +205,7 @@ export function BillingView({ userProfile, onUpdate }: { userProfile: any, activ
                 ))}
               </div>
 
-              <button onClick={() => handleSelectPlan(p)} style={{background: p.popular ? "#C4622D" : "#2C2016", color: "white", fontWeight:800, fontSize:15, padding:"16px", borderRadius:16, border:"none", cursor:"pointer", width:"100%", boxShadow: p.popular ? "0 8px 20px rgba(196,98,45,0.2)" : "none", transition:"all 0.2s"}} className="hover-scale">
+              <button onClick={() => handleSelectPlan(p)} style={{background: p.popular ? "var(--theme-primary)" : "var(--theme-text-main, #2C2016)", color: "white", fontWeight:800, fontSize:15, padding:"16px", borderRadius:16, border:"none", cursor:"pointer", width:"100%", boxShadow: p.popular ? "0 8px 20px rgba(var(--theme-primary-rgb),0.2)" : "none", transition:"all 0.2s"}} className="hover-scale">
                 Pilih Paket
               </button>
             </div>
@@ -224,14 +224,14 @@ export function BillingView({ userProfile, onUpdate }: { userProfile: any, activ
           <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.6)", backdropFilter:"blur(5px)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center", padding:20}}>
              <motion.div initial={{scale:0.95, y:20}} animate={{scale:1, y:0}} exit={{scale:0.95, y:20}} style={{background:"white", borderRadius:32, padding:"32px 40px", maxWidth:500, width:"100%", textAlign:"center", boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
                <div style={{width:64, height:64, background:"rgba(44,32,22,0.05)", borderRadius:24, display:"flex", alignItems:"center", justifyContent:"center", fontSize:32, margin:"0 auto 24px"}}>🛒</div>
-               <h3 style={{fontSize:24, fontWeight:800, color:"#2C2016", marginBottom:8}}>Checkout Pembayaran</h3>
-               <p style={{fontSize:15, color:"rgba(44,32,22,0.6)", marginBottom:32, lineHeight:1.5}}>Anda akan berlangganan paket <strong style={{color:"#C4622D"}}>{modal.name}</strong>.</p>
+               <h3 style={{fontSize:24, fontWeight:800, color:"var(--theme-text-main, #2C2016)", marginBottom:8}}>Checkout Pembayaran</h3>
+               <p style={{fontSize:15, color:"rgba(44,32,22,0.6)", marginBottom:32, lineHeight:1.5}}>Anda akan berlangganan paket <strong style={{color:"var(--theme-primary)"}}>{modal.name}</strong>.</p>
                
                {/* Voucher Section */}
                <div style={{marginBottom:24, textAlign:"left"}}>
                   <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8}}>
                     <label style={{fontSize:12, fontWeight:800, color:"rgba(44,32,22,0.4)", textTransform:"uppercase", margin:0}}>Punya Kode Voucher?</label>
-                    <button onClick={() => setShowVoucherList(true)} style={{fontSize:11, fontWeight:800, color:"#C4622D", background:"none", border:"none", cursor:"pointer", textDecoration:"underline"}}>Lihat Voucher Aktif</button>
+                    <button onClick={() => setShowVoucherList(true)} style={{fontSize:11, fontWeight:800, color:"var(--theme-primary)", background:"none", border:"none", cursor:"pointer", textDecoration:"underline"}}>Lihat Voucher Aktif</button>
                   </div>
                   <div style={{display:"flex", gap:8}}>
                     <input 
@@ -240,7 +240,7 @@ export function BillingView({ userProfile, onUpdate }: { userProfile: any, activ
                      onChange={(e) => setVoucherCodeInput(e.target.value.toUpperCase())}
                      style={{flex:1, padding:"12px 16px", borderRadius:12, border:"1px solid #EEE", fontSize:14, fontWeight:800, letterSpacing:1}} 
                     />
-                    <button onClick={() => handleApplyVoucher(voucherCodeInput)} style={{background:"#2C2016", color:"white", border:"none", padding:"0 20px", borderRadius:12, fontWeight:700, fontSize:13, cursor:"pointer"}}>Terapkan</button>
+                    <button onClick={() => handleApplyVoucher(voucherCodeInput)} style={{background:"var(--theme-text-main, #2C2016)", color:"white", border:"none", padding:"0 20px", borderRadius:12, fontWeight:700, fontSize:13, cursor:"pointer"}}>Terapkan</button>
                   </div>
                   {voucherError && <div style={{fontSize:11, color:"#9C2B4E", fontWeight:700, marginTop:6}}>* {voucherError}</div>}
                </div>
@@ -260,15 +260,15 @@ export function BillingView({ userProfile, onUpdate }: { userProfile: any, activ
 
                  <div style={{height:1, borderBottom:"1px dashed rgba(44,32,22,0.1)", margin:"12px 0"}}/>
                  
-                 <div style={{display:"flex", justifyContent:"space-between", fontSize:18, fontWeight:800, color:"#2C2016"}}>
+                 <div style={{display:"flex", justifyContent:"space-between", fontSize:18, fontWeight:800, color:"var(--theme-text-main, #2C2016)"}}>
                    <span>Total Bayar</span> 
-                   <span style={{color:"#C4622D"}}>Rp {calculateFinalPrice(modal.price).toLocaleString("id-ID")}</span>
+                   <span style={{color:"var(--theme-primary)"}}>Rp {calculateFinalPrice(modal.price).toLocaleString("id-ID")}</span>
                  </div>
                </div>
 
                <div style={{display:"flex", gap:14}}>
-                 <button onClick={()=>{setModal(null); setAppliedVoucher(null);}} style={{flex:1, background:"#F5F5F5", color:"#2C2016", fontWeight:800, padding:"16px", borderRadius:16, border:"none", cursor:"pointer", fontSize:15}}>Batal</button>
-                 <button onClick={handleSimulatePayment} disabled={loading} style={{flex:1, background:"#2C2016", color:"white", fontWeight:800, padding:"16px", borderRadius:16, border:"none", cursor:loading?"wait":"pointer", fontSize:15, boxShadow:"0 8px 20px rgba(0,0,0,0.1)"}}>
+                 <button onClick={()=>{setModal(null); setAppliedVoucher(null);}} style={{flex:1, background:"#F5F5F5", color:"var(--theme-text-main, #2C2016)", fontWeight:800, padding:"16px", borderRadius:16, border:"none", cursor:"pointer", fontSize:15}}>Batal</button>
+                 <button onClick={handleSimulatePayment} disabled={loading} style={{flex:1, background:"var(--theme-text-main, #2C2016)", color:"white", fontWeight:800, padding:"16px", borderRadius:16, border:"none", cursor:loading?"wait":"pointer", fontSize:15, boxShadow:"0 8px 20px rgba(0,0,0,0.1)"}}>
                    {loading ? "Memproses..." : "Bayar Sekarang"}
                  </button>
                </div>
@@ -309,8 +309,8 @@ export function BillingView({ userProfile, onUpdate }: { userProfile: any, activ
                       <div key={p.id} style={{padding:20, border:"2px dashed #EEE", borderRadius:20, position:"relative", opacity: isDisabled ? 0.6 : 1, background: isDisabled ? "#F9F9F9" : "white"}}>
                         <div style={{display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:12}}>
                           <div>
-                            <div style={{fontSize:16, fontWeight:800, color:"#2C2016"}}>{p.code}</div>
-                            <div style={{fontSize:12, fontWeight:700, color:"#C4622D", marginTop:2}}>
+                            <div style={{fontSize:16, fontWeight:800, color:"var(--theme-text-main, #2C2016)"}}>{p.code}</div>
+                            <div style={{fontSize:12, fontWeight:700, color:"var(--theme-primary)", marginTop:2}}>
                               Diskon {p.type === 'percent' ? `${p.value}%` : `Rp ${p.value.toLocaleString()}`}
                             </div>
                           </div>
@@ -320,7 +320,7 @@ export function BillingView({ userProfile, onUpdate }: { userProfile: any, activ
                               handleApplyVoucher(p.code);
                               setShowVoucherList(false);
                             }} 
-                            style={{background: isDisabled ? "#CCC" : "#2C2016", color:"white", border:"none", padding:"6px 16px", borderRadius:10, fontSize:12, fontWeight:800, cursor: isDisabled ? "not-allowed" : "pointer"}}
+                            style={{background: isDisabled ? "#CCC" : "var(--theme-text-main, #2C2016)", color:"white", border:"none", padding:"6px 16px", borderRadius:10, fontSize:12, fontWeight:800, cursor: isDisabled ? "not-allowed" : "pointer"}}
                           >
                             {isDisabled ? "Tidak Bisa Pakai" : "Gunakan"}
                           </button>

@@ -29,6 +29,8 @@ import { DashboardView } from "./DashboardView";
 
 import { motion, AnimatePresence } from "motion/react";
 
+import { LandingPage } from "./LandingPage";
+
 export default function App() {
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
@@ -116,7 +118,7 @@ export default function App() {
         <Route path="/login" element={(user && profile) ? <Navigate to="/" /> : <AuthScreen currentUser={user && !profile ? user : null} onUserCreated={(u)=>setUser(u)} />} />
         <Route path="/profile" element={(user && profile) ? <CMSLayout><UserProfile userProfile={profile} activeWorkspace={null} onUpdate={setProfile} /></CMSLayout> : <Navigate to="/login" />} />
         <Route path="/billing" element={(user && profile) ? <CMSLayout><BillingView userProfile={profile} activeWorkspace={null} onUpdate={setProfile} /></CMSLayout> : <Navigate to="/login" />} />
-        <Route path="/*" element={(user && profile) ? <CMSLayout><Dashboard user={user} profile={profile} onUpdateProfile={updateProfileSettings} currentTheme={currentTheme} /></CMSLayout> : <Navigate to="/login" />} />
+        <Route path="/*" element={(user && profile) ? <CMSLayout><Dashboard user={user} profile={profile} onUpdateProfile={updateProfileSettings} currentTheme={currentTheme} /></CMSLayout> : <LandingPage />} />
       </Routes>
       <AnimatePresence>
         {showOnboarding && user && (
@@ -643,7 +645,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
           <button onClick={()=>window.location.reload()} className="hover-scale" style={{...B(true), padding:"10px 24px", borderRadius:24}}>Coba Refresh Sekarang</button>
         )}
         
-        <button onClick={()=>signOut(auth)} className="hover-scale" style={{...B(false), fontSize:13, borderRadius:24, marginTop:12}}>Batal & Logout</button>
+        <button onClick={()=>{ signOut(auth).then(() => window.location.hash = "#/login"); }} className="hover-scale" style={{...B(false), fontSize:13, borderRadius:24, marginTop:12}}>Batal & Logout</button>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
@@ -654,7 +656,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
       <Sidebar 
         open={sidebarOpen} setOpen={setSidebarOpen} tab={tab} setTab={handleTabChange} 
         workspaces={workspaces} activeWorkspace={workspace} onWorkspaceSelect={setWorkspace} 
-        user={user} profile={profile} onLogout={()=>signOut(auth)}
+        user={user} profile={profile} onLogout={()=>{ signOut(auth).then(() => window.location.hash = "#/login"); }}
         title={title}
         onOpenSidebar={() => setSidebarOpen(true)}
         onLeaveWorkspace={async (ws: any) => {
@@ -749,7 +751,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
               onDelete={() => handleDeleteWorkspace(workspace)}
               isOwner={workspace?.createdBy === user?.uid}
             />}
-            {tab==="admin"&&<AdminPanel userProfile={profile} onLogout={()=>signOut(auth)} />}
+            {tab==="admin"&&<AdminPanel userProfile={profile} onLogout={()=>{ signOut(auth).then(() => window.location.hash = "#/login"); }} />}
           </motion.div>
         </AnimatePresence>
       </div>

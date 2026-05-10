@@ -470,7 +470,7 @@ function MetricsRow({ content, config, updateConfig, theme }: any) {
 
   const displayGoals = config.customGoals && config.customGoals.length > 0 ? config.customGoals : defaultMetrics;
 
-  const ICONS: Record<string, JSX.Element> = {
+  const ICONS: Record<string, React.ReactNode> = {
     Target: <Target size={18}/>,
     BarChart3: <BarChart3 size={18}/>,
     Eye: <Eye size={18}/>,
