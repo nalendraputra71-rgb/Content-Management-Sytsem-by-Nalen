@@ -557,9 +557,12 @@ export function LandingPage() {
             <div className="bg-white rounded-3xl p-8 shadow-sm border border-black/5 hover:shadow-xl transition-shadow flex flex-col h-full">
               <div className="mb-8 mt-2">
                 <div className="text-xl font-bold text-[#0B2A4A] mb-2">Monthly Starter</div>
-                <div className="flex items-end gap-1 mb-4">
-                  <span className="text-4xl font-extrabold text-[#0B2A4A]">Rp 69k</span>
-                  <span className="text-slate-500 pb-1 font-semibold">/bulan</span>
+                <div className="flex flex-col gap-1 mb-4">
+                  <span className="text-sm font-semibold text-slate-400 line-through decoration-slate-300">Rp 149.000</span>
+                  <div className="flex items-end gap-1">
+                    <span className="text-4xl font-extrabold text-[#0B2A4A]">Rp 69.000</span>
+                    <span className="text-slate-500 pb-1 font-semibold">/bulan</span>
+                  </div>
                 </div>
                 <p className="text-slate-500 text-sm">Sempurna untuk kreator solo yang ingin lebih fleksibel tanpa komitmen jangka panjang.</p>
               </div>
@@ -584,9 +587,12 @@ export function LandingPage() {
               </div>
               <div className="mb-8 mt-2">
                 <div className="text-xl font-bold text-white mb-2">Growth Master</div>
-                <div className="flex items-end gap-1 mb-4">
-                  <span className="text-4xl font-extrabold text-white">Rp 699k</span>
-                  <span className="text-blue-200 pb-1 font-semibold">/tahun</span>
+                <div className="flex flex-col gap-1 mb-4">
+                  <span className="text-sm font-semibold text-blue-300/60 line-through decoration-blue-300/40">Rp 1.788.000</span>
+                  <div className="flex items-end gap-1">
+                    <span className="text-4xl font-extrabold text-white">Rp 849.000</span>
+                    <span className="text-blue-200 pb-1 font-semibold">/tahun</span>
+                  </div>
                 </div>
                 <p className="text-blue-200 text-sm">Hemat lebih dari 20%. Solusi pro untuk agensi & korporat yang mengejar target agresif.</p>
               </div>
