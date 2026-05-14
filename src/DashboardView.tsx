@@ -1009,7 +1009,7 @@ function TodoItem({ todo, onToggle, onRename, onDelete, theme, disableAnimation 
         ) : (
           <div 
             onClick={() => { if(!todo.isAutomated) setIsEditing(true); }}
-            style={{ fontSize: "clamp(11px, 4.5cqw, 14px)", fontWeight: 600, color: "#2C2016", textDecoration: todo.completed ? "line-through" : "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", cursor: todo.isAutomated ? "default" : "text" }}
+            style={{ fontSize: "clamp(11px, 4.5cqw, 14px)", fontWeight: 600, color: "#2C2016", textDecoration: todo.completed ? "line-through" : "none", wordBreak: "break-word", whiteSpace: "normal", overflow: "visible", cursor: todo.isAutomated ? "default" : "text", lineHeight: 1.4 }}
           >
             {todo.text}
           </div>
@@ -1150,6 +1150,7 @@ function StickyNoteWidget({ config, updateConfig, theme }: any) {
 
 function StickyNotesModal({ notes, updateConfig, onClose, theme }: any) {
   const colors = ["#FFF59D", "#FFCC80", "#FFAB91", "#F48FB1", "#CE93D8", "#B39DDB", "#90CAF9", "#81D4FA", "#80CBC4", "#C5E1A5"];
+  const [showColorOptions, setShowColorOptions] = useState<{[id:string]:boolean}>({});
   
   const addNote = () => {
     if (notes.length >= 10) return;
@@ -1189,9 +1190,10 @@ function StickyNotesModal({ notes, updateConfig, onClose, theme }: any) {
             <AnimatePresence>
               {notes.map((n: any) => (
                 <motion.div layout initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} key={n.id} style={{ background: n.color, borderRadius: 24, padding: 24, position: "relative", display: "flex", flexDirection: "column", boxShadow: "0 10px 30px rgba(0,0,0,0.08)", minHeight: 200 }}>
-                   <div style={{ display: "flex", gap: 6, marginBottom: 16, flexWrap: "wrap", background: "rgba(255,255,255,0.4)", padding: 6, borderRadius: 12, width: "max-content" }}>
-                     {colors.map(c => (
-                       <button key={c} onClick={() => changeColor(n.id, c)} style={{ width: 18, height: 18, borderRadius: "50%", background: c, border: c === n.color ? "2px solid rgba(0,0,0,0.4)" : "2px solid transparent", cursor: "pointer", padding: 0 }} />
+                   <div style={{ display: "flex", gap: 6, marginBottom: 16, flexWrap: "wrap", background: showColorOptions[n.id] ? "rgba(255,255,255,0.4)" : "transparent", padding: 6, borderRadius: 12, width: "max-content", alignItems: "center", transition: "all 0.2s" }}>
+                     <button onClick={() => setShowColorOptions(p => ({...p, [n.id]: !p[n.id]}))} style={{ width: 18, height: 18, borderRadius: "50%", background: n.color, border: "2px solid rgba(0,0,0,0.4)", cursor: "pointer", padding: 0 }} title="Ubah Warna" />
+                     {showColorOptions[n.id] && colors.filter(c => c !== n.color).map(c => (
+                       <button key={c} onClick={() => changeColor(n.id, c)} style={{ width: 18, height: 18, borderRadius: "50%", background: c, border: "2px solid transparent", cursor: "pointer", padding: 0 }} />
                      ))}
                    </div>
                    <textarea 

@@ -50,8 +50,8 @@ export function LandingPage() {
           </nav>
 
           <div className="flex items-center gap-4">
-            <button onClick={() => navigate('/login')} className="hidden sm:block text-sm font-bold text-[#1D4D7A] hover:text-[#0B2A4A] transition-colors">Masuk</button>
-            <button onClick={() => navigate('/login')} className="bg-[#1D4D7A] text-white text-sm font-bold py-2.5 px-5 rounded-full hover:bg-[#0B2A4A] transition-all transform hover:scale-105 active:scale-95 shadow-lg shadow-[#1D4D7A]/20">Mulai Gratis</button>
+            <button onClick={() => navigate('/login', { state: { mode: 'login' }})} className="hidden sm:block text-sm font-bold text-[#1D4D7A] hover:text-[#0B2A4A] transition-colors">Masuk</button>
+            <button onClick={() => navigate('/login', { state: { mode: 'signup' }})} className="bg-[#1D4D7A] text-white text-sm font-bold py-2.5 px-5 rounded-full hover:bg-[#0B2A4A] transition-all transform hover:scale-105 active:scale-95 shadow-lg shadow-[#1D4D7A]/20">Mulai Gratis</button>
           </div>
         </div>
       </header>
@@ -83,17 +83,21 @@ export function LandingPage() {
           <motion.div 
             animate={{ y: [0, 20, 0], rotate: [15, 20, 15] }} 
             transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-            className="absolute top-[25%] right-[15%] bg-white text-blue-600 p-4 rounded-3xl shadow-xl border border-slate-100"
+            className="absolute top-[25%] right-[15%] bg-white text-black p-4 rounded-3xl shadow-xl border border-slate-100 flex items-center justify-center w-[66px] h-[66px]"
           >
-            <Facebook size={32} strokeWidth={2.5} />
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+              <path d="M19.589 6.686a4.793 4.793 0 01-3.975-4.685h-3.65v15.348c0 2.213-1.802 4.015-4.015 4.015-2.214 0-4.015-1.802-4.015-4.015 0-2.214 1.801-4.015 4.015-4.015a4.01 4.01 0 013.064 1.455v-3.79a7.664 7.664 0 00-3.064-.622c-4.226 0-7.665 3.44-7.665 7.665 0 4.226 3.439 7.665 7.665 7.665 4.225 0 7.664-3.439 7.664-7.665v-6.6a8.49 8.49 0 004.605 1.365V8.04c-1.637 0-3.136-.576-4.329-1.354z"/>
+            </svg>
           </motion.div>
 
           <motion.div 
             animate={{ y: [0, -10, 0], x: [0, 10, 0], rotate: [-5, 0, -5] }} 
             transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-            className="absolute bottom-[10%] left-[20%] bg-black text-white p-4 rounded-3xl shadow-xl border border-slate-800"
+            className="absolute bottom-[10%] left-[20%] bg-blue-600 text-white p-4 rounded-3xl shadow-xl border border-blue-500 flex items-center justify-center w-[66px] h-[66px]"
           >
-            <Twitter size={32} strokeWidth={2.5} />
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+              <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.924 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+            </svg>
           </motion.div>
 
           <motion.div 
@@ -133,7 +137,7 @@ export function LandingPage() {
             transition={{ delay: 0.2 }}
             className="flex flex-col sm:flex-row gap-4 justify-center"
           >
-            <button onClick={() => navigate('/login')} className="bg-[#1D4D7A] text-white font-bold py-4 px-8 rounded-full text-lg hover:bg-[#0B2A4A] transition-all transform hover:scale-105 active:scale-95 shadow-xl shadow-[#1D4D7A]/20 flex items-center justify-center gap-2">
+            <button onClick={() => navigate('/login', { state: { mode: 'signup' }})} className="bg-[#1D4D7A] text-white font-bold py-4 px-8 rounded-full text-lg hover:bg-[#0B2A4A] transition-all transform hover:scale-105 active:scale-95 shadow-xl shadow-[#1D4D7A]/20 flex items-center justify-center gap-2">
               Gas Sekarang! — Gratis 30 Hari <Zap size={20} className="text-yellow-400" />
             </button>
             <button onClick={() => { document.getElementById('dashboard-visual')?.scrollIntoView({ behavior: 'smooth' }); }} className="bg-white text-[#1D4D7A] font-bold py-4 px-8 rounded-full text-lg border border-black/5 hover:border-black/10 hover:shadow-md transition-all flex items-center justify-center gap-2">
@@ -575,7 +579,7 @@ export function LandingPage() {
                 ))}
               </ul>
               
-              <button onClick={() => navigate('/login')} className="w-full py-4 rounded-xl font-bold bg-[#FAFAFA] text-[#0B2A4A] border border-black/10 hover:bg-slate-100 transition-colors mt-auto">
+              <button onClick={() => navigate('/login', { state: { mode: 'signup' }})} className="w-full py-4 rounded-xl font-bold bg-[#FAFAFA] text-[#0B2A4A] border border-black/10 hover:bg-slate-100 transition-colors mt-auto">
                 Mulai Trial 30 Hari
               </button>
             </div>
@@ -605,7 +609,7 @@ export function LandingPage() {
                 ))}
               </ul>
               
-              <button onClick={() => navigate('/login')} className="w-full py-4 rounded-xl font-bold bg-white text-[#0B2A4A] hover:bg-blue-50 transition-colors shadow-lg mt-auto">
+              <button onClick={() => navigate('/login', { state: { mode: 'signup' }})} className="w-full py-4 rounded-xl font-bold bg-white text-[#0B2A4A] hover:bg-blue-50 transition-colors shadow-lg mt-auto">
                 Ambil Paket Tahunan
               </button>
             </div>
@@ -619,7 +623,7 @@ export function LandingPage() {
         <div className="max-w-3xl mx-auto relative z-10">
           <h2 className="text-3xl md:text-5xl font-extrabold mb-6">Siap Jadikan Kontenmu Level Selanjutnya?</h2>
           <p className="text-blue-100 text-lg mb-10">Ribuan kreator sudah menghemat berjam-jam waktu mingguan mereka. Sekarang giliranmu.</p>
-          <button onClick={() => navigate('/login')} className="bg-white text-[#0B2A4A] font-bold py-4 px-10 rounded-full text-lg hover:shadow-2xl hover:scale-105 active:scale-95 transition-all">
+          <button onClick={() => navigate('/login', { state: { mode: 'signup' }})} className="bg-white text-[#0B2A4A] font-bold py-4 px-10 rounded-full text-lg hover:shadow-2xl hover:scale-105 active:scale-95 transition-all">
             Mulai Bangun Markasmu 🚀
           </button>
         </div>

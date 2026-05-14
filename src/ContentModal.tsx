@@ -37,6 +37,24 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
   const [aiResult, setAiResult] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
   const [captionLoading, setCaptionLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const debounceRef = useRef<NodeJS.Timeout>();
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      if (!d.title || !String(d.title).trim()) return;
+      setIsSaving(true);
+      try {
+        await onSave(d, false);
+      } catch (e) {
+        console.error("Autosave failed", e);
+      }
+      setIsSaving(false);
+    }, 1000);
+    return () => { if(debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [d]);
 
   const activePillar = gps(pillars, d.pillar);
   const headerBg = activePillar?.color || "#2C2016";
@@ -147,23 +165,6 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
     reader.readAsDataURL(file);
   };
   const modalScrollRef = useRef<HTMLDivElement>(null);
-
-  const [isSaving, setIsSaving] = useState(false);
-
-  const handleSave = async () => {
-    if(!d.title || !String(d.title).trim()){
-      alert("Judul tidak boleh kosong.");
-      return;
-    } 
-    setIsSaving(true);
-    try {
-      await onSave(d);
-    } catch(e: any) {
-      console.error("Error in onSave callback:", e);
-      alert("Terjadi kesalahan saat menyimpan: " + e.message);
-    }
-    setIsSaving(false);
-  };
 
   const isNew = modal.mode==="add";
   const canArchive = !d.archived && !isNew;
@@ -397,15 +398,9 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
             {canDelete && <button onClick={()=>onDelete(d.id)} className="hover-scale" style={{...B(false), background:"#FDF5F8", border:"1.5px solid #9C2B4E", color:"#9C2B4E", padding:"7px 14px", fontSize:12, fontWeight:700}}>🗑️ Hapus</button>}
           </div>
           <div style={{display:"flex", gap:10}}>
-            <button onClick={onClose} className="hover-scale" style={{...B(false), padding:"8px 16px", fontSize:12, color: "#666", fontWeight:600}}>Batal</button>
-            <button 
-              onClick={handleSave} 
-              disabled={isSaving}
-              className="hover-scale shadow-orange"
-              style={{...B(true,"var(--theme-primary)"), padding:"10px 24px", fontWeight:800, borderRadius: 12, fontSize:13, opacity: isSaving ? 0.7 : 1}}
-            >
-              {isSaving ? "Menyimpan..." : (isNew ? "+ Tambahkan" : "💾 Simpan Brief")}
-            </button>
+            <span style={{ fontSize: 12, color: isSaving ? "var(--theme-primary)" : "rgba(44,32,22,0.4)", fontWeight: 600, display: "flex", alignItems: "center" }}>
+              {isSaving ? "Menyimpan..." : "Tersimpan otomatis"}
+            </span>
           </div>
         </div>
       </motion.div>

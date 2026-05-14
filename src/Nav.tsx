@@ -1042,7 +1042,7 @@ export function Sidebar({
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showNotifPanel, setShowNotifPanel] = useState(false);
   const [showChatSupport, setShowChatSupport] = useState(false);
-  const { notifications, setNotifications, toast, setToast } =
+  const { notifications, setNotifications, toast, setToast, archiveNotif, archiveAll } =
     useNotifications(profile);
 
   const unreadCount = notifications.filter((n) => n.unread).length;
@@ -1144,65 +1144,10 @@ export function Sidebar({
                     exit={{ opacity: 0, width: 0 }}
                     style={{ overflow: "hidden", whiteSpace: "nowrap" }}
                   >
-                    {editingTitle ? (
-                      <input
-                        autoFocus
-                        value={titleValue}
-                        onChange={(e) => setTitleValue(e.target.value)}
-                        onBlur={() => {
-                          setEditingTitle(false);
-                          if (
-                            titleValue.trim() &&
-                            titleValue.trim() !== title &&
-                            onTitleChange
-                          ) {
-                            onTitleChange(titleValue.trim());
-                          }
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            setEditingTitle(false);
-                            if (
-                              titleValue.trim() &&
-                              titleValue.trim() !== title &&
-                              onTitleChange
-                            ) {
-                              onTitleChange(titleValue.trim());
-                            }
-                          } else if (e.key === "Escape") {
-                            setEditingTitle(false);
-                          }
-                        }}
-                        style={{
-                          fontSize: 20,
-                          fontWeight: 800,
-                          letterSpacing: "-1px",
-                          color: "#ffffff",
-                          background: "rgba(255,255,255,0.1)",
-                          border: "none",
-                          outline: "none",
-                          borderRadius: 4,
-                          width: "100%",
-                          padding: "0 4px",
-                        }}
-                      />
-                    ) : (
-                      <span
-                        style={{
-                          fontSize: 20,
-                          fontWeight: 800,
-                          letterSpacing: "-1px",
-                          color: "#ffffff",
-                          cursor: "text",
-                        }}
-                        onClick={() => {
-                          setTitleValue(title || "Content Management");
-                          setEditingTitle(true);
-                        }}
-                      >
-                        {title || "Content Management"}
-                      </span>
-                    )}
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, paddingLeft: 4 }}>
+                      <div style={{ width: 28, height: 28, borderRadius: 6, background: "linear-gradient(to top right, #1D4D7A, #0B2A4A)", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: "bold", fontSize: 16 }}>H</div>
+                      <div style={{ fontWeight: 800, color: "white", fontSize: 20, letterSpacing: "-0.5px" }}>Hubify</div>
+                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -1284,6 +1229,8 @@ export function Sidebar({
                           notifications={notifications}
                           onClose={() => setShowNotifPanel(false)}
                           onRead={handleRead}
+                          archiveNotif={archiveNotif}
+                          archiveAll={archiveAll}
                           onContactSupport={() => {
                             setShowNotifPanel(false);
                             setShowChatSupport(true);

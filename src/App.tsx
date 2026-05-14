@@ -445,22 +445,23 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
     return () => { unsubWs(); unsubContent(); };
   }, [workspace?.id, user?.uid]);
 
-  const handleSave = async (data: any) => {
+  const handleSave = async (data: any, closeModal = true) => {
     console.log("handleSave called with data:", data);
     if (!workspace) {
         console.error("Workspace is null");
         return;
     }
     if (isRestricted) {
-      alert("Akses Terbatas: Fitur ini dikunci.");
+      if(closeModal) alert("Akses Terbatas: Fitur ini dikunci.");
       return;
     }
     if (isUnverified) {
-      alert("Akses Terbatas: Silakan lengkapi nama panggilan dan verifikasi email Anda terlebih dahulu.");
+      if(closeModal) alert("Akses Terbatas: Silakan lengkapi nama panggilan dan verifikasi email Anda terlebih dahulu.");
       return;
     }
     const isNew = modal.mode === "add";
-    const itemId = isNew ? gid() : data.id;
+    const itemId = data.id || (isNew ? gid() : "");
+    if (!itemId) return;
     
     // Clean up undefined values before saving to Firestore to prevent silent or synchronous failures
     const cleanData = { ...data };
@@ -476,11 +477,15 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
     try {
       await setDoc(doc(db, "workspaces", workspace.id, "content", itemId), itemData, { merge: true });
       console.log("Save successful!");
-      setModal(null);
+      if (closeModal) {
+        setModal(null);
+      } else if (isNew) {
+        setModal({mode: "edit", data: itemData});
+      }
     } catch (e: any) { 
       console.error("Save Error:", e);
-      alert("Gagal menyimpan data: " + e.message);
-      handleFirestoreError(e, isNew?'create':'update'); 
+      if(closeModal) alert("Gagal menyimpan data: " + e.message);
+      if(closeModal) handleFirestoreError(e, isNew?'create':'update', null); 
     }
   };
 
@@ -729,10 +734,10 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
         <AnimatePresence mode="wait">
           <motion.div key={tab} initial={{ opacity: 0, y: 5, scale: 0.99 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -5, scale: 0.99 }} transition={{ duration: 0.15, ease: "easeOut" }}>
             {tab==="dashboard"&&<DashboardView user={user} profile={profile} activeWorkspace={workspace} content={filtered} theme={currentTheme} setTab={setTab} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} year={year} month={month} />}
-            {tab==="month"&&<MonthView year={year} month={month} monthContent={monthContent} filtered={filtered} openEdit={openEdit} openAdd={openAdd} showHolidays={showHolidays} holidays={holidays} customEvents={workspace?.settings?.customEvents || []} pillars={pillars} platforms={platforms} isRestricted={isRestricted}/>}
-            {tab==="week"&&<WeekView year={year} month={month} content={content} filtered={filtered} openEdit={openEdit} openAdd={openAdd} showHolidays={showHolidays} holidays={holidays} pillars={pillars} platforms={platforms} isRestricted={isRestricted}/>}
-            {tab==="board"&&<BoardView year={year} month={month} content={content} filtered={filtered} openEdit={openEdit} openAdd={openAdd} statuses={statuses} pillars={pillars} platforms={platforms} search={search} isRestricted={isRestricted}/>}
-            {tab==="timeline"&&<TimelineView year={year} month={month} content={content} filtered={filtered} openEdit={openEdit} openAdd={openAdd} pillars={pillars} platforms={platforms} showHolidays={showHolidays} holidays={holidays} isRestricted={isRestricted}/>}
+            {tab==="month"&&<MonthView year={year} month={month} monthContent={monthContent} filtered={filtered} openEdit={openEdit} openAdd={openAdd} showHolidays={showHolidays} holidays={holidays} customEvents={workspace?.settings?.customEvents || []} pillars={pillars} platforms={platforms} isRestricted={isRestricted} showArchived={showArchived} />}
+            {tab==="week"&&<WeekView year={year} month={month} content={content} filtered={filtered} openEdit={openEdit} openAdd={openAdd} showHolidays={showHolidays} holidays={holidays} pillars={pillars} platforms={platforms} isRestricted={isRestricted} showArchived={showArchived} />}
+            {tab==="board"&&<BoardView year={year} month={month} content={content} filtered={filtered} openEdit={openEdit} openAdd={openAdd} statuses={statuses} pillars={pillars} platforms={platforms} search={search} isRestricted={isRestricted} showArchived={showArchived} />}
+            {tab==="timeline"&&<TimelineView year={year} month={month} content={content} filtered={filtered} openEdit={openEdit} openAdd={openAdd} pillars={pillars} platforms={platforms} showHolidays={showHolidays} holidays={holidays} isRestricted={isRestricted} showArchived={showArchived} />}
             {tab==="table"&&<TableView filtered={filtered} openEdit={openEdit} archiveItem={archiveItem} unarchiveItem={unarchiveItem} deleteItem={deleteItem} pillars={pillars} platforms={platforms} showArchived={showArchived} search={search} bulkIds={bulkIds} setBulkIds={setBulkIds} onBulk={handleBulkActions} isRestricted={isRestricted}/>}
             {tab.startsWith("social")&&<SocialStudioView tab={tab} />}
             {tab==="analytics"&&<AnalyticsView content={content} pillars={pillars} platforms={platforms} pics={pics} statuses={statuses} openEdit={openEdit} isRestricted={isRestricted}/>}

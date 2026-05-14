@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { 
   auth, db, googleProvider, signInWithPopup, 
   createUserWithEmailAndPassword, signInWithEmailAndPassword,
@@ -8,14 +9,26 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 
 export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: any) => void, currentUser?: any }) {
-  const [mode, setMode] = useState<"login" | "signup" | "forgot">("signup");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const location = useLocation();
+  const initialMode = location.state?.mode || "signup";
+  const [mode, setMode] = useState<"login" | "signup" | "forgot">(initialMode);
+  
+  // Update mode if location.state.mode changes
+  useEffect(() => {
+    if (location.state?.mode) {
+      setMode(location.state.mode);
+    }
+  }, [location.state?.mode]);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [msg, setMsg] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [nickname, setNickname] = useState("");
 
-  const checkUserDocument = async (user: any) => {
+  const checkUserDocument = async (user: any, providedFullName?: string, providedNickname?: string) => {
     try {
       const userRef = doc(db, "users", user.uid);
       const snap = await getDoc(userRef);
@@ -28,7 +41,8 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
          await setDoc(userRef, {
            uid: user.uid,
            email: user.email,
-           fullName: user.displayName || "Your Name",
+           fullName: providedFullName || user.displayName || "Your Name",
+           nickname: providedNickname || "",
            username: (user.displayName || "user").replace(/\s+/g, "").toLowerCase() + Math.floor(Math.random()*1000),
            avatar: user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || "Your Name"}`,
            plan: cPlan,
@@ -76,8 +90,14 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
     setMsg("");
     try {
       await sendPasswordResetEmail(auth, email);
-      setMsg("Link pencetakan ulang password telah dikirim ke email Anda.");
-    } catch (e: any) { setError(e.message); }
+      setMsg("Link udah dikirim ke email kamu, buruan cek ya!");
+    } catch (e: any) { 
+      if (e.code === 'auth/user-not-found') {
+        setError("Email itu ga kedaftar nih.");
+      } else {
+        setError(e.message);
+      }
+    }
     finally { setLoading(false); }
   };
 
@@ -90,13 +110,22 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
          const res = await signInWithEmailAndPassword(auth, email, password);
          await checkUserDocument(res.user);
       } else if (mode === "signup") {
+         if (!fullName || !nickname) {
+           setError("Nama Lengkap dan Nama Panggilan wajib diisi!");
+           setLoading(false);
+           return;
+         }
          const res = await createUserWithEmailAndPassword(auth, email, password);
          await sendEmailVerification(res.user);
-         await checkUserDocument(res.user);
+         await checkUserDocument(res.user, fullName, nickname);
       }
     } catch (e: any) { 
       if (e.code === 'auth/operation-not-allowed') {
         setError("Firebase Error (auth/operation-not-allowed). Fitur Email/Password belum aktif. Silakan masuk ke project Firebase Anda, menu Authentication > Sign-in method, dan aktifkan Email/Password.");
+      } else if (e.code === 'auth/email-already-in-use') {
+        setError("Email sudah terdaftar.");
+      } else if (e.code === 'auth/wrong-password' || e.code === 'auth/user-not-found' || e.code === 'auth/invalid-credential') {
+        setError("Username atau passwordnya salah, coba cek dan masukin ulang ya.");
       } else {
         setError(e.message); 
       }
@@ -114,7 +143,7 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
         initial={{ opacity: 0, y: 20, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
-        className="max-w-5xl w-full flex flex-col md:flex-row shadow-[0_20px_60px_-15px_rgba(11,42,74,0.15)] rounded-[32px] overflow-hidden bg-white relative z-10 min-h-[650px] border border-black/5"
+        className="max-w-5xl w-full flex flex-col md:flex-row shadow-[0_20px_60px_-15px_rgba(11,42,74,0.15)] rounded-[32px] overflow-hidden bg-white relative z-10 min-h-[580px] border border-black/5"
       >
         {/* Left: Branding & Visuals */}
         <div className="w-full md:w-[45%] relative bg-[#0B2A4A] overflow-hidden flex flex-col p-10 md:p-12 text-white">
@@ -168,8 +197,8 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
         </div>
 
         {/* Right: Form */}
-        <div className="w-full md:w-[55%] p-8 md:p-14 flex flex-col relative overflow-y-auto bg-white">
-            <button onClick={() => window.location.href = '#/'} className="flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-[#1D4D7A] transition-colors mb-8 shrink-0 w-fit">
+        <div className="w-full md:w-[55%] p-6 md:p-10 flex flex-col relative overflow-y-auto bg-white">
+            <button onClick={() => window.location.href = '#/'} className="flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-[#1D4D7A] transition-colors mb-4 shrink-0 w-fit">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
               Kembali
             </button>
@@ -177,44 +206,56 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
             <div className="flex-1 flex flex-col justify-center">
               <AnimatePresence mode="wait">
               <motion.div key={mode} initial={{opacity:0, x:20}} animate={{opacity:1, x:0}} exit={{opacity:0, x:-20}} transition={{ duration: 0.3, ease: "easeOut" }}>
-                <h2 className="text-3xl md:text-4xl font-extrabold text-[#0B2A4A] mb-2">{mode === 'signup' ? 'Mulai Sekarang 🔥' : mode === 'login' ? 'Selamat Datang Lagi 👋' : 'Reset Password 🤔'}</h2>
-                <p className="text-sm font-medium text-slate-500 mb-8">
+                <h2 className="text-2xl md:text-3xl font-extrabold text-[#0B2A4A] mb-1">{mode === 'signup' ? 'Mulai Sekarang 🔥' : mode === 'login' ? 'Selamat Datang Lagi 👋' : 'Reset Password 🤔'}</h2>
+                <p className="text-sm font-medium text-slate-500 mb-6">
                   {mode === 'signup' ? 'Bikin akun gratis, nggak pake kartu kredit.' : mode === 'login' ? 'Masuk buat lanjutin kerjaan kamu yang tertunda.' : 'Tenang, kita bantu pulihin akun kamu.'}
                 </p>
 
-                {error && <motion.div initial={{opacity:0, y:-10}} animate={{opacity:1, y:0}} className="mb-6 p-4 bg-red-50 text-red-600 rounded-2xl text-sm font-bold border border-red-100 flex items-start gap-3"><span className="text-lg">🚨</span> <span>{error}</span></motion.div>}
-                {msg && <motion.div initial={{opacity:0, y:-10}} animate={{opacity:1, y:0}} className="mb-6 p-4 bg-green-50 text-green-700 rounded-2xl text-sm font-bold border border-green-100 flex items-start gap-3"><span className="text-lg">✅</span> <span>{msg}</span></motion.div>}
+                {error && <motion.div initial={{opacity:0, y:-10}} animate={{opacity:1, y:0}} className="mb-4 p-3 bg-red-50 text-red-600 rounded-xl text-sm font-bold border border-red-100 flex items-start gap-2"><span className="text-base mt-0.5">🚨</span> <span>{error}</span></motion.div>}
+                {msg && <motion.div initial={{opacity:0, y:-10}} animate={{opacity:1, y:0}} className="mb-4 p-3 bg-green-50 text-green-700 rounded-xl text-sm font-bold border border-green-100 flex items-start gap-2"><span className="text-base mt-0.5">✅</span> <span>{msg}</span></motion.div>}
                 
                 {mode === "forgot" ? (
-                  <form onSubmit={handleForgot} className="space-y-4">
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-bold text-[#0B2A4A] ml-1">Email Saat Daftar</label>
-                      <input type="email" placeholder="contoh@hubify.com" className="w-full p-4 rounded-2xl border-2 border-slate-100 focus:border-[#1D4D7A] bg-slate-50 focus:bg-white outline-none transition-all font-medium text-[#0B2A4A] placeholder:text-slate-400" value={email} onChange={e=>setEmail(e.target.value)} />
+                  <form onSubmit={handleForgot} className="space-y-3">
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-[#0B2A4A] ml-1">Email Saat Daftar</label>
+                      <input type="email" placeholder="contoh@hubify.com" className="w-full p-3 rounded-xl border-2 border-slate-100 focus:border-[#1D4D7A] bg-slate-50 focus:bg-white outline-none transition-all font-medium text-[#0B2A4A] placeholder:text-slate-400 text-sm" value={email} onChange={e=>setEmail(e.target.value)} />
                     </div>
-                    <button disabled={loading} className="w-full bg-[#1D4D7A] text-white rounded-2xl p-4 font-bold text-lg hover:bg-[#0B2A4A] transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-[#1D4D7A]/20 mt-4 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none">
+                    <button disabled={loading} className="w-full bg-[#1D4D7A] text-white rounded-xl p-3 font-bold text-sm hover:bg-[#0B2A4A] transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-[#1D4D7A]/20 mt-3 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none">
                       {loading ? "Ngirim..." : "Kirim Link Reset"}
                     </button>
-                    <div className="text-center mt-6 text-sm">
+                    <div className="text-center mt-4 text-sm">
                       <button type="button" onClick={() => setMode("login")} className="text-slate-500 font-bold hover:text-[#1D4D7A] transition-colors">Batal, kembali ke Login</button>
                     </div>
                   </form>
                 ) : (
-                  <form onSubmit={handleEmailAuth} className="space-y-4">
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-bold text-[#0B2A4A] ml-1">Email</label>
-                      <input type="email" placeholder="contoh@hubify.com" className="w-full p-4 rounded-2xl border-2 border-slate-100 focus:border-[#1D4D7A] bg-slate-50 focus:bg-white outline-none transition-all font-medium text-[#0B2A4A] placeholder:text-slate-400" value={email} onChange={e=>setEmail(e.target.value)} required />
+                  <form onSubmit={handleEmailAuth} className="space-y-3">
+                    {mode === "signup" && (
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-xs font-bold text-[#0B2A4A] ml-1">Nama Lengkap</label>
+                          <input type="text" placeholder="John Doe" className="w-full p-3 rounded-xl border-2 border-slate-100 focus:border-[#1D4D7A] bg-slate-50 focus:bg-white outline-none transition-all font-medium text-[#0B2A4A] placeholder:text-slate-400 text-sm" value={fullName} onChange={e=>setFullName(e.target.value)} required />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-xs font-bold text-[#0B2A4A] ml-1">Nama Panggilan</label>
+                          <input type="text" placeholder="Loe" className="w-full p-3 rounded-xl border-2 border-slate-100 focus:border-[#1D4D7A] bg-slate-50 focus:bg-white outline-none transition-all font-medium text-[#0B2A4A] placeholder:text-slate-400 text-sm" value={nickname} onChange={e=>setNickname(e.target.value)} required />
+                        </div>
+                      </div>
+                    )}
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-[#0B2A4A] ml-1">Email</label>
+                      <input type="email" placeholder="contoh@hubify.com" className="w-full p-3 rounded-xl border-2 border-slate-100 focus:border-[#1D4D7A] bg-slate-50 focus:bg-white outline-none transition-all font-medium text-[#0B2A4A] placeholder:text-slate-400 text-sm" value={email} onChange={e=>setEmail(e.target.value)} required />
                     </div>
-                    <div className="space-y-1.5">
+                    <div className="space-y-1">
                       <div className="flex justify-between items-center ml-1">
-                        <label className="text-sm font-bold text-[#0B2A4A]">Password</label>
+                        <label className="text-xs font-bold text-[#0B2A4A]">Password</label>
                         {mode === "login" && (
                           <button type="button" onClick={() => setMode("forgot")} className="text-xs font-bold text-blue-600 hover:text-[#0B2A4A] transition-colors">Lupa Password?</button>
                         )}
                       </div>
-                      <input type="password" placeholder="Minimal 6 karakter" className="w-full p-4 rounded-2xl border-2 border-slate-100 focus:border-[#1D4D7A] bg-slate-50 focus:bg-white outline-none transition-all font-medium text-[#0B2A4A] placeholder:text-slate-400" value={password} onChange={e=>setPassword(e.target.value)} required />
+                      <input type="password" placeholder="Minimal 6 karakter" className="w-full p-3 rounded-xl border-2 border-slate-100 focus:border-[#1D4D7A] bg-slate-50 focus:bg-white outline-none transition-all font-medium text-[#0B2A4A] placeholder:text-slate-400 text-sm" value={password} onChange={e=>setPassword(e.target.value)} required />
                     </div>
                     
-                    <button disabled={loading} className="w-full bg-[#1D4D7A] text-white rounded-2xl p-4 font-bold text-lg hover:bg-[#0B2A4A] transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-[#1D4D7A]/20 mt-4 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none">
+                    <button disabled={loading} className="w-full bg-[#1D4D7A] text-white rounded-xl p-3 mt-4 font-bold text-sm hover:bg-[#0B2A4A] transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-[#1D4D7A]/20 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none">
                       {loading ? "Tunggu bentar..." : mode === "login" ? "Masuk ke Dashboard" : "Daftar Free Trial 30 Hari"}
                     </button>
                   </form>
@@ -222,18 +263,18 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
 
                 {mode !== "forgot" && (
                   <>
-                    <div className="flex items-center my-8 text-sm font-bold text-slate-300 gap-4">
-                      <div className="flex-1 h-0.5 bg-slate-100 rounded-full"></div>
+                    <div className="flex items-center my-6 text-xs font-bold text-slate-300 gap-4">
+                      <div className="flex-1 h-[1px] bg-slate-100 rounded-full"></div>
                       ATAU LEBIH CEPAT
-                      <div className="flex-1 h-0.5 bg-slate-100 rounded-full"></div>
+                      <div className="flex-1 h-[1px] bg-slate-100 rounded-full"></div>
                     </div>
 
-                    <button onClick={handleGoogle} disabled={loading} className="w-full flex items-center justify-center gap-3 border-2 border-slate-100 bg-white rounded-2xl p-4 font-bold text-[#0B2A4A] hover:border-[#1D4D7A]/30 hover:bg-blue-50/50 transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none">
-                      <svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg"><g transform="matrix(1, 0, 0, 1, 27.009001, -39.238998)"><path fill="#4285F4" d="M -3.264 51.509 C -3.264 50.719 -3.334 49.969 -3.454 49.239 L -14.754 49.239 L -14.754 53.749 L -8.284 53.749 C -8.574 55.229 -9.424 56.479 -10.684 57.329 L -10.684 60.329 L -6.824 60.329 C -4.564 58.239 -3.264 55.159 -3.264 51.509 Z"/><path fill="#34A853" d="M -14.754 63.239 C -11.514 63.239 -8.804 62.159 -6.824 60.329 L -10.684 57.329 C -11.764 58.049 -13.134 58.489 -14.754 58.489 C -17.884 58.489 -20.534 56.379 -21.484 53.529 L -25.464 53.529 L -25.464 56.619 C -23.494 60.539 -19.444 63.239 -14.754 63.239 Z"/><path fill="#FBBC05" d="M -21.484 53.529 C -21.734 52.809 -21.864 52.039 -21.864 51.239 C -21.864 50.439 -21.724 49.669 -21.484 48.949 L -21.484 45.859 L -25.464 45.859 C -26.284 47.479 -26.754 49.299 -26.754 51.239 C -26.754 53.179 -26.284 54.999 -25.464 56.619 L -21.484 53.529 Z"/><path fill="#EA4335" d="M -14.754 43.989 C -12.984 43.989 -11.404 44.599 -10.154 45.789 L -6.734 42.369 C -8.804 40.429 -11.514 39.239 -14.754 39.239 C -19.444 39.239 -23.494 41.939 -25.464 45.859 L -21.484 48.949 C -20.534 46.099 -17.884 43.989 -14.754 43.989 Z"/></g></svg>
+                    <button onClick={handleGoogle} disabled={loading} className="w-full flex items-center justify-center gap-3 border-2 border-slate-100 bg-white rounded-xl p-3 font-bold text-[#0B2A4A] text-sm hover:border-[#1D4D7A]/30 hover:bg-blue-50/50 transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none">
+                      <svg viewBox="0 0 24 24" width="20" height="20" xmlns="http://www.w3.org/2000/svg"><g transform="matrix(1, 0, 0, 1, 27.009001, -39.238998)"><path fill="#4285F4" d="M -3.264 51.509 C -3.264 50.719 -3.334 49.969 -3.454 49.239 L -14.754 49.239 L -14.754 53.749 L -8.284 53.749 C -8.574 55.229 -9.424 56.479 -10.684 57.329 L -10.684 60.329 L -6.824 60.329 C -4.564 58.239 -3.264 55.159 -3.264 51.509 Z"/><path fill="#34A853" d="M -14.754 63.239 C -11.514 63.239 -8.804 62.159 -6.824 60.329 L -10.684 57.329 C -11.764 58.049 -13.134 58.489 -14.754 58.489 C -17.884 58.489 -20.534 56.379 -21.484 53.529 L -25.464 53.529 L -25.464 56.619 C -23.494 60.539 -19.444 63.239 -14.754 63.239 Z"/><path fill="#FBBC05" d="M -21.484 53.529 C -21.734 52.809 -21.864 52.039 -21.864 51.239 C -21.864 50.439 -21.724 49.669 -21.484 48.949 L -21.484 45.859 L -25.464 45.859 C -26.284 47.479 -26.754 49.299 -26.754 51.239 C -26.754 53.179 -26.284 54.999 -25.464 56.619 L -21.484 53.529 Z"/><path fill="#EA4335" d="M -14.754 43.989 C -12.984 43.989 -11.404 44.599 -10.154 45.789 L -6.734 42.369 C -8.804 40.429 -11.514 39.239 -14.754 39.239 C -19.444 39.239 -23.494 41.939 -25.464 45.859 L -21.484 48.949 C -20.534 46.099 -17.884 43.989 -14.754 43.989 Z"/></g></svg>
                       {mode === "login" ? "Masuk pake Google" : "Daftar pake Google (Gratis 30 Hari)"}
                     </button>
 
-                    <div className="mt-8 text-center text-sm font-medium text-slate-500 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                    <div className="mt-6 text-center text-xs font-medium text-slate-500 bg-slate-50 p-3 rounded-xl border border-slate-100">
                       {mode === "login" ? (
                         <>Belum gabung sama Hubify? <button onClick={() => setMode("signup")} className="text-[#1D4D7A] font-bold hover:underline">Daftar sekarang</button></>
                       ) : (

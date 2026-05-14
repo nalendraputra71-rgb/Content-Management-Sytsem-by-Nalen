@@ -5,7 +5,7 @@ import {
   I, B, CARD, PBadge, SBadge, getDynamicEvents 
 } from "./data";
 
-export function MonthView({year,month,monthContent,filtered,openEdit,openAdd,showHolidays,holidays,customEvents,pillars,platforms}: any) {
+export function MonthView({year,month,monthContent,filtered,openEdit,openAdd,showHolidays,holidays,customEvents,pillars,platforms,showArchived}: any) {
   const dim = new Date(year,month,0).getDate();
   const sd = new Date(year,month-1,1).getDay();
   
@@ -53,8 +53,8 @@ export function MonthView({year,month,monthContent,filtered,openEdit,openAdd,sho
     return result;
   };
 
-  const getF  = (d:any) => filtered.filter((c:any)=>c.day===d&&!c.archived);
-  const getA  = (d:any) => monthContent.filter((c:any)=>c.day===d&&!c.archived);
+  const getF  = (d:any) => filtered.filter((c:any)=>c.day===d&&(!c.archived || showArchived)).sort((a:any,b:any) => ((a.uploadHour??24)*60+(a.uploadMinute??0)) - ((b.uploadHour??24)*60+(b.uploadMinute??0)));
+  const getA  = (d:any) => monthContent.filter((c:any)=>c.day===d&&(!c.archived || showArchived));
   return (
     <div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:3,marginBottom:3}}>
@@ -79,7 +79,6 @@ export function MonthView({year,month,monthContent,filtered,openEdit,openAdd,sho
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:3}}>
                 <div style={{display:"flex",flexDirection:"column",gap:2}}>
                   <span style={{fontSize:18,fontWeight:900,lineHeight:1,color:(isSpec||isToday)?"var(--theme-primary)":"#2C2016"}}>{day}</span>
-                  {isToday && <span style={{fontSize:9,fontWeight:800,background:"var(--theme-primary)",color:"white",padding:"2px 6px",borderRadius:4}}>HARI INI</span>}
                 </div>
                 <div style={{display:"flex",gap:3,alignItems:"center"}}>
                   {allItems.length>0&&<span style={{background:"#2C2016",color:"#FAF7F2",borderRadius:12,padding:"2px 6px",fontSize:9,fontWeight:700}}>{allItems.length}</span>}
@@ -130,7 +129,7 @@ export function MonthView({year,month,monthContent,filtered,openEdit,openAdd,sho
   );
 }
 
-export function WeekView({year,month,content,openEdit,openAdd,pillars,platforms,showHolidays,holidays}: any) {
+export function WeekView({year,month,content,filtered,openEdit,openAdd,pillars,platforms,showHolidays,holidays,showArchived}: any) {
   const [wOff,setWOff] = useState(0);
   const base = new Date(year,month-1,1);
   const ws = new Date(base.getTime() + wOff*7*86400000);
@@ -138,7 +137,7 @@ export function WeekView({year,month,content,openEdit,openAdd,pillars,platforms,
     const d=new Date(ws.getTime()+i*86400000);
     return {date:d,y:d.getFullYear(),mo:d.getMonth()+1,d:d.getDate(),dow:d.getDay()};
   });
-  const getItems = (day:any) => content.filter((c:any)=>c.year===day.y&&c.month===day.mo&&c.day===day.d&&!c.archived);
+  const getItems = (day:any) => filtered.filter((c:any)=>c.year===day.y&&c.month===day.mo&&c.day===day.d&&(!c.archived || showArchived)).sort((a:any,b:any) => ((a.uploadHour??24)*60+(a.uploadMinute??0)) - ((b.uploadHour??24)*60+(b.uploadMinute??0)));
   return (
     <div>
       <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:16}}>
@@ -187,8 +186,8 @@ export function WeekView({year,month,content,openEdit,openAdd,pillars,platforms,
   );
 }
 
-export function BoardView({year,month,content,filtered,openEdit,openAdd,statuses,pillars,platforms,search}: any) {
-  const items = filtered.filter((c:any)=>c.year===year&&c.month===month&&!c.archived);
+export function BoardView({year,month,content,filtered,openEdit,openAdd,statuses,pillars,platforms,search,showArchived}: any) {
+  const items = filtered.filter((c:any)=>c.year===year&&c.month===month&&(!c.archived || showArchived));
   
   const High = ({txt}:any) => {
     try {
@@ -203,7 +202,7 @@ export function BoardView({year,month,content,filtered,openEdit,openAdd,statuses
     <div style={{display:"flex",gap:12,overflowX:"auto",paddingBottom:12,minHeight:400}}>
       {Array.isArray(statuses) && statuses.map((st:any)=>{
         const stName = typeof st === 'string' ? st : (st?.name || st?.id || String(st));
-        const cols=items.filter((c:any)=>c.status===stName);
+        const cols=items.filter((c:any)=>c.status===stName).sort((a:any,b:any) => ((a.uploadHour??24)*60+(a.uploadMinute??0)) - ((b.uploadHour??24)*60+(b.uploadMinute??0)));
         const ss = (typeof st !== 'string' && st?.color) ? {bg: st.color+"20", color: st.color} : gss(stName);
         return (
           <div key={stName} style={{minWidth:220,flex:"0 0 220px",background:"#F5F0E8",borderRadius:12,padding:10}}>
@@ -242,10 +241,10 @@ export function BoardView({year,month,content,filtered,openEdit,openAdd,statuses
   );
 }
 
-export function TimelineView({year,month,content,filtered,openEdit,openAdd,pillars,platforms,showHolidays,holidays}: any) {
+export function TimelineView({year,month,content,filtered,openEdit,openAdd,pillars,platforms,showHolidays,holidays,showArchived}: any) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const dim = new Date(year,month,0).getDate();
-  const getItems = (d:any) => filtered.filter((c:any)=>c.day===d&&!c.archived);
+  const getItems = (d:any) => filtered.filter((c:any)=>c.day===d&&(!c.archived || showArchived)).sort((a:any,b:any) => ((a.uploadHour??24)*60+(a.uploadMinute??0)) - ((b.uploadHour??24)*60+(b.uploadMinute??0)));
   const getEv = (d:any) => showHolidays?holidays[`${year}-${month}-${d}`]:null;
   useEffect(()=>{
     if(scrollRef.current) scrollRef.current.scrollLeft=0;
