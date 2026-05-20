@@ -32,6 +32,7 @@ import {
   BarChart2,
   MessageSquare,
   Crown,
+  Trash2
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { eng, fmt, YEARS, B, I, TAB, MONTHS, CustomDropdown } from "./data";
@@ -1042,7 +1043,7 @@ export function Sidebar({
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showNotifPanel, setShowNotifPanel] = useState(false);
   const [showChatSupport, setShowChatSupport] = useState(false);
-  const { notifications, setNotifications, toast, setToast, archiveNotif, archiveAll } =
+  const { notifications, setNotifications, toast, setToast, archiveNotif, archiveAll, handleInviteAction } =
     useNotifications(profile);
 
   const unreadCount = notifications.filter((n) => n.unread).length;
@@ -1085,6 +1086,7 @@ export function Sidebar({
           setShowNotifPanel(true);
           setOpen(true);
         }}
+        onInviteAction={handleInviteAction}
       />
       <motion.div
         initial={false}
@@ -1235,6 +1237,7 @@ export function Sidebar({
                             setShowNotifPanel(false);
                             setShowChatSupport(true);
                           }}
+                          onInviteAction={handleInviteAction}
                         />
                       </motion.div>
                     ) : (
@@ -1297,7 +1300,7 @@ export function Sidebar({
                                   display: "flex",
                                   flexDirection: "column",
                                   gap: 8,
-                                  overflow: "visible",
+                                  overflow: "visible"
                                 }}
                               >
                                 {workspaces.map((ws: any) => {
@@ -1483,11 +1486,11 @@ export function Sidebar({
                                                            )}
                                                            {isOwner ? (
                                                              <div onClick={(e)=>{ e.stopPropagation(); setLeavingWs({ id: ws.id, type: 'delete', name: ws.name }); setWsMenuOpen(null); }} style={{padding:6, borderRadius:6, background:"rgba(225,29,72,0.8)", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center"}} title="Hapus Workspace">
-                                                               <AlertTriangle size={12} color="white" />
+                                                               <Trash2 size={12} color="white" />
                                                              </div>
                                                            ) : (
                                                              <div onClick={(e)=>{ e.stopPropagation(); setLeavingWs({ id: ws.id, type: 'leave', name: ws.name }); setWsMenuOpen(null); }} style={{padding:6, borderRadius:6, background:"rgba(225,29,72,0.8)", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center"}} title="Tinggalkan Workspace">
-                                                               <AlertTriangle size={12} color="white" />
+                                                               <LogOut size={12} color="white" />
                                                              </div>
                                                            )}
                                                         </motion.div>
@@ -1643,7 +1646,7 @@ export function Sidebar({
                                   display: "flex",
                                   flexDirection: "column",
                                   gap: 4,
-                                  overflow: "hidden",
+                                  overflow: "visible"
                                 }}
                               >
                                 {VIEWS.map((v) => (
@@ -1784,7 +1787,7 @@ export function Sidebar({
                                   display: "flex",
                                   flexDirection: "column",
                                   gap: 2,
-                                  overflow: "hidden",
+                                  overflow: "visible"
                                 }}
                               >
                                 {SOCIAL_STUDIO.map((v: any) => (
@@ -2308,7 +2311,7 @@ export function Sidebar({
                       margin: "0 auto 20px",
                     }}
                   >
-                    <AlertTriangle size={32} />
+                    {leavingWs.type === "delete" ? <Trash2 size={32} /> : <LogOut size={32} />}
                   </div>
                   <h3
                     style={{
@@ -2352,10 +2355,12 @@ export function Sidebar({
                     </button>
                     <button
                       onClick={() => {
+                        const targetWs = workspaces.find((w: any) => w.id === leavingWs.id);
+                        if (!targetWs) return;
                         if (leavingWs.type === "delete" && onDeleteWorkspace) {
-                           onDeleteWorkspace(leavingWs.id);
+                           onDeleteWorkspace(targetWs);
                         } else if (onLeaveWorkspace) {
-                           onLeaveWorkspace(leavingWs);
+                           onLeaveWorkspace(targetWs);
                         }
                         setLeavingWs(null);
                       }}

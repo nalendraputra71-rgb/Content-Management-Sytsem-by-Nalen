@@ -113,6 +113,11 @@ service cloud.firestore {
        allow delete: if isAdmin();
     }
 
+    match /accountDeletionReasons/{reasonId} {
+       allow create: if isSignedIn();
+       allow read, update, delete: if isAdmin();
+    }
+
     // ─── WORKSPACES ──────────────────────────────────────────────────────────
     match /workspaces/{wsId} {
       allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || resource.data.get('publicLinkEnabled', false) == true);
@@ -129,7 +134,7 @@ service cloud.firestore {
           (request.auth.uid == memberId && incoming().role == "owner" && 
            getAfter(/databases/$(database)/documents/workspaces/$(wsId)).data.ownerId == request.auth.uid)
         );
-        allow delete: if isOwner(wsId) && memberId != request.auth.uid;
+        allow delete: if isOwner(wsId) || (request.auth.uid == memberId && existing().role != "owner");
         allow update: if isOwner(wsId) && incoming().diff(existing()).affectedKeys().hasOnly(['role']);
       }
 

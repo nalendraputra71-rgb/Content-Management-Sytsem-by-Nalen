@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { auth, db, signOut, updatePassword, doc, getDoc, updateDoc, runTransaction, collection, query, where, getDocs } from "./firebase";
+import { auth, db, signOut, updatePassword, doc, getDoc, updateDoc, runTransaction, collection, query, where, getDocs, addDoc } from "./firebase";
 import { User, Mail, Shield, CreditCard, ChevronRight, LogOut, Key, Save, ArrowLeft, Pencil, Crown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { I, B, CARD } from "./data";
@@ -21,6 +21,56 @@ export function UserProfile({ userProfile, activeWorkspace, onUpdate }: { userPr
   const [showTxModal, setShowTxModal] = useState(false);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loadingTx, setLoadingTx] = useState(false);
+
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteReason, setDeleteReason] = useState("");
+  const [customReason, setCustomReason] = useState("");
+
+  const DELETE_REASONS = [
+    "Terlalu mahal",
+    "Fitur kurang lengkap",
+    "Susah digunakan",
+    "Hanya mencoba / tidak butuh lagi",
+    "Lainnya"
+  ];
+
+  const handleDeleteAccount = async () => {
+    if (!deleteReason) {
+       setMessage({ text: "Harap pilih alasan menghapus akun.", type: "error" });
+       return;
+    }
+    setLoading(true);
+    try {
+        const uid = auth.currentUser?.uid;
+        if (!uid) throw new Error("Tidak ada user.");
+
+        const finalReason = deleteReason === "Lainnya" ? customReason : deleteReason;
+
+        // Add reason anonymously before token expires
+        await addDoc(collection(db, "accountDeletionReasons"), {
+             reason: finalReason,
+             deletedAt: new Date().toISOString()
+        });
+
+        // Delete user doc
+        await runTransaction(db, async (t) => {
+            t.delete(doc(db, "users", uid));
+        });
+
+        await auth.currentUser?.delete();
+        window.location.hash = "#/login"; // Use hash router
+    } catch(e: any) {
+        if (e.code === 'auth/requires-recent-login') {
+            setMessage({ text: "Demi keamanan, harap logout dan login kembali sebelum menghapus akun.", type: "error" });
+            setShowDeleteConfirm(false);
+        } else {
+            console.error("Delete account error:", e);
+            setMessage({ text: "Gagal menghapus akun: " + e.message, type: "error" });
+        }
+    } finally {
+        setLoading(false);
+    }
+  };
 
   const loadTransactions = async () => {
      setShowTxModal(true);
@@ -352,6 +402,12 @@ export function UserProfile({ userProfile, activeWorkspace, onUpdate }: { userPr
               </div>
               <button onClick={() => navigate("/billing")} className="hover-scale" style={{...B(true), background:"var(--theme-text-main, #2C2016)", border:"none", color:"white", fontSize:11, display:"flex", alignItems:"center", gap:6}}>Upgrade / Ganti Plan <ChevronRight size={14}/></button>
            </div>
+           
+           <div style={{marginTop: 24, paddingTop: 24, borderTop: "1px solid #EEE"}}>
+              <h3 style={{fontSize:14, fontWeight:700, color:"#9C2B4E", marginBottom:8}}>Danger Zone</h3>
+              <p style={{fontSize:12, color:"rgba(44,32,22,0.6)", marginBottom:16}}>Hapus akun Anda secara permanen beserta semua data yang ada di dalamnya.</p>
+              <button onClick={() => setShowDeleteConfirm(true)} style={{...B(false), background:"#FFF0F5", color:"#9C2B4E", borderColor:"#F8EAF0", fontSize: 12}}>Hapus Akun Permanen</button>
+           </div>
         </div>
       </div>
 
@@ -364,6 +420,37 @@ export function UserProfile({ userProfile, activeWorkspace, onUpdate }: { userPr
             <div style={{display:"flex", gap:12}}>
               <button onClick={()=>setShowLogoutConfirm(false)} style={{flex:1, padding:12, borderRadius:12, background:"var(--theme-bg, #FAFAFA)", border:"1px solid rgba(44,32,22,0.1)", fontWeight:600, color:"var(--theme-text-main, #2C2016)", cursor:"pointer"}}>Batal</button>
               <button onClick={() => { setShowLogoutConfirm(false); signOut(auth).then(() => window.location.hash = "#/login"); }} style={{flex:1, padding:12, borderRadius:12, background:"#9C2B4E", border:"none", fontWeight:600, color:"white", cursor:"pointer"}}>Keluar</button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Delete Account Modal */}
+      {showDeleteConfirm && (
+        <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.6)", backdropFilter:"blur(5px)", zIndex:999, display:"flex", alignItems:"center", justifyContent:"center"}}>
+          <motion.div initial={{scale:0.95, opacity:0}} animate={{scale:1, opacity:1}} exit={{scale:0.95, opacity:0}} style={{background:"white", padding:30, borderRadius:20, width:400, textAlign:"left"}}>
+            <h3 style={{fontSize:20, fontWeight:800, color:"#9C2B4E", marginBottom:8}}>Hapus Akun Permanen</h3>
+            <p style={{fontSize:14, color:"rgba(44,32,22,0.6)", marginBottom:20, lineHeight: 1.5}}>
+              Tindakan ini tidak dapat dibatalkan. Semua data ruang kerja, tiket, dan transaksi akan terhapus.
+            </p>
+            <div style={{marginBottom: 16}}>
+                <label style={{fontSize:12, fontWeight:700, color:"rgba(44,32,22,0.6)", display:"block", marginBottom:8}}>Mengapa Anda ingin menghapus akun?</label>
+                <select value={deleteReason} onChange={(e) => setDeleteReason(e.target.value)} style={{...I({}), width:"100%", marginBottom: 12}}>
+                  <option value="" disabled>Pilih alasan...</option>
+                  {DELETE_REASONS.map(r => <option key={r} value={r}>{r}</option>)}
+                </select>
+                {deleteReason === "Lainnya" && (
+                    <textarea 
+                       value={customReason} 
+                       onChange={e => setCustomReason(e.target.value)} 
+                       placeholder="Ceritakan alasan Anda..."
+                       style={{...I({}), width:"100%", minHeight: 80, resize:"none"}}
+                    />
+                )}
+            </div>
+            <div style={{display:"flex", gap:12, marginTop: 24}}>
+              <button disabled={loading} onClick={()=>setShowDeleteConfirm(false)} style={{flex:1, padding:12, borderRadius:12, background:"var(--theme-bg, #FAFAFA)", border:"1px solid rgba(44,32,22,0.1)", fontWeight:600, color:"var(--theme-text-main, #2C2016)", cursor:"pointer"}}>Batal</button>
+              <button disabled={loading} onClick={handleDeleteAccount} style={{flex:1, padding:12, borderRadius:12, background:"#9C2B4E", border:"none", fontWeight:600, color:"white", cursor:loading?"not-allowed":"pointer"}}>{loading ? "Memproses..." : "Hapus Akun"}</button>
             </div>
           </motion.div>
         </div>

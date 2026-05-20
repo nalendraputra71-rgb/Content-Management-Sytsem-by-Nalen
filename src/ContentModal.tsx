@@ -38,8 +38,11 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
   const [aiLoading, setAiLoading] = useState(false);
   const [captionLoading, setCaptionLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [showWarning, setShowWarning] = useState(false);
+  const [isShaking, setIsShaking] = useState(false);
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
 
-  const debounceRef = useRef<NodeJS.Timeout>();
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -61,6 +64,8 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
 
   const titleRef = useRef<HTMLTextAreaElement>(null);
 
+  const isDirty = useRef(false);
+
   useEffect(() => {
     if (titleRef.current) {
       titleRef.current.style.height = 'auto';
@@ -68,14 +73,51 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
     }
   }, [d.title, modal.open]);
 
-  const set = (k:string,v:any) => setD((p:any)=>({...p,[k]:v}));
+  const set = (k:string,v:any) => {
+    isDirty.current = true;
+    setD((p:any)=>({...p,[k]:v}));
+  };
   const setM = (k:string,v:any, isAds=false) => {
+    isDirty.current = true;
     const ts = new Date().toLocaleString("id-ID",{dateStyle:"medium",timeStyle:"short"});
     if(isAds) {
       setD((p:any)=>({...p,adsMetrics:{...p.adsMetrics,[k]:Number(v)||0},metricsUpdatedAt:ts}));
     } else {
       setD((p:any)=>({...p,metrics:{...p.metrics,[k]:Number(v)||0},metricsUpdatedAt:ts}));
     }
+  };
+
+  const handleClose = () => {
+    if (isDirty.current) {
+      if (modal.mode === "add" && (!d.title || !String(d.title).trim() || !d.year || !d.month || !d.day)) {
+        setShowWarning(true);
+        setIsShaking(true);
+        setTimeout(() => setIsShaking(false), 600);
+        if (modalScrollRef.current) {
+           modalScrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      }
+      setShowExitConfirm(true);
+      return; 
+    }
+    onClose();
+  };
+
+  const addCustomField = () => {
+    isDirty.current = true;
+    setD((p:any)=>({...p, customFields: [...p.customFields, {key:"", value:""}]}));
+  };
+  const updateCustomField = (index:number, k:string, v:any) => {
+    isDirty.current = true;
+    const arr = [...d.customFields];
+    arr[index] = {...arr[index], [k]:v};
+    set("customFields", arr);
+  };
+  const removeCustomField = (index:number) => {
+    isDirty.current = true;
+    const arr = [...d.customFields];
+    arr.splice(index, 1);
+    set("customFields", arr);
   };
 
   const analyzeContent = async () => {
@@ -171,7 +213,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
   const canDelete = !isNew;
 
   return (
-    <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} transition={{ duration: 0.15 }} onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(30,21,9,0.7)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:300,padding:16}}>
+    <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} transition={{ duration: 0.15 }} onClick={handleClose} style={{position:"fixed",inset:0,background:"rgba(30,21,9,0.7)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:300,padding:16}}>
       <motion.div 
         initial={{scale:0.97, opacity:0, y:15}} animate={{scale:1, opacity:1, y:0}} exit={{scale:0.97, opacity:0, y:15}} transition={{ duration: 0.2, ease: "easeOut" }}
         onClick={e=>e.stopPropagation()} 
@@ -179,10 +221,16 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
       >
         <div ref={modalScrollRef} style={{padding: 32, overflow: "auto", flex: 1}}>
           <div style={{background:headerBg,color:"#FAFAFA",borderRadius:16,padding:"24px 28px",marginBottom:24, boxShadow:"inset 0 2px 4px rgba(255,255,255,0.05)", position:"relative", transition: "background 0.3s ease"}}>
-              <button className="hover-scale" onClick={onClose} style={{position:"absolute",top:20,right:20,background:"rgba(255,255,255,0.1)",border:"none",borderRadius:"50%",width:32,height:32,cursor:"pointer",fontSize:18,color:"white",display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+              <button className="hover-scale" onClick={handleClose} style={{position:"absolute",top:20,right:20,background:"rgba(255,255,255,0.1)",border:"none",borderRadius:"50%",width:32,height:32,cursor:"pointer",fontSize:18,color:"white",display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:16,marginBottom:16, paddingRight: 40}}>
-                  <div style={{flex:1}}>
-                     <label style={{...L, color:"rgba(250,247,242,0.4)", fontSize:10}}>Judul Konten</label>
+                  <motion.div 
+                    animate={isShaking && (!d.title || !String(d.title).trim()) ? { x: [-10, 10, -10, 10, 0], backgroundColor: ["transparent", "rgba(255, 68, 68, 0.4)", "transparent"] } : { x: 0, backgroundColor: "transparent" }} 
+                    transition={{ duration: 0.5 }}
+                    style={{flex:1, borderRadius: 8, paddingLeft: 8, marginLeft: -8, paddingTop: 4}}
+                  >
+                     <label style={{...L, color: (showWarning && (!d.title || !String(d.title).trim())) ? "#FF8A8A" : "rgba(250,247,242,0.4)", fontSize:10}}>
+                        Judul Konten { (showWarning && (!d.title || !String(d.title).trim())) && <span style={{fontWeight:800}}>*Wajib Diisi</span> }
+                     </label>
                    <textarea 
                       ref={titleRef}
                       value={d.title} 
@@ -190,7 +238,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                       rows={1}
                       style={{background:"transparent",border:"none",borderBottom:"1.5px solid rgba(250,247,242,0.2)",fontSize:26,fontWeight:800, letterSpacing:"-0.5px",color:"white",width:"100%",outline:"none",padding:"4px 0", resize: "none", overflow: "hidden", lineHeight: 1.2}} 
                       placeholder="Tulis Judul Konten..."/>
-                </div>
+                </motion.div>
                 <div style={{textAlign:"right", flexShrink: 0}}>
                     <h2 style={{fontSize:16,margin:0,color:"#ffffff", fontWeight:700}}>{isNew?"✨ Baru":"✏️ Detail Konten"}</h2>
                 </div>
@@ -228,8 +276,14 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
 
         {/* Row 1: Date + Time + Platform */}
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1.5fr",gap:16,marginBottom:16}}>
-          <div style={GRP}>
-            <label style={L}>Tanggal Update</label>
+          <motion.div 
+            animate={isShaking && (!d.year || !d.month || !d.day) ? { x: [-10, 10, -10, 10, 0] } : { x: 0 }} 
+            transition={{ duration: 0.5 }}
+            style={GRP}
+          >
+            <label style={{...L, color: (showWarning && (!d.year || !d.month || !d.day)) ? "#E53935" : L.color}}>
+               Tanggal Update { (showWarning && (!d.year || !d.month || !d.day)) && <span style={{fontWeight:800}}>*Wajib Diisi</span> }
+            </label>
             <input 
               type="date" 
               value={`${d.year || new Date().getFullYear()}-${String(d.month || new Date().getMonth()+1).padStart(2, '0')}-${String(d.day || new Date().getDate()).padStart(2, '0')}`} 
@@ -241,9 +295,9 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                   set("day", parseInt(parts[2], 10));
                 }
               }} 
-              style={{...I(), width:"100%"}}
+              style={{...I(), width:"100%", borderColor: (showWarning && (!d.year || !d.month || !d.day)) ? "#E53935" : I({}).borderColor }}
             />
-          </div>
+          </motion.div>
           <div style={GRP}>
             <label style={L}>Jam Upload</label>
             <div style={{display:"flex",gap:4, alignItems: "center"}}>
@@ -404,6 +458,35 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
           </div>
         </div>
       </motion.div>
+
+      <AnimatePresence>
+        {showExitConfirm && (
+          <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.5)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:400,borderRadius:24}} onClick={e=>e.stopPropagation()}>
+             <motion.div initial={{scale:0.95}} animate={{scale:1}} exit={{scale:0.95}} style={{background:"#FAFAFA",padding:32,borderRadius:24,maxWidth:360,width:"100%",boxShadow:"0 12px 30px rgba(0,0,0,0.2)",textAlign:"center"}}>
+                <h3 style={{margin:"0 0 16px",fontSize:20,color:"#2C2016", fontWeight:800}}>Keluar dari Draft?</h3>
+                <p style={{margin:"0 0 24px",fontSize:14,color:"rgba(44,32,22,0.6)",lineHeight:1.5}}>
+                   {modal.mode === "add" ? "Anda sedang membuat draft baru. Yakin ingin keluar? Jika dihapus, draft ini akan hilang sepenuhnya." : "Anda sedang mengedit konten. Yakin ingin keluar?"}
+                </p>
+                <div style={{display:"flex",gap:12}}>
+                   <button onClick={async ()=>{
+                     if (modal.mode === "add" && d.title?.trim() !== "") {
+                        await onDelete(d.id, true);
+                     } else {
+                        onClose();
+                     }
+                   }} style={{flex:1,padding:"12px 16px",background:"var(--theme-bg)",border:"1.5px solid rgba(44,32,22,0.2)",color:"#2C2016",borderRadius:24,fontWeight:700,cursor:"pointer"}}>
+                      {modal.mode === "add" ? "Hapus Draft" : "Keluar"}
+                   </button>
+                   <button onClick={()=>{
+                     setShowExitConfirm(false);
+                   }} style={{flex:1,padding:"12px 16px",background:"var(--theme-primary, #C4622D)",border:"none",color:"white",borderRadius:24,fontWeight:700,cursor:"pointer"}}>
+                      Lanjutkan Edit
+                   </button>
+                </div>
+             </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

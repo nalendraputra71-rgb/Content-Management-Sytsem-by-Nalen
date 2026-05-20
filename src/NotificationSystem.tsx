@@ -79,8 +79,9 @@ export function useNotifications(userProfile: any) {
     let isMounted = true;
     let unsubGlobal: any;
     let unsubTickets: any;
+    let unsubInvites: any;
     
-    import("./firebase").then(({ db, collection, query, onSnapshot, orderBy, where }) => {
+    import("./firebase").then(({ db, collection, query, onSnapshot, orderBy, where, collectionGroup }) => {
       unsubGlobal = onSnapshot(query(collection(db, "global_notifications"), orderBy("createdAt", "desc")), (snap) => {
         if (!isMounted) return;
         const globalNotifs = snap.docs.map(d => ({id: d.id, ...d.data()})) as any[];
@@ -144,6 +145,47 @@ export function useNotifications(userProfile: any) {
          }, (err:any) => {
            console.warn("Tickets onSnapshot error:", err);
          });
+
+         // Listen to workspace invites
+         unsubInvites = onSnapshot(query(collectionGroup(db, "members"), where("userId", "==", userProfile.uid), where("status", "==", "pending")), (snap) => {
+            if (!isMounted) return;
+            const inviteNotifs: any[] = [];
+            snap.forEach(d => {
+               const data = d.data();
+               const wsName = data.workspaceName || "Workspace Baru";
+               const inviter = data.inviterName || "Seseorang";
+               inviteNotifs.push({
+                   id: `invite_${data.workspaceId}_${d.id}`, // the member doc id is usually user.uid, but safe to add both
+                   type: "invite",
+                   workspaceId: data.workspaceId,
+                   memberId: d.id,
+                   icon: <Bell size={20} color="#C4622D" />,
+                   title: "Undangan Workspace Baru",
+                   desc: `${inviter} mengundang Anda untuk bergabung ke "${wsName}".`,
+                   time: new Date(data.joinedAt || Date.now()).toLocaleString("id-ID", {dateStyle:"short", timeStyle:"short"}),
+                   unread: true
+               });
+            });
+
+            setNotifications(prev => {
+                const others = prev.filter(p => !p.id.startsWith("invite_"));
+                const newInvites = inviteNotifs.filter(n => !others.some(o => o.id === n.id));
+                const finalNotifs = applyArchive([...inviteNotifs, ...others]);
+                
+                // Show toast for new invites
+                if (newInvites.length > 0) {
+                     // Check if not archived
+                     const unarchivedNew = newInvites.filter(n => !archivedIds.includes(n.id));
+                     if (unarchivedNew.length > 0 && typeof window !== "undefined") {
+                         // wait a bit to avoid flashes
+                         setTimeout(() => setToast(unarchivedNew[0]), 500); 
+                     }
+                }
+                return finalNotifs;
+            });
+         }, (err:any) => {
+            console.warn("Invites onSnapshot error:", err);
+         });
       }
     });
 
@@ -154,20 +196,36 @@ export function useNotifications(userProfile: any) {
        isMounted = false; 
        if (unsubGlobal) unsubGlobal();
        if (unsubTickets) unsubTickets();
+       if (unsubInvites) unsubInvites();
     };
   }, [userProfile]);
 
-  return { notifications, setNotifications, toast, setToast, archiveNotif, archiveAll };
+  const handleInviteAction = async (workspaceId: string, memberId: string, action: 'accept'|'reject') => {
+      try {
+          const { doc, updateDoc, deleteDoc, db } = await import("./firebase");
+          const ref = doc(db, "workspaces", workspaceId, "members", memberId);
+          if (action === "accept") {
+              await updateDoc(ref, { status: "active" });
+          } else {
+              await deleteDoc(ref);
+          }
+          setToast(null);
+      } catch(e) {
+          console.error("Failed to process invite:", e);
+      }
+  };
+
+  return { notifications, setNotifications, toast, setToast, archiveNotif, archiveAll, handleInviteAction };
 }
 
-export function NotificationToast({ toast, onClose, onClick }: { toast: any, onClose: () => void, onClick: () => void }) {
+export function NotificationToast({ toast, onClose, onClick, onInviteAction }: { toast: any, onClose: () => void, onClick: () => void, onInviteAction?: (wsId:string, mId:string, action:'accept'|'reject') => void }) {
   const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
-    if (expanded) return;
+    if (expanded || toast?.type === "invite") return;
     const timer = setTimeout(() => onClose(), 5000);
     return () => clearTimeout(timer);
-  }, [expanded, onClose]);
+  }, [expanded, onClose, toast]);
 
   return (
     <AnimatePresence>
@@ -179,12 +237,12 @@ export function NotificationToast({ toast, onClose, onClick }: { toast: any, onC
           style={{
             position: "fixed", top: 20, right: 20, zIndex: 1000, 
             background: "white", padding: 16, borderRadius: 16, 
-            width: expanded ? 320 : "auto", maxWidth: "calc(100vw - 40px)", boxShadow: "0 10px 40px rgba(0,0,0,0.1)",
+            width: (expanded || toast.type === "invite") ? 320 : "auto", maxWidth: "calc(100vw - 40px)", boxShadow: "0 10px 40px rgba(0,0,0,0.1)",
             border: "1px solid rgba(44,32,22,0.05)", display: "flex", gap: 16, alignItems: "flex-start",
-            cursor: expanded ? "default" : "pointer", overflow: "hidden"
+            cursor: (expanded || toast.type === "invite") ? "default" : "pointer", overflow: "hidden"
           }}
           onClick={() => {
-            if (!expanded) {
+            if (!expanded && toast.type !== "invite") {
               setExpanded(true);
               onClick(); // Mark as read or open side panel
             }
@@ -195,9 +253,15 @@ export function NotificationToast({ toast, onClose, onClick }: { toast: any, onC
           </div>
           <div style={{flex: 1, minWidth: 0}}>
             <div style={{fontSize: 14, fontWeight: 700, color: "#2C2016", marginBottom: 4}}>{toast.title}</div>
-            {expanded ? (
+            {(expanded || toast.type === "invite") ? (
                <motion.div initial={{height:0, opacity:0}} animate={{height:"auto", opacity:1}} style={{fontSize:12, color:"rgba(44,32,22,0.6)", lineHeight:1.5}}>
                  {toast.desc}
+                 {toast.type === "invite" && (
+                    <div style={{display: "flex", gap: 8, marginTop: 12}}>
+                        <button onClick={(e)=>{ e.stopPropagation(); onInviteAction?.(toast.workspaceId, toast.memberId, 'accept'); }} style={{flex:1, padding:"8px", background:"#C4622D", border:"none", borderRadius:8, color:"white", fontSize:12, fontWeight:700, cursor:"pointer"}}>Terima</button>
+                        <button onClick={(e)=>{ e.stopPropagation(); onInviteAction?.(toast.workspaceId, toast.memberId, 'reject'); }} style={{flex:1, padding:"8px", background:"#F5F5F5", border:"none", borderRadius:8, color:"#2C2016", fontSize:12, fontWeight:700, cursor:"pointer"}}>Tolak</button>
+                    </div>
+                 )}
                </motion.div>
             ) : (
                <div style={{fontSize: 12, color: "rgba(44,32,22,0.6)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis"}}>
@@ -214,7 +278,7 @@ export function NotificationToast({ toast, onClose, onClick }: { toast: any, onC
   );
 }
 
-export function NotificationPanel({ notifications, onClose, onRead, onContactSupport, archiveNotif, archiveAll }: { notifications: any[], onClose: () => void, onRead: (id: string) => void, onContactSupport: () => void, archiveNotif: (id:string)=>void, archiveAll: ()=>void }) {
+export function NotificationPanel({ notifications, onClose, onRead, onContactSupport, archiveNotif, archiveAll, onInviteAction }: { notifications: any[], onClose: () => void, onRead: (id: string) => void, onContactSupport: () => void, archiveNotif: (id:string)=>void, archiveAll: ()=>void, onInviteAction?: (wsId:string, mId:string, action:'accept'|'reject') => void }) {
   const [viewArchived, setViewArchived] = useState(false);
   const visibleNotifs = notifications.filter(n => !!n.isArchived === viewArchived);
   
@@ -265,9 +329,25 @@ export function NotificationPanel({ notifications, onClose, onRead, onContactSup
             <div style={{flex: 1, paddingRight: 16}}>
               <div style={{fontSize: 13, fontWeight: (!n.isArchived && n.unread) ? 800 : 600, color: (!n.isArchived && n.unread) ? "white" : "rgba(255,255,255,0.7)", marginBottom: 2}}>{n.title}</div>
               {(!n.isArchived && n.unread) ? (
-                <div style={{fontSize: 12, color: "rgba(255,255,255,0.8)", lineHeight: 1.4, marginBottom: 6}}>{n.desc}</div>
+                <div style={{fontSize: 12, color: "rgba(255,255,255,0.8)", lineHeight: 1.4, marginBottom: 6}}>
+                    {n.desc}
+                    {n.type === "invite" && (
+                        <div style={{display: "flex", gap: 8, marginTop: 8}}>
+                            <button onClick={(e)=>{ e.stopPropagation(); onInviteAction?.(n.workspaceId, n.memberId, 'accept'); }} style={{flex:1, padding:"6px", background:"#C4622D", border:"none", borderRadius:6, color:"white", fontSize:11, fontWeight:700, cursor:"pointer"}}>Terima</button>
+                            <button onClick={(e)=>{ e.stopPropagation(); onInviteAction?.(n.workspaceId, n.memberId, 'reject'); }} style={{flex:1, padding:"6px", background:"rgba(255,255,255,0.1)", border:"none", borderRadius:6, color:"white", fontSize:11, fontWeight:700, cursor:"pointer"}}>Tolak</button>
+                        </div>
+                    )}
+                </div>
               ) : (
-                <div style={{fontSize: 11, color: "rgba(255,255,255,0.5)", lineHeight: 1.4, marginBottom: 4, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden"}}>{n.desc}</div>
+                <div style={{fontSize: 11, color: "rgba(255,255,255,0.5)", lineHeight: 1.4, marginBottom: 4, ...(n.type === "invite" ? {} : {display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden"})}}>
+                    {n.desc}
+                    {n.type === "invite" && !n.isArchived && (
+                        <div style={{display: "flex", gap: 8, marginTop: 8}}>
+                            <button onClick={(e)=>{ e.stopPropagation(); onInviteAction?.(n.workspaceId, n.memberId, 'accept'); }} style={{flex:1, padding:"6px", background:"#C4622D", border:"none", borderRadius:6, color:"white", fontSize:11, fontWeight:700, cursor:"pointer"}}>Terima</button>
+                            <button onClick={(e)=>{ e.stopPropagation(); onInviteAction?.(n.workspaceId, n.memberId, 'reject'); }} style={{flex:1, padding:"6px", background:"rgba(255,255,255,0.1)", border:"none", borderRadius:6, color:"white", fontSize:11, fontWeight:700, cursor:"pointer"}}>Tolak</button>
+                        </div>
+                    )}
+                </div>
               )}
               <div style={{fontSize: 10, color: "rgba(255,255,255,0.4)", fontWeight: 600}}>{n.time}</div>
             </div>

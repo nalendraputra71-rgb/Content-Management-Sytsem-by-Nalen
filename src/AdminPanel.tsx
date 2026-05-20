@@ -24,6 +24,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
   const [tickets, setTickets] = useState<any[]>([]);
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
   const [loadingTickets, setLoadingTickets] = useState(true);
+  const [deletionReasons, setDeletionReasons] = useState<any[]>([]);
 
   const [showPlanModal, setShowPlanModal] = useState(false);
   const [editingPlan, setEditingPlan] = useState<any>(null);
@@ -88,6 +89,11 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
     unsubs.push(onSnapshot(doc(db, "config", "system"), snap => {
       if (snap.exists()) setSystemSettings(snap.data());
     }, (err) => console.warn("Admin config snap error:", err)));
+
+    // Deletion reasons
+    unsubs.push(onSnapshot(collection(db, "accountDeletionReasons"), snap => {
+      setDeletionReasons(snap.docs.map(d => ({id: d.id, ...d.data()})));
+    }, (err) => console.warn("Admin deletion reasons snap error:", err)));
     
     return () => { unsubs.forEach(u => u()); };
   }, [selectedUser?.id, selectedTicket?.id]);
@@ -218,6 +224,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
     { id: "admins", lb: "Super Admin", ic: <Shield size={18}/> },
     { id: "plans", lb: "Paket & Promo", ic: <Tag size={18}/> },
     { id: "support", lb: "Support & Tiket", ic: <LifeBuoy size={18}/> },
+    { id: "deletion_feedback", lb: "Alasan Hapus Akun", ic: <AlertCircle size={18}/> },
     { id: "settings", lb: "Pengaturan", ic: <Settings size={18}/> }
   ];
 
@@ -831,6 +838,34 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                         )}
                     </div>
                  </div>
+              </motion.div>
+            )}
+
+            {/* DELETION FEEDBACK */}
+            {activeTab === "deletion_feedback" && (
+              <motion.div key="deletion_feedback" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0}}>
+                <h2 style={{fontSize:28, fontWeight:800, marginBottom:24, letterSpacing:"-1px"}}>Alasan Hapus Akun</h2>
+                <div style={CARD({padding:24, borderRadius:24})}>
+                  <div style={{display:"flex", flexDirection:"column", gap:16}}>
+                    {deletionReasons.length === 0 ? (
+                      <div style={{color:"rgba(44,32,22,0.4)", fontSize:14, textAlign:"center", padding:40, background:"#FAF7F2", borderRadius:16}}>Belum ada data.</div>
+                    ) : (
+                      deletionReasons.sort((a,b) => new Date(b.deletedAt||0).getTime() - new Date(a.deletedAt||0).getTime()).map(dr => (
+                        <div key={dr.id} style={{padding:20, background:"#FDFBF7", borderRadius:16, border:"1px solid #F5F0E8"}}>
+                           <div style={{display:"flex", justifyContent:"space-between", marginBottom:8}}>
+                              <div style={{fontSize:16, fontWeight:800, color:"#9C2B4E"}}>Alasan: {dr.reason}</div>
+                              <div style={{fontSize:12, color:"rgba(44,32,22,0.4)", fontWeight:600}}>{dr.deletedAt ? new Date(dr.deletedAt).toLocaleString() : ""}</div>
+                           </div>
+                           {dr.additionalContext && (
+                              <div style={{fontSize:14, color:"rgba(44,32,22,0.7)", background:"white", padding:12, borderRadius:8, border:"1px solid #F5F0E8", marginTop:8}}>
+                                "{dr.additionalContext}"
+                              </div>
+                           )}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
               </motion.div>
             )}
 

@@ -280,20 +280,14 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
       return;
     }
 
-    setConfirmAction({
-      title: "Keluar dari Workspace?",
-      msg: `Yakin ingin keluar dari workspace "${ws.name}"? Akses Anda akan dicabut.`,
-      onConfirm: async () => {
-        try {
-          const memberRef = doc(db, "workspaces", ws.id, "members", user.uid);
-          await deleteDoc(memberRef);
-          setSaveMsg("Berhasil keluar dari workspace.");
-          setTimeout(() => setSaveMsg(""), 3000);
-        } catch (e: any) {
-          handleFirestoreError(e, 'delete');
-        }
-      }
-    });
+    try {
+      const memberRef = doc(db, "workspaces", ws.id, "members", user.uid);
+      await deleteDoc(memberRef);
+      setSaveMsg("Berhasil keluar dari workspace.");
+      setTimeout(() => setSaveMsg(""), 3000);
+    } catch (e: any) {
+      handleFirestoreError(e, 'delete');
+    }
   };
 
   const handleDeleteWorkspace = async (ws: any) => {
@@ -304,20 +298,15 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
       return;
     }
 
-    setConfirmAction({
-      title: "Hapus Workspace?",
-      msg: `Yakin ingin menghapus permanen workspace "${ws.name}"? Semua data di dalamnya akan hilang selamanya.`,
-      onConfirm: async () => {
-        try {
-          // Delete workspace doc
-          await deleteDoc(doc(db, "workspaces", ws.id));
-          setSaveMsg("Workspace berhasil dihapus.");
-          setTimeout(() => setSaveMsg(""), 3000);
-        } catch (e: any) {
-          handleFirestoreError(e, 'delete');
-        }
-      }
-    });
+    try {
+      // Delete workspace doc
+      await deleteDoc(doc(db, "workspaces", ws.id));
+      setSaveMsg("Workspace berhasil dihapus.");
+      setTimeout(() => setSaveMsg(""), 3000);
+      if (workspace?.id === ws.id) setWorkspace(workspaces[0] || null);
+    } catch (e: any) {
+      handleFirestoreError(e, 'delete');
+    }
   };
 
   const handleTabChange = (newTab: string) => {
@@ -337,7 +326,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
 
     const unsubMembers = onSnapshot(q, (snap) => {
       try {
-        const wsIds = snap.docs.map(d => (d.data() as any).workspaceId).filter(id => !!id);
+        const wsIds = snap.docs.filter(d => (d.data() as any).status !== "pending").map(d => (d.data() as any).workspaceId).filter(id => !!id);
         
         // Cleanup previous listeners
         wsUnsubs.forEach(u => u());
@@ -495,12 +484,10 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
     if (isUnverified) return alert("Akses Terbatas: Silakan lengkapi nama panggilan dan verifikasi email Anda terlebih dahulu.");
     setModal({mode:"add",data:emptyItem(year,month,day,pillars,platforms,pics,statuses)});
   };
-  const deleteItem = async (id:string) => { 
+  const deleteItem = async (id:string, force:boolean = false) => { 
     if(!workspace || !id || isRestricted) return;
-    setConfirmAction({
-      title: "Hapus Konten?",
-      msg: "Yakin ingin menghapus permanen konten ini? Tindakan ini tidak dapat dikembalikan.",
-      onConfirm: async () => {
+    
+    const doDelete = async () => {
         try {
           const docRef = doc(db, "workspaces", workspace.id, "content", id);
           await deleteDoc(docRef); 
@@ -510,7 +497,17 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
         } catch (e: any) {
           handleFirestoreError(e, 'delete');
         }
-      }
+    };
+
+    if (force) {
+        await doDelete();
+        return;
+    }
+
+    setConfirmAction({
+      title: "Hapus Konten?",
+      msg: "Yakin ingin menghapus permanen konten ini? Tindakan ini tidak dapat dikembalikan.",
+      onConfirm: doDelete
     });
   };
 
@@ -664,22 +661,8 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
         user={user} profile={profile} onLogout={()=>{ signOut(auth).then(() => window.location.hash = "#/login"); }}
         title={title}
         onOpenSidebar={() => setSidebarOpen(true)}
-        onLeaveWorkspace={async (ws: any) => {
-          let memberPath;
-          try {
-            memberPath = `workspaces/${ws.id}/members/${user.uid}`;
-            const memberRef = doc(db, "workspaces", ws.id, "members", user.uid);
-            await deleteDoc(memberRef);
-          } catch (e: any) {
-            handleFirestoreError(e, 'delete', memberPath);
-          }
-        }}
-        onDeleteWorkspace={async (wsId: string) => {
-          try {
-             await deleteDoc(doc(db, "workspaces", wsId));
-             if (workspace?.id === wsId) setWorkspace(workspaces[0] || null);
-          } catch(e: any) { alert("Gagal menghapus: " + e.message); }
-        }}
+        onLeaveWorkspace={handleLeaveWorkspace}
+        onDeleteWorkspace={handleDeleteWorkspace}
         onRenameWorkspace={async (wsId: string, newName: string) => {
           try {
             await updateDoc(doc(db, "workspaces", wsId), { name: newName });
@@ -762,7 +745,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
       </div>
 
       <AnimatePresence>
-        {shareModal && <ShareWorkspaceModal key="share" workspace={workspace} onClose={()=>setShareModal(false)} />}
+        {shareModal && <ShareWorkspaceModal key="share" workspace={workspace} userProfile={profile} onClose={()=>setShareModal(false)} />}
       </AnimatePresence>
       <AnimatePresence>
         {modal && <ContentModal key="content" modal={modal} onSave={handleSave} onClose={()=>setModal(null)} onArchive={archiveItem} onRestore={unarchiveItem} onDelete={deleteItem} pillars={pillars} platforms={platforms} pics={pics} statuses={statuses} isRestricted={isRestricted}/>}
