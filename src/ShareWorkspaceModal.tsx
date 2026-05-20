@@ -77,10 +77,14 @@ export function ShareWorkspaceModal({ workspace, userProfile, onClose }: { works
 
   const confirmRemoveMember = async () => {
     if (!memberToRemove) return;
-    const ref = doc(db, "workspaces", workspace.id, "members", memberToRemove.id || memberToRemove.userId);
-    await deleteDoc(ref);
-    fetchMembers();
-    setMemberToRemove(null);
+    try {
+       const ref = doc(db, "workspaces", workspace.id, "members", memberToRemove.id || memberToRemove.userId);
+       await deleteDoc(ref);
+       fetchMembers();
+       setMemberToRemove(null);
+    } catch (e: any) {
+       console.error("Failed to remove member:", e);
+    }
   };
 
   const togglePublicLink = async () => {

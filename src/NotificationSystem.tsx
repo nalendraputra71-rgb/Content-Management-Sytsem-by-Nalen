@@ -147,11 +147,12 @@ export function useNotifications(userProfile: any) {
          });
 
          // Listen to workspace invites
-         unsubInvites = onSnapshot(query(collectionGroup(db, "members"), where("userId", "==", userProfile.uid), where("status", "==", "pending")), (snap) => {
+         unsubInvites = onSnapshot(query(collectionGroup(db, "members"), where("userId", "==", userProfile.uid)), (snap) => {
             if (!isMounted) return;
             const inviteNotifs: any[] = [];
             snap.forEach(d => {
                const data = d.data();
+               if (data.status !== "pending") return; // LOCAL FILTER TO AVOID COMPOSITE INDEX ERROR
                const wsName = data.workspaceName || "Workspace Baru";
                const inviter = data.inviterName || "Seseorang";
                inviteNotifs.push({

@@ -135,7 +135,7 @@ service cloud.firestore {
            getAfter(/databases/$(database)/documents/workspaces/$(wsId)).data.ownerId == request.auth.uid)
         );
         allow delete: if isOwner(wsId) || (request.auth.uid == memberId && existing().role != "owner");
-        allow update: if isOwner(wsId) && incoming().diff(existing()).affectedKeys().hasOnly(['role']);
+        allow update: if (isOwner(wsId) && incoming().diff(existing()).affectedKeys().hasOnly(['role'])) || (request.auth.uid == memberId && incoming().diff(existing()).affectedKeys().hasOnly(['status']) && incoming().status == "active");
       }
 
       // ─── CONTENT ───────────────────────────────────────────────────────────

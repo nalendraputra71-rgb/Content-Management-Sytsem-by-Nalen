@@ -363,8 +363,12 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
               }
               setWsLoading(false);
             }
-          }, (err) => {
-            console.error(`Workspace ${id} fetch error:`, err);
+          }, (err: any) => {
+            if (err.code === "permission-denied") {
+               console.warn(`Workspace ${id} fetch warn: permission-denied`);
+            } else {
+               console.error(`Workspace ${id} fetch error:`, err);
+            }
             pendingIds.delete(id);
             if (pendingIds.size === 0) {
               const listArr = wsIds.map(wid => results[wid]).filter(w => !!w);
@@ -418,8 +422,12 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
             if (data.settings.headerStyle) setHeaderStyle(data.settings.headerStyle);
           }
        }
-    }, (error) => {
-       console.error("Workspace details onSnapshot error:", error);
+    }, (error: any) => {
+       if (error.code === "permission-denied") {
+          console.warn("Workspace details onSnapshot warn: permission-denied");
+       } else {
+          console.error("Workspace details onSnapshot error:", error);
+       }
     });
 
     const contentRef = collection(db, "workspaces", workspace.id, "content");
@@ -840,7 +848,7 @@ function PublicView() {
 
   useEffect(() => {
     if (!wsId) return;
-    getDoc(doc(db, "workspaces", wsId)).then(s => setWs(s.data()));
+    getDoc(doc(db, "workspaces", wsId)).then(s => setWs(s.data())).catch(e => console.warn("PublicView fetch error", e));
     onSnapshot(collection(db, "workspaces", wsId, "content"), (snap) => {
       setContent(snap.docs.map(d => d.data()));
     }, (error) => {
