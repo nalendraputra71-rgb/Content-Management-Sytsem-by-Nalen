@@ -22,9 +22,18 @@ export function MonthView({year,month,monthContent,filtered,openEdit,openAdd,sho
 
     // 3. Custom Events
     if (customEvents && Array.isArray(customEvents)) {
+      const parseLocalDate = (dateStr: any) => {
+        if (!dateStr || typeof dateStr !== "string") return new Date(0);
+        const parts = dateStr.split("-");
+        if (parts.length === 3) {
+          return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+        }
+        return new Date(dateStr);
+      };
+
       customEvents.forEach((ev: any) => {
-        const start = new Date(ev.start);
-        const end = new Date(ev.end);
+        const start = parseLocalDate(ev.start);
+        const end = parseLocalDate(ev.end);
         const current = new Date(year, month - 1, d);
         
         let match = false;

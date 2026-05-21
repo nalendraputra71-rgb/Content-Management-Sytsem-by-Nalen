@@ -25,6 +25,13 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
   const [newEvEnd, setNewEvEnd] = useState("");
   const [newEvMonthly, setNewEvMonthly] = useState(false);
 
+  const [editingEvId, setEditingEvId] = useState<string | null>(null);
+  const [editEvName, setEditEvName] = useState("");
+  const [editEvColor, setEditEvColor] = useState("");
+  const [editEvStart, setEditEvStart] = useState("");
+  const [editEvEnd, setEditEvEnd] = useState("");
+  const [editEvMonthly, setEditEvMonthly] = useState(false);
+
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [savingTheme, setSavingTheme] = useState(false);
@@ -145,37 +152,26 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
   };
   const delCustomEvent = (id: string) => setLocalCustomEvents((prev: any) => prev.filter((ev: any) => ev.id !== id));
 
-  const addMultiEvents = (type: "payday" | "twindate") => {
-    const year = new Date().getFullYear();
-    const newEvents: any[] = [];
-    
-    if (type === "payday") {
-      for (let m = 1; m <= 12; m++) {
-        const dateStr = `${year}-${m}-25`;
-        newEvents.push({
-          id: `payday-${m}-${Date.now()}`,
-          name: "Payday Sale 🛍️",
-          color: "#E57373",
-          start: dateStr,
-          end: dateStr,
-          monthly: false
-        });
-      }
-    } else {
-      for (let d = 1; d <= 12; d++) {
-        const dateStr = `${year}-${d}-${d}`;
-        newEvents.push({
-          id: `twindate-${d}-${Date.now()}`,
-          name: `${d}.${d} Mega Sale ⚡`,
-          color: "#3F51B5",
-          start: dateStr,
-          end: dateStr,
-          monthly: false
-        });
-      }
-    }
-    
-    setLocalCustomEvents((prev: any) => [...prev, ...newEvents]);
+  const startEditCustomEvent = (ev: any) => {
+    setEditingEvId(ev.id);
+    setEditEvName(ev.name);
+    setEditEvColor(ev.color || "#C4622D");
+    setEditEvStart(ev.start || "");
+    setEditEvEnd(ev.end || "");
+    setEditEvMonthly(ev.monthly || false);
+  };
+
+  const saveEditedCustomEvent = (id: string) => {
+    if (!editEvName.trim() || !editEvStart || !editEvEnd) return;
+    setLocalCustomEvents((prev: any) => prev.map((ev: any) => ev.id === id ? {
+      ...ev,
+      name: editEvName.trim(),
+      color: editEvColor,
+      start: editEvStart,
+      end: editEvEnd,
+      monthly: editEvMonthly
+    } : ev));
+    setEditingEvId(null);
   };
 
   const renderInputRow = (placeholder: string, value: string, onChange: any, onAdd: any, colorPicker: boolean) => (
@@ -363,21 +359,6 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
               <h3 style={{ fontSize: 18, margin: "0 0 14px" }}>✨ Event Kustom & Promo</h3>
               <p style={{ fontSize: 11, color: "rgba(44,32,22,0.4)", marginBottom: 10 }}>Misal: Pay Day Sale, Twin Date, atau Peluncuran Produk.</p>
               
-              <div style={{display:"flex", gap:10, marginBottom:16}}>
-                <button 
-                  onClick={() => addMultiEvents("payday")}
-                  style={{...B(false), fontSize:11, padding:"6px 12px", background:"#FDF5F8", borderColor:"#E57373", color:"#E57373"}}
-                >
-                  ⚡ Preset Payday (25th)
-                </button>
-                <button 
-                  onClick={() => addMultiEvents("twindate")}
-                  style={{...B(false), fontSize:11, padding:"6px 12px", background:"#E8EAF6", borderColor:"#3F51B5", color:"#3F51B5"}}
-                >
-                  👫 Preset Twin Date (1.1 - 12.12)
-                </button>
-              </div>
-
               <div style={{ background: "#FAFAF8", padding: 16, borderRadius:16, display: "flex", flexDirection: "column", gap: 10, marginBottom: 20, border:"1px solid rgba(0,0,0,0.05)" }}>
                 <input type="text" value={newEvName} onChange={(e: any) => setNewEvName(e.target.value)} placeholder="Nama Event (e.g., Payday Sale)" style={I({})} />
                 <div style={{ display: "flex", gap: 8 }}>
@@ -402,20 +383,55 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                {localCustomEvents.map((ev: any) => (
-                  <div key={ev.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "white", padding: "10px 14px", borderRadius: 12, border:`1px solid ${ev.color}44` }}>
-                    <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                      <div style={{width:10, height:10, borderRadius:"50%", background:ev.color, boxShadow:`0 0 10px ${ev.color}44` }} />
-                      <div>
-                        <div style={{ fontSize: 13, fontWeight: 700, color:"#2C2016" }}>{ev.name}</div>
-                        <div style={{ fontSize: 10, color: "#999" }}>
-                          {ev.start} s/d {ev.end} {ev.monthly && "• (Bulanan)"}
+                {localCustomEvents.map((ev: any) => {
+                  const isEditing = editingEvId === ev.id;
+                  if (isEditing) {
+                    return (
+                      <div key={ev.id} style={{ background: "#FAFAF8", padding: 16, borderRadius: 16, display: "flex", flexDirection: "column", gap: 10, border: `1px solid ${editEvColor}88` }}>
+                        <input type="text" value={editEvName} onChange={(e: any) => setEditEvName(e.target.value)} placeholder="Nama Event" style={I({})} />
+                        <div style={{ display: "flex", gap: 8 }}>
+                           <div style={{flex: 1}}>
+                             <label style={{fontSize:9, fontWeight:700, marginBottom:4, display:"block", color:"#999"}}>Start Date</label>
+                             <input type="date" value={editEvStart} onChange={(e: any) => setEditEvStart(e.target.value)} style={I({fontSize:11, padding:6})} />
+                           </div>
+                           <div style={{flex: 1}}>
+                             <label style={{fontSize:9, fontWeight:700, marginBottom:4, display:"block", color:"#999"}}>End Date</label>
+                             <input type="date" value={editEvEnd} onChange={(e: any) => setEditEvEnd(e.target.value)} style={I({fontSize:11, padding:6})} />
+                           </div>
+                           <div style={{flex: 0}}>
+                             <label style={{fontSize:9, fontWeight:700, marginBottom:4, display:"block", color:"#999"}}>Color</label>
+                             <input type="color" value={editEvColor} onChange={(e: any) => setEditEvColor(e.target.value)} style={{ width: 32, height: 32, border: "none", borderRadius: 8, cursor: "pointer", background:"none" }} />
+                           </div>
+                        </div>
+                        <label style={{display:"flex", alignItems:"center", gap:8, fontSize:11, cursor:"pointer", color:"#666"}}>
+                           <input type="checkbox" checked={editEvMonthly} onChange={e=>setEditEvMonthly(e.target.checked)} />
+                           Ulangi Setiap Bulan (Berdasarkan Tgl)
+                        </label>
+                        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                          <button onClick={() => setEditingEvId(null)} style={{ ...B(false), fontSize: 11, padding: "6px 12px", height: "auto" }}>Batal</button>
+                          <button onClick={() => saveEditedCustomEvent(ev.id)} style={{ ...B(true, "#2C2016"), fontSize: 11, padding: "6px 12px", height: "auto" }}>Simpan</button>
                         </div>
                       </div>
+                    );
+                  }
+                  return (
+                    <div key={ev.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "white", padding: "10px 14px", borderRadius: 12, border:`1px solid ${ev.color}44` }}>
+                      <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                        <div style={{width:10, height:10, borderRadius:"50%", background:ev.color, boxShadow:`0 0 10px ${ev.color}44` }} />
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 700, color:"#2C2016" }}>{ev.name}</div>
+                          <div style={{ fontSize: 10, color: "#999" }}>
+                            {ev.start} s/d {ev.end} {ev.monthly && "• (Bulanan)"}
+                          </div>
+                        </div>
+                      </div>
+                      <div style={{ display: "flex", gap: 6 }}>
+                        <button onClick={() => startEditCustomEvent(ev)} style={{ background: "rgba(44,32,22,0.05)", border: "none", borderRadius: 6, padding: "5px 10px", fontSize: 10, cursor: "pointer", color: "#2C2016", fontWeight: 600 }}>Edit</button>
+                        <button onClick={() => delCustomEvent(ev.id)} style={{ background: "rgba(156,43,78,0.05)", border: "none", borderRadius: 6, padding: "5px 10px", fontSize: 10, cursor: "pointer", color: "#9C2B4E", fontWeight: 600 }}>Hapus</button>
+                      </div>
                     </div>
-                    <button onClick={() => delCustomEvent(ev.id)} style={{ background: "rgba(156,43,78,0.05)", border: "none", borderRadius: 6, padding: "5px 10px", fontSize: 10, cursor: "pointer", color: "#9C2B4E" }}>Hapus</button>
-                  </div>
-                ))}
+                  );
+                })}
                 {localCustomEvents.length === 0 && <div style={{padding:40, textAlign:"center", fontSize:12, color:"#CCC"}}>Belum ada event kustom.</div>}
               </div>
             </>
