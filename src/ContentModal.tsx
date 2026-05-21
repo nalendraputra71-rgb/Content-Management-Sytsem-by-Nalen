@@ -87,18 +87,14 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
     }
   };
 
-  const handleClose = () => {
+  const handleClose = async () => {
     if (isDirty.current) {
-      if (modal.mode === "add" && (!d.title || !String(d.title).trim() || !d.year || !d.month || !d.day)) {
-        setShowWarning(true);
-        setIsShaking(true);
-        setTimeout(() => setIsShaking(false), 600);
-        if (modalScrollRef.current) {
-           modalScrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
-        }
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      try {
+        await onSave(d, false);
+      } catch (e) {
+        console.error("Autosave failed on close:", e);
       }
-      setShowExitConfirm(true);
-      return; 
     }
     onClose();
   };
@@ -460,7 +456,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
       </motion.div>
 
       <AnimatePresence>
-        {showExitConfirm && (
+        {false && (
           <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.5)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:400,borderRadius:24}} onClick={e=>e.stopPropagation()}>
              <motion.div initial={{scale:0.95}} animate={{scale:1}} exit={{scale:0.95}} style={{background:"#FAFAFA",padding:32,borderRadius:24,maxWidth:360,width:"100%",boxShadow:"0 12px 30px rgba(0,0,0,0.2)",textAlign:"center"}}>
                 <h3 style={{margin:"0 0 16px",fontSize:20,color:"#2C2016", fontWeight:800}}>Keluar dari Draft?</h3>

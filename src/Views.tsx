@@ -107,13 +107,13 @@ export function MonthView({year,month,monthContent,filtered,openEdit,openAdd,sho
 
               <div style={{display:"flex",flexDirection:"column",gap:2}}>
                 {items.slice(0,4).map((item:any)=>{
-                  const ps=gps(pillars,item.pillar);
+                  const ps = item.archived ? { color: "#7A7976", light: "#EBEAE6" } : gps(pillars,item.pillar);
                   return (
                     <button key={item.id} className="hover-scale" onClick={()=>openEdit(item)} style={{background:ps.light,border:"none",borderLeft:`3px solid ${ps.color}`,borderRadius:"4px 8px 8px 4px",padding:"4px 6px",textAlign:"left",cursor:"pointer",width:"100%",marginBottom:2}}>
                       <div style={{display:"flex",alignItems:"flex-start",gap:3}}>
-                        <span className="pill-tag" style={{background:gpc(platforms,item.platform),color:"#FAF7F2",fontSize:8,padding:"1px 4px",marginTop:1}}>{item.platform[0]}</span>
+                        <span className="pill-tag" style={{background:item.archived ? "#9E9D9A" : gpc(platforms,item.platform),color:"#FAF7F2",fontSize:8,padding:"1px 4px",marginTop:1}}>{item.platform[0]}</span>
                         {item.isAds&&<span style={{fontSize:8,marginTop:1}}>💰</span>}
-                        <span style={{fontSize:10,color:ps.color,fontWeight:700,lineHeight:1.3,display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden"}}>{item.title||"(tanpa judul)"}</span>
+                        <span style={{fontSize:10,color:ps.color,fontWeight:700,lineHeight:1.3,display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden"}}>{item.title||"(tanpa judul)"}{item.archived ? " 📦" : ""}</span>
                       </div>
                     </button>
                   );
@@ -168,10 +168,10 @@ export function WeekView({year,month,content,filtered,openEdit,openAdd,pillars,p
               {ev&&<div style={{fontSize:8,color:"#A67C1C",fontWeight:700,background:"#FBF5E3",borderRadius:4,padding:"2px 5px",marginBottom:5}}>{ev}</div>}
               <div style={{display:"flex",flexDirection:"column",gap:3}}>
                 {items.map((item:any)=>{
-                  const ps=gps(pillars,item.pillar);
+                  const ps = item.archived ? { color: "#7A7976", light: "#EBEAE6" } : gps(pillars,item.pillar);
                   return (
                     <button key={item.id} className="hover-scale card-hover" onClick={()=>openEdit(item)} style={{background:ps.light,border:"none",borderLeft:`3px solid ${ps.color}`,borderRadius:"6px 12px 12px 6px",padding:"6px 8px",textAlign:"left",cursor:"pointer",width:"100%",marginBottom:4}}>
-                      <div style={{fontSize:10,color:ps.color,fontWeight:700,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{item.title}</div>
+                      <div style={{fontSize:10,color:ps.color,fontWeight:700,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{item.title}{item.archived ? " 📦" : ""}</div>
                       <div style={{fontSize:8,color:"rgba(44,32,22,0.5)",marginTop:2,fontWeight:600}}>{fmtT(item.uploadHour,item.uploadMinute)} · {item.platform} {item.isAds?"💰":""}</div>
                     </button>
                   );
@@ -215,10 +215,10 @@ export function BoardView({year,month,content,filtered,openEdit,openAdd,statuses
             </div>
             <div style={{display:"flex",flexDirection:"column",gap:6}}>
               {cols.map((item:any)=>{
-                const ps=gps(pillars,item.pillar) || {color:"#ccc", light:"#eee"};
+                const ps = item.archived ? { color: "#7A7976", light: "#EBEAE6" } : (gps(pillars,item.pillar) || {color:"#ccc", light:"#eee"});
                 return (
-                  <div key={item.id} onClick={()=>openEdit(item)} style={{background:"white",borderRadius:8,padding:"10px 12px",cursor:"pointer",boxShadow:"0 1px 3px rgba(44,32,22,0.07)",borderLeft:`3px solid ${ps.color}`}}>
-                    <div style={{fontSize:11,fontWeight:600,color:"#2C2016",lineHeight:1.3,marginBottom:5}}><High txt={item.title||"(tanpa judul)"}/></div>
+                  <div key={item.id} onClick={()=>openEdit(item)} style={{background:"white",borderRadius:8,padding:"10px 12px",cursor:"pointer",boxShadow:"0 1px 3px rgba(44,32,22,0.07)",borderLeft:`3px solid ${ps.color}`, opacity: item.archived ? 0.75 : 1}}>
+                    <div style={{fontSize:11,fontWeight:600,color:"#2C2016",lineHeight:1.3,marginBottom:5}}><High txt={item.title||"(tanpa judul)"}/>{item.archived ? " 📦" : ""}</div>
                     <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:4}}>
                       <PBadge name={item.platform} platforms={platforms}/>
                       <span style={{background:ps.light,color:ps.color,fontSize:8,padding:"1px 5px",borderRadius:6}}>{item.pillar}</span>
@@ -267,10 +267,10 @@ export function TimelineView({year,month,content,filtered,openEdit,openAdd,pilla
                 </div>
                 <div style={{display:"flex",flexDirection:"column",gap:4}}>
                   {items.map((item:any)=>{
-                    const ps=gps(pillars,item.pillar);
+                    const ps = item.archived ? { color: "#7A7976", light: "#EBEAE6" } : gps(pillars,item.pillar);
                     return (
                       <button key={item.id} className="hover-scale card-hover" onClick={()=>openEdit(item)} style={{background:ps.light,border:"none",borderLeft:`3px solid ${ps.color}`,borderRadius:"4px 8px 8px 4px",padding:"4px 6px",textAlign:"left",cursor:"pointer",width:"100%"}}>
-                        <div style={{fontSize:9,color:ps.color,fontWeight:700,overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",wordWrap:"break-word"}}>{item.title||"(tanpa judul)"}</div>
+                        <div style={{fontSize:9,color:ps.color,fontWeight:700,overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",wordWrap:"break-word"}}>{item.title||"(tanpa judul)"}{item.archived ? " 📦" : ""}</div>
                         <div style={{fontSize:8,color:"rgba(44,32,22,0.5)",marginTop:2,fontWeight:600}}>{fmtT(item.uploadHour,item.uploadMinute)} {item.isAds?"💰":""}</div>
                       </button>
                     );
@@ -382,7 +382,7 @@ export function TableView({filtered,openEdit,archiveItem,unarchiveItem,deleteIte
             </thead>
             <tbody>
               {sorted.map(item=>{
-                const e=eng(item.metrics)+eng(item.adsMetrics),ps=gps(pillars,item.pillar),ss=gss(item.status);
+                const e=eng(item.metrics)+eng(item.adsMetrics),ps = item.archived ? { color: "#7A7976", light: "#EBEAE6" } : gps(pillars,item.pillar),ss=gss(item.status);
                 const v=(item.metrics?.views||0)+(item.adsMetrics?.views||0);
                 const r=(item.metrics?.reach||0)+(item.adsMetrics?.reach||0);
                 return (
