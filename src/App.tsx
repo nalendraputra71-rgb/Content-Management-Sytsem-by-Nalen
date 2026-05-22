@@ -17,7 +17,7 @@ import { Header, NavBar, FilterBar, Sidebar } from "./Nav";
 import { MonthView, WeekView, BoardView, TimelineView, TableView } from "./Views";
 import { AnalyticsView } from "./AnalyticsView";
 import { SocialStudioView } from "./SocialStudioView";
-import { SettingsPanel } from "./SettingsPanel";
+import { SettingsPanel, HOLIDAY_API_OPTIONS } from "./SettingsPanel";
 import { AdminPanel } from "./AdminPanel";
 import { ContentModal } from "./ContentModal";
 import { CsvModal } from "./CsvModal";
@@ -30,6 +30,123 @@ import { DashboardView } from "./DashboardView";
 import { motion, AnimatePresence } from "motion/react";
 
 import { LandingPage } from "./LandingPage";
+
+const INDONESIA_STATIC_SKB_HOLIDAYS: Record<string, string> = {
+  // ─── 2024 ──────────────────────────────────────────────
+  "2024-1-1": "❇️ Tahun Baru Masehi",
+  "2024-2-8": "🕌 Isra Mikraj Nabi Muhammad SAW",
+  "2024-2-9": "🏮 Cuti Bersama Tahun Baru Imlek",
+  "2024-2-10": "🏮 Tahun Baru Imlek",
+  "2024-3-11": "🕉️ Hari Suci Nyepi (Tahun Baru Saka 1946)",
+  "2024-3-12": "🕉️ Cuti Bersama Hari Suci Nyepi",
+  "2024-3-29": "✝️ Wafat Yesus Kristus",
+  "2024-3-31": "✝️ Hari Paskah",
+  "2024-4-8": "🕌 Cuti Bersama Idul Fitri 1445 H",
+  "2024-4-9": "🕌 Cuti Bersama Idul Fitri 1445 H",
+  "2024-4-10": "🕌 Hari Raya Idul Fitri 1445 H",
+  "2024-4-11": "🕌 Hari Raya Idul Fitri 1445 H",
+  "2024-4-12": "🕌 Cuti Bersama Idul Fitri 1445 H",
+  "2024-4-15": "🕌 Cuti Bersama Idul Fitri 1445 H",
+  "2024-5-1": "🛠️ Hari Buruh Internasional",
+  "2024-5-9": "✝️ Kenaikan Yesus Kristus",
+  "2024-5-10": "✝️ Cuti Bersama Kenaikan Yesus Kristus",
+  "2024-5-23": "☸️ Hari Raya Waisak 2568 BE",
+  "2024-5-24": "☸️ Cuti Bersama Hari Raya Waisak",
+  "2024-6-1": "🇮🇩 Hari Lahir Pancasila",
+  "2024-6-17": "🕌 Hari Raya Idul Adha 1445 H",
+  "2024-6-18": "🕌 Cuti Bersama Idul Adha 1445 H",
+  "2024-7-7": "🕌 Tahun Baru Islam 1446 H",
+  "2024-8-17": "🇮🇩 Hari Kemerdekaan RI",
+  "2024-9-16": "🕌 Maulid Nabi Muhammad SAW",
+  "2024-12-25": "🎄 Hari Raya Natal",
+  "2024-12-26": "🎄 Cuti Bersama Hari Raya Natal",
+
+  // ─── 2025 ──────────────────────────────────────────────
+  "2025-1-1": "❇️ Tahun Baru 2025 Masehi",
+  "2025-1-27": "🕌 Isra Mikraj Nabi Muhammad SAW",
+  "2025-1-28": "🏮 Cuti Bersama Tahun Baru Imlek",
+  "2025-1-29": "🏮 Tahun Baru Imlek 2576 Kongzili",
+  "2025-3-28": "🕉️ Cuti Bersama Hari Suci Nyepi",
+  "2025-3-29": "🕉️ Hari Suci Nyepi (Tahun Baru Saka 1947)",
+  "2025-3-31": "🕌 Hari Raya Idul Fitri 1446 H",
+  "2025-4-1": "🕌 Hari Raya Idul Fitri 1446 H",
+  "2025-4-2": "🕌 Cuti Bersama Idul Fitri 1446 H",
+  "2025-4-3": "🕌 Cuti Bersama Idul Fitri 1446 H",
+  "2025-4-4": "🕌 Cuti Bersama Idul Fitri 1446 H",
+  "2025-4-7": "🕌 Cuti Bersama Idul Fitri 1446 H",
+  "2025-4-18": "✝️ Wafat Yesus Kristus",
+  "2025-4-20": "✝️ Kebangkitan Yesus Kristus (Paskah)",
+  "2025-5-1": "🛠️ Hari Buruh Internasional",
+  "2025-5-12": "☸️ Hari Raya Waisak 2569 BE",
+  "2025-5-13": "☸️ Cuti Bersama Hari Raya Waisak",
+  "2025-5-29": "✝️ Kenaikan Yesus Kristus",
+  "2025-5-30": "✝️ Cuti Bersama Kenaikan Yesus Kristus",
+  "2025-6-1": "🇮🇩 Hari Lahir Pancasila",
+  "2025-6-6": "🕌 Hari Raya Idul Adha 1446 H",
+  "2025-6-9": "🕌 Cuti Bersama Idul Adha 1446 H",
+  "2025-6-27": "🕌 Tahun Baru Islam 1447 H",
+  "2025-8-17": "🇮🇩 Hari Kemerdekaan RI",
+  "2025-9-5": "🕌 Maulid Nabi Muhammad SAW",
+  "2025-12-25": "🎄 Hari Raya Natal",
+  "2025-12-26": "🎄 Cuti Bersama Hari Raya Natal",
+
+  // ─── 2026 ──────────────────────────────────────────────
+  "2026-1-1": "❇️ Tahun Baru 2026 Masehi",
+  "2026-1-15": "🕌 Isra Mikraj Nabi Muhammad SAW",
+  "2026-2-17": "🏮 Tahun Baru Imlek 2577 Kongzili",
+  "2026-2-18": "🏮 Cuti Bersama Tahun Baru Imlek",
+  "2026-3-18": "🕉️ Cuti Bersama Hari Suci Nyepi",
+  "2026-3-19": "🕉️ Hari Suci Nyepi (Tahun Baru Saka 1948)",
+  "2026-3-20": "🕌 Hari Raya Idul Fitri 1447 H",
+  "2026-3-21": "🕌 Hari Raya Idul Fitri 1447 H",
+  "2026-3-23": "🕌 Cuti Bersama Idul Fitri 1447 H",
+  "2026-3-24": "🕌 Cuti Bersama Idul Fitri 1447 H",
+  "2026-3-25": "🕌 Cuti Bersama Idul Fitri 1447 H",
+  "2026-3-26": "🕌 Cuti Bersama Idul Fitri 1447 H",
+  "2026-4-3": "✝️ Wafat Yesus Kristus",
+  "2026-4-5": "✝️ Kebangkitan Yesus Kristus (Paskah)",
+  "2026-5-1": "🛠️ Hari Buruh Internasional",
+  "2026-5-14": "✝️ Kenaikan Yesus Kristus",
+  "2026-5-15": "✝️ Cuti Bersama Kenaikan Yesus Kristus",
+  "2026-5-27": "🕌 Hari Raya Idul Adha 1447 H",
+  "2026-5-28": "🕌 Cuti Bersama Idul Adha 1447 H",
+  "2026-5-31": "☸️ Hari Raya Waisak 2570 BE",
+  "2026-6-1": "🇮🇩 Hari Lahir Pancasila",
+  "2026-6-2": "☸️ Cuti Bersama Hari Raya Waisak",
+  "2026-6-16": "🕌 Tahun Baru Islam 1448 H",
+  "2026-8-17": "🇮🇩 Hari Kemerdekaan RI",
+  "2026-8-25": "🕌 Maulid Nabi Muhammad SAW",
+  "2026-12-25": "🎄 Hari Raya Natal",
+  "2026-12-26": "🎄 Cuti Bersama Hari Raya Natal",
+
+  // ─── 2027 ──────────────────────────────────────────────
+  "2027-1-1": "❇️ Tahun Baru 2027 Masehi",
+  "2027-1-5": "🕌 Isra Mikraj Nabi Muhammad SAW",
+  "2027-2-6": "🏮 Tahun Baru Imlek 2578 Kongzili",
+  "2027-2-8": "🏮 Cuti Bersama Tahun Baru Imlek",
+  "2027-3-8": "🕉️ Hari Suci Nyepi (Tahun Baru Saka 1949)",
+  "2027-3-9": "🕉️ Cuti Bersama Hari Suci Nyepi",
+  "2027-3-10": "🕌 Hari Raya Idul Fitri 1448 H",
+  "2027-3-11": "🕌 Hari Raya Idul Fitri 1448 H",
+  "2027-3-12": "🕌 Cuti Bersama Idul Fitri 1448 H",
+  "2027-3-15": "🕌 Cuti Bersama Idul Fitri 1448 H",
+  "2027-3-16": "🕌 Cuti Bersama Idul Fitri 1448 H",
+  "2027-3-26": "✝️ Wafat Yesus Kristus",
+  "2027-3-28": "✝️ Kebangkitan Yesus Kristus (Paskah)",
+  "2027-5-1": "🛠️ Hari Buruh Internasional",
+  "2027-5-6": "✝️ Kenaikan Yesus Kristus",
+  "2027-5-7": "✝️ Cuti Bersama Kenaikan Yesus Kristus",
+  "2027-5-16": "🕌 Hari Raya Idul Adha 1448 H",
+  "2027-5-17": "🕌 Cuti Bersama Idul Adha 1448 H",
+  "2027-5-20": "☸️ Hari Raya Waisak 2571 BE",
+  "2027-5-21": "☸️ Cuti Bersama Hari Raya Waisak",
+  "2027-6-1": "🇮🇩 Hari Lahir Pancasila",
+  "2027-6-6": "🕌 Tahun Baru Islam 1449 H",
+  "2027-8-17": "🇮🇩 Hari Kemerdekaan RI",
+  "2027-8-25": "🕌 Maulid Nabi Muhammad SAW",
+  "2027-12-25": "🎄 Hari Raya Natal",
+  "2027-12-24": "🎄 Cuti Bersama Hari Raya Natal"
+};
 
 export default function App() {
   const [user, setUser] = useState<any>(null);
@@ -251,12 +368,173 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
   const [pics, setPics]         = useState(DPIC);
   const [statuses, setStatuses] = useState(DST);
   const [holidays, setHolidays] = useState(DH);
+  const [holidayApis, setHolidayApis] = useState<string[]>([]);
+  const [apiHolidays, setApiHolidays] = useState<Record<string, string>>({});
+  const [loadingHolidayApis, setLoadingHolidayApis] = useState(false);
 
   useEffect(() => {
     const handler = () => openAdd(new Date().getDate());
     window.addEventListener("openContentModal", handler);
     return () => window.removeEventListener("openContentModal", handler);
   }, [workspace, user, pillars, platforms, pics, statuses]);
+
+  useEffect(() => {
+    if (!workspace || !holidayApis || holidayApis.length === 0) {
+      setApiHolidays({});
+      return;
+    }
+
+    let isMounted = true;
+    const fetchAll = async () => {
+      setLoadingHolidayApis(true);
+      const tempHolidays: Record<string, string> = {};
+
+      try {
+        const fetchPromises = holidayApis.map(async (apiId) => {
+          const opt = HOLIDAY_API_OPTIONS.find(o => o.id === apiId);
+          if (!opt) return;
+
+          try {
+            if (opt.id === "id-skb") {
+              // Load bulletproof static list under the selected year
+              Object.entries(INDONESIA_STATIC_SKB_HOLIDAYS).forEach(([key, nameStr]) => {
+                if (key.startsWith(`${year}-`)) {
+                  tempHolidays[key] = nameStr;
+                }
+              });
+
+              let fetched = false;
+              // 1. Try fe-hari-libur-api.vercel.app/api
+              try {
+                const response = await fetch(`https://fe-hari-libur-api.vercel.app/api?year=${year}`);
+                if (response.ok) {
+                  const data = await response.json();
+                  if (Array.isArray(data)) {
+                    data.forEach((item: any) => {
+                      const dateStr = item.holiday_date || item.date;
+                      const nameStr = item.holiday_name || item.name;
+                      if (dateStr && nameStr) {
+                        const parts = dateStr.split("-");
+                        if (parts.length === 3) {
+                          const y = parts[0];
+                          const m = parseInt(parts[1], 10);
+                          const d = parseInt(parts[2], 10);
+                          const formattedKey = `${y}-${m}-${d}`;
+                          
+                          if (tempHolidays[formattedKey]) {
+                            if (!tempHolidays[formattedKey].includes(nameStr)) {
+                              tempHolidays[formattedKey] += `, ${nameStr}`;
+                            }
+                          } else {
+                            tempHolidays[formattedKey] = nameStr;
+                          }
+                        }
+                      }
+                    });
+                    fetched = true;
+                  }
+                }
+              } catch (err) {
+                console.log("Catatan: fe-hari-libur-api dialihkan otomatis ke database lokal SKB.");
+              }
+
+              // 2. Try dayoffapi.vercel.app fallback if first failed
+              if (!fetched) {
+                try {
+                  const response = await fetch(`https://dayoffapi.vercel.app/api/v1/holidays?year=${year}`);
+                  if (response.ok) {
+                     const resData = await response.json();
+                     const data = resData.data || resData;
+                     if (Array.isArray(data)) {
+                       data.forEach((item: any) => {
+                         const dateStr = item.date || item.holiday_date;
+                         const nameStr = item.name || item.holiday_name;
+                         if (dateStr && nameStr) {
+                           const parts = dateStr.split("-");
+                           if (parts.length === 3) {
+                             const y = parts[0];
+                             const m = parseInt(parts[1], 10);
+                             const d = parseInt(parts[2], 10);
+                             const formattedKey = `${y}-${m}-${d}`;
+                             
+                             if (tempHolidays[formattedKey]) {
+                               if (!tempHolidays[formattedKey].includes(nameStr)) {
+                                 tempHolidays[formattedKey] += `, ${nameStr}`;
+                               }
+                             } else {
+                               tempHolidays[formattedKey] = nameStr;
+                             }
+                           }
+                         }
+                       });
+                     }
+                  }
+                } catch (err) {
+                  console.log("Catatan: dayoffapi dialihkan otomatis ke database lokal SKB.");
+                }
+              }
+            } else {
+              // Standard Nager.Date API
+              try {
+                const response = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${year}/${opt.country}`);
+                if (response.ok) {
+                  const data = await response.json();
+                  if (Array.isArray(data)) {
+                    data.forEach((item: any) => {
+                      if (item.date) {
+                        const parts = item.date.split("-");
+                        if (parts.length === 3) {
+                          const y = parts[0];
+                          const m = parseInt(parts[1], 10);
+                          const d = parseInt(parts[2], 10);
+                          const formattedKey = `${y}-${m}-${d}`;
+                          
+                          const name = item.localName || item.name;
+                          if (tempHolidays[formattedKey]) {
+                            if (!tempHolidays[formattedKey].includes(name)) {
+                              tempHolidays[formattedKey] += `, ${name}`;
+                            }
+                          } else {
+                            tempHolidays[formattedKey] = name;
+                          }
+                        }
+                      }
+                    });
+                  }
+                }
+              } catch (err) {
+                console.log(`Catatan: ${opt.name} tidak dapat dijangkau online.`);
+              }
+            }
+          } catch (e) {
+            console.log(`Holidays backup load used for ${opt.name}.`);
+          }
+        });
+
+        await Promise.all(fetchPromises);
+        
+        if (isMounted) {
+          setApiHolidays(tempHolidays);
+        }
+      } catch (err) {
+        console.error("Kesalahan mengambil data API Hari Besar:", err);
+      } finally {
+        if (isMounted) {
+          setLoadingHolidayApis(false);
+        }
+      }
+    };
+
+    fetchAll();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [holidayApis, year, workspace?.id]);
+
+  const combinedHolidays = useMemo(() => {
+    return { ...apiHolidays, ...holidays };
+  }, [apiHolidays, holidays]);
 
   const [bulkIds, setBulkIds] = useState<string[]>([]);
   const [exportModal, setExportModal] = useState(false);
@@ -418,6 +696,11 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
             if (data.settings.pics) setPics(data.settings.pics);
             if (data.settings.statuses) setStatuses(data.settings.statuses);
             if (data.settings.holidays) setHolidays(data.settings.holidays);
+            if (data.settings.holidayApis !== undefined) {
+              setHolidayApis(data.settings.holidayApis);
+            } else {
+              setHolidayApis([]);
+            }
             if (data.settings.headerImage !== undefined) setHeaderImage(data.settings.headerImage);
             if (data.settings.headerStyle) setHeaderStyle(data.settings.headerStyle);
           }
@@ -745,15 +1028,15 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
         <AnimatePresence mode="wait">
           <motion.div key={tab} initial={{ opacity: 0, y: 5, scale: 0.99 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -5, scale: 0.99 }} transition={{ duration: 0.15, ease: "easeOut" }}>
             {tab==="dashboard"&&<DashboardView user={user} profile={profile} activeWorkspace={workspace} content={filtered} theme={currentTheme} setTab={setTab} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} year={year} month={month} />}
-            {tab==="month"&&<MonthView year={year} month={month} monthContent={monthContent} filtered={filtered} openEdit={openEdit} openAdd={openAdd} showHolidays={showHolidays} holidays={holidays} customEvents={workspace?.settings?.customEvents || []} pillars={pillars} platforms={platforms} isRestricted={isRestricted} showArchived={showArchived} />}
-            {tab==="week"&&<WeekView year={year} month={month} content={content} filtered={filtered} openEdit={openEdit} openAdd={openAdd} showHolidays={showHolidays} holidays={holidays} pillars={pillars} platforms={platforms} isRestricted={isRestricted} showArchived={showArchived} />}
+            {tab==="month"&&<MonthView year={year} month={month} monthContent={monthContent} filtered={filtered} openEdit={openEdit} openAdd={openAdd} showHolidays={showHolidays} holidays={combinedHolidays} customEvents={workspace?.settings?.customEvents || []} pillars={pillars} platforms={platforms} isRestricted={isRestricted} showArchived={showArchived} />}
+            {tab==="week"&&<WeekView year={year} month={month} content={content} filtered={filtered} openEdit={openEdit} openAdd={openAdd} showHolidays={showHolidays} holidays={combinedHolidays} pillars={pillars} platforms={platforms} isRestricted={isRestricted} showArchived={showArchived} />}
             {tab==="board"&&<BoardView year={year} month={month} content={content} filtered={filtered} openEdit={openEdit} openAdd={openAdd} statuses={statuses} pillars={pillars} platforms={platforms} search={search} isRestricted={isRestricted} showArchived={showArchived} />}
-            {tab==="timeline"&&<TimelineView year={year} month={month} content={content} filtered={filtered} openEdit={openEdit} openAdd={openAdd} pillars={pillars} platforms={platforms} showHolidays={showHolidays} holidays={holidays} isRestricted={isRestricted} showArchived={showArchived} />}
+            {tab==="timeline"&&<TimelineView year={year} month={month} content={content} filtered={filtered} openEdit={openEdit} openAdd={openAdd} pillars={pillars} platforms={platforms} showHolidays={showHolidays} holidays={combinedHolidays} isRestricted={isRestricted} showArchived={showArchived} />}
             {tab==="table"&&<TableView filtered={filtered} openEdit={openEdit} archiveItem={archiveItem} unarchiveItem={unarchiveItem} deleteItem={deleteItem} pillars={pillars} platforms={platforms} showArchived={showArchived} search={search} bulkIds={bulkIds} setBulkIds={setBulkIds} onBulk={handleBulkActions} isRestricted={isRestricted}/>}
             {tab.startsWith("social")&&<SocialStudioView tab={tab} />}
             {tab==="analytics"&&<AnalyticsView content={content} pillars={pillars} platforms={platforms} pics={pics} statuses={statuses} openEdit={openEdit} isRestricted={isRestricted}/>}
             {tab==="settings"&&<SettingsPanel 
-              initialSettings={{pillars, platforms, pics, statuses, holidays, customEvents: workspace?.settings?.customEvents || []}} 
+              initialSettings={{pillars, platforms, pics, statuses, holidays, holidayApis, customEvents: workspace?.settings?.customEvents || []}} 
               onSave={async (d:any) => {
                 await updateWsSettings(d);
                 setIsSettingsDirty(false);

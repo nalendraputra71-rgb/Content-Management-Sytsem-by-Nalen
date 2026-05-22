@@ -1,6 +1,57 @@
 import { useState, useEffect } from "react";
 import { I, B, CARD, THEMES } from "./data";
-import { Save, CheckCircle2 } from "lucide-react";
+import { 
+  Save, 
+  CheckCircle2, 
+  Palette, 
+  Layers, 
+  Smartphone, 
+  Users, 
+  ClipboardList, 
+  Calendar, 
+  Sparkles, 
+  Building, 
+  Settings, 
+  Cloud, 
+  FlaskConical,
+  Trash2
+} from "lucide-react";
+
+function getSectionIcon(id: string, size = 16) {
+  switch (id) {
+    case "visual": return <Palette size={size} />;
+    case "pillars": return <Layers size={size} />;
+    case "platforms": return <Smartphone size={size} />;
+    case "pics": return <Users size={size} />;
+    case "statuses": return <ClipboardList size={size} />;
+    case "holidays": return <Calendar size={size} />;
+    case "customEvents": return <Sparkles size={size} />;
+    case "workspace": return <Building size={size} />;
+    case "general": return <Settings size={size} />;
+    default: return <Settings size={size} />;
+  }
+}
+
+function formatIndonesiaDate(ymdString: string) {
+  const parts = ymdString.split("-");
+  if (parts.length !== 3) return ymdString;
+  const months = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agt", "Sep", "Okt", "Nov", "Des"];
+  const y = parts[0];
+  const m = parseInt(parts[1], 10);
+  const d = parseInt(parts[2], 10);
+  if (isNaN(m) || isNaN(d) || m < 1 || m > 12) return ymdString;
+  return `${d} ${months[m - 1]} ${y}`;
+}
+
+export const HOLIDAY_API_OPTIONS = [
+  { id: "id-skb", name: "Indonesia - SKB 3 Menteri (Lengkap Hari Raya Islam & Cuti Bersama)", country: "ID", color: "#E11D48", isCustomApi: true },
+  { id: "id", name: "Indonesia (Hari Libur Utama - Nager.Date)", country: "ID", color: "#EF4444" },
+  { id: "us", name: "United States (US Holidays)", country: "US", color: "#2563EB" },
+  { id: "sg", name: "Singapore (SG Holidays)", country: "SG", color: "#059669" },
+  { id: "my", name: "Malaysia (MY Holidays)", country: "MY", color: "#D97706" },
+  { id: "jp", name: "Japan (JP Holidays)", country: "JP", color: "#7C3AED" },
+  { id: "gb", name: "United Kingdom (UK Holidays)", country: "GB", color: "#0891B2" },
+];
 
 export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, profile, onUpdateProfile, onDirty, onLeave, onDelete, isOwner }: any) {
   const [section, setSection] = useState("visual");
@@ -12,6 +63,7 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
   const [localPics, setLocalPics] = useState(initialSettings.pics || []);
   const [localStatuses, setLocalStatuses] = useState(initialSettings.statuses || []);
   const [localHolidays, setLocalHolidays] = useState(initialSettings.holidays || {});
+  const [localHolidayApis, setLocalHolidayApis] = useState(initialSettings.holidayApis || []);
   const [localCustomEvents, setLocalCustomEvents] = useState(initialSettings.customEvents || []);
 
   const [newVal, setNewVal] = useState("");
@@ -46,6 +98,7 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
                   JSON.stringify(localPics) !== JSON.stringify(initialSettings.pics || []) ||
                   JSON.stringify(localStatuses) !== JSON.stringify(initialSettings.statuses || []) ||
                   JSON.stringify(localHolidays) !== JSON.stringify(initialSettings.holidays || {}) ||
+                  JSON.stringify(localHolidayApis) !== JSON.stringify(initialSettings.holidayApis || []) ||
                   JSON.stringify(localCustomEvents) !== JSON.stringify(initialSettings.customEvents || []);
 
   useEffect(() => {
@@ -59,20 +112,21 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
     setLocalPics(initialSettings.pics || []);
     setLocalStatuses(initialSettings.statuses || []);
     setLocalHolidays(initialSettings.holidays || {});
+    setLocalHolidayApis(initialSettings.holidayApis || []);
     setLocalCustomEvents(initialSettings.customEvents || []);
     setSaveSuccess(false);
   }, [JSON.stringify(initialSettings)]);
 
   const sections = [
-    ["visual", "Tema Visual", "🎨"],
-    ["pillars", "Content Pillars", "🖌️"],
-    ["platforms", "Platforms", "📱"],
-    ["pics", "Team PIC", "👤"],
-    ["statuses", "Status Workflow", "📋"],
-    ["holidays", "Hari Besar", "📅"],
-    ["customEvents", "Event Kustom", "✨"],
-    ["workspace", "Workspace", "🏢"],
-    ["general", "General & Debug", "⚙️"]
+    ["visual", "Tema Visual"],
+    ["pillars", "Content Pillars"],
+    ["platforms", "Platforms"],
+    ["pics", "Team PIC"],
+    ["statuses", "Status Workflow"],
+    ["holidays", "Hari Besar"],
+    ["customEvents", "Event Kustom"],
+    ["workspace", "Workspace"],
+    ["general", "General & Debug"]
   ];
 
   const handleSectionChange = (id: string) => {
@@ -107,6 +161,7 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
         pics: localPics,
         statuses: localStatuses,
         holidays: localHolidays,
+        holidayApis: localHolidayApis,
         customEvents: localCustomEvents
       });
       setSaveSuccess(true);
@@ -138,7 +193,19 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
   const editStatus = (i: any, name: any, color: any) => setLocalStatuses((p: any) => p.map((x: any, idx: any) => idx === i ? { name, color } : x));
   const delStatus = (i: any) => setLocalStatuses((s: any) => s.filter((_: any, idx: any) => idx !== i));
 
-  const addHoliday = () => { if (!newHKey.trim() || !newHVal.trim()) return; setLocalHolidays((h: any) => ({ ...h, [newHKey]: newHVal })); setNewHKey(""); setNewHVal(""); };
+  const addHoliday = () => {
+    if (!newHKey || !newHVal.trim()) return;
+    const parts = newHKey.split("-");
+    if (parts.length === 3) {
+      const y = parts[0];
+      const m = parseInt(parts[1], 10);
+      const d = parseInt(parts[2], 10);
+      const cleanedKey = `${y}-${m}-${d}`;
+      setLocalHolidays((h: any) => ({ ...h, [cleanedKey]: newHVal.trim() }));
+      setNewHKey("");
+      setNewHVal("");
+    }
+  };
   const delHoliday = (k: any) => setLocalHolidays((h: any) => { const n = { ...h }; delete n[k]; return n; });
 
   const addCustomEvent = () => {
@@ -183,12 +250,26 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
   };
 
   const renderInputRow = (placeholder: string, value: string, onChange: any, onAdd: any, colorPicker: boolean) => (
-    <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
-      {colorPicker && <input type="color" value={newColor} onChange={(e: any) => setNewColor(e.target.value)} style={{ width: 36, height: 36, border: "1.5px solid rgba(44,32,22,0.15)", borderRadius: 6, cursor: "pointer", padding: 2 }} />}
-      <input value={value} onChange={(e: any) => onChange(e.target.value)} onKeyDown={(e: any) => e.key === "Enter" && onAdd()} placeholder={placeholder} style={I({ flex: 1 })} />
-      <button onClick={onAdd} className="hover-scale" style={{ ...B(true, "#C4622D"), padding: "7px 14px", fontWeight: 600 }}>+ Tambah</button>
+    <div style={{ display: "flex", gap: 8, marginTop: 12, background: "var(--theme-primary)11", padding: 10, borderRadius: 16, border: "1px dashed var(--theme-primary)44", alignItems: "center" }}>
+      {colorPicker && <div style={{width: 36, height: 36, borderRadius: 10, overflow: "hidden", border: "2px solid white", boxShadow: "0 2px 6px rgba(0,0,0,0.1)", flexShrink: 0}}><input type="color" value={newColor} onChange={(e: any) => setNewColor(e.target.value)} style={{ width: "200%", height: "200%", transform: "translate(-25%, -25%)", border: "none", cursor: "pointer", background: "none" }} /></div>}
+      <input value={value} onChange={(e: any) => onChange(e.target.value)} onKeyDown={(e: any) => e.key === "Enter" && onAdd()} placeholder={placeholder} style={I({ flex: 1, border: "none", background: "white", boxShadow: "0 2px 8px rgba(0,0,0,0.04)", fontSize: 14 })} />
+      <button onClick={onAdd} className="hover-scale" style={{ ...B(true, "var(--theme-primary)"), padding: "0 20px", height: 42, fontWeight: 700, borderRadius: 12, border: "none", color: "white" }}>Tambah</button>
     </div>
   );
+
+  const sortedHolidays = Object.entries(localHolidays).sort(([k1], [k2]) => {
+    const parts1 = k1.split("-").map(Number);
+    const parts2 = k2.split("-").map(Number);
+    const y1 = parts1[0] || 0;
+    const m1 = parts1[1] || 1;
+    const d1 = parts1[2] || 1;
+    const y2 = parts2[0] || 0;
+    const m2 = parts2[1] || 1;
+    const d2 = parts2[2] || 1;
+    const date1 = new Date(y1, m1 - 1, d1);
+    const date2 = new Date(y2, m2 - 1, d2);
+    return date1.getTime() - date2.getTime();
+  });
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -218,19 +299,58 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "200px 1fr", gap: 16, minHeight: 400 }}>
-        <div style={{ background: "white", borderRadius: 12, padding: "12px 0", boxShadow: "0 1px 4px rgba(44,32,22,0.08)", height: "fit-content" }}>
-          {sections.map(([id, label, ic]) => (
-            <button key={id} onClick={() => handleSectionChange(id)} style={{ width: "100%", padding: "10px 16px", textAlign: "left", border: "none", borderLeft: `3px solid ${section === id ? "var(--theme-primary)" : "transparent"}`, background: section === id ? "var(--theme-primary)11" : "transparent", cursor: "pointer", fontSize: 13, fontWeight: section === id ? 600 : 400, color: section === id ? "var(--theme-primary)" : "#2C2016", display: "flex", alignItems:"center", gap:8 }}>
-              <span>{ic}</span>{label}
+      <div style={{ display: "grid", gridTemplateColumns: "210px 1fr", gap: 16, minHeight: 400 }}>
+        <div style={{ background: "white", borderRadius: 16, padding: "12px 4px", boxShadow: "0 1px 6px rgba(44,32,22,0.06)", height: "fit-content", border: "1px solid rgba(44,32,22,0.04)" }}>
+          {sections.map(([id, label]) => (
+            <button 
+              key={id} 
+              onClick={() => handleSectionChange(id)} 
+              style={{ 
+                width: "calc(100% - 16px)", 
+                margin: "4px 8px",
+                padding: "10px 14px", 
+                textAlign: "left", 
+                border: "none", 
+                borderRadius: "10px",
+                background: section === id ? "var(--theme-primary)15" : "transparent", 
+                cursor: "pointer", 
+                fontSize: 13, 
+                fontWeight: section === id ? 700 : 500, 
+                color: section === id ? "var(--theme-primary)" : "rgba(44,32,22,0.8)", 
+                display: "flex", 
+                alignItems: "center", 
+                gap: 12,
+                boxShadow: section === id ? "0 2px 6px rgba(0,0,0,0.02)" : "none",
+                transition: "all 0.15s ease-out"
+              }}
+              className="hover:bg-black/[0.02]"
+            >
+              <span style={{ 
+                display: "inline-flex", 
+                alignItems: "center", 
+                justifyContent: "center", 
+                color: section === id ? "var(--theme-primary)" : "rgba(44,32,22,0.5)",
+                transform: section === id ? "scale(1.05)" : "scale(1)",
+                transition: "transform 0.15s"
+              }}>
+                {getSectionIcon(id, 16)}
+              </span>
+              <span>{label}</span>
             </button>
           ))}
         </div>
         <div style={CARD()}>
           {section === "visual" && (
-            <>
-              <h3 style={{ fontSize: 18, margin: "0 0 8px" }}>🎨 Tema Visual Profesional</h3>
-              <p style={{ fontSize: 13, color: "rgba(44,32,22,0.6)", marginBottom: 20 }}>Pilih salah satu dari 10 tema warna profesional untuk aplikasi Anda. Tema ini akan berlaku untuk seluruh tampilan dashboard secara global.</p>
+            <div className="fade-in">
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+                <div style={{ background: "var(--theme-primary)22", padding: 10, borderRadius: 12, color: "var(--theme-primary)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  {getSectionIcon("visual", 20)}
+                </div>
+                <div>
+                  <h3 style={{ fontSize: 18, margin: 0, color: "#2C2016" }}>Tema Visual Profesional</h3>
+                  <p style={{ fontSize: 12, color: "rgba(44,32,22,0.5)", margin: "4px 0 0" }}>Pilih salah satu dari 10 tema warna profesional untuk aplikasi Anda. Tema ini berlaku secara global.</p>
+                </div>
+              </div>
               
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 16 }}>
                 {THEMES.map((t) => {
@@ -278,162 +398,343 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
                    <CheckCircle2 size={18} /> Tema berhasil disimpan dan disinkronkan ke seluruh perangkat Anda.
                 </div>
               )}
-            </>
+            </div>
           )}
           {section === "pillars" && (
-            <>
-              <h3 style={{ fontSize: 18, margin: "0 0 14px" }}>🎨 Content Pillars</h3>
+            <div className="fade-in">
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+                <div style={{ background: "var(--theme-primary)22", padding: 10, borderRadius: 12, color: "var(--theme-primary)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  {getSectionIcon("pillars", 20)}
+                </div>
+                <div>
+                  <h3 style={{ fontSize: 18, margin: 0, color: "#2C2016" }}>Content Pillars</h3>
+                  <p style={{ fontSize: 12, color: "rgba(44,32,22,0.5)", margin: "4px 0 0" }}>Kategori konten utama untuk strategi Anda</p>
+                </div>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {localPillars.map((p: any, i: any) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", background: "#FAFAF8", borderRadius: 8, marginBottom: 6 }}>
-                  <input type="color" value={p.color} onChange={(e: any) => editPillar(i, p.name, e.target.value)} title="Warna Pillar" style={{ width: 24, height: 24, padding: 0, border: "none", cursor: "pointer" }} />
-                  <input value={p.name} onChange={(e: any) => editPillar(i, e.target.value, p.color)} style={{ flex: 1, fontSize: 13, fontWeight: 500, border: "none", background: "transparent", outline: "none" }} />
-                  <button onClick={() => delPillar(i)} style={{ background: "rgba(156,43,78,0.1)", border: "none", borderRadius: 6, padding: "3px 8px", fontSize: 11, cursor: "pointer", color: "#9C2B4E", }}>Hapus</button>
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", background: "white", borderRadius: 12, border: "1px solid rgba(44,32,22,0.05)", boxShadow: "0 2px 8px rgba(44,32,22,0.02)", transition: "all 0.2s" }} className="hover:border-[var(--theme-primary)44]">
+                  <div style={{width: 28, height: 28, borderRadius: 8, overflow: "hidden", border: "2px solid white", boxShadow: "0 2px 6px rgba(0,0,0,0.1)", flexShrink: 0}}><input type="color" value={p.color} onChange={(e: any) => editPillar(i, p.name, e.target.value)} title="Warna Pillar" style={{ width: "200%", height: "200%", transform: "translate(-25%, -25%)", border: "none", cursor: "pointer" }} /></div>
+                  <input value={p.name} onChange={(e: any) => editPillar(i, e.target.value, p.color)} style={{ flex: 1, fontSize: 14, fontWeight: 600, border: "none", background: "transparent", outline: "none", color: "#2C2016" }} />
+                  <button onClick={() => delPillar(i)} style={{ background: "#FDF5F8", border: "none", borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#9C2B4E", transition: "all 0.2s" }} className="hover:bg-[#9C2B4E] hover:text-white">Hapus</button>
                 </div>
               ))}
+              </div>
               {renderInputRow("Nama pillar baru...", newVal, setNewVal, addPillar, true)}
-            </>
+            </div>
           )}
           {section === "platforms" && (
-            <>
-              <h3 style={{ fontSize: 18, margin: "0 0 14px" }}>📱 Platforms</h3>
+            <div className="fade-in">
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+                <div style={{ background: "var(--theme-primary)22", padding: 10, borderRadius: 12, color: "var(--theme-primary)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  {getSectionIcon("platforms", 20)}
+                </div>
+                <div>
+                  <h3 style={{ fontSize: 18, margin: 0, color: "#2C2016" }}>Platforms</h3>
+                  <p style={{ fontSize: 12, color: "rgba(44,32,22,0.5)", margin: "4px 0 0" }}>Saluran distribusi konten Anda</p>
+                </div>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {localPlatforms.map((p: any, i: any) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", background: "#FAFAF8", borderRadius: 8, marginBottom: 6 }}>
-                  <input type="color" value={p.color} onChange={(e: any) => editPlatform(i, p.name, e.target.value)} title="Warna Platform" style={{ width: 24, height: 24, padding: 0, border: "none", cursor: "pointer" }} />
-                  <input value={p.name} onChange={(e: any) => editPlatform(i, e.target.value, p.color)} style={{ flex: 1, fontSize: 13, fontWeight: 500, border: "none", background: "transparent", outline: "none" }} />
-                  <button onClick={() => delPlatform(i)} style={{ background: "#FDF5F8", border: "none", borderRadius: 6, padding: "3px 8px", fontSize: 11, cursor: "pointer", color: "#9C2B4E", }}>Hapus</button>
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", background: "white", borderRadius: 12, border: "1px solid rgba(44,32,22,0.05)", boxShadow: "0 2px 8px rgba(44,32,22,0.02)", transition: "all 0.2s" }} className="hover:border-[var(--theme-primary)44]">
+                  <div style={{width: 28, height: 28, borderRadius: 8, overflow: "hidden", border: "2px solid white", boxShadow: "0 2px 6px rgba(0,0,0,0.1)", flexShrink: 0}}><input type="color" value={p.color} onChange={(e: any) => editPlatform(i, p.name, e.target.value)} title="Warna Platform" style={{ width: "200%", height: "200%", transform: "translate(-25%, -25%)", border: "none", cursor: "pointer" }} /></div>
+                  <input value={p.name} onChange={(e: any) => editPlatform(i, e.target.value, p.color)} style={{ flex: 1, fontSize: 14, fontWeight: 600, border: "none", background: "transparent", outline: "none", color: "#2C2016" }} />
+                  <button onClick={() => delPlatform(i)} style={{ background: "#FDF5F8", border: "none", borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#9C2B4E", transition: "all 0.2s" }} className="hover:bg-[#9C2B4E] hover:text-white">Hapus</button>
                 </div>
               ))}
+              </div>
               {renderInputRow("Nama platform baru...", newVal, setNewVal, addPlatform, true)}
-            </>
+            </div>
           )}
           {section === "pics" && (
-            <>
-              <h3 style={{ fontSize: 18, margin: "0 0 14px" }}>👤 Team PIC</h3>
+            <div className="fade-in">
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+                <div style={{ background: "var(--theme-primary)22", padding: 10, borderRadius: 12, color: "var(--theme-primary)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  {getSectionIcon("pics", 20)}
+                </div>
+                <div>
+                  <h3 style={{ fontSize: 18, margin: 0, color: "#2C2016" }}>Team PIC</h3>
+                  <p style={{ fontSize: 12, color: "rgba(44,32,22,0.5)", margin: "4px 0 0" }}>Anggota tim yang bertanggung jawab (Person In Charge)</p>
+                </div>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {localPics.map((p: any, i: any) => {
                 const name = typeof p === 'string' ? p : p.name;
-                const color = typeof p === 'string' ? "#C4622D" : p.color;
+                const color = typeof p === 'string' ? "var(--theme-primary)" : p.color;
                 return (
-                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", background: "#FAFAF8", borderRadius: 8, marginBottom: 6 }}>
-                    <input type="color" value={color} onChange={(e: any) => editPic(i, name, e.target.value)} title="Warna PIC" style={{ width: 24, height: 24, padding: 0, border: "none", cursor: "pointer" }} />
-                    <input value={name} onChange={(e: any) => editPic(i, e.target.value, color)} style={{ flex: 1, fontSize: 13, fontWeight: 500, border: "none", background: "transparent", outline: "none" }} />
-                    <button onClick={() => delPic(i)} style={{ background: "#FDF5F8", border: "none", borderRadius: 6, padding: "3px 8px", fontSize: 11, cursor: "pointer", color: "#9C2B4E", }}>Hapus</button>
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", background: "white", borderRadius: 12, border: "1px solid rgba(44,32,22,0.05)", boxShadow: "0 2px 8px rgba(44,32,22,0.02)", transition: "all 0.2s" }} className="hover:border-[var(--theme-primary)44]">
+                    <div style={{width: 28, height: 28, borderRadius: 8, overflow: "hidden", border: "2px solid white", boxShadow: "0 2px 6px rgba(0,0,0,0.1)", flexShrink: 0}}><input type="color" value={color} onChange={(e: any) => editPic(i, name, e.target.value)} title="Warna PIC" style={{ width: "200%", height: "200%", transform: "translate(-25%, -25%)", border: "none", cursor: "pointer" }} /></div>
+                    <input value={name} onChange={(e: any) => editPic(i, e.target.value, color)} style={{ flex: 1, fontSize: 14, fontWeight: 600, border: "none", background: "transparent", outline: "none", color: "#2C2016" }} />
+                    <button onClick={() => delPic(i)} style={{ background: "#FDF5F8", border: "none", borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#9C2B4E", transition: "all 0.2s" }} className="hover:bg-[#9C2B4E] hover:text-white">Hapus</button>
                   </div>
                 );
               })}
+              </div>
               {renderInputRow("Nama PIC baru...", newVal, setNewVal, addPic, true)}
-            </>
+            </div>
           )}
           {section === "statuses" && (
-            <>
-              <h3 style={{ fontSize: 18, margin: "0 0 14px" }}>📋 Status Workflow</h3>
-              <div style={{ fontSize: 11, color: "rgba(44,32,22,0.4)", marginBottom: 10 }}>Urutan dari atas ke bawah = alur kerja</div>
+            <div className="fade-in">
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+                <div style={{ background: "var(--theme-primary)22", padding: 10, borderRadius: 12, color: "var(--theme-primary)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  {getSectionIcon("statuses", 20)}
+                </div>
+                <div>
+                  <h3 style={{ fontSize: 18, margin: 0, color: "#2C2016" }}>Status Workflow</h3>
+                  <p style={{ fontSize: 12, color: "rgba(44,32,22,0.5)", margin: "4px 0 0" }}>Urutan dari atas ke bawah = alur kerja</p>
+                </div>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {localStatuses.map((s: any, i: any) => {
                 const name = typeof s === 'string' ? s : s.name;
-                const color = typeof s === 'string' ? "#C4622D" : s.color;
+                const color = typeof s === 'string' ? "var(--theme-primary)" : s.color;
                 return (
-                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", background: "#FAFAF8", borderRadius: 8, marginBottom: 6 }}>
-                    <span style={{ fontSize: 11, color: "rgba(44,32,22,0.3)" }}>{i + 1}.</span>
-                    <input type="color" value={color} onChange={(e: any) => editStatus(i, name, e.target.value)} title="Warna Status" style={{ width: 24, height: 24, padding: 0, border: "none", cursor: "pointer" }} />
-                    <input value={name} onChange={(e: any) => editStatus(i, e.target.value, color)} style={{ flex: 1, background: color + "15", color: color, fontSize: 11, fontWeight: 700, padding: "4px 8px", borderRadius: 8, border: "none", outline: "none", maxWidth: "fit-content" }} />
-                    <button onClick={() => delStatus(i)} style={{ background: "#FDF5F8", border: "none", borderRadius: 6, padding: "3px 8px", fontSize: 11, cursor: "pointer", color: "#9C2B4E", }}>Hapus</button>
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", background: "white", borderRadius: 12, border: "1px solid rgba(44,32,22,0.05)", boxShadow: "0 2px 8px rgba(44,32,22,0.02)", transition: "all 0.2s" }} className="hover:border-[var(--theme-primary)44]">
+                    <span style={{ fontSize: 12, fontWeight: 800, color: "rgba(44,32,22,0.3)", width: 24, textAlign: "center" }}>{i + 1}.</span>
+                    <div style={{width: 28, height: 28, borderRadius: 8, overflow: "hidden", border: "2px solid white", boxShadow: "0 2px 6px rgba(0,0,0,0.1)", flexShrink: 0}}><input type="color" value={color} onChange={(e: any) => editStatus(i, name, e.target.value)} title="Warna Status" style={{ width: "200%", height: "200%", transform: "translate(-25%, -25%)", border: "none", cursor: "pointer" }} /></div>
+                    <input value={name} onChange={(e: any) => editStatus(i, e.target.value, color)} style={{ flex: 1, background: color + "15", color: color, fontSize: 13, fontWeight: 700, padding: "6px 12px", borderRadius: 8, border: "none", outline: "none", maxWidth: "fit-content" }} />
+                    <div style={{flex: 1}} />
+                    <button onClick={() => delStatus(i)} style={{ background: "#FDF5F8", border: "none", borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#9C2B4E", transition: "all 0.2s" }} className="hover:bg-[#9C2B4E] hover:text-white">Hapus</button>
                   </div>
                 );
               })}
+              </div>
               {renderInputRow("Status baru (e.g. In Review)...", newVal, setNewVal, addStatus, true)}
-            </>
+            </div>
           )}
           {section === "holidays" && (
-            <>
-              <h3 style={{ fontSize: 18, margin: "0 0 14px" }}>📅 Hari Besar & Event</h3>
-              <div style={{ fontSize: 11, color: "rgba(44,32,22,0.4)", marginBottom: 10 }}>Format key: YYYY-M-D (contoh: 2026-8-17)</div>
-              <div style={{ maxHeight: 280, overflow: "auto", display: "flex", flexDirection: "column", gap: 4, marginBottom: 10 }}>
-                {Object.entries(localHolidays).sort().map(([k, v]: any) => (
-                  <div key={k} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 10px", background: "#FAFAF8", borderRadius: 8 }}>
-                    <span style={{ fontSize: 10, color: "rgba(44,32,22,0.4)", fontFamily: "monospace", flexShrink: 0 }}>{k}</span>
-                    <span style={{ flex: 1, fontSize: 12 }}>{v}</span>
-                    <button onClick={() => delHoliday(k)} style={{ background: "#FDF5F8", border: "none", borderRadius: 6, padding: "2px 7px", fontSize: 10, cursor: "pointer", color: "#9C2B4E", }}>✕</button>
+            <div className="fade-in">
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+                <div style={{ background: "var(--theme-primary)22", padding: 10, borderRadius: 12, color: "var(--theme-primary)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  {getSectionIcon("holidays", 20)}
+                </div>
+                <div>
+                  <h3 style={{ fontSize: 18, margin: 0, color: "#2C2016" }}>Hari Besar & Event Tahunan</h3>
+                  <p style={{ fontSize: 12, color: "rgba(44,32,22,0.5)", margin: "4px 0 0" }}>Kelola hari libur otomatis (via API) atau tambahkan hari besar kustom Anda sendiri.</p>
+                </div>
+              </div>
+
+              {/* Integrasi API Hari Besar Gratis */}
+              <div style={{ background: "rgba(44,32,22,0.03)", border: "1px solid rgba(44,32,22,0.08)", borderRadius: 16, padding: 18, marginBottom: 24, boxShadow: "inset 0 1px 3px rgba(0,0,0,0.01)" }}>
+                <h4 style={{ fontSize: 13, fontWeight: 700, margin: "0 0 6px", color: "var(--theme-primary)", display: "flex", alignItems: "center", gap: 6 }}>
+                  🔌 Sinkronisasi Kalender Hari Libur Otomatis
+                </h4>
+                <p style={{ fontSize: 11, color: "rgba(44,32,22,0.6)", margin: "0 0 14px", lineHeight: 1.4 }}>
+                  Pilih kalender hari libur nasional resmi untuk ditampilkan otomatis di dashboard dan sistem kalender mingguan/bulanan Anda. Bisa diaktifkan bersamaan.
+                </p>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 10 }}>
+                  {HOLIDAY_API_OPTIONS.map((opt) => {
+                    const active = localHolidayApis.includes(opt.id);
+                    return (
+                      <label 
+                        key={opt.id} 
+                        style={{ 
+                          display: "flex", 
+                          alignItems: "center", 
+                          gap: 10, 
+                          padding: "10px 14px", 
+                          background: active ? "white" : "rgba(255,255,255,0.4)", 
+                          border: `2.5px solid ${active ? "var(--theme-primary)" : "rgba(44,32,22,0.06)"}`, 
+                          borderRadius: 12, 
+                          cursor: "pointer", 
+                          fontSize: 12, 
+                          fontWeight: 700,
+                          color: active ? "var(--theme-primary)" : "rgba(44,32,22,0.7)",
+                          boxShadow: active ? "0 4px 10px rgba(0,0,0,0.04)" : "none",
+                          transition: "all 0.15s ease-out"
+                        }}
+                        className="hover-scale"
+                      >
+                        <input 
+                          type="checkbox" 
+                          checked={active} 
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setLocalHolidayApis((prev: string[]) => [...prev, opt.id]);
+                            } else {
+                              setLocalHolidayApis((prev: string[]) => prev.filter(x => x !== opt.id));
+                            }
+                          }}
+                          style={{
+                            accentColor: "var(--theme-primary)",
+                            cursor: "pointer",
+                            width: 16,
+                            height: 16
+                          }}
+                        />
+                        <span>{opt.name}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                <h4 style={{ fontSize: 13, fontWeight: 700, margin: 0, color: "#2C2016" }}>📋 Daftar Hari Besar Kustom</h4>
+                <span style={{ fontSize: 11, color: "rgba(44,32,22,0.4)" }}>{sortedHolidays.length} Kustom terdaftar</span>
+              </div>
+              
+              <div style={{ maxHeight: 220, overflow: "auto", display: "flex", flexDirection: "column", gap: 8, marginBottom: 24, paddingRight: 4 }}>
+                {sortedHolidays.map(([k, v]: any) => (
+                  <div key={k} style={{ display: "flex", alignItems: "center", justifyItems: "center", gap: 16, padding: "10px 14px", background: "white", borderRadius: 12, border: "1px solid rgba(44,32,22,0.06)", boxShadow: "0 1px 4px rgba(44,32,22,0.015)" }}>
+                    <div style={{ background: "var(--theme-primary)12", color: "var(--theme-primary)", padding: "4px 10px", borderRadius: 8, display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                      <Calendar size={13} />
+                      <span style={{ fontSize: 11, fontWeight: 700, fontFamily: "var(--font-sans)" }}>
+                        {formatIndonesiaDate(k)}
+                      </span>
+                    </div>
+                    <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: "#2C2016" }}>{v}</span>
+                    <button 
+                      onClick={() => delHoliday(k)} 
+                      style={{ 
+                        background: "rgba(156, 43, 78, 0.05)", 
+                        border: "none", 
+                        borderRadius: 8, 
+                        width: 28, 
+                        height: 28, 
+                        display: "flex", 
+                        alignItems: "center", 
+                        justifyContent: "center", 
+                        cursor: "pointer", 
+                        color: "#9C2B4E", 
+                        transition: "all 0.2s" 
+                      }} 
+                      title="Hapus"
+                      className="hover:bg-[#9C2B4E] hover:text-white"
+                    >
+                      <Trash2 size={13} />
+                    </button>
                   </div>
                 ))}
+                {sortedHolidays.length === 0 && (
+                  <div style={{ padding: "30px 20px", textAlign: "center", fontSize: 12, color: "rgba(44,32,22,0.4)", border: "1px dashed rgba(44,32,22,0.12)", borderRadius: 16 }}>
+                    Belum ada hari besar kustom. Gunakan formulir di bawah untuk menambahkan.
+                  </div>
+                )}
               </div>
-              <div style={{ display: "flex", gap: 6 }}>
-                <input value={newHKey} onChange={(e: any) => setNewHKey(e.target.value)} placeholder="YYYY-M-D" style={I({ width: 130, flex: "none" })} />
-                <input value={newHVal} onChange={(e: any) => setNewHVal(e.target.value)} placeholder="🎉 Nama Event" style={I({ flex: 1 })} />
-                <button onClick={addHoliday} className="hover-scale" style={{ ...B(true, "#C4622D"), padding: "7px 14px", fontWeight: 600 }}>+ Tambah</button>
+              
+              <div style={{ display: "flex", gap: 12, background: "var(--theme-primary)08", padding: 14, borderRadius: 16, border: "1px dashed var(--theme-primary)33", alignItems: "flex-end" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6, flex: "none", width: 160 }}>
+                  <label style={{ fontSize: 11, fontWeight: 700, color: "var(--theme-primary)" }}>Pilih Tanggal</label>
+                  <input 
+                    type="date" 
+                    value={newHKey} 
+                    onChange={(e: any) => setNewHKey(e.target.value)} 
+                    style={I({ border: "1px solid rgba(44,32,22,0.1)", background: "white", padding: "8px 10px", borderRadius: 8, boxShadow: "0 2px 8px rgba(0,0,0,0.02)", fontSize: 13, height: 38, width: "100%" })} 
+                  />
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6, flex: 1 }}>
+                  <label style={{ fontSize: 11, fontWeight: 700, color: "var(--theme-primary)" }}>Nama Hari Besar / Event</label>
+                  <input 
+                    value={newHVal} 
+                    onChange={(e: any) => setNewHVal(e.target.value)} 
+                    onKeyDown={(e: any) => e.key === "Enter" && addHoliday()}
+                    placeholder="Contoh: HUT RI, Idul Fitri, Tahun Baru" 
+                    style={I({ border: "1px solid rgba(44,32,22,0.1)", background: "white", padding: "8px 12px", borderRadius: 8, boxShadow: "0 2px 8px rgba(0,0,0,0.02)", fontSize: 13, height: 38, width: "100%" })} 
+                  />
+                </div>
+                <button 
+                  onClick={addHoliday} 
+                  className="hover-scale font-bold" 
+                  style={{ 
+                    ...B(true, "var(--theme-primary)"), 
+                    padding: "0 24px", 
+                    height: 38, 
+                    borderRadius: 8, 
+                    border: "none", 
+                    color: "white",
+                    fontSize: 13
+                  }}
+                >
+                  Tambah
+                </button>
               </div>
-            </>
+            </div>
           )}
           {section === "customEvents" && (
-            <>
-              <h3 style={{ fontSize: 18, margin: "0 0 14px" }}>✨ Event Kustom & Promo</h3>
-              <p style={{ fontSize: 11, color: "rgba(44,32,22,0.4)", marginBottom: 10 }}>Misal: Pay Day Sale, Twin Date, atau Peluncuran Produk.</p>
+            <div className="fade-in">
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+                <div style={{ background: "var(--theme-primary)22", padding: 10, borderRadius: 12, color: "var(--theme-primary)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  {getSectionIcon("customEvents", 20)}
+                </div>
+                <div>
+                  <h3 style={{ fontSize: 18, margin: 0, color: "#2C2016" }}>Event Kustom & Promo</h3>
+                  <p style={{ fontSize: 12, color: "rgba(44,32,22,0.5)", margin: "4px 0 0" }}>Misal: Pay Day Sale, Twin Date, atau Peluncuran Produk.</p>
+                </div>
+              </div>
               
-              <div style={{ background: "#FAFAF8", padding: 16, borderRadius:16, display: "flex", flexDirection: "column", gap: 10, marginBottom: 20, border: addEventAttempted && (!newEvName.trim() || !newEvStart || !newEvEnd) ? "1.5px solid #9C2B4E" : "1px solid rgba(0,0,0,0.05)" }}>
+              <div style={{ background: "var(--theme-primary)08", padding: 20, borderRadius: 20, display: "flex", flexDirection: "column", gap: 12, marginBottom: 24, border: addEventAttempted && (!newEvName.trim() || !newEvStart || !newEvEnd) ? "2px solid #9C2B4E" : "1px dashed var(--theme-primary)44" }}>
                 <input 
                   type="text" 
                   value={newEvName} 
                   onChange={(e: any) => setNewEvName(e.target.value)} 
                   placeholder="Nama Event (e.g., Payday Sale)" 
                   style={I({
-                    borderColor: addEventAttempted && !newEvName.trim() ? "#9C2B4E" : "rgba(44,32,22,0.15)",
+                    borderColor: addEventAttempted && !newEvName.trim() ? "#9C2B4E" : "rgba(44,32,22,0.1)",
                     borderWidth: addEventAttempted && !newEvName.trim() ? "2px" : "1px",
-                    background: addEventAttempted && !newEvName.trim() ? "#FDF5F8" : "white"
+                    background: addEventAttempted && !newEvName.trim() ? "#FDF5F8" : "white",
+                    fontSize: 14, boxShadow: "0 2px 8px rgba(0,0,0,0.04)"
                   })} 
                 />
-                <div style={{ display: "flex", gap: 8 }}>
+                <div style={{ display: "flex", gap: 12 }}>
                    <div style={{flex: 1}}>
-                     <label style={{fontSize:9, fontWeight:700, marginBottom:4, display:"block", color: addEventAttempted && !newEvStart ? "#9C2B4E" : "#999"}}>Start Date {addEventAttempted && !newEvStart && "*"}</label>
+                     <label style={{fontSize:11, fontWeight:700, marginBottom:6, display:"block", color: addEventAttempted && !newEvStart ? "#9C2B4E" : "var(--theme-primary)"}}>Start Date {addEventAttempted && !newEvStart && "*"}</label>
                      <input 
                        type="date" 
                        value={newEvStart} 
                        onChange={(e: any) => setNewEvStart(e.target.value)} 
                        style={I({
-                         fontSize:11, 
-                         padding:6,
-                         borderColor: addEventAttempted && !newEvStart ? "#9C2B4E" : "rgba(44,32,22,0.15)",
+                         fontSize:13, 
+                         padding:10,
+                         borderColor: addEventAttempted && !newEvStart ? "#9C2B4E" : "rgba(44,32,22,0.1)",
                          borderWidth: addEventAttempted && !newEvStart ? "2px" : "1px",
-                         background: addEventAttempted && !newEvStart ? "#FDF5F8" : "white"
+                         background: addEventAttempted && !newEvStart ? "#FDF5F8" : "white",
+                         boxShadow: "0 2px 8px rgba(0,0,0,0.04)"
                        })} 
                      />
                    </div>
                    <div style={{flex: 1}}>
-                     <label style={{fontSize:9, fontWeight:700, marginBottom:4, display:"block", color: addEventAttempted && !newEvEnd ? "#9C2B4E" : "#999"}}>End Date {addEventAttempted && !newEvEnd && "*"}</label>
+                     <label style={{fontSize:11, fontWeight:700, marginBottom:6, display:"block", color: addEventAttempted && !newEvEnd ? "#9C2B4E" : "var(--theme-primary)"}}>End Date {addEventAttempted && !newEvEnd && "*"}</label>
                      <input 
                        type="date" 
                        value={newEvEnd} 
                        onChange={(e: any) => setNewEvEnd(e.target.value)} 
                        style={I({
-                         fontSize:11, 
-                         padding:6,
-                         borderColor: addEventAttempted && !newEvEnd ? "#9C2B4E" : "rgba(44,32,22,0.15)",
+                         fontSize:13, 
+                         padding:10,
+                         borderColor: addEventAttempted && !newEvEnd ? "#9C2B4E" : "rgba(44,32,22,0.1)",
                          borderWidth: addEventAttempted && !newEvEnd ? "2px" : "1px",
-                         background: addEventAttempted && !newEvEnd ? "#FDF5F8" : "white"
+                         background: addEventAttempted && !newEvEnd ? "#FDF5F8" : "white",
+                         boxShadow: "0 2px 8px rgba(0,0,0,0.04)"
                        })} 
                      />
                    </div>
                    <div style={{flex: 0}}>
-                     <label style={{fontSize:9, fontWeight:700, marginBottom:4, display:"block", color:"#999"}}>Color</label>
-                     <input type="color" value={newEvColor} onChange={(e: any) => setNewEvColor(e.target.value)} style={{ width: 32, height: 32, border: "none", borderRadius: 8, cursor: "pointer", background:"none" }} />
+                     <label style={{fontSize:11, fontWeight:700, marginBottom:6, display:"block", color:"var(--theme-primary)"}}>Color</label>
+                     <div style={{width: 44, height: 44, borderRadius: 12, overflow: "hidden", border: "2px solid white", boxShadow: "0 2px 8px rgba(0,0,0,0.15)", flexShrink: 0}}>
+                       <input type="color" value={newEvColor} onChange={(e: any) => setNewEvColor(e.target.value)} style={{ width: "200%", height: "200%", transform: "translate(-25%, -25%)", border: "none", cursor: "pointer", background:"none" }} />
+                     </div>
                    </div>
                 </div>
-                <label style={{display:"flex", alignItems:"center", gap:8, fontSize:11, cursor:"pointer", color:"#666"}}>
-                   <input type="checkbox" checked={newEvMonthly} onChange={e=>setNewEvMonthly(e.target.checked)} />
+                <label style={{display:"flex", alignItems:"center", gap:8, fontSize:13, cursor:"pointer", color:"#2C2016", fontWeight: 600}}>
+                   <input type="checkbox" checked={newEvMonthly} onChange={e=>setNewEvMonthly(e.target.checked)} style={{width: 18, height: 18, accentColor: "var(--theme-primary)"}} />
                    Ulangi Setiap Bulan (Berdasarkan Tgl)
                 </label>
-                <button onClick={addCustomEvent} style={{ ...B(true, "#2C2016"), height: 40, borderRadius: 10, fontSize:12 }}>Tambah Event Kustom</button>
+                <button className="hover-scale" onClick={addCustomEvent} style={{ ...B(true, "var(--theme-primary)"), height: 44, borderRadius: 12, fontSize:14, fontWeight: 800, marginTop: 4, color: "white", border: "none" }}>Tambah Event Kustom</button>
                 
                 {addEventAttempted && (!newEvName.trim() || !newEvStart || !newEvEnd) && (
-                  <span style={{ fontSize: 10, color: "#9C2B4E", fontWeight: 700, marginTop: 4, display: "block" }}>
-                    ⚠️ Harap lengkapi semua kolom yang ditandai merah terlebih dahulu (Nama Event, Start Date, End Date)!
+                  <span style={{ fontSize: 11, color: "#9C2B4E", fontWeight: 700, marginTop: 4, display: "block" }}>
+                    ⚠️ Harap lengkapi semua kolom yang ditandai merah terlebih dahulu!
                   </span>
                 )}
               </div>
 
-              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {localCustomEvents.map((ev: any) => {
                   const isEditing = editingEvId === ev.id;
                   if (isEditing) {
                     return (
-                      <div key={ev.id} style={{ background: "#FAFAF8", padding: 16, borderRadius: 16, display: "flex", flexDirection: "column", gap: 10, border: editEventAttempted && (!editEvName.trim() || !editEvStart || !editEvEnd) ? "1.5px solid #9C2B4E" : `1px solid ${editEvColor}88` }}>
+                      <div className="fade-in" key={ev.id} style={{ background: "white", padding: 20, borderRadius: 20, display: "flex", flexDirection: "column", gap: 12, border: editEventAttempted && (!editEvName.trim() || !editEvStart || !editEvEnd) ? "2px solid #9C2B4E" : `2px solid ${editEvColor}AA`, boxShadow: "0 4px 12px rgba(0,0,0,0.06)" }}>
                         <input 
                           type="text" 
                           value={editEvName} 
@@ -442,19 +743,19 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
                           style={I({
                             borderColor: editEventAttempted && !editEvName.trim() ? "#9C2B4E" : "rgba(44,32,22,0.15)",
                             borderWidth: editEventAttempted && !editEvName.trim() ? "2px" : "1px",
-                            background: editEventAttempted && !editEvName.trim() ? "#FDF5F8" : "white"
+                            background: editEventAttempted && !editEvName.trim() ? "#FDF5F8" : "white", fontSize: 14
                           })} 
                         />
-                        <div style={{ display: "flex", gap: 8 }}>
+                        <div style={{ display: "flex", gap: 12 }}>
                            <div style={{flex: 1}}>
-                             <label style={{fontSize:9, fontWeight:700, marginBottom:4, display:"block", color: editEventAttempted && !editEvStart ? "#9C2B4E" : "#999"}}>Start Date {editEventAttempted && !editEvStart && "*"}</label>
+                             <label style={{fontSize:11, fontWeight:700, marginBottom:6, display:"block", color: editEventAttempted && !editEvStart ? "#9C2B4E" : "var(--theme-primary)"}}>Start Date {editEventAttempted && !editEvStart && "*"}</label>
                              <input 
                                type="date" 
                                value={editEvStart} 
                                onChange={(e: any) => setEditEvStart(e.target.value)} 
                                style={I({
-                                 fontSize:11, 
-                                 padding:6,
+                                 fontSize:13, 
+                                 padding:10,
                                  borderColor: editEventAttempted && !editEvStart ? "#9C2B4E" : "rgba(44,32,22,0.15)",
                                  borderWidth: editEventAttempted && !editEvStart ? "2px" : "1px",
                                  background: editEventAttempted && !editEvStart ? "#FDF5F8" : "white"
@@ -462,14 +763,14 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
                              />
                            </div>
                            <div style={{flex: 1}}>
-                             <label style={{fontSize:9, fontWeight:700, marginBottom:4, display:"block", color: editEventAttempted && !editEvEnd ? "#9C2B4E" : "#999"}}>End Date {editEventAttempted && !editEvEnd && "*"}</label>
+                             <label style={{fontSize:11, fontWeight:700, marginBottom:6, display:"block", color: editEventAttempted && !editEvEnd ? "#9C2B4E" : "var(--theme-primary)"}}>End Date {editEventAttempted && !editEvEnd && "*"}</label>
                              <input 
                                type="date" 
                                value={editEvEnd} 
                                onChange={(e: any) => setEditEvEnd(e.target.value)} 
                                style={I({
-                                 fontSize:11, 
-                                 padding:6,
+                                 fontSize:13, 
+                                 padding:10,
                                  borderColor: editEventAttempted && !editEvEnd ? "#9C2B4E" : "rgba(44,32,22,0.15)",
                                  borderWidth: editEventAttempted && !editEvEnd ? "2px" : "1px",
                                  background: editEventAttempted && !editEvEnd ? "#FDF5F8" : "white"
@@ -477,20 +778,22 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
                              />
                            </div>
                            <div style={{flex: 0}}>
-                             <label style={{fontSize:9, fontWeight:700, marginBottom:4, display:"block", color:"#999"}}>Color</label>
-                             <input type="color" value={editEvColor} onChange={(e: any) => setEditEvColor(e.target.value)} style={{ width: 32, height: 32, border: "none", borderRadius: 8, cursor: "pointer", background:"none" }} />
+                             <label style={{fontSize:11, fontWeight:700, marginBottom:6, display:"block", color:"var(--theme-primary)"}}>Color</label>
+                             <div style={{width: 44, height: 44, borderRadius: 12, overflow: "hidden", border: "2px solid rgba(0,0,0,0.05)", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", flexShrink: 0}}>
+                               <input type="color" value={editEvColor} onChange={(e: any) => setEditEvColor(e.target.value)} style={{ width: "200%", height: "200%", transform: "translate(-25%, -25%)", border: "none", cursor: "pointer", background:"none" }} />
+                             </div>
                            </div>
                         </div>
-                        <label style={{display:"flex", alignItems:"center", gap:8, fontSize:11, cursor:"pointer", color:"#666"}}>
-                           <input type="checkbox" checked={editEvMonthly} onChange={e=>setEditEvMonthly(e.target.checked)} />
+                        <label style={{display:"flex", alignItems:"center", gap:8, fontSize:13, cursor:"pointer", color:"#2C2016", fontWeight: 600}}>
+                           <input type="checkbox" checked={editEvMonthly} onChange={e=>setEditEvMonthly(e.target.checked)} style={{width: 18, height: 18, accentColor: "var(--theme-primary)"}} />
                            Ulangi Setiap Bulan (Berdasarkan Tgl)
                         </label>
-                        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-                          <button onClick={() => setEditingEvId(null)} style={{ ...B(false), fontSize: 11, padding: "6px 12px", height: "auto" }}>Batal</button>
-                          <button onClick={() => saveEditedCustomEvent(ev.id)} style={{ ...B(true, "#2C2016"), fontSize: 11, padding: "6px 12px", height: "auto" }}>Simpan</button>
+                        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 8 }}>
+                          <button onClick={() => setEditingEvId(null)} style={{ ...B(false), fontSize: 13, padding: "8px 16px", height: "auto", borderRadius: 10 }}>Batal</button>
+                          <button onClick={() => saveEditedCustomEvent(ev.id)} style={{ ...B(true, "var(--theme-primary)"), fontSize: 13, padding: "8px 24px", height: "auto", borderRadius: 10, color: "white", border: "none", fontWeight: 800 }}>Simpan</button>
                         </div>
                         {editEventAttempted && (!editEvName.trim() || !editEvStart || !editEvEnd) && (
-                          <span style={{ fontSize: 10, color: "#9C2B4E", fontWeight: 700, marginTop: 4, display: "block" }}>
+                          <span style={{ fontSize: 11, color: "#9C2B4E", fontWeight: 700, marginTop: 4, display: "block" }}>
                             ⚠️ Harap lengkapi semua kolom edit yang ditandai merah sebelum menyimpan!
                           </span>
                         )}
@@ -498,37 +801,44 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
                     );
                   }
                   return (
-                    <div key={ev.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "white", padding: "10px 14px", borderRadius: 12, border:`1px solid ${ev.color}44` }}>
-                      <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                        <div style={{width:10, height:10, borderRadius:"50%", background:ev.color, boxShadow:`0 0 10px ${ev.color}44` }} />
+                    <div className="hover-scale" key={ev.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "white", padding: "14px 18px", borderRadius: 16, border:`1.5px solid ${ev.color}44`, boxShadow: "0 2px 8px rgba(0,0,0,0.03)" }}>
+                      <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+                        <div style={{width:14, height:14, borderRadius:"50%", background:ev.color, boxShadow:`0 0 12px ${ev.color}88` }} />
                         <div>
-                          <div style={{ fontSize: 13, fontWeight: 700, color:"#2C2016" }}>{ev.name}</div>
-                          <div style={{ fontSize: 10, color: "#999" }}>
-                            {ev.start} s/d {ev.end} {ev.monthly && "• (Bulanan)"}
+                          <div style={{ fontSize: 15, fontWeight: 800, color:"#2C2016" }}>{ev.name}</div>
+                          <div style={{ fontSize: 12, color: "rgba(44,32,22,0.6)", marginTop: 2, fontWeight: 500 }}>
+                            {ev.start} s/d {ev.end} {ev.monthly && <span style={{color: "var(--theme-primary)", fontWeight: 700}}>• (Bulanan)</span>}
                           </div>
                         </div>
                       </div>
-                      <div style={{ display: "flex", gap: 6 }}>
-                        <button onClick={() => startEditCustomEvent(ev)} style={{ background: "rgba(44,32,22,0.05)", border: "none", borderRadius: 6, padding: "5px 10px", fontSize: 10, cursor: "pointer", color: "#2C2016", fontWeight: 600 }}>Edit</button>
-                        <button onClick={() => delCustomEvent(ev.id)} style={{ background: "rgba(156,43,78,0.05)", border: "none", borderRadius: 6, padding: "5px 10px", fontSize: 10, cursor: "pointer", color: "#9C2B4E", fontWeight: 600 }}>Hapus</button>
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <button onClick={() => startEditCustomEvent(ev)} style={{ background: "rgba(44,32,22,0.05)", border: "none", borderRadius: 8, padding: "8px 14px", fontSize: 12, cursor: "pointer", color: "#2C2016", fontWeight: 700 }} className="hover:bg-black/10">Edit</button>
+                        <button onClick={() => delCustomEvent(ev.id)} style={{ background: "rgba(156,43,78,0.05)", border: "none", borderRadius: 8, padding: "8px 14px", fontSize: 12, cursor: "pointer", color: "#9C2B4E", fontWeight: 700 }} className="hover:bg-[#9C2B4E] hover:text-white transition-colors">Hapus</button>
                       </div>
                     </div>
                   );
                 })}
-                {localCustomEvents.length === 0 && <div style={{padding:40, textAlign:"center", fontSize:12, color:"#CCC"}}>Belum ada event kustom.</div>}
+                {localCustomEvents.length === 0 && <div style={{padding:40, textAlign:"center", fontSize:13, fontWeight: 500, color:"rgba(44,32,22,0.3)", border: "1px dashed rgba(44,32,22,0.1)", borderRadius: 16 }}>Belum ada event kustom.</div>}
               </div>
-            </>
+            </div>
           )}
           {section === "workspace" && (
-            <>
-              <h3 style={{ fontSize: 18, margin: "0 0 14px" }}>🏢 Manajemen Workspace</h3>
-              <p style={{ fontSize: 13, color: "rgba(44,32,22,0.6)", marginBottom: 24 }}>Kelola status Anda di workspace ini. Anda dapat keluar dari workspace jika diundang, atau menghapus workspace jika Anda adalah pemiliknya.</p>
+            <div className="fade-in">
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+                <div style={{ background: "var(--theme-primary)22", padding: 10, borderRadius: 12, color: "var(--theme-primary)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  {getSectionIcon("workspace", 20)}
+                </div>
+                <div>
+                  <h3 style={{ fontSize: 18, margin: 0, color: "#2C2016" }}>Manajemen Workspace</h3>
+                  <p style={{ fontSize: 12, color: "rgba(44,32,22,0.5)", margin: "4px 0 0", maxWidth: 500 }}>Kelola status Anda di workspace ini. Anda dapat keluar dari workspace jika diundang, atau menghapus workspace jika Anda adalah pemiliknya.</p>
+                </div>
+              </div>
               
-              <div style={{ background: "#FDF0EB", border: "1px solid rgba(196,98,45,0.1)", borderRadius: 16, padding: 24 }}>
-                <h4 style={{ fontSize: 15, fontWeight: 800, color: "#2C2016", marginBottom: 8 }}>{isOwner ? "Hapus Workspace Ini" : "Tinggalkan Workspace Ini"}</h4>
-                <p style={{ fontSize: 13, color: "rgba(44,32,22,0.6)", marginBottom: 20 }}>
+              <div style={{ background: "#FDF5F8", border: "1.5px solid rgba(156,43,78,0.15)", borderRadius: 20, padding: 24, boxShadow: "0 4px 12px rgba(156,43,78,0.05)", marginTop: 24 }}>
+                <h4 style={{ fontSize: 16, fontWeight: 800, color: "#9C2B4E", marginBottom: 8 }}>{isOwner ? "Hapus Workspace Ini" : "Tinggalkan Workspace Ini"}</h4>
+                <p style={{ fontSize: 13, color: "rgba(156,43,78,0.7)", marginBottom: 24, lineHeight: 1.5 }}>
                   {isOwner 
-                    ? "Menghapus workspace akan menghilangkan seluruh data konten, platform, dan anggota di dalamnya secara permanen. Tindakan ini tidak dapat dibatalkan." 
+                    ? "Menghapus workspace akan menghilangkan seluruh data konten, platform, dan anggota di dalamnya secara permanen. Tindakan ini tidak dapat dibatalkan!" 
                     : "Anda akan kehilangan akses ke seluruh konten dan pengaturan di workspace ini. Anda harus diundang kembali oleh pemilik untuk mendapatkan akses lagi."}
                 </p>
                 
@@ -538,32 +848,47 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
                     className="hover-scale"
                     style={{ 
                       ...B(true, "#9C2B4E"), 
-                      padding: "10px 24px", borderRadius: 12, fontSize: 13, fontWeight: 800, background: "#9C2B4E", border: "none"
+                      padding: "12px 28px", borderRadius: 12, fontSize: 14, fontWeight: 800, background: "#9C2B4E", border: "none", color: "white"
                     }}
                   >
                     {isOwner ? "Hapus Workspace" : "Tinggalkan Workspace"}
                   </button>
-                  <span style={{ fontSize: 12, color: "rgba(44,32,22,0.4)", fontStyle: "italic" }}>
-                    ({isOwner ? "hapus workspace" : "leave this workspace"})
-                  </span>
                 </div>
               </div>
-            </>
+            </div>
           )}
           {section === "general" && (
-            <>
-              <h3 style={{ fontSize: 18, margin: "0 0 14px" }}>⚙️ General & Debug</h3>
-              <div style={{ background: "#FAFAF8", borderRadius: 10, padding: 16, border: "1px solid rgba(44,32,22,0.06)" }}>
-                <p style={{ fontSize: 13, color: "#2C2016", marginBottom: 12 }}><strong>Penyimpanan Data:</strong> Data Anda disinkronkan ke Google Firebase Cloud Firestore setelah Anda menekan tombol simpan.</p>
+            <div className="fade-in">
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+                <div style={{ background: "var(--theme-primary)22", padding: 10, borderRadius: 12, color: "var(--theme-primary)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  {getSectionIcon("general", 20)}
+                </div>
+                <div>
+                  <h3 style={{ fontSize: 18, margin: 0, color: "#2C2016" }}>General & Debug</h3>
+                  <p style={{ fontSize: 12, color: "rgba(44,32,22,0.5)", margin: "4px 0 0" }}>Pengaturan lanjutan dan alat pengembangan</p>
+                </div>
+              </div>
+              
+              <div style={{ background: "white", borderRadius: 16, padding: 20, border: "1px solid rgba(44,32,22,0.06)", boxShadow: "0 2px 8px rgba(0,0,0,0.02)" }}>
+                <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 20 }}>
+                   <div style={{marginTop: 2, color: "var(--theme-primary)", display: "flex", alignItems: "center"}}><Cloud size={18} /></div>
+                   <div>
+                     <strong style={{ fontSize: 14, color: "#2C2016", display: "block", marginBottom: 4 }}>Sinkronisasi Cloud Firestore</strong>
+                     <p style={{ fontSize: 13, color: "rgba(44,32,22,0.6)", margin: 0, lineHeight: 1.5 }}>Setiap perubahan yang Anda buat disinkronkan secara aman ke Google Firebase Cloud Firestore setelah Anda menekan tombol simpan.</p>
+                   </div>
+                </div>
+                
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  <div style={{ background: "#FDF0EB", padding: 12, borderRadius: 8, border: "1px solid rgba(196,98,45,0.15)" }}>
-                    <h4 style={{ fontSize: 12, margin: "0 0 6px", color: "#C4622D" }}>🧪 Testing Mode</h4>
-                    <p style={{ fontSize: 11, color: "rgba(44,32,22,0.6)", marginBottom: 10 }}>Gunakan data dummy untuk melihat bagaimana dashboard ini bekerja dengan banyak data.</p>
-                    <button onClick={onSeed} style={{ ...B(false), background: "#C4622D", color: "white", border: "none", fontWeight: 700, padding: "8px 16px" }}>✨ Generate Data Dummy (Seed)</button>
+                  <div style={{ background: "var(--theme-primary)08", padding: 16, borderRadius: 12, border: "1px dashed var(--theme-primary)44" }}>
+                    <h4 style={{ fontSize: 14, margin: "0 0 6px", color: "var(--theme-primary)", display: "flex", alignItems: "center", gap: 6 }}>
+                      <span style={{ display: "flex", alignItems: "center" }}><FlaskConical size={16} /></span> Testing Mode
+                    </h4>
+                    <p style={{ fontSize: 12, color: "rgba(44,32,22,0.6)", marginBottom: 14, lineHeight: 1.4 }}>Gunakan data dummy untuk melihat bagaimana dashboard ini bekerja dengan banyak data. Berguna untuk menguji performa dan tampilan.</p>
+                    <button onClick={onSeed} className="hover-scale" style={{ ...B(false), background: "var(--theme-primary)", color: "white", border: "none", fontWeight: 700, padding: "10px 20px", borderRadius: 10 }}>✨ Generate Data Dummy (Seed)</button>
                   </div>
                 </div>
               </div>
-            </>
+            </div>
           )}
         </div>
       </div>
