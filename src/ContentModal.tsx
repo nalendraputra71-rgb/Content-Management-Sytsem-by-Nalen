@@ -41,6 +41,50 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
   const [showWarning, setShowWarning] = useState(false);
   const [isShaking, setIsShaking] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const [hourError, setHourError] = useState(false);
+  const [minuteError, setMinuteError] = useState(false);
+
+  const handleHourChange = (e: any) => {
+    isDirty.current = true;
+    const valStr = e.target.value;
+    if (valStr === "") {
+      set("uploadHour", "");
+      setHourError(false);
+      return;
+    }
+    const val = Number(valStr);
+    if (isNaN(val) || val < 0 || val > 23) {
+      set("uploadHour", ""); // auto delete
+      setHourError(true);
+      setTimeout(() => {
+        setHourError(false);
+      }, 2500);
+    } else {
+      set("uploadHour", val);
+      setHourError(false);
+    }
+  };
+
+  const handleMinuteChange = (e: any) => {
+    isDirty.current = true;
+    const valStr = e.target.value;
+    if (valStr === "") {
+      set("uploadMinute", "");
+      setMinuteError(false);
+      return;
+    }
+    const val = Number(valStr);
+    if (isNaN(val) || val < 0 || val > 59) {
+      set("uploadMinute", ""); // auto delete
+      setMinuteError(true);
+      setTimeout(() => {
+        setMinuteError(false);
+      }, 2500);
+    } else {
+      set("uploadMinute", val);
+      setMinuteError(false);
+    }
+  };
 
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -80,10 +124,11 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
   const setM = (k:string,v:any, isAds=false) => {
     isDirty.current = true;
     const ts = new Date().toLocaleString("id-ID",{dateStyle:"medium",timeStyle:"short"});
+    const val = v === "" ? "" : (Number(v) || 0);
     if(isAds) {
-      setD((p:any)=>({...p,adsMetrics:{...p.adsMetrics,[k]:Number(v)||0},metricsUpdatedAt:ts}));
+      setD((p:any)=>({...p,adsMetrics:{...p.adsMetrics,[k]:val},metricsUpdatedAt:ts}));
     } else {
-      setD((p:any)=>({...p,metrics:{...p.metrics,[k]:Number(v)||0},metricsUpdatedAt:ts}));
+      setD((p:any)=>({...p,metrics:{...p.metrics,[k]:val},metricsUpdatedAt:ts}));
     }
   };
 
@@ -297,10 +342,55 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
           <div style={GRP}>
             <label style={L}>Jam Upload</label>
             <div style={{display:"flex",gap:4, alignItems: "center"}}>
-              <input type="number" min={0} max={23} value={d.uploadHour} onChange={(e:any)=>set("uploadHour",+e.target.value)} style={{...I(), textAlign:"center", flex: 1, minWidth: 0, padding: "8px 4px"}} placeholder="Jam"/>
+              <input 
+                type="number" 
+                min={0} 
+                max={23} 
+                value={d.uploadHour !== undefined && d.uploadHour !== null ? d.uploadHour : ""} 
+                onChange={handleHourChange} 
+                style={I({
+                  textAlign: "center", 
+                  flex: 1, 
+                  minWidth: 0, 
+                  padding: "8px 4px",
+                  borderColor: hourError ? "#9C2B4E" : "rgba(44,32,22,0.15)",
+                  borderWidth: hourError ? "2px" : "1px",
+                  background: hourError ? "#FDF5F8" : "white",
+                  boxShadow: hourError ? "0 0 0 3px rgba(156, 43, 78, 0.1)" : "none"
+                })} 
+                placeholder="Jam"
+              />
               <span style={{lineHeight:"40px",color:"rgba(44,32,22,0.4)", fontWeight: 700}}>:</span>
-              <input type="number" min={0} max={59} step={5} value={d.uploadMinute} onChange={(e:any)=>set("uploadMinute",+e.target.value)} style={{...I(), textAlign:"center", flex: 1, minWidth: 0, padding: "8px 4px"}} placeholder="Menit"/>
+              <input 
+                type="number" 
+                min={0} 
+                max={59} 
+                step={5} 
+                value={d.uploadMinute !== undefined && d.uploadMinute !== null ? d.uploadMinute : ""} 
+                onChange={handleMinuteChange} 
+                style={I({
+                  textAlign: "center", 
+                  flex: 1, 
+                  minWidth: 0, 
+                  padding: "8px 4px",
+                  borderColor: minuteError ? "#9C2B4E" : "rgba(44,32,22,0.15)",
+                  borderWidth: minuteError ? "2px" : "1px",
+                  background: minuteError ? "#FDF5F8" : "white",
+                  boxShadow: minuteError ? "0 0 0 3px rgba(156, 43, 78, 0.1)" : "none"
+                })} 
+                placeholder="Menit"
+              />
             </div>
+            {hourError && (
+              <span style={{ fontSize: 9, color: "#9C2B4E", fontWeight: 700, marginTop: 2, display: "block" }}>
+                ⚠️ Jam harus antara 0 - 23! Input dihapus otomatis.
+              </span>
+            )}
+            {minuteError && (
+              <span style={{ fontSize: 9, color: "#9C2B4E", fontWeight: 700, marginTop: 2, display: "block" }}>
+                ⚠️ Menit harus antara 0 - 59! Input dihapus otomatis.
+              </span>
+            )}
           </div>
           <div style={GRP}>
             <label style={L}>Platform</label>
@@ -407,7 +497,14 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
             {MK.map((k:string)=>(
               <div key={k} style={GRP}>
                 <label style={{...L,marginBottom:2,color:MC[k]||"#C4622D"}}>{k}</label>
-                <input type="number" min={0} value={d.metrics[k]||0} onChange={(e:any)=>setM(k,e.target.value)} style={I({textAlign:"right"})}/>
+                <input 
+                  type="number" 
+                  min={0} 
+                  placeholder="0" 
+                  value={d.metrics[k] === 0 ? "" : (d.metrics[k] !== undefined && d.metrics[k] !== null ? d.metrics[k] : "")} 
+                  onChange={(e:any)=>setM(k,e.target.value)} 
+                  style={I({textAlign:"right"})}
+                />
               </div>
             ))}
           </div>
@@ -425,7 +522,14 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
               {[...MK,"clicks","conversions"].map((k:string)=>(
                 <div key={k} style={GRP}>
                   <label style={{...L,marginBottom:2,color:k==="clicks"||k==="conversions"?"#9C2B4E":MC[k]||"#9C2B4E"}}>{k}</label>
-                  <input type="number" min={0} value={d.adsMetrics?.[k]||0} onChange={(e:any)=>setM(k,e.target.value,true)} style={I({textAlign:"right"})}/>
+                  <input 
+                    type="number" 
+                    min={0} 
+                    placeholder="0" 
+                    value={d.adsMetrics?.[k] === 0 ? "" : (d.adsMetrics?.[k] !== undefined && d.adsMetrics?.[k] !== null ? d.adsMetrics[k] : "")} 
+                    onChange={(e:any)=>setM(k,e.target.value,true)} 
+                    style={I({textAlign:"right"})}
+                  />
                 </div>
               ))}
             </div>

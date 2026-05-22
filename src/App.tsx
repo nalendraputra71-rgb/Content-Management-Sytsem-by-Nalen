@@ -468,6 +468,26 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
         }
     });
 
+    // Convert any empty inputs ("") back to numbers or defaults for Firestore saving
+    if (cleanData.metrics) {
+      cleanData.metrics = { ...cleanData.metrics };
+      Object.keys(cleanData.metrics).forEach(k => {
+        if (cleanData.metrics[k] === "") {
+          cleanData.metrics[k] = 0;
+        }
+      });
+    }
+    if (cleanData.adsMetrics) {
+      cleanData.adsMetrics = { ...cleanData.adsMetrics };
+      Object.keys(cleanData.adsMetrics).forEach(k => {
+        if (cleanData.adsMetrics[k] === "") {
+          cleanData.adsMetrics[k] = 0;
+        }
+      });
+    }
+    if (cleanData.uploadHour === "") cleanData.uploadHour = 9;
+    if (cleanData.uploadMinute === "") cleanData.uploadMinute = 0;
+
     const itemData = { ...cleanData, id: itemId, workspaceId: workspace.id, userId: user?.uid || "" };
     console.log("Cleaned itemData:", itemData);
     

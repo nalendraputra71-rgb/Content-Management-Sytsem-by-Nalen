@@ -32,6 +32,9 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
   const [editEvEnd, setEditEvEnd] = useState("");
   const [editEvMonthly, setEditEvMonthly] = useState(false);
 
+  const [addEventAttempted, setAddEventAttempted] = useState(false);
+  const [editEventAttempted, setEditEventAttempted] = useState(false);
+
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [savingTheme, setSavingTheme] = useState(false);
@@ -139,6 +142,7 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
   const delHoliday = (k: any) => setLocalHolidays((h: any) => { const n = { ...h }; delete n[k]; return n; });
 
   const addCustomEvent = () => {
+    setAddEventAttempted(true);
     if (!newEvName.trim() || !newEvStart || !newEvEnd) return;
     setLocalCustomEvents((prev: any) => [...prev, {
       id: Date.now().toString(),
@@ -149,6 +153,7 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
       monthly: newEvMonthly
     }]);
     setNewEvName(""); setNewEvStart(""); setNewEvEnd(""); setNewEvMonthly(false);
+    setAddEventAttempted(false);
   };
   const delCustomEvent = (id: string) => setLocalCustomEvents((prev: any) => prev.filter((ev: any) => ev.id !== id));
 
@@ -159,9 +164,11 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
     setEditEvStart(ev.start || "");
     setEditEvEnd(ev.end || "");
     setEditEvMonthly(ev.monthly || false);
+    setEditEventAttempted(false);
   };
 
   const saveEditedCustomEvent = (id: string) => {
+    setEditEventAttempted(true);
     if (!editEvName.trim() || !editEvStart || !editEvEnd) return;
     setLocalCustomEvents((prev: any) => prev.map((ev: any) => ev.id === id ? {
       ...ev,
@@ -172,6 +179,7 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
       monthly: editEvMonthly
     } : ev));
     setEditingEvId(null);
+    setEditEventAttempted(false);
   };
 
   const renderInputRow = (placeholder: string, value: string, onChange: any, onAdd: any, colorPicker: boolean) => (
@@ -359,16 +367,48 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
               <h3 style={{ fontSize: 18, margin: "0 0 14px" }}>✨ Event Kustom & Promo</h3>
               <p style={{ fontSize: 11, color: "rgba(44,32,22,0.4)", marginBottom: 10 }}>Misal: Pay Day Sale, Twin Date, atau Peluncuran Produk.</p>
               
-              <div style={{ background: "#FAFAF8", padding: 16, borderRadius:16, display: "flex", flexDirection: "column", gap: 10, marginBottom: 20, border:"1px solid rgba(0,0,0,0.05)" }}>
-                <input type="text" value={newEvName} onChange={(e: any) => setNewEvName(e.target.value)} placeholder="Nama Event (e.g., Payday Sale)" style={I({})} />
+              <div style={{ background: "#FAFAF8", padding: 16, borderRadius:16, display: "flex", flexDirection: "column", gap: 10, marginBottom: 20, border: addEventAttempted && (!newEvName.trim() || !newEvStart || !newEvEnd) ? "1.5px solid #9C2B4E" : "1px solid rgba(0,0,0,0.05)" }}>
+                <input 
+                  type="text" 
+                  value={newEvName} 
+                  onChange={(e: any) => setNewEvName(e.target.value)} 
+                  placeholder="Nama Event (e.g., Payday Sale)" 
+                  style={I({
+                    borderColor: addEventAttempted && !newEvName.trim() ? "#9C2B4E" : "rgba(44,32,22,0.15)",
+                    borderWidth: addEventAttempted && !newEvName.trim() ? "2px" : "1px",
+                    background: addEventAttempted && !newEvName.trim() ? "#FDF5F8" : "white"
+                  })} 
+                />
                 <div style={{ display: "flex", gap: 8 }}>
                    <div style={{flex: 1}}>
-                     <label style={{fontSize:9, fontWeight:700, marginBottom:4, display:"block", color:"#999"}}>Start Date</label>
-                     <input type="date" value={newEvStart} onChange={(e: any) => setNewEvStart(e.target.value)} style={I({fontSize:11, padding:6})} />
+                     <label style={{fontSize:9, fontWeight:700, marginBottom:4, display:"block", color: addEventAttempted && !newEvStart ? "#9C2B4E" : "#999"}}>Start Date {addEventAttempted && !newEvStart && "*"}</label>
+                     <input 
+                       type="date" 
+                       value={newEvStart} 
+                       onChange={(e: any) => setNewEvStart(e.target.value)} 
+                       style={I({
+                         fontSize:11, 
+                         padding:6,
+                         borderColor: addEventAttempted && !newEvStart ? "#9C2B4E" : "rgba(44,32,22,0.15)",
+                         borderWidth: addEventAttempted && !newEvStart ? "2px" : "1px",
+                         background: addEventAttempted && !newEvStart ? "#FDF5F8" : "white"
+                       })} 
+                     />
                    </div>
                    <div style={{flex: 1}}>
-                     <label style={{fontSize:9, fontWeight:700, marginBottom:4, display:"block", color:"#999"}}>End Date</label>
-                     <input type="date" value={newEvEnd} onChange={(e: any) => setNewEvEnd(e.target.value)} style={I({fontSize:11, padding:6})} />
+                     <label style={{fontSize:9, fontWeight:700, marginBottom:4, display:"block", color: addEventAttempted && !newEvEnd ? "#9C2B4E" : "#999"}}>End Date {addEventAttempted && !newEvEnd && "*"}</label>
+                     <input 
+                       type="date" 
+                       value={newEvEnd} 
+                       onChange={(e: any) => setNewEvEnd(e.target.value)} 
+                       style={I({
+                         fontSize:11, 
+                         padding:6,
+                         borderColor: addEventAttempted && !newEvEnd ? "#9C2B4E" : "rgba(44,32,22,0.15)",
+                         borderWidth: addEventAttempted && !newEvEnd ? "2px" : "1px",
+                         background: addEventAttempted && !newEvEnd ? "#FDF5F8" : "white"
+                       })} 
+                     />
                    </div>
                    <div style={{flex: 0}}>
                      <label style={{fontSize:9, fontWeight:700, marginBottom:4, display:"block", color:"#999"}}>Color</label>
@@ -380,6 +420,12 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
                    Ulangi Setiap Bulan (Berdasarkan Tgl)
                 </label>
                 <button onClick={addCustomEvent} style={{ ...B(true, "#2C2016"), height: 40, borderRadius: 10, fontSize:12 }}>Tambah Event Kustom</button>
+                
+                {addEventAttempted && (!newEvName.trim() || !newEvStart || !newEvEnd) && (
+                  <span style={{ fontSize: 10, color: "#9C2B4E", fontWeight: 700, marginTop: 4, display: "block" }}>
+                    ⚠️ Harap lengkapi semua kolom yang ditandai merah terlebih dahulu (Nama Event, Start Date, End Date)!
+                  </span>
+                )}
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -387,16 +433,48 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
                   const isEditing = editingEvId === ev.id;
                   if (isEditing) {
                     return (
-                      <div key={ev.id} style={{ background: "#FAFAF8", padding: 16, borderRadius: 16, display: "flex", flexDirection: "column", gap: 10, border: `1px solid ${editEvColor}88` }}>
-                        <input type="text" value={editEvName} onChange={(e: any) => setEditEvName(e.target.value)} placeholder="Nama Event" style={I({})} />
+                      <div key={ev.id} style={{ background: "#FAFAF8", padding: 16, borderRadius: 16, display: "flex", flexDirection: "column", gap: 10, border: editEventAttempted && (!editEvName.trim() || !editEvStart || !editEvEnd) ? "1.5px solid #9C2B4E" : `1px solid ${editEvColor}88` }}>
+                        <input 
+                          type="text" 
+                          value={editEvName} 
+                          onChange={(e: any) => setEditEvName(e.target.value)} 
+                          placeholder="Nama Event" 
+                          style={I({
+                            borderColor: editEventAttempted && !editEvName.trim() ? "#9C2B4E" : "rgba(44,32,22,0.15)",
+                            borderWidth: editEventAttempted && !editEvName.trim() ? "2px" : "1px",
+                            background: editEventAttempted && !editEvName.trim() ? "#FDF5F8" : "white"
+                          })} 
+                        />
                         <div style={{ display: "flex", gap: 8 }}>
                            <div style={{flex: 1}}>
-                             <label style={{fontSize:9, fontWeight:700, marginBottom:4, display:"block", color:"#999"}}>Start Date</label>
-                             <input type="date" value={editEvStart} onChange={(e: any) => setEditEvStart(e.target.value)} style={I({fontSize:11, padding:6})} />
+                             <label style={{fontSize:9, fontWeight:700, marginBottom:4, display:"block", color: editEventAttempted && !editEvStart ? "#9C2B4E" : "#999"}}>Start Date {editEventAttempted && !editEvStart && "*"}</label>
+                             <input 
+                               type="date" 
+                               value={editEvStart} 
+                               onChange={(e: any) => setEditEvStart(e.target.value)} 
+                               style={I({
+                                 fontSize:11, 
+                                 padding:6,
+                                 borderColor: editEventAttempted && !editEvStart ? "#9C2B4E" : "rgba(44,32,22,0.15)",
+                                 borderWidth: editEventAttempted && !editEvStart ? "2px" : "1px",
+                                 background: editEventAttempted && !editEvStart ? "#FDF5F8" : "white"
+                               })} 
+                             />
                            </div>
                            <div style={{flex: 1}}>
-                             <label style={{fontSize:9, fontWeight:700, marginBottom:4, display:"block", color:"#999"}}>End Date</label>
-                             <input type="date" value={editEvEnd} onChange={(e: any) => setEditEvEnd(e.target.value)} style={I({fontSize:11, padding:6})} />
+                             <label style={{fontSize:9, fontWeight:700, marginBottom:4, display:"block", color: editEventAttempted && !editEvEnd ? "#9C2B4E" : "#999"}}>End Date {editEventAttempted && !editEvEnd && "*"}</label>
+                             <input 
+                               type="date" 
+                               value={editEvEnd} 
+                               onChange={(e: any) => setEditEvEnd(e.target.value)} 
+                               style={I({
+                                 fontSize:11, 
+                                 padding:6,
+                                 borderColor: editEventAttempted && !editEvEnd ? "#9C2B4E" : "rgba(44,32,22,0.15)",
+                                 borderWidth: editEventAttempted && !editEvEnd ? "2px" : "1px",
+                                 background: editEventAttempted && !editEvEnd ? "#FDF5F8" : "white"
+                               })} 
+                             />
                            </div>
                            <div style={{flex: 0}}>
                              <label style={{fontSize:9, fontWeight:700, marginBottom:4, display:"block", color:"#999"}}>Color</label>
@@ -411,6 +489,11 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
                           <button onClick={() => setEditingEvId(null)} style={{ ...B(false), fontSize: 11, padding: "6px 12px", height: "auto" }}>Batal</button>
                           <button onClick={() => saveEditedCustomEvent(ev.id)} style={{ ...B(true, "#2C2016"), fontSize: 11, padding: "6px 12px", height: "auto" }}>Simpan</button>
                         </div>
+                        {editEventAttempted && (!editEvName.trim() || !editEvStart || !editEvEnd) && (
+                          <span style={{ fontSize: 10, color: "#9C2B4E", fontWeight: 700, marginTop: 4, display: "block" }}>
+                            ⚠️ Harap lengkapi semua kolom edit yang ditandai merah sebelum menyimpan!
+                          </span>
+                        )}
                       </div>
                     );
                   }
