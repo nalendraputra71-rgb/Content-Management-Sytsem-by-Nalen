@@ -144,6 +144,41 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
   const activePillar = gps(pillars, d.pillar);
   const headerBg = activePillar?.color || "#2C2016";
 
+  const getTranslucentColor = (hex: string, alpha: string) => {
+    if (!hex) return "rgba(255,255,255,0.14)";
+    if (hex.startsWith("#")) {
+      let cleanHex = hex;
+      if (hex.length === 4) {
+        cleanHex = "#" + hex[1] + hex[1] + hex[2] + hex[2] + hex[3] + hex[3];
+      }
+      return `${cleanHex}${alpha}`;
+    }
+    return hex;
+  };
+
+  const activePillarColor = activePillar?.color || "#FF6B00";
+
+  // Platform lookup
+  const activePlatformOption = platforms?.find((x:any) => {
+    const name = typeof x === 'string' ? x : x?.name;
+    return name?.trim()?.toLowerCase() === d.platform?.trim()?.toLowerCase();
+  }) || platforms?.[0];
+  const activePlatformColor = (activePlatformOption && typeof activePlatformOption !== 'string') ? activePlatformOption.color || "#2C2016" : "#2C2016";
+
+  // PIC lookup
+  const activePicOption = pics?.find((x:any) => {
+    const name = typeof x === 'string' ? x : x?.name;
+    return name?.trim()?.toLowerCase() === d.pic?.trim()?.toLowerCase();
+  }) || pics?.[0];
+  const activePicColor = (activePicOption && typeof activePicOption !== 'string') ? activePicOption.color || "#2B4C7E" : "#2B4C7E";
+
+  // Status lookup
+  const activeStatusOption = statuses?.find((x:any) => {
+    const name = typeof x === 'string' ? x : x?.name;
+    return name?.trim()?.toLowerCase() === d.status?.trim()?.toLowerCase();
+  }) || statuses?.[0];
+  const activeStatusColor = (activeStatusOption && typeof activeStatusOption !== 'string') ? activeStatusOption.color || "#A67C1C" : "#A67C1C";
+
   const titleRef = useRef<HTMLTextAreaElement>(null);
 
   const isDirty = useRef(false);
@@ -303,8 +338,8 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
           {/* Block 1: Area Identitas Atas */}
           <div style={{background:headerBg,color:"#FAFAFA",borderRadius:16,padding:"20px 24px",boxShadow:"inset 0 2px 4px rgba(255,255,255,0.05)", position:"relative", transition: "background 0.3s ease"}}>
               <button className="hover-scale" onClick={handleClose} style={{position:"absolute",top:20,right:20,background:"rgba(255,255,255,0.1)",border:"none",borderRadius:"50%",width:32,height:32,cursor:"pointer",fontSize:18,color:"white",display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
-              <div style={{display:"flex",flexDirection:"column",alignItems:"flex-start",gap:8, paddingRight: 40}}>
-                  <div style={{display:"flex", justifyContent:"space-between", width:"100%", alignItems:"center"}}>
+              <div style={{display:"flex",flexDirection:"column",alignItems:"flex-start",gap:8, width: "100%"}}>
+                  <div style={{display:"flex", justifyContent:"space-between", width:"100%", alignItems:"center", paddingRight: "40px"}}>
                      <span style={{fontSize:10, fontWeight:800, textTransform:"uppercase", letterSpacing:1.5, color:"rgba(255,255,255,0.5)"}}>
                         {isNew?"✨ Konten Baru":"✏️ Detail Konten"}
                      </span>
@@ -313,7 +348,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                   <motion.div 
                     animate={isShaking && (!d.title || !String(d.title).trim()) ? { x: [-10, 10, -10, 10, 0], backgroundColor: ["transparent", "rgba(255, 68, 68, 0.4)", "transparent"] } : { x: 0, backgroundColor: "transparent" }} 
                     transition={{ duration: 0.5 }}
-                    style={{width: "100%"}}
+                    style={{width: "100%", paddingRight: "40px"}}
                   >
                      {isReaderMode ? (
                        <div style={{fontSize:28, fontWeight:900, letterSpacing:"-0.75px", color:"white", width:"100%", padding:"4px 0 4px 0", lineHeight: 1.25, wordBreak: "break-word", whiteSpace: "pre-wrap"}}>
@@ -457,8 +492,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                     gridTemplateColumns: "repeat(4, 1fr)", 
                     gap: "12px", 
                     width: "100%", 
-                    marginTop: "2px",
-                    paddingRight: "44px" /* leave room for absolute org/boost icon */
+                    marginTop: "6px"
                   }}>
                     {/* Pillar */}
                     <div style={{display:"flex", flexDirection:"column", gap:"4px"}}>
@@ -469,18 +503,18 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                         <span style={{
                           fontSize: "11px", 
                           fontWeight: 700, 
-                          color: "white", 
+                          color: "#FFF", 
                           display: "inline-flex", 
                           alignItems: "center", 
                           gap: 3, 
                           textOverflow: "ellipsis", 
                           overflow: "hidden", 
                           whiteSpace: "nowrap",
-                          background: "rgba(255,255,255,0.14)",
+                          background: activePillarColor,
                           padding: "4px 10px",
                           borderRadius: "8px",
                           height: "26px",
-                          border: "1px solid rgba(255,255,255,0.1)"
+                          border: `1px solid rgba(255,255,255,0.3)`
                         }}>
                           {d.pillar || "Tanpa Pillar"}
                         </span>
@@ -497,9 +531,9 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                             borderRadius: "8px", 
                             fontSize: "11px", 
                             fontWeight: 700, 
-                            background: "rgba(255,255,255,0.14)", 
-                            color: "white", 
-                            border: "1px solid rgba(255,255,255,0.15)",
+                            background: activePillarColor, 
+                            color: "#FFF", 
+                            border: `1px solid rgba(255,255,255,0.3)`,
                             height: "26px",
                             display: "inline-flex",
                             alignItems: "center",
@@ -518,18 +552,18 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                         <span style={{
                           fontSize: "11px", 
                           fontWeight: 700, 
-                          color: "white", 
+                          color: "#FFF", 
                           display: "inline-flex", 
                           alignItems: "center", 
                           gap: 3, 
                           textOverflow: "ellipsis", 
                           overflow: "hidden", 
                           whiteSpace: "nowrap",
-                          background: "rgba(255,255,255,0.14)",
+                          background: activePlatformColor,
                           padding: "4px 10px",
                           borderRadius: "8px",
                           height: "26px",
-                          border: "1px solid rgba(255,255,255,0.1)"
+                          border: `1px solid rgba(255,255,255,0.3)`
                         }}>
                           {d.platform || "Tanpa Platform"}
                         </span>
@@ -546,9 +580,9 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                             borderRadius: "8px", 
                             fontSize: "11px", 
                             fontWeight: 700, 
-                            background: "rgba(255,255,255,0.14)", 
-                            color: "white", 
-                            border: "1px solid rgba(255,255,255,0.15)",
+                            background: activePlatformColor, 
+                            color: "#FFF", 
+                            border: `1px solid rgba(255,255,255,0.3)`,
                             height: "26px",
                             display: "inline-flex",
                             alignItems: "center",
@@ -567,18 +601,18 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                         <span style={{
                           fontSize: "11px", 
                           fontWeight: 700, 
-                          color: "white", 
+                          color: "#FFF", 
                           display: "inline-flex", 
                           alignItems: "center", 
                           gap: 3, 
                           textOverflow: "ellipsis", 
                           overflow: "hidden", 
                           whiteSpace: "nowrap",
-                          background: "rgba(255,255,255,0.14)",
+                          background: activePicColor,
                           padding: "4px 10px",
                           borderRadius: "8px",
                           height: "26px",
-                          border: "1px solid rgba(255,255,255,0.1)"
+                          border: `1px solid rgba(255,255,255,0.3)`
                         }}>
                           {d.pic || "Tanpa PIC"}
                         </span>
@@ -595,9 +629,9 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                             borderRadius: "8px", 
                             fontSize: "11px", 
                             fontWeight: 700, 
-                            background: "rgba(255,255,255,0.14)", 
-                            color: "white", 
-                            border: "1px solid rgba(255,255,255,0.15)",
+                            background: activePicColor, 
+                            color: "#FFF", 
+                            border: `1px solid rgba(255,255,255,0.3)`,
                             height: "26px",
                             display: "inline-flex",
                             alignItems: "center",
@@ -616,7 +650,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                         <span style={{
                           fontSize: "11px", 
                           fontWeight: 800, 
-                          color: "white", 
+                          color: "#FFF", 
                           display: "inline-flex", 
                           alignItems: "center", 
                           gap: 3, 
@@ -624,11 +658,11 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                           textOverflow: "ellipsis", 
                           overflow: "hidden", 
                           whiteSpace: "nowrap",
-                          background: "rgba(255,255,255,0.22)",
+                          background: activeStatusColor,
                           padding: "4px 10px",
                           borderRadius: "8px",
                           height: "26px",
-                          border: "1px solid rgba(255,255,255,0.15)"
+                          border: `1px solid rgba(255,255,255,0.3)`
                         }}>
                           {d.status || "Draft"}
                         </span>
@@ -646,9 +680,9 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                             fontSize: "11px", 
                             fontWeight: 800, 
                             textTransform: "uppercase",
-                            background: "rgba(255,255,255,0.22)", 
-                            color: "white", 
-                            border: "1px solid rgba(255,255,255,0.2)",
+                            background: activeStatusColor, 
+                            color: "#FFF", 
+                            border: `1px solid rgba(255,255,255,0.3)`,
                             height: "26px",
                             display: "inline-flex",
                             alignItems: "center",
@@ -657,32 +691,6 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                         />
                       )}
                     </div>
-                  </div>
-
-                  {/* Absolute organic/boost icon at the bottom-right of the title block container */}
-                  <div 
-                    className="hover-scale"
-                    style={{
-                      position: "absolute",
-                      bottom: "16px",
-                      right: "16px",
-                      width: "30px",
-                      height: "30px",
-                      borderRadius: "50%",
-                      background: d.isAds ? "rgba(255,255,255,0.25)" : "rgba(255,255,255,0.15)",
-                      backdropFilter: "blur(4px)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: "15px",
-                      border: "1px solid rgba(255,255,255,0.2)",
-                      zIndex: 10,
-                      userSelect: "none",
-                      boxShadow: "0 4px 12px rgba(0,0,0,0.06)"
-                    }} 
-                    title={d.isAds ? "Campaign Boosted (Paid Ads)" : "Organic (🍃)"}
-                  >
-                    {d.isAds ? "💰" : "🍃"}
                   </div>
               </div>
           </div>
