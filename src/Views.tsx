@@ -105,7 +105,6 @@ export function MonthView({year,month,monthContent,filtered,openEdit,openAdd,sho
                     borderRadius: 4,
                     fontWeight: 700, 
                     lineHeight: 1.2, 
-                    textTransform:"uppercase", 
                     letterSpacing:0.3,
                     border: e.color ? `1px solid ${e.color}33` : "none"
                   }}>

@@ -45,6 +45,8 @@ function formatIndonesiaDate(ymdString: string) {
 
 export const HOLIDAY_API_OPTIONS = [
   { id: "id-skb", name: "Indonesia - SKB 3 Menteri (Lengkap Hari Raya Islam & Cuti Bersama)", country: "ID", color: "#E11D48", isCustomApi: true },
+  { id: "id-id-observances", name: "Indonesia - Hari Peringatan Non-Libur (Kartini, Hardiknas, Hari Sumpah Pemuda, dll)", country: "ID", color: "#6366F1", isCustomApi: true },
+  { id: "id-int-observances", name: "Internasional - Hari Peringatan Non-Libur (World Water Day, World Health Day, dll)", country: "ID", color: "#4F46E5", isCustomApi: true },
   { id: "id", name: "Indonesia (Hari Libur Utama - Nager.Date)", country: "ID", color: "#EF4444" },
   { id: "us", name: "United States (US Holidays)", country: "US", color: "#2563EB" },
   { id: "sg", name: "Singapore (SG Holidays)", country: "SG", color: "#059669" },
