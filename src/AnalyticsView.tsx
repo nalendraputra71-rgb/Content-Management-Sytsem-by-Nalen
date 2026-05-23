@@ -30,7 +30,7 @@ const LoadingDots = () => (
 import { 
   MONTHS, MS, DAYS_S, DAYS_ID, YEARS, MK, MC,
   eng, fmt, gps,
-  I, B, CARD, PBadge 
+  I, B, CARD, PBadge, htmlToPlainText 
 } from "./data";
 
 function CustomDropdown({ value, options, onChange, style }: { value: string, options: any[], onChange: (val: string) => void, style?: any }) {
@@ -414,7 +414,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                 <PBadge name={item.platform} platforms={platforms}/>
                 <span style={{background:ps.light,color:ps.color,fontSize:8,padding:"1px 5px",borderRadius:6}}>{item.pillar}</span>
                 {item.isAds&&<span style={{fontSize:8,color:"#9C2B4E",fontWeight:700}}>💰 Ads</span>}
-                {item.briefCopywriting&&<span style={{fontSize:9,color:"#2B4C7E",cursor:"pointer"}} title={item.briefCopywriting}>📝 Brief</span>}
+                {item.briefCopywriting&&<span style={{fontSize:9,color:"#2B4C7E",cursor:"pointer"}} title={htmlToPlainText(item.briefCopywriting)}>📝 Brief</span>}
               </div>
             </div>
             <div style={{textAlign:"right",flexShrink:0}}>

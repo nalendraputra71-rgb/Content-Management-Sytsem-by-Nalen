@@ -4,7 +4,7 @@ import * as XLSX from "xlsx";
 import { 
   MONTHS, YEARS, DP, DPL, DPIC, DST, DH, 
   gid, eng, fmtD, fmtT, emptyItem, makeSeed, 
-  I, B, CARD, THEMES
+  I, B, CARD, THEMES, htmlToPlainText
 } from "./data";
 
 import { 
@@ -1284,9 +1284,9 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
                     "Comments": c.metrics?.comments || 0,
                     "Shares": c.metrics?.shares || 0,
                     "Saves": c.metrics?.saves || 0,
-                    "Objective": c.objective || "",
-                    "Brief Konten": c.briefCopywriting || "",
-                    "Caption": c.caption || ""
+                    "Objective": htmlToPlainText(c.objective || ""),
+                    "Brief Konten": htmlToPlainText(c.briefCopywriting || ""),
+                    "Caption": htmlToPlainText(c.caption || "")
                 }));
                 const ws = XLSX.utils.json_to_sheet(exportData);
                 const wb = XLSX.utils.book_new();

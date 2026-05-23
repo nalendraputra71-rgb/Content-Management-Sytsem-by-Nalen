@@ -31,7 +31,7 @@ const LoadingDots = () => (
 
 import { 
   MK, MC, eng, fmt, fmtD, gps,
-  I, L, B, GRP, CustomDropdown
+  I, L, B, GRP, CustomDropdown, htmlToPlainText
 } from "./data";
 import { 
   ChevronDown,
@@ -1095,7 +1095,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                     <button 
                       onClick={() => {
                         if (copiedBrief) return;
-                        navigator.clipboard.writeText(d.briefCopywriting);
+                        navigator.clipboard.writeText(htmlToPlainText(d.briefCopywriting));
                         setCopiedBrief(true);
                         setTimeout(() => setCopiedBrief(false), 2000);
                       }} 
@@ -1143,7 +1143,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                     <button 
                       onClick={() => {
                         if (copiedCaption) return;
-                        navigator.clipboard.writeText(d.caption);
+                        navigator.clipboard.writeText(htmlToPlainText(d.caption));
                         setCopiedCaption(true);
                         setTimeout(() => setCopiedCaption(false), 2000);
                       }} 

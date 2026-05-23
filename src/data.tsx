@@ -4,6 +4,21 @@ import * as XLSX from "xlsx";
 import { motion, AnimatePresence } from "motion/react";
 import { ChevronDown } from "lucide-react";
 
+export const htmlToPlainText = (html: string) => {
+  if (!html) return "";
+  let text = html.replace(/<br\s*[\/]?>/gi, "\n");
+  text = text.replace(/<\/p>/gi, "\n");
+  text = text.replace(/<\/h[1-6]>/gi, "\n");
+  text = text.replace(/<(?:.|\n)*?>/gm, "");
+  
+  if (typeof document !== "undefined") {
+    const textarea = document.createElement("textarea");
+    textarea.innerHTML = text;
+    text = textarea.value;
+  }
+  return text.trim();
+};
+
 export function CustomDropdown({ value, options, onChange, dark = false, style = {}, prefix = "", alignRight = false }: { value: string, options: any[], onChange: (val: string) => void, dark?: boolean, style?: any, prefix?: string, alignRight?: boolean }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);

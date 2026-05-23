@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { 
   MONTHS, MS, DAYS_S, MK, MC,
   eng, fmt, fmtD, fmtT, gps, gpc, gss,
-  I, B, CARD, PBadge, SBadge, getDynamicEvents 
+  I, B, CARD, PBadge, SBadge, getDynamicEvents, htmlToPlainText 
 } from "./data";
 
 export function MonthView({year,month,monthContent,filtered,openEdit,openAdd,showHolidays,holidays,customEvents,pillars,platforms,showArchived}: any) {
@@ -410,7 +410,7 @@ export function TableView({filtered,openEdit,archiveItem,unarchiveItem,deleteIte
                       </div>
                     </td>
                     <td style={{...td, verticalAlign:"top"}}>
-                      <div style={{fontSize:12,color:"rgba(44,32,22,0.6)",lineHeight:1.5, wordBreak:"break-word", whiteSpace: "pre-wrap"}}>{item.briefCopywriting||"-"}</div>
+                      <div style={{fontSize:12,color:"rgba(44,32,22,0.6)",lineHeight:1.5, wordBreak:"break-word", whiteSpace: "pre-wrap"}}>{htmlToPlainText(item.briefCopywriting)||"-"}</div>
                     </td>
                     <td style={td}><span className="pill-tag" style={{background:"rgba(44,32,22,0.06)",color:"#2C2016"}}>{item.pic}</span></td>
                     <td style={td}><SBadge status={item.status}/></td>
