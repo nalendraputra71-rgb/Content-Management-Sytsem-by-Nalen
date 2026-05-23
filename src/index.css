@@ -141,9 +141,21 @@ select option {
   margin-top: 16px;
   margin-bottom: 8px;
 }
-.markdown-body strong {
+.markdown-body strong, .tiptap-prose strong {
   font-weight: 700;
 }
+
+/* Tiptap styles */
+.tiptap-prose p {
+  margin-bottom: 8px;
+}
+.tiptap-prose h1, .tiptap-prose h2, .tiptap-prose h3, .tiptap-prose h4 {
+  font-weight: 700;
+  margin-top: 16px;
+  margin-bottom: 8px;
+}
+.tiptap-prose h1 { font-size: 1.5em; }
+.tiptap-prose h2 { font-size: 1.25em; }
 
 /* Hide number input spinners */
 .hide-number-arrows::-webkit-outer-spin-button,

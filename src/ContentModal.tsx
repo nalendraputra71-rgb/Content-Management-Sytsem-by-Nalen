@@ -2,7 +2,10 @@ import { useState, useRef, useEffect } from "react";
 import { GoogleGenAI } from "@google/genai";
 import { motion, AnimatePresence } from "motion/react";
 import Markdown from "react-markdown";
+import remarkBreaks from "remark-breaks";
+import rehypeRaw from "rehype-raw";
 import TextareaAutosize from "react-textarea-autosize";
+import { RichTextEditor } from "./RichTextEditor";
 
 const GeminiIcon = ({ size = 18 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -331,7 +334,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
         Brief: ${d.briefCopywriting}
         Objective: ${d.objective}
         
-        Tuliskan HANYA hasil caption akhirnya saja. Jangan berikan pengantar/penutup eksplanasi. Sertakan hashtag yang relevan sesuai dengan platform.`;
+        Tuliskan HANYA hasil caption akhirnya saja. Jangan berikan pengantar/penutup eksplanasi. Sertakan hashtag yang relevan sesuai dengan platform. Outputkan dalam format tag HTML dasar seperti <p>, <strong>, <em>, <br> untuk styling format typography-nya.`;
         
         const apiKey = process.env.GEMINI_API_KEY;
         if (!apiKey) {
@@ -790,7 +793,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                   <label style={{ fontSize: 12, fontWeight: 600, color: "rgba(44,32,22,0.6)", display: "flex", alignItems: "center", gap: 6, margin: 0 }}>
                     🎯 Objective Konten
                   </label>
-                  <TextareaAutosize ref={objectiveRef} value={d.objective} onChange={(e:any)=>set("objective",e.target.value)} style={I({ border: "1px solid rgba(44,32,22,0.12)", borderRadius: 10, resize:"vertical" })} minRows={3} placeholder="Tujuan atau target output dari konten ini..."/>
+                  <RichTextEditor inputRef={objectiveRef} value={d.objective} onChange={(val)=>set("objective",val)} minRows={3} placeholder="Tujuan atau target output dari konten ini..."/>
                 </div>
 
                 {/* Brief Section with AI Button */}
@@ -805,7 +808,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                           {aiLoading ? <LoadingDots /> : "Analyze with Gemini"}
                         </button>
                     </div>
-                    <TextareaAutosize ref={briefRef} value={d.briefCopywriting} onChange={(e:any)=>set("briefCopywriting",e.target.value)} style={I({ border: "1px solid rgba(44,32,22,0.12)", borderRadius: 10, resize:"vertical" })} minRows={4} placeholder="Arah konten, tone of voice, call to action, poin kata kunci utama..."/>
+                    <RichTextEditor inputRef={briefRef} value={d.briefCopywriting} onChange={(val)=>set("briefCopywriting",val)} minRows={4} placeholder="Arah konten, tone of voice, call to action, poin kata kunci utama..."/>
                 </div>
 
                 {/* Caption Section with AI Button */}
@@ -820,7 +823,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                           {captionLoading ? <LoadingDots /> : "Generate Caption"}
                         </button>
                     </div>
-                    <TextareaAutosize ref={captionRef} value={d.caption} onChange={(e:any)=>set("caption",e.target.value)} style={I({ border: "1px solid rgba(44,32,22,0.12)", borderRadius: 10, resize:"vertical" })} minRows={3} placeholder="Salinan caption social media yang sudah siap diposting..."/>
+                    <RichTextEditor inputRef={captionRef} value={d.caption} onChange={(val)=>set("caption",val)} minRows={3} placeholder="Salinan caption social media yang sudah siap diposting..."/>
                 </div>
               </div>
 
@@ -1045,8 +1048,8 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                 <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(44,32,22,0.4)", textTransform: "uppercase", marginBottom: 6, letterSpacing: "0.5px", display: "flex", alignItems: "center", gap: 6 }}>
                   🎯 Objective Konten
                 </div>
-                <div style={{ fontSize: 13, color: "#2C2016", lineHeight: 1.5, whiteSpace: "pre-wrap", background: "rgba(44,32,22,0.02)", padding: "12px 16px", borderRadius: 10 }}>
-                  {d.objective ? d.objective : <span style={{ color: "rgba(44,32,22,0.4)", fontStyle: "italic" }}>Tidak ada spesifikasi objective khusus.</span>}
+                <div style={{ fontSize: 13, color: "#2C2016", lineHeight: 1.5, background: "rgba(44,32,22,0.02)", padding: "12px 16px", borderRadius: 10 }}>
+                  {d.objective ? <div className="tiptap-prose" dangerouslySetInnerHTML={{ __html: d.objective }} /> : <span style={{ color: "rgba(44,32,22,0.4)", fontStyle: "italic" }}>Tidak ada spesifikasi objective khusus.</span>}
                 </div>
               </div>
 
@@ -1091,9 +1094,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                 </div>
                 <div style={{ fontSize: 13, color: "#2C2016", lineHeight: 1.5, background: "#FCFAF7", padding: "12px 16px", borderRadius: 10, border: "1px solid rgba(44,32,22,0.03)" }}>
                   {d.briefCopywriting ? (
-                    <div className="markdown-body">
-                      <Markdown>{d.briefCopywriting}</Markdown>
-                    </div>
+                    <div className="tiptap-prose" dangerouslySetInnerHTML={{ __html: d.briefCopywriting }} />
                   ) : (
                     <span style={{ color: "rgba(44,32,22,0.4)", fontStyle: "italic" }}>Belum ada brief konten yang ditambahkan. Silakan beralih ke Mode Input & Edit untuk menambahkan brief.</span>
                   )}
@@ -1141,9 +1142,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                 </div>
                 <div style={{ fontSize: 13, color: "#2C2016", lineHeight: 1.5, background: "#FAFDFB", padding: "12px 16px", borderRadius: 10, border: "1px solid rgba(44,32,22,0.03)" }}>
                   {d.caption ? (
-                    <div style={{ whiteSpace: "pre-wrap" }}>
-                      {d.caption}
-                    </div>
+                    <div className="tiptap-prose" dangerouslySetInnerHTML={{ __html: d.caption }} />
                   ) : (
                     <span style={{ color: "rgba(44,32,22,0.4)", fontStyle: "italic" }}>Belum ada salinan caption. Silakan beralih ke Mode Input & Edit atau gunakan fitur "Generate Caption" bertenaga Gemini AI.</span>
                   )}
