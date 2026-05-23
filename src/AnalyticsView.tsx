@@ -33,7 +33,7 @@ import {
   I, B, CARD, PBadge, htmlToPlainText 
 } from "./data";
 
-function CustomDropdown({ value, options, onChange, style }: { value: string, options: any[], onChange: (val: string) => void, style?: any }) {
+function CustomDropdown({ value, options = [], onChange, style }: { value: string, options?: any[], onChange: (val: string) => void, style?: any }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 

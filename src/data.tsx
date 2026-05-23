@@ -2,10 +2,10 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid } from "recharts";
 import * as XLSX from "xlsx";
 import { motion, AnimatePresence } from "motion/react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Pencil, Plus, Trash2 } from "lucide-react";
 
-export const htmlToPlainText = (html: string) => {
-  if (!html) return "";
+export const htmlToPlainText = (html: any) => {
+  if (!html || typeof html !== 'string') return "";
   let text = html.replace(/<br\s*[\/]?>/gi, "\n");
   text = text.replace(/<\/p>/gi, "\n");
   text = text.replace(/<\/h[1-6]>/gi, "\n");
@@ -19,17 +19,39 @@ export const htmlToPlainText = (html: string) => {
   return text.trim();
 };
 
-export function CustomDropdown({ value, options, onChange, dark = false, style = {}, prefix = "", alignRight = false }: { value: string, options: any[], onChange: (val: string) => void, dark?: boolean, style?: any, prefix?: string, alignRight?: boolean }) {
+export function CustomDropdown({ value, options = [], onChange, dark = false, style = {}, prefix = "", alignRight = false, onUpdateOptions }: { value: string, options?: any[], onChange: (val: string) => void, dark?: boolean, style?: any, prefix?: string, alignRight?: boolean, onUpdateOptions?: (newOptions: any[]) => void }) {
   const [open, setOpen] = useState(false);
+  const [editMode, setEditMode] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const [localOptions, setLocalOptions] = useState<any[]>(options);
+
+  // Sync with prop options when not editing
+  useEffect(() => {
+    if (!editMode) {
+      setLocalOptions(options || []);
+    }
+  }, [options, editMode]);
+
+  const handleSaveEdit = (optsToSave?: any[]) => {
+    const finalOpts = optsToSave !== undefined ? optsToSave : localOptions;
+    setEditMode(false);
+    if (onUpdateOptions) {
+      onUpdateOptions(finalOpts);
+    }
+  };
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (ref.current && !ref.current.contains(event.target as Node)) setOpen(false);
+      if (ref.current && !ref.current.contains(event.target as Node)) {
+        setOpen(false);
+        if (editMode) {
+          handleSaveEdit();
+        }
+      }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  }, [editMode, localOptions, onUpdateOptions]);
 
   const activeOption = options.find(o => (typeof o === 'string' ? o : o.id || o.name || o) === value);
   const displayLabel = activeOption ? (typeof activeOption === 'string' ? activeOption : activeOption.label || activeOption.name || activeOption) : value;
@@ -53,41 +75,195 @@ export function CustomDropdown({ value, options, onChange, dark = false, style =
         <div style={{display: "flex", alignItems: "center", gap: 8, overflow: "hidden"}}>
            {activeColor && !dark && <div style={{width:8, height:8, borderRadius:"50%", background:activeColor, flexShrink:0}}/>}
            <span style={{overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap"}}>{prefix}{displayLabel}</span>
-        </div>
-        <ChevronDown size={14} style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'all 0.2s', opacity: 0.6, flexShrink: 0 }} />
+         </div>
+         <ChevronDown size={14} style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'all 0.2s', opacity: 0.6, flexShrink: 0 }} />
       </button>
       <AnimatePresence>
         {open && (
           <motion.div 
             initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }} transition={{ duration: 0.15 }}
-            style={{ position: "absolute", top: "100%", left: alignRight ? "auto" : 0, right: alignRight ? 0 : "auto", minWidth: "100%", width: "max-content", maxWidth: "250px", marginTop: 4, background: "white", border: "1px solid rgba(44,32,22,0.1)", borderRadius: 12, padding: 6, zIndex: 9999, boxShadow: "0 10px 40px rgba(0,0,0,0.15)", maxHeight: 250, overflowY: "auto", overflowX: "hidden" }}
+            style={{ position: "absolute", top: "100%", left: alignRight ? "auto" : 0, right: alignRight ? 0 : "auto", minWidth: "100%", width: "max-content", maxWidth: "250px", marginTop: 4, background: "white", border: "1px solid rgba(44,32,22,0.1)", borderRadius: 12, padding: 6, zIndex: 9999, boxShadow: "0 10px 40px rgba(0,0,0,0.15)", maxHeight: 300, overflowY: "auto", overflowX: "hidden" }}
           >
-            {options.map((o, i) => {
-              const val = typeof o === 'string' ? o : o.id || o.name || o;
-              const isSelected = val === value;
-              const label = typeof o === 'string' ? o : o.label || o.name || o;
-              const color = (typeof o !== 'string') ? o.color : null;
-              
-              return (
-                <div 
-                  key={i} 
-                  onClick={() => { onChange(val); setOpen(false); }}
-                  style={{ 
-                    padding: "10px 12px", borderRadius: 8, fontSize: 13, fontWeight: isSelected?800:600, cursor: "pointer", 
-                    background: isSelected ? (color ? color + "20" : "rgba(var(--theme-primary-rgb), 0.1)") : "transparent", 
-                    color: isSelected ? (color || "var(--theme-primary)") : "#2C2016", 
-                    transition: "all 0.1s",
-                    display: "flex", alignItems: "center", gap: 10,
-                    marginBottom: 2
-                  }}
-                  onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = "#FAFAFA"; }}
-                  onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = "transparent"; }}
-                >
-                  {color && <div style={{width:10, height:10, borderRadius:"50%", background:color}}/>}
-                  <span style={{flex: 1, whiteSpace: "nowrap"}}>{prefix}{label}</span>
+            {editMode && onUpdateOptions ? (
+              <div 
+                style={{display: "flex", flexDirection: "column", gap: 8, padding: "8px 4px"}}
+                onClick={(e) => e.stopPropagation()}
+                onMouseDown={(e) => e.stopPropagation()}
+              >
+                <div style={{fontSize: 11, fontWeight: 800, color: "#4B5563", textTransform: "uppercase", letterSpacing: 0.8, paddingBottom: 6, borderBottom: "1px solid #F3F4F6", display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4}}>
+                  <span>Edit Opsi</span>
+                  <button 
+                    onClick={(e) => { 
+                      e.stopPropagation(); 
+                      handleSaveEdit(); 
+                    }} 
+                    style={{
+                      background: "rgba(59, 130, 246, 0.1)", 
+                      border: "none", 
+                      padding: "4px 8px",
+                      borderRadius: 6,
+                      cursor: "pointer", 
+                      color: "#2563EB", 
+                      fontSize: 10, 
+                      fontWeight: 700,
+                      transition: "all 0.2s"
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = "rgba(59, 130, 246, 0.18)"}
+                    onMouseLeave={(e) => e.currentTarget.style.background = "rgba(59, 130, 246, 0.1)"}
+                  >
+                    Selesai
+                  </button>
                 </div>
-              );
-            })}
+                <div style={{display: "flex", flexDirection: "column", gap: 6, maxHeight: "180px", overflowY: "auto", paddingRight: 2}}>
+                  {localOptions.map((o, i) => {
+                    const isStr = typeof o === 'string';
+                    const val = isStr ? o : o.id || o.name || o;
+                    const label = isStr ? o : o.label || o.name || o;
+                    const color = isStr ? null : o.color;
+                    return (
+                      <div key={i} style={{display: "flex", alignItems: "center", gap: 6}} onClick={(e) => e.stopPropagation()}>
+                        {!isStr && (
+                          <div style={{position: "relative", width: 22, height: 22, borderRadius: "50%", border: "1px solid #E5E7EB", overflow: "hidden", cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: color || "#2C2016"}}>
+                            <input 
+                              type="color" 
+                              value={color || "#2C2016"} 
+                              onChange={(e) => {
+                                const newOpts = [...localOptions];
+                                newOpts[i] = { ...newOpts[i], color: e.target.value };
+                                setLocalOptions(newOpts);
+                              }}
+                              style={{position: "absolute", opacity: 0, width: "100%", height: "100%", cursor: "pointer"}}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                            <div style={{width: 10, height: 10, borderRadius: "50%", background: "white", opacity: 0.7, pointerEvents: "none"}} />
+                          </div>
+                        )}
+                        <input 
+                          value={label}
+                          onChange={(e) => {
+                            const newOpts = [...localOptions];
+                            if (isStr) newOpts[i] = e.target.value;
+                            else newOpts[i] = { ...newOpts[i], name: e.target.value, id: e.target.value };
+                            setLocalOptions(newOpts);
+                          }}
+                          placeholder="Nama opsi..."
+                          style={{
+                            flex: 1, 
+                            minWidth: 0, 
+                            fontSize: 12, 
+                            padding: "6px 8px", 
+                            border: "1px solid #E5E7EB", 
+                            borderRadius: 6, 
+                            outline: "none",
+                            background: "#FFFFFF",
+                            color: "#1F2937",
+                            fontWeight: 600,
+                            boxShadow: "inset 0 1px 2px rgba(0,0,0,0.03)",
+                            transition: "all 0.15s"
+                          }}
+                          onFocus={(e) => {
+                            e.target.style.borderColor = "#3B82F6";
+                            e.target.style.boxShadow = "0 0 0 2px rgba(59, 130, 246, 0.15)";
+                          }}
+                          onBlur={(e) => {
+                            e.target.style.borderColor = "#E5E7EB";
+                            e.target.style.boxShadow = "none";
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          onKeyDown={(e) => {
+                            e.stopPropagation();
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              handleSaveEdit();
+                            }
+                          }}
+                        />
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const newOpts = localOptions.filter((_, idx) => idx !== i);
+                            setLocalOptions(newOpts);
+                          }}
+                          style={{
+                            background: "none", 
+                            border: "none", 
+                            color: "#9C2B4E", 
+                            cursor: "pointer", 
+                            padding: 6, 
+                            display: "flex", 
+                            alignItems: "center", 
+                            justifyContent: "center",
+                            borderRadius: 6,
+                            transition: "all 0.2s"
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.background = "#FEE2E2"}
+                          onMouseLeave={(e) => e.currentTarget.style.background = "none"}
+                        >
+                          <Trash2 size={13}/>
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const isObj = localOptions.length > 0 && typeof localOptions[0] !== 'string';
+                    const newItem = isObj ? {name: "Opsi Baru", id: "opsi-" + Date.now(), color: "#3B82F6"} : "Opsi Baru";
+                    const newOpts = [...localOptions, newItem];
+                    setLocalOptions(newOpts);
+                  }}
+                  style={{display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "8px", background: "#F3F4F6", border: "none", borderRadius: 8, fontSize: 11, fontWeight: 700, color: "#4B5563", cursor: "pointer", marginTop: 4, transition: "all 0.2s"}}
+                  onMouseEnter={(e) => e.currentTarget.style.background = "#E5E7EB"}
+                  onMouseLeave={(e) => e.currentTarget.style.background = "#F3F4F6"}
+                >
+                  <Plus size={12}/> Tambah Opsi
+                </button>
+              </div>
+            ) : (
+              <>
+                {options.map((o, i) => {
+                  const val = typeof o === 'string' ? o : o.id || o.name || o;
+                  const isSelected = val === value;
+                  const label = typeof o === 'string' ? o : o.label || o.name || o;
+                  const color = (typeof o !== 'string') ? o.color : null;
+                  
+                  return (
+                    <div 
+                      key={i} 
+                      onClick={() => { onChange(val); setOpen(false); }}
+                      style={{ 
+                        padding: "10px 12px", borderRadius: 8, fontSize: 13, fontWeight: isSelected?800:600, cursor: "pointer", 
+                        background: isSelected ? (color ? color + "20" : "rgba(var(--theme-primary-rgb), 0.1)") : "transparent", 
+                        color: isSelected ? (color || "var(--theme-primary)") : "#2C2016", 
+                        transition: "all 0.1s",
+                        display: "flex", alignItems: "center", gap: 10,
+                        marginBottom: 2
+                      }}
+                      onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = "#FAFAFA"; }}
+                      onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = "transparent"; }}
+                    >
+                      {color && <div style={{width:10, height:10, borderRadius:"50%", background:color}}/>}
+                      <span style={{flex: 1, whiteSpace: "nowrap"}}>{prefix}{label}</span>
+                    </div>
+                  );
+                })}
+                {onUpdateOptions && (
+                  <div 
+                    onClick={(e) => { e.stopPropagation(); setEditMode(true); }}
+                    style={{ borderTop: "1px solid rgba(44,32,22,0.1)", marginTop: 4, paddingTop: 4, paddingBottom: 0 }}
+                  >
+                    <div 
+                      style={{ padding: "8px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, color: "rgba(44,32,22,0.5)" }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = "#FAFAFA"}
+                      onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+                    >
+                      <Pencil size={12}/> Edit Opsi Dropdown
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

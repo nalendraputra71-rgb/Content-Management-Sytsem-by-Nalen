@@ -1255,7 +1255,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
         {shareModal && <ShareWorkspaceModal key="share" workspace={workspace} userProfile={profile} onClose={()=>setShareModal(false)} />}
       </AnimatePresence>
       <AnimatePresence>
-        {modal && <ContentModal key="content" modal={modal} onSave={handleSave} onClose={()=>setModal(null)} onArchive={archiveItem} onRestore={unarchiveItem} onDelete={deleteItem} pillars={pillars} platforms={platforms} pics={pics} statuses={statuses} isRestricted={isRestricted}/>}
+        {modal && <ContentModal key="content" modal={modal} onSave={handleSave} onClose={()=>setModal(null)} onArchive={archiveItem} onRestore={unarchiveItem} onDelete={deleteItem} pillars={pillars} platforms={platforms} pics={pics} statuses={statuses} isRestricted={isRestricted} onSettingUpdate={updateWsSettings} />}
       </AnimatePresence>
       <AnimatePresence>
         {showCsv && <CsvModal key="csv" onClose={()=>setShowCsv(false)} onImport={handleBulkImport} workspaceId={workspace?.id} pillars={pillars} platforms={platforms} pics={pics} statuses={statuses} existingContent={content} />}

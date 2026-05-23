@@ -72,7 +72,7 @@ const getMetricIcon = (k: string, color?: string, size = 14) => {
   }
 };
 
-export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,pillars,platforms,pics,statuses}: any) {
+export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,pillars,platforms,pics,statuses,onSettingUpdate}: any) {
   const [d,setD] = useState({...modal.data,metrics:{...(modal.data.metrics||{})},adsMetrics:{...(modal.data.adsMetrics||{views:0,reach:0,likes:0,comments:0,shares:0,reposts:0,saves:0,clicks:0,conversions:0})},referenceLinks:modal.data.referenceLinks||[],customFields:modal.data.customFields||[]});
   const [aiResult, setAiResult] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
@@ -598,6 +598,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                           options={pillars} 
                           prefix="" 
                           onChange={(v)=>set("pillar",v)} 
+                          onUpdateOptions={(opts) => onSettingUpdate && onSettingUpdate({pillars: opts})}
                           style={{ 
                             width: "100%", 
                             padding: "4px 10px", 
@@ -647,6 +648,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                           options={platforms} 
                           prefix="" 
                           onChange={(v)=>set("platform",v)} 
+                          onUpdateOptions={(opts) => onSettingUpdate && onSettingUpdate({platforms: opts})}
                           style={{ 
                             width: "100%", 
                             padding: "4px 10px", 
@@ -696,6 +698,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                           options={pics} 
                           prefix="" 
                           onChange={(v)=>set("pic",v)} 
+                          onUpdateOptions={(opts) => onSettingUpdate && onSettingUpdate({pics: opts})}
                           style={{ 
                             width: "100%", 
                             padding: "4px 10px", 
@@ -746,6 +749,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                           prefix="" 
                           alignRight={true}
                           onChange={(v)=>set("status",v)} 
+                          onUpdateOptions={(opts) => onSettingUpdate && onSettingUpdate({statuses: opts})}
                           style={{ 
                             width: "100%", 
                             padding: "4px 10px", 

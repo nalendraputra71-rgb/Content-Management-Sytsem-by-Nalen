@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { db, collection, query, where, getDocs, doc, setDoc, deleteDoc, updateDoc, limit } from "./firebase";
 import { Users, Mail, Shield, Trash2, Link, Copy, Check, Search, AtSign } from "lucide-react";
 import { I, B, CARD } from "./data";
 import { motion, AnimatePresence } from "motion/react";
 
-export function ShareWorkspaceModal({ workspace, userProfile, onClose }: { workspace: any, userProfile: any, onClose: () => void }) {
+export const ShareWorkspaceModal: React.FC<{ workspace: any, userProfile: any, onClose: () => void }> = ({ workspace, userProfile, onClose }) => {
+
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("viewer");
   const [members, setMembers] = useState<any[]>([]);
