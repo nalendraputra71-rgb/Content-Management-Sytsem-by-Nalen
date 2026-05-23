@@ -448,7 +448,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                         </span>
                         <div style={{height: "10px", width: "1px", background: "rgba(255,255,255,0.3)"}} />
                         <span style={{fontSize: "12px", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 5}}>
-                          🕒 {d.uploadHour !== undefined && d.uploadHour !== null ? String(d.uploadHour).padStart(2, '0') : "00"}:{d.uploadMinute !== undefined && d.uploadMinute !== null ? String(d.uploadMinute).padStart(2, '0') : "00"} WIB
+                          🕒 {d.uploadHour !== undefined && d.uploadHour !== null ? String(d.uploadHour).padStart(2, '0') : "00"}:{d.uploadMinute !== undefined && d.uploadMinute !== null ? String(d.uploadMinute).padStart(2, '0') : "00"} {d.timeFormat || '24H'}
                         </span>
                       </>
                     ) : (
@@ -530,7 +530,24 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                             }} 
                             placeholder="00"
                           />
-                          <span style={{fontSize: "9px", color: "rgba(255,255,255,0.7)", marginLeft: "4px", fontWeight: 700}}>WIB</span>
+                          <select
+                            value={d.timeFormat || '24H'}
+                            onChange={(e: any) => set('timeFormat', e.target.value)}
+                            style={{
+                              background: "transparent",
+                              border: "none",
+                              color: "rgba(255,255,255,0.7)",
+                              fontSize: "9px",
+                              fontWeight: 700,
+                              outline: "none",
+                              cursor: "pointer",
+                              marginLeft: "4px"
+                            }}
+                          >
+                            <option style={{color:"black"}} value="24H">24H</option>
+                            <option style={{color:"black"}} value="AM">AM</option>
+                            <option style={{color:"black"}} value="PM">PM</option>
+                          </select>
                         </div>
 
                         {(hourError || minuteError) && (
