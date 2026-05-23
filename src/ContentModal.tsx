@@ -446,6 +446,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                         <div style={{display: "flex", alignItems: "center", gap: "4px", background: "rgba(255,255,255,0.15)", padding: "4px 8px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.1)"}}>
                           <span style={{fontSize: "12px", display: "flex", alignItems: "center", marginRight: "2px"}}>🕒</span>
                           <input 
+                            className="hide-number-arrows"
                             type="number" 
                             min={0} 
                             max={23} 
@@ -457,7 +458,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                               fontSize: "11px",
                               fontWeight: 700,
                               color: "white",
-                              width: "20px",
+                              width: "32px",
                               textAlign: "center",
                               outline: "none",
                               padding: 0,
@@ -467,6 +468,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                           />
                           <span style={{color:"rgba(255,255,255,0.5)", fontWeight: 700, fontSize: "11px"}}>:</span>
                           <input 
+                            className="hide-number-arrows"
                             type="number" 
                             min={0} 
                             max={59} 
@@ -479,7 +481,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                               fontSize: "11px",
                               fontWeight: 700,
                               color: "white",
-                              width: "20px",
+                              width: "32px",
                               textAlign: "center",
                               outline: "none",
                               padding: 0,
@@ -667,7 +669,6 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                           display: "inline-flex", 
                           alignItems: "center", 
                           gap: 3, 
-                          textTransform: "uppercase", 
                           textOverflow: "ellipsis", 
                           overflow: "hidden", 
                           whiteSpace: "nowrap",
@@ -685,6 +686,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                           value={d.status} 
                           options={statuses} 
                           prefix="" 
+                          alignRight={true}
                           onChange={(v)=>set("status",v)} 
                           style={{ 
                             width: "100%", 
@@ -692,7 +694,6 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                             borderRadius: "8px", 
                             fontSize: "11px", 
                             fontWeight: 800, 
-                            textTransform: "uppercase",
                             background: activeStatusColor, 
                             color: "#FFF", 
                             border: `1px solid rgba(255,255,255,0.3)`,
@@ -727,17 +728,6 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
           {!isReaderMode ? (
             <>
               {/* Removed Block 3: Pengaturan Jadwal & Waktu (now inline under title) */}
-
-              {/* Block 4: Ads Toggle */}
-              <div style={{display:"flex",alignItems:"center",gap:12,padding:"16px 20px",background:"rgba(156,43,78,0.05)",borderRadius:16,border:"1px solid rgba(156,43,78,0.1)"}}>
-                <button onClick={()=>set("isAds",!d.isAds)} style={{width:40,height:22,borderRadius:11,border:"none",cursor:"pointer",background:d.isAds?"#9C2B4E":"rgba(44,32,22,0.15)",transition:"background .2s",position:"relative",flexShrink:0}}>
-                  <div style={{width:18,height:18,borderRadius:"50%",background:"white",position:"absolute",top:2,left:d.isAds?20:2,transition:"left .2s"}}/>
-                </button>
-                <div>
-                  <span style={{fontSize:13,fontWeight:700,color:d.isAds?"#9C2B4E":"#2C2016"}}>💰 {d.isAds?"Konten Berbayar (Ads/Boost)":"Konten Organik"}</span>
-                  <div style={{fontSize:10,color:"rgba(44,32,22,0.5)"}}>Toggle untuk menandai apakah konten ini diiklankan ke target audiens berbayar</div>
-                </div>
-              </div>
 
               {/* Block 5: Objective, Brief & Caption */}
               <div style={{
@@ -862,9 +852,8 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
 
               {/* Metrics Section */}
               <div style={{
-                display: "grid",
-                gridTemplateColumns: d.isAds ? "1fr 1fr" : "1fr",
-                gap: "16px",
+                display: "flex",
+                flexDirection: "column",
                 marginBottom: "18px"
               }}>
                 {/* Metrics */}
@@ -913,54 +902,70 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                       <strong style={{color:"#C4622D"}}>{(d.metrics?.reach||0)>0?((eng(d.metrics)/(d.metrics.reach))*100).toFixed(2):0}%</strong>
                     </span>
                   </div>
+                  
+                  <div style={{marginTop: 12, display: "flex", alignItems: "center", gap: 10, alignSelf:"flex-end"}}>
+                    <div style={{fontSize: 11, fontWeight: 700, color: "rgba(44,32,22,0.6)", textTransform: "uppercase", letterSpacing: 0.5}}>Ads/Boost:</div>
+                    <button onClick={()=>set("isAds",!d.isAds)} style={{width:32,height:18,borderRadius:9,border:"none",cursor:"pointer",background:d.isAds?"#9C2B4E":"rgba(44,32,22,0.15)",transition:"background .2s",position:"relative",flexShrink:0}}>
+                      <div style={{width:14,height:14,borderRadius:"50%",background:"white",position:"absolute",top:2,left:d.isAds?16:2,transition:"left .2s"}}/>
+                    </button>
+                  </div>
                 </div>
 
                 {/* Ads Metrics */}
-                {d.isAds && (
-                  <div style={{
-                    background: "rgba(156,43,78,0.03)",
-                    border: "1px solid rgba(156,43,78,0.1)",
-                    borderRadius: 16,
-                    padding: "16px 20px",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "space-between"
-                  }}>
-                    <div>
-                      <div style={{...L, marginBottom:12, color:"#9C2B4E", display: "flex", alignItems: "center", gap: 6}}>
-                        <span>💰 Hasil Kampanye Berbayar</span>
-                      </div>
-                      <div style={{display:"grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8}}>
-                        {[...MK,"clicks","conversions"].map((k:string)=>(
-                          <div key={k} style={GRP}>
-                            <label style={{...L, marginBottom: 4, color: k==="clicks"||k==="conversions"?"#9C2B4E":MC[k]||"#9C2B4E", display: "flex", alignItems: "center", gap: 4, textTransform: "capitalize", fontSize: "11px"}}>
-                              {getMetricIcon(k, k==="clicks"||k==="conversions"?"#9C2B4E":MC[k]||"#9C2B4E", 12)}
-                              {k}
-                            </label>
-                            <input 
-                              type="number" 
-                              min={0} 
-                              placeholder="0" 
-                              value={d.adsMetrics?.[k] === 0 ? "" : (d.adsMetrics?.[k] !== undefined && d.adsMetrics?.[k] !== null ? d.adsMetrics[k] : "")} 
-                              onChange={(e:any)=>setM(k,e.target.value,true)} 
-                              style={I({textAlign:"right", fontSize: "12px", padding: "6px 8px"})}
-                            />
+                <AnimatePresence>
+                  {d.isAds && (
+                    <motion.div 
+                      initial={{ height: 0, opacity: 0, overflow: "hidden", marginTop: 0 }}
+                      animate={{ height: "auto", opacity: 1, overflow: "visible", marginTop: 16 }}
+                      exit={{ height: 0, opacity: 0, overflow: "hidden", marginTop: 0 }}
+                      transition={{ duration: 0.3, ease: "easeInOut" }}
+                    >
+                      <div style={{
+                        background: "rgba(156,43,78,0.03)",
+                        border: "1px solid rgba(156,43,78,0.1)",
+                        borderRadius: 16,
+                        padding: "16px 20px",
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "space-between"
+                      }}>
+                        <div>
+                          <div style={{...L, marginBottom:12, color:"#9C2B4E", display: "flex", alignItems: "center", gap: 6}}>
+                            <span>💰 Hasil Kampanye Berbayar</span>
                           </div>
-                        ))}
+                          <div style={{display:"grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8}}>
+                            {[...MK,"clicks","conversions"].map((k:string)=>(
+                              <div key={k} style={GRP}>
+                                <label style={{...L, marginBottom: 4, color: k==="clicks"||k==="conversions"?"#9C2B4E":MC[k]||"#9C2B4E", display: "flex", alignItems: "center", gap: 4, textTransform: "capitalize", fontSize: "11px"}}>
+                                  {getMetricIcon(k, k==="clicks"||k==="conversions"?"#9C2B4E":MC[k]||"#9C2B4E", 12)}
+                                  {k}
+                                </label>
+                                <input 
+                                  type="number" 
+                                  min={0} 
+                                  placeholder="0" 
+                                  value={d.adsMetrics?.[k] === 0 ? "" : (d.adsMetrics?.[k] !== undefined && d.adsMetrics?.[k] !== null ? d.adsMetrics[k] : "")} 
+                                  onChange={(e:any)=>setM(k,e.target.value,true)} 
+                                  style={I({textAlign:"right", fontSize: "12px", padding: "6px 8px"})}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        <div style={{marginTop:12, padding:"8px 10px", background:"rgba(156,43,78,0.06)", borderRadius:8, display:"flex", flexDirection: "column", gap:2}}>
+                          <span style={{fontSize:11, color:"#9C2B4E", display: "flex", justifyContent: "space-between"}}>
+                            <span>Total Engagement Ads:</span>
+                            <strong>{fmt(eng(d.adsMetrics||{}))}</strong>
+                          </span>
+                          <span style={{fontSize:11, color:"#9C2B4E", display: "flex", justifyContent: "space-between"}}>
+                            <span>Ad Click / Conv:</span>
+                            <strong>{fmt(d.adsMetrics?.clicks||0)} / {fmt(d.adsMetrics?.conversions||0)}</strong>
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                    <div style={{marginTop:12, padding:"8px 10px", background:"rgba(156,43,78,0.06)", borderRadius:8, display:"flex", flexDirection: "column", gap:2}}>
-                      <span style={{fontSize:11, color:"#9C2B4E", display: "flex", justifyContent: "space-between"}}>
-                        <span>Total Engagement Ads:</span>
-                        <strong>{fmt(eng(d.adsMetrics||{}))}</strong>
-                      </span>
-                      <span style={{fontSize:11, color:"#9C2B4E", display: "flex", justifyContent: "space-between"}}>
-                        <span>Ad Click / Conv:</span>
-                        <strong>{fmt(d.adsMetrics?.clicks||0)} / {fmt(d.adsMetrics?.conversions||0)}</strong>
-                      </span>
-                    </div>
-                  </div>
-                )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </>
           ) : (

@@ -144,3 +144,13 @@ select option {
 .markdown-body strong {
   font-weight: 700;
 }
+
+/* Hide number input spinners */
+.hide-number-arrows::-webkit-outer-spin-button,
+.hide-number-arrows::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.hide-number-arrows[type=number] {
+  -moz-appearance: textfield;
+}

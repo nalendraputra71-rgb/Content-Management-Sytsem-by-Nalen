@@ -4,7 +4,7 @@ import * as XLSX from "xlsx";
 import { motion, AnimatePresence } from "motion/react";
 import { ChevronDown } from "lucide-react";
 
-export function CustomDropdown({ value, options, onChange, dark = false, style = {}, prefix = "" }: { value: string, options: any[], onChange: (val: string) => void, dark?: boolean, style?: any, prefix?: string }) {
+export function CustomDropdown({ value, options, onChange, dark = false, style = {}, prefix = "", alignRight = false }: { value: string, options: any[], onChange: (val: string) => void, dark?: boolean, style?: any, prefix?: string, alignRight?: boolean }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -45,7 +45,7 @@ export function CustomDropdown({ value, options, onChange, dark = false, style =
         {open && (
           <motion.div 
             initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }} transition={{ duration: 0.15 }}
-            style={{ position: "absolute", top: "100%", left: 0, minWidth: "100%", width: "max-content", marginTop: 4, background: "white", border: "1px solid rgba(44,32,22,0.1)", borderRadius: 12, padding: 6, zIndex: 9999, boxShadow: "0 10px 40px rgba(0,0,0,0.15)", maxHeight: 250, overflowY: "auto" }}
+            style={{ position: "absolute", top: "100%", left: alignRight ? "auto" : 0, right: alignRight ? 0 : "auto", minWidth: "100%", width: "max-content", maxWidth: "250px", marginTop: 4, background: "white", border: "1px solid rgba(44,32,22,0.1)", borderRadius: 12, padding: 6, zIndex: 9999, boxShadow: "0 10px 40px rgba(0,0,0,0.15)", maxHeight: 250, overflowY: "auto", overflowX: "hidden" }}
           >
             {options.map((o, i) => {
               const val = typeof o === 'string' ? o : o.id || o.name || o;
