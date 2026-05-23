@@ -193,8 +193,37 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
   const activeStatusColor = (activeStatusOption && typeof activeStatusOption !== 'string') ? activeStatusOption.color || "#A67C1C" : "#A67C1C";
 
   const titleRef = useRef<HTMLTextAreaElement>(null);
+  const objectiveRef = useRef<HTMLTextAreaElement>(null);
+  const briefRef = useRef<HTMLTextAreaElement>(null);
+  const captionRef = useRef<HTMLTextAreaElement>(null);
+  const [focusTarget, setFocusTarget] = useState<string|null>(null);
 
   const isDirty = useRef(false);
+
+  useEffect(() => {
+    if (!isReaderMode && focusTarget) {
+      setTimeout(() => {
+        if (focusTarget === "title" && titleRef.current) {
+          titleRef.current.focus();
+          const len = titleRef.current.value.length;
+          titleRef.current.setSelectionRange(len, len);
+        } else if (focusTarget === "objective" && objectiveRef.current) {
+          objectiveRef.current.focus();
+          const len = objectiveRef.current.value.length;
+          objectiveRef.current.setSelectionRange(len, len);
+        } else if (focusTarget === "brief" && briefRef.current) {
+          briefRef.current.focus();
+          const len = briefRef.current.value.length;
+          briefRef.current.setSelectionRange(len, len);
+        } else if (focusTarget === "caption" && captionRef.current) {
+          captionRef.current.focus();
+          const len = captionRef.current.value.length;
+          captionRef.current.setSelectionRange(len, len);
+        }
+        setFocusTarget(null);
+      }, 100);
+    }
+  }, [isReaderMode, focusTarget]);
 
   useEffect(() => {
     if (titleRef.current) {
@@ -349,7 +378,16 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
         <div ref={modalScrollRef} style={{padding: "24px 28px", overflow: "auto", flex: 1, display: "flex", flexDirection: "column", gap: "16px"}}>
           
           {/* Block 1: Area Identitas Atas */}
-          <div style={{background:headerBg,color:"#FAFAFA",borderRadius:16,padding:"20px 24px",boxShadow:"inset 0 2px 4px rgba(255,255,255,0.05)", position:"relative", transition: "background 0.3s ease"}}>
+          <div 
+            onDoubleClick={(e) => { 
+                if (isReaderMode) {
+                    setIsReaderMode(false);
+                    setFocusTarget("title");
+                } 
+            }}
+            style={{background:headerBg,color:"#FAFAFA",borderRadius:16,padding:"20px 24px",boxShadow:"inset 0 2px 4px rgba(255,255,255,0.05)", position:"relative", transition: "background 0.3s ease", cursor: isReaderMode ? "pointer" : "default"}}
+            title={isReaderMode ? "Klik ganda di area ini untuk mengedit konten" : undefined}
+          >
               <button className="hover-scale" onClick={handleClose} style={{position:"absolute",top:20,right:20,background:"rgba(255,255,255,0.1)",border:"none",borderRadius:"50%",width:32,height:32,cursor:"pointer",fontSize:18,color:"white",display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
               <div style={{display:"flex",flexDirection:"column",alignItems:"flex-start",gap:8, width: "100%"}}>
                   <div style={{display:"flex", justifyContent:"space-between", width:"100%", alignItems:"center", paddingRight: "40px"}}>
@@ -725,9 +763,17 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
 
           {/* Removed single mode banner transition flow to place mode switch in the footer */}
 
-          {!isReaderMode ? (
-            <>
-              {/* Removed Block 3: Pengaturan Jadwal & Waktu (now inline under title) */}
+          <AnimatePresence mode="popLayout" initial={false}>
+            {!isReaderMode ? (
+              <motion.div 
+                key="edit-mode"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15, ease: "linear" }}
+                style={{ display: "flex", flexDirection: "column", gap: "16px", width: "100%" }}
+              >
+                {/* Removed Block 3: Pengaturan Jadwal & Waktu (now inline under title) */}
 
               {/* Block 5: Objective, Brief & Caption */}
               <div style={{
@@ -744,7 +790,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                   <label style={{ fontSize: 12, fontWeight: 600, color: "rgba(44,32,22,0.6)", display: "flex", alignItems: "center", gap: 6, margin: 0 }}>
                     🎯 Objective Konten
                   </label>
-                  <TextareaAutosize value={d.objective} onChange={(e:any)=>set("objective",e.target.value)} style={I({ border: "1px solid rgba(44,32,22,0.12)", borderRadius: 10, resize:"vertical" })} minRows={3} placeholder="Tujuan atau target output dari konten ini..."/>
+                  <TextareaAutosize ref={objectiveRef} value={d.objective} onChange={(e:any)=>set("objective",e.target.value)} style={I({ border: "1px solid rgba(44,32,22,0.12)", borderRadius: 10, resize:"vertical" })} minRows={3} placeholder="Tujuan atau target output dari konten ini..."/>
                 </div>
 
                 {/* Brief Section with AI Button */}
@@ -759,7 +805,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                           {aiLoading ? <LoadingDots /> : "Analyze with Gemini"}
                         </button>
                     </div>
-                    <TextareaAutosize value={d.briefCopywriting} onChange={(e:any)=>set("briefCopywriting",e.target.value)} style={I({ border: "1px solid rgba(44,32,22,0.12)", borderRadius: 10, resize:"vertical" })} minRows={4} placeholder="Arah konten, tone of voice, call to action, poin kata kunci utama..."/>
+                    <TextareaAutosize ref={briefRef} value={d.briefCopywriting} onChange={(e:any)=>set("briefCopywriting",e.target.value)} style={I({ border: "1px solid rgba(44,32,22,0.12)", borderRadius: 10, resize:"vertical" })} minRows={4} placeholder="Arah konten, tone of voice, call to action, poin kata kunci utama..."/>
                 </div>
 
                 {/* Caption Section with AI Button */}
@@ -774,7 +820,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                           {captionLoading ? <LoadingDots /> : "Generate Caption"}
                         </button>
                     </div>
-                    <TextareaAutosize value={d.caption} onChange={(e:any)=>set("caption",e.target.value)} style={I({ border: "1px solid rgba(44,32,22,0.12)", borderRadius: 10, resize:"vertical" })} minRows={3} placeholder="Salinan caption social media yang sudah siap diposting..."/>
+                    <TextareaAutosize ref={captionRef} value={d.caption} onChange={(e:any)=>set("caption",e.target.value)} style={I({ border: "1px solid rgba(44,32,22,0.12)", borderRadius: 10, resize:"vertical" })} minRows={3} placeholder="Salinan caption social media yang sudah siap diposting..."/>
                 </div>
               </div>
 
@@ -967,19 +1013,35 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                   )}
                 </AnimatePresence>
               </div>
-            </>
-          ) : (
-            <>
-              {/* BEAUTIFUL READING PRESENTATION (READER MODE) */}
+              </motion.div>
+            ) : (
+              <motion.div 
+                key="reader-mode"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15, ease: "linear" }}
+                style={{ display: "flex", flexDirection: "column", gap: "16px", width: "100%" }}
+              >
+                {/* BEAUTIFUL READING PRESENTATION (READER MODE) */}
               
               {/* Item 2: Objective */}
-              <div style={{
+              <div 
+                onDoubleClick={(e) => { 
+                    e.stopPropagation();
+                    setIsReaderMode(false);
+                    setFocusTarget("objective");
+                }}
+                style={{
                 background: "#FFFFFF",
                 border: "1px solid rgba(44,32,22,0.08)",
                 borderRadius: 16,
                 padding: "16px 20px",
-                boxShadow: "0 4px 20px rgba(44,32,22,0.02)"
-              }}>
+                boxShadow: "0 4px 20px rgba(44,32,22,0.02)",
+                cursor: "text"
+              }}
+              title="Klik ganda untuk mengedit Objective"
+              >
                 <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(44,32,22,0.4)", textTransform: "uppercase", marginBottom: 6, letterSpacing: "0.5px", display: "flex", alignItems: "center", gap: 6 }}>
                   🎯 Objective Konten
                 </div>
@@ -989,13 +1051,22 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
               </div>
 
               {/* Item 3: Brief Markdown Section */}
-              <div style={{
+              <div 
+                onDoubleClick={(e) => { 
+                    e.stopPropagation();
+                    setIsReaderMode(false);
+                    setFocusTarget("brief");
+                }}
+                style={{
                 background: "#FFFFFF",
                 border: "1px solid rgba(44,32,22,0.08)",
                 borderRadius: 16,
                 padding: "16px 20px",
-                boxShadow: "0 4px 20px rgba(44,32,22,0.02)"
-              }}>
+                boxShadow: "0 4px 20px rgba(44,32,22,0.02)",
+                cursor: "text"
+              }}
+              title="Klik ganda untuk mengedit Brief"
+              >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                   <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(44,32,22,0.4)", textTransform: "uppercase", display: "flex", alignItems: "center", gap: 6, letterSpacing: "0.5px" }}>
                     📝 Arahan Kreatif & Brief Konten
@@ -1030,13 +1101,22 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
               </div>
 
               {/* Item 4: Final Caption Previews */}
-              <div style={{
+              <div 
+                onDoubleClick={(e) => { 
+                    e.stopPropagation();
+                    setIsReaderMode(false);
+                    setFocusTarget("caption");
+                }}
+                style={{
                 background: "#FFFFFF",
                 border: "1px solid rgba(44,32,22,0.08)",
                 borderRadius: 16,
                 padding: "16px 20px",
-                boxShadow: "0 4px 20px rgba(44,32,22,0.02)"
-              }}>
+                boxShadow: "0 4px 20px rgba(44,32,22,0.02)",
+                cursor: "text"
+              }}
+              title="Klik ganda untuk mengedit Caption"
+              >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                   <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(44,32,22,0.4)", textTransform: "uppercase", display: "flex", alignItems: "center", gap: 6, letterSpacing: "0.5px" }}>
                     ✍️ Salinan Caption Posting
@@ -1251,8 +1331,9 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                   </div>
                 </div>
               </div>
-            </>
-          )}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
         </div>
 
