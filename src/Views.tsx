@@ -113,11 +113,11 @@ export function MonthView({year,month,monthContent,filtered,openEdit,openAdd,sho
                 ))}
               </div>
 
-              <div style={{display:"flex",flexDirection:"column",gap:2}}>
-                {items.slice(0,4).map((item:any)=>{
+              <div style={{display:"flex",flexDirection:"column",gap:2, maxHeight: "150px", overflowY: "auto", paddingRight: "2px", scrollbarWidth: "thin"}}>
+                {items.map((item:any)=>{
                   const ps = item.archived ? { color: "#7A7976", light: "#EBEAE6" } : gps(pillars,item.pillar);
                   return (
-                    <button key={item.id} className="hover-scale" onClick={()=>openEdit(item)} style={{background:ps.light,border:"none",borderLeft:`3px solid ${ps.color}`,borderRadius:"4px 8px 8px 4px",padding:"4px 6px",textAlign:"left",cursor:"pointer",width:"100%",marginBottom:2}}>
+                    <button key={item.id} className="hover-scale" onClick={()=>openEdit(item)} style={{background:ps.light,flexShrink:0,border:"none",borderLeft:`3px solid ${ps.color}`,borderRadius:"4px 8px 8px 4px",padding:"4px 6px",textAlign:"left",cursor:"pointer",width:"100%",marginBottom:2}}>
                       <div style={{display:"flex",alignItems:"flex-start",gap:3}}>
                         <span className="pill-tag" style={{background:item.archived ? "#9E9D9A" : gpc(platforms,item.platform),color:"#FAF7F2",fontSize:8,padding:"1px 4px",marginTop:1}}>{item.platform[0]}</span>
                         {item.isAds&&<span style={{fontSize:8,marginTop:1}}>💰</span>}
@@ -126,7 +126,6 @@ export function MonthView({year,month,monthContent,filtered,openEdit,openAdd,sho
                     </button>
                   );
                 })}
-                {items.length>4&&<div style={{fontSize:9,color:"rgba(44,32,22,0.4)",paddingLeft:4,fontWeight:500}}>+{items.length-4} lainnya</div>}
                 {items.length===0&&allItems.length>0&&<div style={{fontSize:8,color:"rgba(44,32,22,0.3)",fontStyle:"italic"}}>Disembunyikan filter</div>}
               </div>
             </div>

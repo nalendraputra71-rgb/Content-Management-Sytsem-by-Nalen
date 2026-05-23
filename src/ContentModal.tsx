@@ -81,6 +81,19 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
   const [hourError, setHourError] = useState(false);
   const [minuteError, setMinuteError] = useState(false);
   const [isReaderMode, setIsReaderMode] = useState(modal.mode !== "add");
+  const [copiedBrief, setCopiedBrief] = useState(false);
+  const [copiedCaption, setCopiedCaption] = useState(false);
+
+  const CheckIcon = () => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{stroke: "currentColor", strokeWidth: 3, strokeLinecap: "round", strokeLinejoin: "round", marginRight: "4px"}}>
+      <motion.path 
+        initial={{ pathLength: 0 }}
+        animate={{ pathLength: 1 }}
+        transition={{ duration: 0.4 }}
+        d="M20 6L9 17l-5-5"
+      />
+    </svg>
+  );
 
   const handleHourChange = (e: any) => {
     isDirty.current = true;
@@ -985,12 +998,18 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                   {d.briefCopywriting && (
                     <button 
                       onClick={() => {
+                        if (copiedBrief) return;
                         navigator.clipboard.writeText(d.briefCopywriting);
-                        alert("Brief berhasil disalin!");
+                        setCopiedBrief(true);
+                        setTimeout(() => setCopiedBrief(false), 2000);
                       }} 
-                      style={{ background: "rgba(196,98,45,0.08)", border: "none", color: "#C4622D", padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 750, cursor: "pointer" }}
+                      style={{ background: copiedBrief ? "rgba(46,125,50,0.1)" : "rgba(196,98,45,0.08)", border: "none", color: copiedBrief ? "#2E7D32" : "#C4622D", padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 750, cursor: copiedBrief ? "default" : "pointer", display: "flex", alignItems: "center", transition: "all 0.3s ease" }}
                     >
-                      📋 Salin Brief
+                      {copiedBrief ? (
+                        <>
+                          <CheckIcon /> Berhasil disalin
+                        </>
+                      ) : "📋 Salin Brief"}
                     </button>
                   )}
                 </div>
@@ -1020,12 +1039,18 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                   {d.caption && (
                     <button 
                       onClick={() => {
+                        if (copiedCaption) return;
                         navigator.clipboard.writeText(d.caption);
-                        alert("Caption berhasil disalin ke Clipboard!");
+                        setCopiedCaption(true);
+                        setTimeout(() => setCopiedCaption(false), 2000);
                       }} 
-                      style={{ background: "rgba(196,98,45,0.08)", border: "none", color: "#C4622D", padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 750, cursor: "pointer" }}
+                      style={{ background: copiedCaption ? "rgba(46,125,50,0.1)" : "rgba(196,98,45,0.08)", border: "none", color: copiedCaption ? "#2E7D32" : "#C4622D", padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 750, cursor: copiedCaption ? "default" : "pointer", display: "flex", alignItems: "center", transition: "all 0.3s ease" }}
                     >
-                      📋 Salin Caption
+                      {copiedCaption ? (
+                        <>
+                          <CheckIcon /> Berhasil disalin
+                        </>
+                      ) : "📋 Salin Caption"}
                     </button>
                   )}
                 </div>
