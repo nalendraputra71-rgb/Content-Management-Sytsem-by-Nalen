@@ -672,8 +672,7 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
                   onChange={(e: any) => setNewEvName(e.target.value)} 
                   placeholder="Nama Event (e.g., Payday Sale)" 
                   style={I({
-                    borderColor: addEventAttempted && !newEvName.trim() ? "#9C2B4E" : "rgba(44,32,22,0.1)",
-                    borderWidth: addEventAttempted && !newEvName.trim() ? "2px" : "1px",
+                    border: addEventAttempted && !newEvName.trim() ? "2px solid #9C2B4E" : "1px solid rgba(44,32,22,0.1)",
                     background: addEventAttempted && !newEvName.trim() ? "#FDF5F8" : "white",
                     fontSize: 14, boxShadow: "0 2px 8px rgba(0,0,0,0.04)"
                   })} 
@@ -688,8 +687,7 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
                        style={I({
                          fontSize:13, 
                          padding:10,
-                         borderColor: addEventAttempted && !newEvStart ? "#9C2B4E" : "rgba(44,32,22,0.1)",
-                         borderWidth: addEventAttempted && !newEvStart ? "2px" : "1px",
+                         border: addEventAttempted && !newEvStart ? "2px solid #9C2B4E" : "1px solid rgba(44,32,22,0.1)",
                          background: addEventAttempted && !newEvStart ? "#FDF5F8" : "white",
                          boxShadow: "0 2px 8px rgba(0,0,0,0.04)"
                        })} 
@@ -704,8 +702,7 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
                        style={I({
                          fontSize:13, 
                          padding:10,
-                         borderColor: addEventAttempted && !newEvEnd ? "#9C2B4E" : "rgba(44,32,22,0.1)",
-                         borderWidth: addEventAttempted && !newEvEnd ? "2px" : "1px",
+                         border: addEventAttempted && !newEvEnd ? "2px solid #9C2B4E" : "1px solid rgba(44,32,22,0.1)",
                          background: addEventAttempted && !newEvEnd ? "#FDF5F8" : "white",
                          boxShadow: "0 2px 8px rgba(0,0,0,0.04)"
                        })} 
@@ -743,8 +740,7 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
                           onChange={(e: any) => setEditEvName(e.target.value)} 
                           placeholder="Nama Event" 
                           style={I({
-                            borderColor: editEventAttempted && !editEvName.trim() ? "#9C2B4E" : "rgba(44,32,22,0.15)",
-                            borderWidth: editEventAttempted && !editEvName.trim() ? "2px" : "1px",
+                            border: editEventAttempted && !editEvName.trim() ? "2px solid #9C2B4E" : "1px solid rgba(44,32,22,0.15)",
                             background: editEventAttempted && !editEvName.trim() ? "#FDF5F8" : "white", fontSize: 14
                           })} 
                         />
@@ -758,8 +754,7 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
                                style={I({
                                  fontSize:13, 
                                  padding:10,
-                                 borderColor: editEventAttempted && !editEvStart ? "#9C2B4E" : "rgba(44,32,22,0.15)",
-                                 borderWidth: editEventAttempted && !editEvStart ? "2px" : "1px",
+                                 border: editEventAttempted && !editEvStart ? "2px solid #9C2B4E" : "1px solid rgba(44,32,22,0.15)",
                                  background: editEventAttempted && !editEvStart ? "#FDF5F8" : "white"
                                })} 
                              />
@@ -773,8 +768,7 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
                                style={I({
                                  fontSize:13, 
                                  padding:10,
-                                 borderColor: editEventAttempted && !editEvEnd ? "#9C2B4E" : "rgba(44,32,22,0.15)",
-                                 borderWidth: editEventAttempted && !editEvEnd ? "2px" : "1px",
+                                 border: editEventAttempted && !editEvEnd ? "2px solid #9C2B4E" : "1px solid rgba(44,32,22,0.15)",
                                  background: editEventAttempted && !editEvEnd ? "#FDF5F8" : "white"
                                })} 
                              />

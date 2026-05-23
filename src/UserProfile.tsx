@@ -359,7 +359,7 @@ export function UserProfile({ userProfile, activeWorkspace, onUpdate }: { userPr
               </div>
             </div>
             <div style={{marginTop:8, display:"flex", flexDirection:"column", gap:8}}>
-               <button onClick={()=>setShowLogoutConfirm(true)} style={{...B(false), width:"100%", display:"flex", alignItems:"center", justifyContent:"space-between", color:"#9C2B4E", borderColor:"#F8EAF0"}}>
+               <button onClick={()=>setShowLogoutConfirm(true)} style={{...B(false), width:"100%", display:"flex", alignItems:"center", justifyContent:"space-between", color:"#9C2B4E", border:"1px solid #F8EAF0"}}>
                  Ganti Akun / Logout <LogOut size={16}/>
                </button>
             </div>
@@ -406,7 +406,7 @@ export function UserProfile({ userProfile, activeWorkspace, onUpdate }: { userPr
            <div style={{marginTop: 24, paddingTop: 24, borderTop: "1px solid #EEE"}}>
               <h3 style={{fontSize:14, fontWeight:700, color:"#9C2B4E", marginBottom:8}}>Danger Zone</h3>
               <p style={{fontSize:12, color:"rgba(44,32,22,0.6)", marginBottom:16}}>Hapus akun Anda secara permanen beserta semua data yang ada di dalamnya.</p>
-              <button onClick={() => setShowDeleteConfirm(true)} style={{...B(false), background:"#FFF0F5", color:"#9C2B4E", borderColor:"#F8EAF0", fontSize: 12}}>Hapus Akun Permanen</button>
+              <button onClick={() => setShowDeleteConfirm(true)} style={{...B(false), background:"#FFF0F5", color:"#9C2B4E", border:"1px solid #F8EAF0", fontSize: 12}}>Hapus Akun Permanen</button>
            </div>
         </div>
       </div>

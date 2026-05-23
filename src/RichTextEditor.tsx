@@ -73,7 +73,7 @@ export const RichTextEditor = React.forwardRef(({ value, onChange, placeholder, 
   const activeBtnStyle: React.CSSProperties = {
     ...btnStyle,
     background: "rgba(44,32,22,0.08)",
-    borderColor: "rgba(44,32,22,0.2)"
+    border: "1px solid rgba(44,32,22,0.2)"
   };
 
   return (

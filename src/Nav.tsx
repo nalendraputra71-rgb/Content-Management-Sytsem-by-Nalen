@@ -2707,9 +2707,9 @@ export function FilterBar({
           style={{
             ...B(false, "#2C2016"),
             background: showHolidays ? "rgba(44,32,22,0.05)" : "transparent",
-            borderColor: showHolidays
-              ? "rgba(44,32,22,0.2)"
-              : "rgba(44,32,22,0.1)",
+            border: showHolidays
+              ? "1px solid rgba(44,32,22,0.2)"
+              : "1px solid rgba(44,32,22,0.1)",
             fontSize: 12,
             padding: "8px 16px",
             borderRadius: 20,
@@ -2723,9 +2723,9 @@ export function FilterBar({
           style={{
             ...B(false, "var(--theme-primary)"),
             background: showArchived ? "var(--theme-primary)11" : "transparent",
-            borderColor: showArchived
-              ? "var(--theme-primary)44"
-              : "rgba(44,32,22,0.1)",
+            border: showArchived
+              ? "1px solid var(--theme-primary)44"
+              : "1px solid rgba(44,32,22,0.1)",
             fontSize: 12,
             padding: "8px 16px",
             borderRadius: 20,
