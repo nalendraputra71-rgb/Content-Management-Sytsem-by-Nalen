@@ -521,11 +521,11 @@ function MetricsRow({ content, config, updateConfig, theme }: any) {
                {ICONS[m.icon] || <Target size={18}/>}
                <span style={{ fontSize: 13, fontWeight: 700, textTransform: "uppercase", opacity: 0.8 }}>{m.label}</span>
              </div>
-             <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                <span style={{ fontSize: 32, fontWeight: 900, color: "white" }}>
+             <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap", wordBreak: "break-all" }}>
+                <span style={{ fontSize: 24, fontWeight: 900, color: "white" }}>
                   {m.isPerc ? Number(m.current).toFixed(2) : Number(m.current).toLocaleString()}
                 </span>
-                <span style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.5)" }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.5)" }}>
                   / {m.isPerc ? m.target : Number(m.target).toLocaleString()}
                 </span>
              </div>

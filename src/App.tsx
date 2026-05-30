@@ -596,7 +596,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
 
   const [showHolidays, setShowHolidays] = useState(true);
   const [showArchived, setShowArchived] = useState(false);
-  const [filters, setFilters]   = useState({pillar:"All",platform:"All",pic:"All",status:"All"});
+  const [filters, setFilters]   = useState({pillar:["All"],platform:["All"],pic:["All"],status:"All"});
   const [title, setTitle]       = useState("Content Management");
   const [tagline, setTagline]   = useState("Content Management System");
   const [headerImage, setHeaderImage] = useState<string|null>(null);
@@ -1207,7 +1207,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
   const monthContent = content.filter(c=>c.year===year&&c.month===month);
   const filtered = useMemo(()=> {
     let items = search ? content.filter(c=>[c.title,c.caption].join(" ").toLowerCase().includes(search.toLowerCase())) : monthContent;
-    return items.filter((c:any)=>(filters.pillar==="All"||c.pillar===filters.pillar)&&(filters.platform==="All"||c.platform===filters.platform)&&(filters.pic==="All"||c.pic===filters.pic)&&(filters.status==="All"||c.status===filters.status));
+    return items.filter((c:any)=>(filters.pillar.includes("All")||filters.pillar.includes(c.pillar))&&(filters.platform.includes("All")||filters.platform.includes(c.platform))&&(filters.pic.includes("All")||filters.pic.includes(c.pic))&&(filters.status==="All"||c.status===filters.status));
   },[monthContent,content,search,filters]);
 
   const provLock = useRef(false);
@@ -1289,6 +1289,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
           showArchived={showArchived} setShowArchived={setShowArchived}
           onImportClick={()=>setShowCsv(true)}
           isRestricted={isRestricted}
+          onSettingUpdate={updateWsSettings}
         />
       )}
 

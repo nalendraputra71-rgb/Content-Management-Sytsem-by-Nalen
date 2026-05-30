@@ -282,10 +282,14 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
 
   useEffect(() => {
     if (titleRef.current) {
-      titleRef.current.style.height = 'auto';
-      titleRef.current.style.height = titleRef.current.scrollHeight + 'px';
+      setTimeout(() => {
+        if (titleRef.current) {
+          titleRef.current.style.height = 'auto';
+          titleRef.current.style.height = titleRef.current.scrollHeight + 'px';
+        }
+      }, 0);
     }
-  }, [d.title, modal.open]);
+  }, [d.title, modal.open, isReaderMode]);
 
   const set = (k:string,v:any) => {
     isDirty.current = true;
@@ -477,7 +481,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                           value={d.title} 
                           onChange={(e:any)=>set("title",e.target.value)} 
                           rows={1}
-                          style={{background:"transparent",border:"none",fontSize:28,fontWeight:900, letterSpacing:"-0.75px",color:"white",width:"100%",outline:"none",padding:"4px 0 8px 0", resize: "none", overflow: "hidden", lineHeight: 1.25}} 
+                          style={{background:"transparent",border:"none",fontSize:28,fontWeight:900, letterSpacing:"-0.75px",color:"white",width:"100%",outline:"none",padding:"4px 0 4px 0", resize: "none", overflow: "hidden", lineHeight: 1.25, wordBreak: "break-word", whiteSpace: "pre-wrap"}} 
                           placeholder="Tulis Judul Konten..."/>
                      )}
                   </motion.div>

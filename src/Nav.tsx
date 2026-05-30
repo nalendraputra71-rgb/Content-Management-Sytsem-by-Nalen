@@ -2664,6 +2664,256 @@ export function NavBar({
   );
 }
 
+function MultiSelectFilter({ values, options, onChange, label, style, onUpdateOptions }: any) {
+  const [open, setOpen] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  
+  // Exclude "All" from local editable options, we handle "All" manually.
+  const baseOptions = options.filter((o:any) => (o.id||o.name||o) !== "All");
+  const [localOptions, setLocalOptions] = useState<any[]>(baseOptions);
+
+  useEffect(() => {
+    if (!editMode) {
+      setLocalOptions(baseOptions);
+    }
+  }, [options, editMode]);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (ref.current && !ref.current.contains(event.target as Node)) {
+        setOpen(false);
+        if (editMode && onUpdateOptions) {
+           onUpdateOptions(localOptions);
+           setEditMode(false);
+        }
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [editMode, localOptions, onUpdateOptions]);
+
+  const handleSaveEdit = () => {
+    if (onUpdateOptions) {
+      onUpdateOptions(localOptions);
+    }
+    setEditMode(false);
+  };
+
+  const toggle = (id: string) => {
+    if (id === "All") {
+      onChange(["All"]);
+      return;
+    }
+    let next = values.filter((v:any) => v !== "All");
+    if (next.includes(id)) {
+      next = next.filter((v:any) => v !== id);
+      if (next.length === 0) next = ["All"];
+    } else {
+      next = [...next, id];
+    }
+    onChange(next);
+  };
+
+  const displayLabel = values.includes("All") ? `Semua ${label}` : values.map((v:any) => {
+    const o = options.find((opt:any) => (opt.id||opt.name||opt) === v);
+    return o ? (o.name||o.id||o) : v;
+  }).join(", ");
+
+  return (
+    <div ref={ref} style={{ position: "relative", width: "100%" }}>
+      <button 
+        onClick={() => setOpen(!open)} 
+        className="hover-scale"
+        style={{ 
+          width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, 
+          padding: "8px 12px", borderRadius: 12, 
+          border: "1px solid rgba(44,32,22,0.1)", 
+          background: "white", 
+          fontSize: 13, fontWeight: 700, cursor: "pointer", 
+          color: "#2C2016",
+          ...style
+        }}
+      >
+        <div style={{display: "flex", alignItems: "center", gap: 8, overflow: "hidden"}}>
+           <span style={{overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap"}}>{displayLabel}</span>
+         </div>
+         <ChevronDown size={14} style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'all 0.2s', opacity: 0.6, flexShrink: 0 }} />
+      </button>
+      <AnimatePresence>
+        {open && (
+           <motion.div 
+            initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }} transition={{ duration: 0.15 }}
+            style={{ position: "absolute", top: "100%", left: 0, minWidth: "100%", width: "max-content", maxWidth: "250px", marginTop: 4, background: "white", border: "1px solid rgba(44,32,22,0.1)", borderRadius: 12, padding: 6, zIndex: 9999, boxShadow: "0 10px 40px rgba(0,0,0,0.15)", maxHeight: 300, overflowY: "auto", overflowX: "hidden" }}
+          >
+             {editMode && onUpdateOptions ? (
+              <div 
+                style={{display: "flex", flexDirection: "column", gap: 8, padding: "8px 4px"}}
+                onClick={(e) => e.stopPropagation()}
+                onMouseDown={(e) => e.stopPropagation()}
+              >
+                <div style={{fontSize: 11, fontWeight: 800, color: "#4B5563", textTransform: "uppercase", letterSpacing: 0.8, paddingBottom: 6, borderBottom: "1px solid #F3F4F6", display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4}}>
+                  <span>Edit Opsi</span>
+                  <button 
+                    onClick={(e) => { 
+                      e.stopPropagation(); 
+                      handleSaveEdit(); 
+                    }} 
+                    style={{
+                      background: "rgba(59, 130, 246, 0.1)", 
+                      border: "none", 
+                      padding: "4px 8px",
+                      borderRadius: 6,
+                      cursor: "pointer", 
+                      color: "#2563EB", 
+                      fontSize: 10, 
+                      fontWeight: 700,
+                      transition: "all 0.2s"
+                    }}
+                  >
+                    Selesai
+                  </button>
+                </div>
+                <div style={{display: "flex", flexDirection: "column", gap: 6, maxHeight: "180px", overflowY: "auto", paddingRight: 2}}>
+                  {localOptions.map((o, i) => {
+                    const isStr = typeof o === 'string';
+                    const val = isStr ? o : o.id || o.name || o;
+                    const optLabel = isStr ? o : o.label || o.name || o;
+                    const color = isStr ? null : o.color;
+                    return (
+                      <div key={i} style={{display: "flex", alignItems: "center", gap: 6}} onClick={(e) => e.stopPropagation()}>
+                        {!isStr && (
+                          <div style={{position: "relative", width: 22, height: 22, borderRadius: "50%", border: "1px solid #E5E7EB", overflow: "hidden", cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: color || "#2C2016"}}>
+                            <input 
+                              type="color" 
+                              value={color || "#2C2016"} 
+                              onChange={(e) => {
+                                const newOpts = [...localOptions];
+                                newOpts[i] = { ...newOpts[i], color: e.target.value };
+                                setLocalOptions(newOpts);
+                              }}
+                              style={{position: "absolute", opacity: 0, width: "100%", height: "100%", cursor: "pointer"}}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                            <div style={{width: 10, height: 10, borderRadius: "50%", background: "white", opacity: 0.7, pointerEvents: "none"}} />
+                          </div>
+                        )}
+                        <input 
+                          value={optLabel}
+                          onChange={(e) => {
+                            const newOpts = [...localOptions];
+                            if (isStr) newOpts[i] = e.target.value;
+                            else newOpts[i] = { ...newOpts[i], name: e.target.value, id: e.target.value };
+                            setLocalOptions(newOpts);
+                          }}
+                          placeholder="Nama opsi..."
+                          style={{
+                            flex: 1, 
+                            minWidth: 0, 
+                            fontSize: 12, 
+                            padding: "6px 8px", 
+                            border: "1px solid #E5E7EB", 
+                            borderRadius: 6, 
+                            outline: "none",
+                            background: "#FFFFFF",
+                            color: "#1F2937",
+                            fontWeight: 600,
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleSaveEdit();
+                            }
+                          }}
+                        />
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const newOpts = localOptions.filter((_, idx) => idx !== i);
+                            setLocalOptions(newOpts);
+                          }}
+                          style={{
+                            background: "none", 
+                            border: "none", 
+                            color: "#9C2B4E", 
+                            cursor: "pointer", 
+                            padding: 6, 
+                            display: "flex", 
+                            alignItems: "center", 
+                            justifyContent: "center",
+                            borderRadius: 6,
+                          }}
+                        >
+                          <Trash2 size={13}/>
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const isObj = localOptions.length > 0 && typeof localOptions[0] !== 'string';
+                    const newItem = isObj ? {name: "Opsi Baru", id: "opsi-" + Date.now(), color: "#3B82F6"} : "Opsi Baru";
+                    const newOpts = [...localOptions, newItem];
+                    setLocalOptions(newOpts);
+                  }}
+                  style={{display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "8px", background: "#F3F4F6", border: "none", borderRadius: 8, fontSize: 11, fontWeight: 700, color: "#4B5563", cursor: "pointer", marginTop: 4}}
+                >
+                  <Plus size={12}/> Tambah Opsi
+                </button>
+              </div>
+             ) : (
+               <>
+                 {options.map((opt:any, i:any) => {
+                   const val = typeof opt === 'string' ? opt : opt.id || opt.name;
+                   const name = typeof opt === 'string' ? opt : opt.name || opt.id;
+                   const selected = values.includes(val);
+                   return (
+                    <button
+                      key={i}
+                      onClick={() => toggle(val)}
+                      style={{
+                        width: "100%", textAlign: "left", padding: "8px 12px", background: selected ? "rgba(156,43,78,0.1)" : "transparent", color: selected ? "#9C2B4E" : "#2C2016", border: "none", borderRadius: 6, fontSize: 13, cursor: "pointer", fontWeight: selected ? 800 : 500, display: "flex", alignItems: "center", gap: 8 
+                      }}
+                    >
+                      <div style={{width: 14, height: 14, border: "1px solid", borderColor: selected ? "#9C2B4E" : "rgba(44,32,22,0.3)", borderRadius: 3, display: "flex", alignItems: "center", justifyContent: "center", background: selected ? "#9C2B4E" : "white", flexShrink: 0}}>
+                         {selected && <div style={{width: 8, height: 8, background: "white", borderRadius: 1}} />}
+                      </div>
+                      {name}
+                    </button>
+                   )
+                 })}
+                 {onUpdateOptions && (
+                   <div 
+                     onClick={(e) => { e.stopPropagation(); setEditMode(true); }}
+                     style={{ borderTop: "1px solid rgba(44,32,22,0.1)", marginTop: 4, paddingTop: 4, paddingBottom: 0 }}
+                   >
+                     <div 
+                       style={{ 
+                         padding: "10px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", 
+                         color: "#4B5563",
+                         display: "flex", alignItems: "center", gap: 8,
+                         background: "rgba(243, 244, 246, 0.4)"
+                       }}
+                       onMouseEnter={(e) => e.currentTarget.style.background = "#F3F4F6"}
+                       onMouseLeave={(e) => e.currentTarget.style.background = "rgba(243, 244, 246, 0.4)"}
+                     >
+                       <Pencil size={12}/> Edit Opsi
+                     </div>
+                   </div>
+                 )}
+               </>
+             )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
 export function FilterBar({
   filters,
   setFilters,
@@ -2676,6 +2926,7 @@ export function FilterBar({
   showArchived,
   setShowArchived,
   onImportClick,
+  onSettingUpdate,
 }: any) {
   const set = (k: any, v: any) => setFilters((p: any) => ({ ...p, [k]: v }));
   return (
@@ -2723,15 +2974,14 @@ export function FilterBar({
             >
               {l as string}
             </label>
-            <CustomDropdown
-              value={filters[key as string]}
+            <MultiSelectFilter
+              label={l as string}
+              values={filters[key as string] || ["All"]}
               options={[{ id: "All", name: `Semua ${l}` }, ...(opt as any[])]}
-              onChange={(v) => set(key, v)}
-              style={{
-                padding: "8px 12px",
-                borderRadius: 12,
-                fontSize: 13,
-                background: "white",
+              onChange={(v:any) => set(key, v)}
+              onUpdateOptions={(opts:any) => {
+                const settingKey = key === "pillar" ? "pillars" : key === "platform" ? "platforms" : "pics";
+                if (onSettingUpdate) onSettingUpdate({[settingKey]: opts});
               }}
             />
           </div>
