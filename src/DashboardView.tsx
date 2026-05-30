@@ -12,7 +12,7 @@ import {
   GripVertical, Layout, Edit3, Save, 
   Calendar, RotateCcw, Target, Sparkles,
   ArrowRight, Settings, User as UserIcon, X, Maximize2, Move, Trash2, Pencil,
-  Heart, Bookmark, Activity, Award, Zap
+  Heart, Bookmark, Activity, Award, Zap, ChevronDown, MousePointerClick, Repeat
 } from "lucide-react";
 import { 
   doc, setDoc, updateDoc, onSnapshot, 
@@ -448,27 +448,71 @@ function MetricsRow({ content, config, updateConfig, theme }: any) {
   const totals = useMemo(() => {
     return content.reduce((acc: any, c: any) => {
       const m = c.metrics || {};
-      acc.views += (m.views || 0);
-      acc.likes += (m.likes || 0);
-      acc.comments += (m.comments || 0);
-      acc.shares += (m.shares || 0);
+      const am = c.adsMetrics || {};
+      acc.views += (m.views || 0) + (am.views || 0);
+      acc.likes += (m.likes || 0) + (am.likes || 0);
+      acc.comments += (m.comments || 0) + (am.comments || 0);
+      acc.shares += (m.shares || 0) + (am.shares || 0);
+      acc.reach += (m.reach || 0) + (am.reach || 0);
+      acc.reposts += (m.reposts || 0) + (am.reposts || 0);
+      acc.saves += (m.saves || 0) + (am.saves || 0);
+      acc.clicks += (m.clicks || 0) + (am.clicks || 0);
+      acc.conversions += (m.conversions || 0) + (am.conversions || 0);
       acc.totalPosts += (c.status === "Published" ? 1 : 0);
+      acc.pendingPosts += (c.status !== "Published" ? 1 : 0);
       return acc;
-    }, { views: 0, likes: 0, comments: 0, shares: 0, totalPosts: 0 });
+    }, { views: 0, likes: 0, comments: 0, shares: 0, reach: 0, reposts: 0, saves: 0, clicks: 0, conversions: 0, totalPosts: 0, pendingPosts: 0 });
   }, [content]);
 
-  const engSum = totals.likes + totals.comments + totals.shares;
-  const engRate = totals.views > 0 ? ((engSum / totals.views) * 100) : 0;
+  const engSum = totals.likes + totals.comments + totals.shares + totals.reposts + totals.saves;
+  const engRate = totals.reach > 0 ? ((engSum / totals.reach) * 100) : (totals.views > 0 ? ((engSum / totals.views) * 100) : 0);
+
+  const COMPOSITE_SOURCES: Record<string, any> = {
+    "views": totals.views,
+    "reach": totals.reach,
+    "engSum": engSum,
+    "engRate": engRate,
+    "likes": totals.likes,
+    "comments": totals.comments,
+    "shares": totals.shares,
+    "saves": totals.saves,
+    "reposts": totals.reposts,
+    "clicks": totals.clicks,
+    "conversions": totals.conversions,
+    "totalPosts": totals.totalPosts,
+    "pendingPosts": totals.pendingPosts,
+  };
+
+  const SOURCE_OPTIONS = [
+    { id: "totalPosts", label: "Konten Publik", icon: "CheckCircle2" },
+    { id: "pendingPosts", label: "Konten Draft", icon: "Edit3" },
+    { id: "views", label: "Total Views", icon: "Eye" },
+    { id: "reach", label: "Total Reach", icon: "Users" },
+    { id: "engSum", label: "Total Engagement", icon: "Zap" },
+    { id: "engRate", label: "Engagement Rate (%)", icon: "TrendingUp" },
+    { id: "likes", label: "Total Likes", icon: "Heart" },
+    { id: "comments", label: "Total Comments", icon: "MessageSquare" },
+    { id: "shares", label: "Total Shares", icon: "Share2" },
+    { id: "saves", label: "Total Saves", icon: "Bookmark" },
+    { id: "reposts", label: "Total Reposts", icon: "Repeat" },
+    { id: "clicks", label: "Link Clicks", icon: "MousePointerClick" },
+    { id: "conversions", label: "Total Conversions", icon: "Award" }
+  ];
 
   // Default Standard Metrics Array (used if config.customGoals is empty/undefined)
   const defaultMetrics = [
-    { id: "cm_1", label: "Total Posts", current: totals.totalPosts, target: config.goals?.posts || 20, icon: "BarChart3", isPerc: false },
-    { id: "cm_2", label: "Views", current: totals.views, target: config.goals?.views || 10000, icon: "Eye", isPerc: false },
-    { id: "cm_3", label: "Engagement", current: engSum, target: config.goals?.engagement || 1000, icon: "MessageSquare", isPerc: false },
-    { id: "cm_4", label: "ER Analysis (%)", current: engRate, target: config.goals?.er || 5, isPerc: true, icon: "TrendingUp" },
+    { id: "cm_1", label: "Total Posts", source: "totalPosts", current: totals.totalPosts, target: config.goals?.posts || 20, icon: "BarChart3", isPerc: false },
+    { id: "cm_2", label: "Views", source: "views", current: totals.views, target: config.goals?.views || 10000, icon: "Eye", isPerc: false },
+    { id: "cm_3", label: "Engagement", source: "engSum", current: engSum, target: config.goals?.engagement || 1000, icon: "MessageSquare", isPerc: false },
+    { id: "cm_4", label: "ER Analysis (%)", source: "engRate", current: engRate, target: config.goals?.er || 5, isPerc: true, icon: "TrendingUp" },
   ];
 
-  const displayGoals = config.customGoals && config.customGoals.length > 0 ? config.customGoals : defaultMetrics;
+  const displayGoals = (config.customGoals && config.customGoals.length > 0 ? config.customGoals : defaultMetrics).map((g: any) => {
+    if (g.source && g.source !== "MANUAL" && COMPOSITE_SOURCES[g.source] !== undefined) {
+      return { ...g, current: COMPOSITE_SOURCES[g.source] };
+    }
+    return g;
+  });
 
   const ICONS: Record<string, React.ReactNode> = {
     Target: <Target size={18}/>,
@@ -480,10 +524,18 @@ function MetricsRow({ content, config, updateConfig, theme }: any) {
     CheckCircle2: <CheckCircle2 size={18}/>,
     Sun: <Sun size={18}/>,
     Cloud: <Cloud size={18}/>,
+    Edit3: <Edit3 size={18}/>,
+    Zap: <Zap size={18}/>,
+    Heart: <Heart size={18}/>,
+    Share2: <Share2 size={18}/>,
+    Bookmark: <Bookmark size={18}/>,
+    Repeat: <Repeat size={18}/>,
+    MousePointerClick: <MousePointerClick size={18}/>,
+    Award: <Award size={18}/>,
   };
 
   const addGoal = () => {
-    setCustomGoals([...customGoals, { id: "g_"+Date.now(), label: "New Goal", current: 0, target: 100, icon: "Target", isPerc: false }]);
+    setCustomGoals([...customGoals, { id: "g_"+Date.now(), label: "Total Views (Semua)", source: "views", current: 0, target: 100, icon: "Eye", isPerc: false }]);
   };
 
   const removeGoal = (id: string) => {
@@ -521,12 +573,12 @@ function MetricsRow({ content, config, updateConfig, theme }: any) {
                {ICONS[m.icon] || <Target size={18}/>}
                <span style={{ fontSize: 13, fontWeight: 700, textTransform: "uppercase", opacity: 0.8 }}>{m.label}</span>
              </div>
-             <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap", wordBreak: "break-all" }}>
-                <span style={{ fontSize: 24, fontWeight: 900, color: "white" }}>
-                  {m.isPerc ? Number(m.current).toFixed(2) : Number(m.current).toLocaleString()}
+             <div style={{ display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap", wordBreak: "keep-all" }}>
+                <span style={{ fontSize: "clamp(16px, 2vw, 24px)", fontWeight: 900, color: "white" }}>
+                  {m.isPerc ? Number(m.current).toFixed(2) + "%" : Number(m.current).toLocaleString()}
                 </span>
-                <span style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.5)" }}>
-                  / {m.isPerc ? m.target : Number(m.target).toLocaleString()}
+                <span style={{ fontSize: "clamp(10px, 1.2vw, 13px)", fontWeight: 600, color: "rgba(255,255,255,0.5)" }}>
+                  / {m.isPerc ? m.target + "%" : Number(m.target).toLocaleString()}
                 </span>
              </div>
              <div style={{ marginTop: 12, fontSize: 12, fontWeight: 600, color: m.current >= m.target ? "#A7F3D0" : "#FECACA" }}>
@@ -545,54 +597,57 @@ function MetricsRow({ content, config, updateConfig, theme }: any) {
              
              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                {customGoals.map((g, i) => (
-                 <div key={g.id} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 2fr auto", gap: 16, alignItems: "start", background: "#FAFAFA", padding: 16, borderRadius: 16, border: "1px solid rgba(0,0,0,0.05)" }}>
-                    <div>
-                       <label style={{ fontSize: 10, fontWeight: 800, color: "rgba(0,0,0,0.5)", textTransform: "uppercase", marginBottom: 4, display: "block" }}>Label Goal</label>
-                       <input value={g.label} onChange={e=>updateGoal(g.id, 'label', e.target.value)} style={{ ...I({}), padding:"10px 12px", width: "100%", boxSizing: "border-box" }} />
+                 <div key={g.id} style={{ display: "flex", alignItems: "center", gap: 12, background: "#FAFAFA", padding: 12, borderRadius: 16, border: "1px solid rgba(0,0,0,0.05)", flexWrap: "wrap" }}>
+                    <div style={{ width: 40, height: 40, borderRadius: 12, background: "rgba(0,0,0,0.05)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--theme-primary)", flexShrink: 0 }}>
+                       {ICONS[g.icon] || <Target size={18}/>}
                     </div>
-                    <div>
-                       <label style={{ fontSize: 10, fontWeight: 800, color: "rgba(0,0,0,0.5)", textTransform: "uppercase", marginBottom: 4, display: "block" }}>Current</label>
-                       <input type="text" value={Number(g.current).toLocaleString('id-ID')} onChange={e=>{
-                         const numStr = e.target.value.replace(/\D/g, "");
-                         const num = parseInt(numStr, 10);
-                         updateGoal(g.id, 'current', isNaN(num) ? 0 : num);
-                       }} style={{ ...I({}), padding:"10px 12px", width: "100%", boxSizing: "border-box" }} />
+                    <div style={{ flex: "2 1 200px", position: "relative" }}>
+                        <select 
+                            value={g.source || "views"} 
+                            onChange={e => {
+                                const val = e.target.value;
+                                let updates: any = { source: val };
+                                const selectedOpt = SOURCE_OPTIONS.find(o => o.id === val);
+                                if (selectedOpt) {
+                                  updates.label = selectedOpt.label;
+                                  updates.icon = selectedOpt.icon;
+                                }
+                                updates.current = COMPOSITE_SOURCES[val] || 0;
+                                updates.isPerc = val === "engRate";
+                                setCustomGoals(customGoals.map(cg => cg.id === g.id ? { ...cg, ...updates } : cg));
+                            }}
+                            style={{ ...I({}), padding:"12px 14px", width: "100%", boxSizing: "border-box", fontSize: 13, fontWeight: 700, appearance: "none", height: 44 }}
+                        >
+                            {SOURCE_OPTIONS.map(opt => (
+                                <option key={opt.id} value={opt.id}>{opt.label}</option>
+                            ))}
+                        </select>
+                        <div style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
+                            <ChevronDown size={14} color="rgba(0,0,0,0.4)" />
+                        </div>
                     </div>
-                    <div>
-                       <label style={{ fontSize: 10, fontWeight: 800, color: "rgba(0,0,0,0.5)", textTransform: "uppercase", marginBottom: 4, display: "block" }}>Target</label>
+
+                    <div style={{ flex: "1 1 120px" }}>
+                       <div style={{ padding:"12px 14px", width: "100%", boxSizing: "border-box", fontSize: 13, fontWeight: 700, background: "#E5E7EB", color: "rgba(0,0,0,0.6)", borderRadius: 12, border: "1px solid rgba(0,0,0,0.05)", display: "flex", alignItems: "center", height: 44 }}>
+                         <span style={{ fontSize: 9, fontWeight: 800, marginRight: 6, opacity: 0.5 }}>Current:</span>
+                         {g.isPerc ? Number(g.current).toFixed(2) + "%" : Number(g.current).toLocaleString('id-ID')}
+                       </div>
+                    </div>
+
+                    <div style={{ flex: "1 1 120px", position: "relative" }}>
+                       <div style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", fontSize: 9, fontWeight: 800, opacity: 0.5, pointerEvents: "none" }}>
+                         Target:
+                       </div>
                        <input type="text" value={Number(g.target).toLocaleString('id-ID')} onChange={e=>{
                          const numStr = e.target.value.replace(/\D/g, "");
                          const num = parseInt(numStr, 10);
                          updateGoal(g.id, 'target', isNaN(num) ? 0 : num);
-                       }} style={{ ...I({}), padding:"10px 12px", width: "100%", boxSizing: "border-box" }} />
+                       }} style={{ ...I({}), padding:"12px 14px 12px 52px", width: "100%", boxSizing: "border-box", fontSize: 13, fontWeight: 700, height: 44, color: "var(--theme-primary)" }} />
                     </div>
-                    <div>
-                       <label style={{ fontSize: 10, fontWeight: 800, color: "rgba(0,0,0,0.5)", textTransform: "uppercase", marginBottom: 4, display: "block" }}>Pilih Icon</label>
-                       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", background: "white", padding: 8, borderRadius: 12, border: "1px solid rgba(0,0,0,0.1)" }}>
-                         {Object.keys(ICONS).map(k => (
-                           <button 
-                             key={k} 
-                             onClick={() => updateGoal(g.id, 'icon', k)}
-                             style={{ 
-                               width: 32, height: 32, borderRadius: 8, border: "none", 
-                               background: g.icon === k ? "var(--theme-primary)" : "transparent",
-                               color: g.icon === k ? "white" : "rgba(0,0,0,0.5)",
-                               cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                               transition: "all 0.2s"
-                             }}
-                             title={k}
-                             className="hover-scale"
-                           >
-                              {ICONS[k]}
-                           </button>
-                         ))}
-                       </div>
-                    </div>
-                    <div style={{ marginTop: 22 }}>
-                      <button onClick={() => removeGoal(g.id)} className="hover-scale" style={{ width: 40, height: 40, borderRadius: 12, border: "none", background: "rgba(225,29,72,0.1)", color: "#E11D48", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-                         <X size={18} />
-                      </button>
-                    </div>
+
+                    <button onClick={() => removeGoal(g.id)} className="hover-scale" style={{ width: 44, height: 44, borderRadius: 12, border: "none", background: "rgba(225,29,72,0.1)", color: "#E11D48", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }} title="Hapus Goal">
+                       <Trash2 size={18} />
+                    </button>
                  </div>
                ))}
                <button onClick={addGoal} style={{ padding: 16, borderRadius: 16, border: "2px dashed #DDD", background: "transparent", color: "#666", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
