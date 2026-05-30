@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import { 
   MONTHS, MS, DAYS_S, MK, MC,
-  eng, fmt, fmtD, fmtT, gps, gpc, gss,
+  eng, fmt, fmtD, fmtT, getMin, gps, gpc, gss,
   I, B, CARD, PBadge, SBadge, getDynamicEvents, htmlToPlainText 
 } from "./data";
 
@@ -62,7 +62,7 @@ export function MonthView({year,month,monthContent,filtered,openEdit,openAdd,sho
     return result;
   };
 
-  const getF  = (d:any) => filtered.filter((c:any)=>c.day===d&&(!c.archived || showArchived)).sort((a:any,b:any) => ((a.uploadHour??24)*60+(a.uploadMinute??0)) - ((b.uploadHour??24)*60+(b.uploadMinute??0)));
+  const getF  = (d:any) => filtered.filter((c:any)=>c.day===d&&(!c.archived || showArchived)).sort((a:any,b:any) => getMin(a) - getMin(b));
   const getA  = (d:any) => monthContent.filter((c:any)=>c.day===d&&(!c.archived || showArchived));
   return (
     <div>
@@ -144,7 +144,7 @@ export function WeekView({year,month,content,filtered,openEdit,openAdd,pillars,p
     const d=new Date(ws.getTime()+i*86400000);
     return {date:d,y:d.getFullYear(),mo:d.getMonth()+1,d:d.getDate(),dow:d.getDay()};
   });
-  const getItems = (day:any) => filtered.filter((c:any)=>c.year===day.y&&c.month===day.mo&&c.day===day.d&&(!c.archived || showArchived)).sort((a:any,b:any) => ((a.uploadHour??24)*60+(a.uploadMinute??0)) - ((b.uploadHour??24)*60+(b.uploadMinute??0)));
+  const getItems = (day:any) => filtered.filter((c:any)=>c.year===day.y&&c.month===day.mo&&c.day===day.d&&(!c.archived || showArchived)).sort((a:any,b:any) => getMin(a) - getMin(b));
   return (
     <div>
       <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:16}}>
@@ -179,7 +179,7 @@ export function WeekView({year,month,content,filtered,openEdit,openAdd,pillars,p
                   return (
                     <button key={item.id} className="hover-scale card-hover" onClick={()=>openEdit(item)} style={{background:ps.light,border:"none",borderLeft:`3px solid ${ps.color}`,borderRadius:"6px 12px 12px 6px",padding:"6px 8px",textAlign:"left",cursor:"pointer",width:"100%",marginBottom:4}}>
                       <div style={{fontSize:10,color:ps.color,fontWeight:700,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{item.title}{item.archived ? " 📦" : ""}</div>
-                      <div style={{fontSize:8,color:"rgba(44,32,22,0.5)",marginTop:2,fontWeight:600}}>{fmtT(item.uploadHour,item.uploadMinute)} · {item.platform} {item.isAds?"💰":""}</div>
+                      <div style={{fontSize:8,color:"rgba(44,32,22,0.5)",marginTop:2,fontWeight:600}}>{fmtT(item.uploadHour,item.uploadMinute,item.timeFormat)} · {item.platform} {item.isAds?"💰":""}</div>
                     </button>
                   );
                 })}
@@ -209,7 +209,7 @@ export function BoardView({year,month,content,filtered,openEdit,openAdd,statuses
     <div style={{display:"flex",gap:12,overflowX:"auto",paddingBottom:12,minHeight:400}}>
       {Array.isArray(statuses) && statuses.map((st:any)=>{
         const stName = typeof st === 'string' ? st : (st?.name || st?.id || String(st));
-        const cols=items.filter((c:any)=>c.status===stName).sort((a:any,b:any) => ((a.uploadHour??24)*60+(a.uploadMinute??0)) - ((b.uploadHour??24)*60+(b.uploadMinute??0)));
+        const cols=items.filter((c:any)=>c.status===stName).sort((a:any,b:any) => getMin(a) - getMin(b));
         const ss = (typeof st !== 'string' && st?.color) ? {bg: st.color+"20", color: st.color} : gss(stName);
         return (
           <div key={stName} style={{minWidth:220,flex:"0 0 220px",background:"#F5F0E8",borderRadius:12,padding:10}}>
@@ -251,7 +251,7 @@ export function BoardView({year,month,content,filtered,openEdit,openAdd,statuses
 export function TimelineView({year,month,content,filtered,openEdit,openAdd,pillars,platforms,showHolidays,holidays,showArchived}: any) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const dim = new Date(year,month,0).getDate();
-  const getItems = (d:any) => filtered.filter((c:any)=>c.day===d&&(!c.archived || showArchived)).sort((a:any,b:any) => ((a.uploadHour??24)*60+(a.uploadMinute??0)) - ((b.uploadHour??24)*60+(b.uploadMinute??0)));
+  const getItems = (d:any) => filtered.filter((c:any)=>c.day===d&&(!c.archived || showArchived)).sort((a:any,b:any) => getMin(a) - getMin(b));
   const getEv = (d:any) => showHolidays?holidays[`${year}-${month}-${d}`]:null;
   useEffect(()=>{
     if(scrollRef.current) scrollRef.current.scrollLeft=0;
@@ -278,7 +278,7 @@ export function TimelineView({year,month,content,filtered,openEdit,openAdd,pilla
                     return (
                       <button key={item.id} className="hover-scale card-hover" onClick={()=>openEdit(item)} style={{background:ps.light,border:"none",borderLeft:`3px solid ${ps.color}`,borderRadius:"4px 8px 8px 4px",padding:"4px 6px",textAlign:"left",cursor:"pointer",width:"100%"}}>
                         <div style={{fontSize:9,color:ps.color,fontWeight:700,overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",wordWrap:"break-word"}}>{item.title||"(tanpa judul)"}{item.archived ? " 📦" : ""}</div>
-                        <div style={{fontSize:8,color:"rgba(44,32,22,0.5)",marginTop:2,fontWeight:600}}>{fmtT(item.uploadHour,item.uploadMinute)} {item.isAds?"💰":""}</div>
+                        <div style={{fontSize:8,color:"rgba(44,32,22,0.5)",marginTop:2,fontWeight:600}}>{fmtT(item.uploadHour,item.uploadMinute,item.timeFormat)} {item.isAds?"💰":""}</div>
                       </button>
                     );
                   })}
@@ -397,7 +397,7 @@ export function TableView({filtered,openEdit,archiveItem,unarchiveItem,deleteIte
                     <td style={td}><input type="checkbox" checked={bulkIds.includes(item.id)} onChange={()=>toggleBulk(item.id)}/></td>
                     <td style={td}>
                       <span style={{fontWeight:800,fontSize:16,color:"#2C2016"}}>{item.day}</span>
-                      <div style={{fontSize:10,color:"rgba(44,32,22,0.4)",fontWeight:600}}>{fmtT(item.uploadHour,item.uploadMinute)}</div>
+                      <div style={{fontSize:10,color:"rgba(44,32,22,0.4)",fontWeight:600}}>{fmtT(item.uploadHour,item.uploadMinute,item.timeFormat)}</div>
                     </td>
                     <td style={td}><PBadge name={item.platform} platforms={platforms}/></td>
                     <td style={td}><span className="pill-tag" style={{background:ps.light,color:ps.color}}>{item.pillar}</span></td>

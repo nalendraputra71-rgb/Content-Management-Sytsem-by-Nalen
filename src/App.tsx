@@ -30,6 +30,7 @@ import { DashboardView } from "./DashboardView";
 import { motion, AnimatePresence } from "motion/react";
 
 import { LandingPage } from "./LandingPage";
+import { Calendar } from "lucide-react";
 
 export function cleanAndFormatHolidayText(text: string): string {
   if (!text) return "";
@@ -493,6 +494,82 @@ function CMSLayout({ children }: any) {
   );
 }
 
+function QuickAddEventModal({ workspace, onClose, onSaveSettings }: any) {
+  const [name, setName] = useState("");
+  const [start, setStart] = useState("");
+  const [end, setEnd] = useState("");
+  const [color, setColor] = useState("#C4622D");
+  const [monthly, setMonthly] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSave = async () => {
+    if (!name.trim() || !start || !end) {
+      setError("Harap isi nama event, tanggal mulai, dan tanggal selesai.");
+      return;
+    }
+    setError("");
+    const newEv = {
+      id: gid(),
+      name: name.trim(),
+      start,
+      end,
+      color,
+      monthly
+    };
+    const currentEvents = workspace?.settings?.customEvents || [];
+    const settingsUpdate = {
+      customEvents: [...currentEvents, newEv]
+    };
+    await onSaveSettings(settingsUpdate);
+    onClose();
+  };
+
+  return (
+    <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)" }} />
+      <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0, transition: { duration: 0.15 } }} style={{ position: "relative", zIndex: 1, background: "#FAFAF8", width: "90%", maxWidth: 440, borderRadius: 24, boxShadow: "0 24px 64px rgba(44,32,22,0.3)", overflow: "hidden", display: "flex", flexDirection: "column", maxHeight: "90vh" }}>
+        <div style={{ padding: "20px 24px", borderBottom: "1px solid rgba(0,0,0,0.05)", background: "white", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#2C2016", display: "flex", alignItems: "center", gap: 8 }}><Calendar size={20} /> Tambah Event Kustom</h3>
+          <button onClick={onClose} style={{ background: "rgba(44,32,22,0.05)", border: "none", width: 32, height: 32, borderRadius: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }} className="hover-scale">✕</button>
+        </div>
+        <div style={{ padding: 24, overflowY: "auto", display: "flex", flexDirection: "column", gap: 16 }}>
+          {error && <div style={{ fontSize: 13, background: "#FDF5F8", color: "#9C2B4E", padding: "10px 14px", borderRadius: 10, fontWeight: 600 }}>{error}</div>}
+          <div>
+            <label style={{ fontSize: 12, fontWeight: 700, marginBottom: 6, display: "block", color: "var(--theme-primary)" }}>Nama Event *</label>
+            <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Contoh: Launching Produk" style={I({ fontSize: 14 })} />
+          </div>
+          <div style={{ display: "flex", gap: 12 }}>
+            <div style={{ flex: 1 }}>
+              <label style={{ fontSize: 12, fontWeight: 700, marginBottom: 6, display: "block", color: "var(--theme-primary)" }}>Start Date *</label>
+              <input type="date" value={start} onChange={(e) => setStart(e.target.value)} style={I({ fontSize: 14, padding: "10px 12px" })} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={{ fontSize: 12, fontWeight: 700, marginBottom: 6, display: "block", color: "var(--theme-primary)" }}>End Date *</label>
+              <input type="date" value={end} onChange={(e) => setEnd(e.target.value)} style={I({ fontSize: 14, padding: "10px 12px" })} />
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 700, marginBottom: 6, display: "block", color: "var(--theme-primary)" }}>Warna Event</label>
+              <div style={{ width: 44, height: 44, borderRadius: 12, overflow: "hidden", border: "2px solid rgba(0,0,0,0.05)", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", flexShrink: 0 }}>
+                <input type="color" value={color} onChange={(e) => setColor(e.target.value)} style={{ width: "200%", height: "200%", transform: "translate(-25%, -25%)", border: "none", cursor: "pointer", background: "none" }} />
+              </div>
+            </div>
+            <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, cursor: "pointer", color: "#2C2016", fontWeight: 600, marginTop: 18 }}>
+              <input type="checkbox" checked={monthly} onChange={e => setMonthly(e.target.checked)} style={{ width: 18, height: 18, accentColor: "var(--theme-primary)" }} />
+              Ulangi Setiap Bulan
+            </label>
+          </div>
+        </div>
+        <div style={{ padding: "16px 24px", background: "white", borderTop: "1px solid rgba(0,0,0,0.05)", display: "flex", justifyContent: "flex-end", gap: 10 }}>
+          <button onClick={onClose} style={{ ...B(false), fontSize: 13, padding: "10px 20px", height: "auto", borderRadius: 12 }}>Batal</button>
+          <button onClick={handleSave} style={{ ...B(true, "var(--theme-primary)"), fontSize: 13, padding: "10px 24px", height: "auto", borderRadius: 12, color: "white", border: "none", fontWeight: 800 }}>Simpan Event</button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
 function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
   const [tab, setTab]           = useState("dashboard");
   const [workspace, setWorkspace] = useState<any>(null);
@@ -503,6 +580,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
   const [year, setYear]         = useState(new Date().getFullYear());
   const [month, setMonth]       = useState(new Date().getMonth() + 1);
   const [modal, setModal]       = useState<any>(null);
+  const [showEventModal, setShowEventModal] = useState(false);
   const [saveMsg, setSaveMsg]   = useState("");
   const [search, setSearch]     = useState("");
   const [confirmAction, setConfirmAction] = useState<{title:string, msg:string, onConfirm:()=>void}|null>(null);
@@ -1198,7 +1276,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
       {["month", "board", "timeline", "table"].includes(tab) && (
         <NavBar 
           tab={tab} setTab={setTab} year={year} setYear={setYear} month={month} setMonth={setMonth} 
-          onOpenAdd={()=>openAdd(1)} isRestricted={isRestricted}
+          onOpenAdd={()=>openAdd(1)} onOpenAddEvent={()=>setShowEventModal(true)} isRestricted={isRestricted}
           search={search} onSearch={setSearch} onShare={()=>setShareModal(true)} sidebarOpen={sidebarOpen}
         />
       )}
@@ -1259,6 +1337,9 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
       </AnimatePresence>
       <AnimatePresence>
         {showCsv && <CsvModal key="csv" onClose={()=>setShowCsv(false)} onImport={handleBulkImport} workspaceId={workspace?.id} pillars={pillars} platforms={platforms} pics={pics} statuses={statuses} existingContent={content} />}
+      </AnimatePresence>
+      <AnimatePresence>
+        {showEventModal && <QuickAddEventModal key="quckAddEvent" workspace={workspace} onClose={() => setShowEventModal(false)} onSaveSettings={updateWsSettings} />}
       </AnimatePresence>
       <AnimatePresence>
         {exportModal && <motion.div key="export" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.8)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center"}}>

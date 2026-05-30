@@ -33,6 +33,27 @@ import {
   I, B, CARD, PBadge, htmlToPlainText 
 } from "./data";
 
+const SocialThumbnail = ({ url, fallback }: { url: string, fallback: any }) => {
+  const [img, setImg] = useState<string|null>(null);
+  useEffect(() => {
+    if(!url) return;
+    let isMounted = true;
+    fetch(`https://api.microlink.io/?url=${encodeURIComponent(url)}`)
+      .then(r=>r.json())
+      .then(d=>{
+        if(isMounted && d?.data?.image?.url) {
+          setImg(d.data.image.url);
+        }
+      })
+      .catch(e=>console.log("no thumb"));
+    return () => { isMounted = false };
+  }, [url]);
+
+  if(img) return <img src={img} alt="thumb" style={{width: "100%", height: "100%", objectFit: "cover"}} />;
+  return fallback;
+};
+
+
 function CustomDropdown({ value, options = [], onChange, style }: { value: string, options?: any[], onChange: (val: string) => void, style?: any }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -94,6 +115,7 @@ export function AnalyticsView({content,pillars,platforms,pics,statuses,openEdit,
   const [activeMetrics,setActiveMetrics] = useState(["reach","likes","comments"]);
   const [topSort,setTopSort] = useState("engagement");
   const [topPlatform,setTopPlatform] = useState("All");
+  const [platformMetric, setPlatformMetric] = useState("engagement");
   
   const [aiInsight, setAiInsight] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
@@ -191,6 +213,14 @@ export function AnalyticsView({content,pillars,platforms,pics,statuses,openEdit,
     if(pctStr.startsWith("-")) return "#E57373";
     return "rgba(44,32,22,0.4)";
   };
+
+  const getPeriodText = () => {
+    if(dateFilt==="tm") return "vs last month";
+    if(dateFilt==="3m" || dateFilt==="6m") return "vs prev period";
+    if(dateFilt==="1y") return "vs last year";
+    if(dateFilt==="custom") return "vs prev period";
+    return "";
+  }
 
   const pTotal = calcPct(total, prevTotal);
   const pV = calcPct(tV, prevTV);
@@ -311,15 +341,17 @@ export function AnalyticsView({content,pillars,platforms,pics,statuses,openEdit,
   const platformData = useMemo(() => {
     const pmap: any = {};
     base.forEach((c:any)=>{
-      if(!pmap[c.platform]) pmap[c.platform] = {name:c.platform, count:0};
-      pmap[c.platform].count += 1;
+      if(!pmap[c.platform]) pmap[c.platform] = {name:c.platform, engagement:0, views:0, reach:0};
+      pmap[c.platform].engagement += getEng(c);
+      pmap[c.platform].views += getV(c);
+      pmap[c.platform].reach += getR(c);
     });
     return platforms.map((p:any) => ({
       name: p.name,
-      count: pmap[p.name]?.count || 0,
+      value: pmap[p.name] ? pmap[p.name][platformMetric] : 0,
       color: p.color
-    })).sort((a:any, b:any) => b.count - a.count);
-  }, [base, platforms]);
+    })).sort((a:any, b:any) => b.value - a.value);
+  }, [base, platforms, platformMetric]);
   const picData = useMemo(() => {
     const pmap: any = {};
     base.forEach((c:any)=>{
@@ -404,6 +436,15 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
         return (
           <div key={item.id} style={{display:"flex",alignItems:"flex-start",gap:10,padding:"10px 12px",background:i===0&&rank===1?"rgba(var(--theme-primary-rgb),0.1)":"#FAFAF8",border:"1px solid rgba(44,32,22,0.06)",borderRadius:8,marginBottom:6}}>
             {rank===1 && <span style={{fontSize:18,fontWeight:700,color:i===0?"var(--theme-primary)":i===1?"#A67C1C":"rgba(44,32,22,0.2)",width:24,flexShrink:0}}>#{i+1}</span>}
+            <div style={{width: 40, height: 40, borderRadius: 6, background: "rgba(44,32,22,0.05)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden", border: "1px solid rgba(44,32,22,0.1)"}}>
+              {item.referenceImage ? (
+                <img src={item.referenceImage} alt="thumb" style={{width: "100%", height: "100%", objectFit: "cover"}} />
+              ) : item.linkSosmed ? (
+                <SocialThumbnail url={item.linkSosmed} fallback={<div style={{fontSize: 20}}>{item.platform?.toLowerCase()?.includes('instagram') ? '📸' : item.platform?.toLowerCase()?.includes('tiktok') ? '🎵' : '🔗'}</div>} />
+              ) : (
+                <div style={{fontSize: 10, color: "rgba(44,32,22,0.4)", textAlign: "center", lineHeight: 1.1, display: "flex", alignItems: "center", justifyContent: "center", height: "100%"}}>no<br/>image</div>
+              )}
+            </div>
             <div style={{flex:1,minWidth:0}}>
               <div style={{fontSize:13,fontWeight:600,display:"flex",alignItems:"center",gap:6}}>
                 <span onClick={()=>openEdit(item)} style={{cursor:"pointer", color:"inherit", borderBottom:"1px dashed rgba(0,0,0,0.3)"}} title="Buka Detail Brief">{item.title||"(Tanpa judul)"}</span>
@@ -428,13 +469,20 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
   );
 
   const MCard = ({label,val,sub,color="var(--theme-primary)", pctStr}: any) => (
-    <div style={CARD({flex:1,minWidth:160,display:"flex",flexDirection:"column"})}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8,gap:8,flexWrap:"wrap"}}>
-        <div style={{fontSize:10,fontWeight:600,letterSpacing:1.2,textTransform:"uppercase",color:"rgba(44,32,22,0.5)"}}>{label}</div>
-        {pctStr && <div style={{fontSize:11,fontWeight:700,color:pctColor(pctStr),background:pctColor(pctStr)+"1A",padding:"3px 8px",borderRadius:6,whiteSpace:"nowrap"}}>{pctStr}</div>}
+    <div style={CARD({flex:1,minWidth:220,display:"flex",flexDirection:"column",justifyContent:"space-between",height:"100%"})}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16,gap:12,flexWrap:"nowrap"}}>
+        <div style={{fontSize:10,fontWeight:600,letterSpacing:1.2,textTransform:"uppercase",color:"rgba(44,32,22,0.5)",lineHeight:1.4}}>{label}</div>
+        {pctStr && (
+          <div style={{display: "flex", flexDirection: "column", alignItems: "flex-end", flexShrink: 0}}>
+            <div style={{fontSize:11,fontWeight:700,color:pctColor(pctStr),background:pctColor(pctStr)+"1A",padding:"3px 8px",borderRadius:6,whiteSpace:"nowrap"}}>{pctStr}</div>
+            {getPeriodText() && <div style={{fontSize: 9, color: "rgba(44,32,22,0.4)", marginTop: 4, fontWeight: 500, whiteSpace:"nowrap"}}>{getPeriodText()}</div>}
+          </div>
+        )}
       </div>
-      <div style={{fontSize:28,fontWeight:800,color,lineHeight:1.1,marginTop:"auto"}}>{val}</div>
-      {sub&&<div style={{fontSize:11,color:"rgba(44,32,22,0.5)",marginTop:6,fontWeight:500}}>{sub}</div>}
+      <div>
+        <div style={{fontSize:28,fontWeight:800,color,lineHeight:1.1}}>{val}</div>
+        {sub&&<div style={{fontSize:11,color:"rgba(44,32,22,0.5)",marginTop:6,fontWeight:500}}>{sub}</div>}
+      </div>
     </div>
   );
 
@@ -471,6 +519,16 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
           <MCard label="Ad Clicks" val={fmt(tClicks)} color="#9C2B4E" pctStr={calcPct(tClicks, prevTClicks)}/>
           <MCard label="Ad Conversions" val={fmt(tConv)} color="#9C2B4E" pctStr={calcPct(tConv, prevTConv)}/>
         </>}
+      </div>
+
+      <div style={{...CARD(), border: "1px solid var(--theme-primary)", background: "rgba(var(--theme-primary-rgb), 0.02)", display: "flex", flexDirection: "column", gap: 6, padding: "16px 20px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ fontSize: 16 }}>🤖</span>
+          <h4 style={{ fontSize: 14, fontWeight: 700, margin: 0, color: "var(--theme-primary)" }}>AI Insights</h4>
+        </div>
+        <p style={{ fontSize: 13, color: "rgba(44,32,22,0.8)", margin: 0, lineHeight: 1.5, fontWeight: 500 }}>
+          Your TikTok interaction increased by 15% this week. Keep up your short video style, and try to upload more on Thursdays at 18:00.
+        </p>
       </div>
 
       {/* Restricted Overlay Logic applies downward */}
@@ -567,14 +625,25 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
       {/* Heatmap & PIC Workload */}
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))",gap:24, marginTop: 12}}>
         <div style={CARD()}>
-          <h4 style={{fontSize:16,fontWeight:700,margin:"0 0 16px", color:"var(--theme-primary)"}}>📈 Konten per Platform</h4>
+          <div style={{display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16}}>
+            <h4 style={{fontSize:16,fontWeight:700,margin:0, color:"var(--theme-primary)"}}>📈 Konten per Platform</h4>
+            <select 
+              value={platformMetric} 
+              onChange={(e) => setPlatformMetric(e.target.value)} 
+              style={{ fontSize: 11, padding: "4px 8px", borderRadius: 6, border: "1px solid rgba(44,32,22,0.1)", background: "white", outline: "none", cursor: "pointer" }}
+            >
+              <option value="engagement">Engagement</option>
+              <option value="views">Views</option>
+              <option value="reach">Reach</option>
+            </select>
+          </div>
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={platformData} margin={{top:10,right:10,left:-20,bottom:0}}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)"/>
               <XAxis dataKey="name" tick={{fontSize:10,fill:"rgba(44,32,22,0.5)"}} tickLine={false} axisLine={false}/>
-              <YAxis tick={{fontSize:10,fill:"rgba(44,32,22,0.5)"}} tickLine={false} axisLine={false}/>
-              <Tooltip cursor={{fill:"rgba(0,0,0,0.05)"}} contentStyle={{borderRadius:8,fontSize:12,border:"1px solid rgba(0,0,0,0.1)",boxShadow:"0 4px 12px rgba(0,0,0,0.05)"}} itemStyle={{color:"#2C2016",fontWeight:600}} labelStyle={{color:"rgba(44,32,22,0.5)",marginBottom:4}}/>
-              <Bar dataKey="count" radius={[4,4,0,0]}>
+              <YAxis tick={{fontSize:10,fill:"rgba(44,32,22,0.5)"}} tickLine={false} axisLine={false} tickFormatter={fmt}/>
+              <Tooltip cursor={{fill:"rgba(0,0,0,0.05)"}} contentStyle={{borderRadius:8,fontSize:12,border:"1px solid rgba(0,0,0,0.1)",boxShadow:"0 4px 12px rgba(0,0,0,0.05)"}} itemStyle={{color:"#2C2016",fontWeight:600}} labelStyle={{color:"rgba(44,32,22,0.5)",marginBottom:4}} formatter={(v:any)=>[fmt(v)]}/>
+              <Bar dataKey="value" radius={[4,4,0,0]}>
                 {platformData.map((entry:any, index:number) => <Cell key={`cell-${index}`} fill={entry.color || "var(--theme-primary)"} />)}
               </Bar>
             </BarChart>

@@ -150,7 +150,7 @@ service cloud.firestore {
             'pillar', 'platform', 'pic', 'isAds', 'uploadHour', 
             'uploadMinute', 'day', 'month', 'year', 'briefCopywriting',
             'objective', 'referenceText', 'referenceLink', 'referenceLinks', 'referenceImage', 'customFields',
-            'linkAsset', 'linkUpload', 'archived', 'updatedAt', 'metricsUpdatedAt',
+            'linkAsset', 'linkUpload', 'linkSosmed', 'archived', 'updatedAt', 'metricsUpdatedAt',
             'id', 'workspaceId', 'userId'
           ]))
         );

@@ -2425,16 +2425,27 @@ export function NavBar({
   month,
   setMonth,
   onOpenAdd,
+  onOpenAddEvent,
   search,
   onSearch,
   onShare,
   sidebarOpen,
 }: any) {
   const [localSearchOpen, setLocalSearchOpen] = useState(!sidebarOpen);
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const addRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setLocalSearchOpen(!sidebarOpen);
   }, [sidebarOpen]);
+
+  useEffect(() => {
+    const clickOutside = (e: any) => {
+      if(addRef.current && !addRef.current.contains(e.target)) setIsAddOpen(false);
+    };
+    window.addEventListener("mousedown", clickOutside);
+    return () => window.removeEventListener("mousedown", clickOutside);
+  }, []);
 
   return (
     <div
@@ -2502,29 +2513,63 @@ export function NavBar({
             />
           </div>
         </div>
-        <button
-          className="hover-scale btn-hover shadow-lg"
-          onClick={onOpenAdd}
-          style={{
-            ...B(true, "var(--theme-primary)"),
-            height: 44,
-            padding: "0 24px",
-            borderRadius: 22,
-            fontSize: 13,
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            border: "none",
-            color: "white",
-            fontWeight: 700,
-            marginLeft: 8,
-            boxShadow: "0 6px 16px rgba(156,43,78,0.2)",
-            flexShrink: 0,
-            marginBottom: 2,
-          }}
-        >
-          <Plus size={20} /> Konten Baru
-        </button>
+        <motion.div ref={addRef} layout style={{ position: "relative", marginLeft: 8, flexShrink: 0, marginBottom: 2, height: 44, display: "flex", alignItems: "center", borderRadius: 22, background: "var(--theme-primary)", boxShadow: "0 6px 16px rgba(156,43,78,0.2)", overflow: "hidden" }}>
+          <AnimatePresence mode="popLayout" initial={false}>
+            {!isAddOpen ? (
+              <motion.button
+                key="btn-tambah"
+                className="hover-scale btn-hover"
+                onClick={() => setIsAddOpen(true)}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.15 }}
+                style={{
+                  ...B(true, "transparent"),
+                  height: 44,
+                  padding: "0 24px",
+                  borderRadius: 22,
+                  fontSize: 13,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 10,
+                  border: "none",
+                  color: "white",
+                  fontWeight: 700,
+                  whiteSpace: "nowrap"
+                }}
+              >
+                <Plus size={20} /> <span style={{ whiteSpace: "nowrap" }}>Tambah</span>
+              </motion.button>
+            ) : (
+              <motion.div
+                key="btn-split"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.15 }}
+                style={{ display: "flex", gap: 6, alignItems: "center", height: 44, padding: "4px 8px" }}
+              >
+                <button
+                  className="hover-scale"
+                  onClick={() => { onOpenAdd(); setIsAddOpen(false); }}
+                  style={{...B(false), background: "transparent", color: "white", border: "none", height: "100%", padding: "0 12px", borderRadius: 18, fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap"}}
+                >
+                  <Edit2 size={16} /> <span style={{ whiteSpace: "nowrap" }}>Konten</span>
+                </button>
+                <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.3)", flexShrink: 0 }} />
+                <button
+                  className="hover-scale"
+                  onClick={() => { onOpenAddEvent(); setIsAddOpen(false); }}
+                  style={{...B(false), background: "transparent", color: "white", border: "none", height: "100%", padding: "0 12px", borderRadius: 18, fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap"}}
+                >
+                  <Calendar size={16} /> <span style={{ whiteSpace: "nowrap" }}>Event</span>
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
       </div>
 
       <div
@@ -2587,7 +2632,6 @@ export function NavBar({
                   color: "#2C2016",
                   fontSize: 13,
                 }}
-                className="focus-ring"
                 value={search}
                 onChange={(e: any) => onSearch && onSearch(e.target.value)}
                 placeholder="Cari konten..."

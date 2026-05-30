@@ -336,7 +336,22 @@ export const gid  = () => `${Date.now()}-${Math.random().toString(36).slice(2,7)
 export const eng  = (m: any)  => m ? (m.likes||0)+(m.comments||0)+(m.shares||0)+(m.reposts||0)+(m.saves||0) : 0;
 export const fmt  = (n: any)  => n>=1e6?`${(n/1e6).toFixed(1)}M`:n>=1000?`${(n/1000).toFixed(1)}K`:String(n||0);
 export const fmtD = (y: any,mo: any,d: any) => { const w=new Date(y,mo-1,d).getDay(); return `${DAYS_ID[w]}, ${String(d).padStart(2,"0")}/${String(mo).padStart(2,"0")}/${y}`; };
-export const fmtT = (h: any,m: any) => `${String(h||9).padStart(2,"0")}:${String(m||0).padStart(2,"0")}`;
+export const fmtT = (h: any, m: any, format?: string) => {
+  const hh = String(h !== undefined && h !== null ? h : 9).padStart(2,"0");
+  const mm = String(m !== undefined && m !== null ? m : 0).padStart(2,"0");
+  if (format === 'AM' || format === 'PM') {
+    return `${hh}:${mm} ${format}`;
+  }
+  return `${hh}:${mm}`;
+};
+
+export const getMin = (item: any) => {
+  let h = item.uploadHour !== undefined && item.uploadHour !== null ? Number(item.uploadHour) : 24;
+  let m = item.uploadMinute !== undefined && item.uploadMinute !== null ? Number(item.uploadMinute) : 0;
+  if (item.timeFormat === 'PM' && h < 12) h += 12;
+  if (item.timeFormat === 'AM' && h === 12) h = 0;
+  return h * 60 + m;
+};
 
 /**
  * Returns dynamic promo events based on date patterns:
@@ -364,7 +379,7 @@ export const emptyItem = (y:any,mo:any,d:any,pillars:any,platforms:any,pics:any,
   title:"",caption:"",briefCopywriting:"",objective:"",
   referenceText:"",referenceLinks:[],referenceImage:"",
   customFields:[],
-  linkAsset:"",linkUpload:"",
+  linkAsset:"",linkSosmed:"",
   isAds:false,archived:false,metricsUpdatedAt:null,
   metrics:{views:0,reach:0,likes:0,comments:0,shares:0,reposts:0,saves:0},
   adsMetrics:{views:0,reach:0,likes:0,comments:0,shares:0,reposts:0,saves:0,clicks:0,conversions:0}

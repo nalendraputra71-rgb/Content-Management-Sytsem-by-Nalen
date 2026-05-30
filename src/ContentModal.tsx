@@ -43,7 +43,20 @@ import {
   Repeat, 
   Bookmark, 
   MousePointer, 
-  Target 
+  Target,
+  Sparkles,
+  Edit2,
+  Calendar,
+  FileText,
+  PenTool,
+  Link,
+  Paperclip,
+  Plus,
+  BarChart2,
+  FolderOpen,
+  ExternalLink,
+  Clock,
+  BookOpen
 } from "lucide-react";
 
 const getMetricIcon = (k: string, color?: string, size = 14) => {
@@ -87,6 +100,21 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
   const [copiedBrief, setCopiedBrief] = useState(false);
   const [copiedCaption, setCopiedCaption] = useState(false);
 
+  const dRef = useRef(d);
+  useEffect(() => {
+    dRef.current = d;
+  }, [d]);
+
+  useEffect(() => {
+    if (modal.data && modal.data.id && !d.id) {
+      setD((p:any) => {
+        const next = { ...p, id: modal.data.id };
+        dRef.current = next;
+        return next;
+      });
+    }
+  }, [modal.data, d.id]);
+
   const CheckIcon = () => (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{stroke: "currentColor", strokeWidth: 3, strokeLinecap: "round", strokeLinejoin: "round", marginRight: "4px"}}>
       <motion.path 
@@ -107,7 +135,11 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
       return;
     }
     const val = Number(valStr);
-    if (isNaN(val) || val < 0 || val > 23) {
+    const timeFormat = d.timeFormat || '24H';
+    const minHour = timeFormat === '24H' ? 0 : 1;
+    const maxHour = timeFormat === '24H' ? 23 : 12;
+    
+    if (isNaN(val) || val < minHour || val > maxHour) {
       set("uploadHour", ""); // auto delete
       setHourError(true);
       setTimeout(() => {
@@ -117,6 +149,25 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
       set("uploadHour", val);
       setHourError(false);
     }
+  };
+
+  const handleFormatChange = (e: any) => {
+    isDirty.current = true;
+    const newFormat = e.target.value;
+    const oldFormat = d.timeFormat || '24H';
+    let currentHour = Number(d.uploadHour);
+
+    if (!isNaN(currentHour) && d.uploadHour !== "" && d.uploadHour !== undefined && d.uploadHour !== null) {
+      if (oldFormat === '24H' && newFormat !== '24H') {
+         if (currentHour === 0) currentHour = 12;
+         else if (currentHour > 12) currentHour = currentHour - 12;
+      } else if (oldFormat !== '24H' && newFormat === '24H') {
+         if (oldFormat === 'PM' && currentHour < 12) currentHour += 12;
+         if (oldFormat === 'AM' && currentHour === 12) currentHour = 0;
+      }
+      set("uploadHour", currentHour);
+    }
+    set('timeFormat', newFormat);
   };
 
   const handleMinuteChange = (e: any) => {
@@ -145,10 +196,11 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(async () => {
-      if (!d.title || !String(d.title).trim()) return;
+      const currentD = dRef.current;
+      if (!currentD.title || !String(currentD.title).trim()) return;
       setIsSaving(true);
       try {
-        await onSave(d, false);
+        await onSave(currentD, false);
       } catch (e) {
         console.error("Autosave failed", e);
       }
@@ -237,24 +289,29 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
 
   const set = (k:string,v:any) => {
     isDirty.current = true;
-    setD((p:any)=>({...p,[k]:v}));
+    const next = { ...dRef.current, [k]: v };
+    dRef.current = next;
+    setD(next);
   };
   const setM = (k:string,v:any, isAds=false) => {
     isDirty.current = true;
     const ts = new Date().toLocaleString("id-ID",{dateStyle:"medium",timeStyle:"short"});
     const val = v === "" ? "" : (Number(v) || 0);
+    let next;
     if(isAds) {
-      setD((p:any)=>({...p,adsMetrics:{...p.adsMetrics,[k]:val},metricsUpdatedAt:ts}));
+      next = {...dRef.current,adsMetrics:{...dRef.current.adsMetrics,[k]:val},metricsUpdatedAt:ts};
     } else {
-      setD((p:any)=>({...p,metrics:{...p.metrics,[k]:val},metricsUpdatedAt:ts}));
+      next = {...dRef.current,metrics:{...dRef.current.metrics,[k]:val},metricsUpdatedAt:ts};
     }
+    dRef.current = next;
+    setD(next);
   };
 
   const handleClose = async () => {
     if (isDirty.current) {
       if (debounceRef.current) clearTimeout(debounceRef.current);
       try {
-        await onSave(d, false);
+        await onSave(dRef.current, false);
       } catch (e) {
         console.error("Autosave failed on close:", e);
       }
@@ -264,19 +321,25 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
 
   const addCustomField = () => {
     isDirty.current = true;
-    setD((p:any)=>({...p, customFields: [...p.customFields, {key:"", value:""}]}));
+    const next = {...dRef.current, customFields: [...dRef.current.customFields, {key:"", value:""}]};
+    dRef.current = next;
+    setD(next);
   };
   const updateCustomField = (index:number, k:string, v:any) => {
     isDirty.current = true;
-    const arr = [...d.customFields];
+    const arr = [...dRef.current.customFields];
     arr[index] = {...arr[index], [k]:v};
-    set("customFields", arr);
+    const next = {...dRef.current, customFields: arr};
+    dRef.current = next;
+    setD(next);
   };
   const removeCustomField = (index:number) => {
     isDirty.current = true;
-    const arr = [...d.customFields];
+    const arr = [...dRef.current.customFields];
     arr.splice(index, 1);
-    set("customFields", arr);
+    const next = {...dRef.current, customFields: arr};
+    dRef.current = next;
+    setD(next);
   };
 
   const analyzeContent = async () => {
@@ -395,7 +458,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
               <div style={{display:"flex",flexDirection:"column",alignItems:"flex-start",gap:8, width: "100%"}}>
                   <div style={{display:"flex", justifyContent:"space-between", width:"100%", alignItems:"center", paddingRight: "40px"}}>
                      <span style={{fontSize:10, fontWeight:800, textTransform:"uppercase", letterSpacing:1.5, color:"rgba(255,255,255,0.5)"}}>
-                        {isNew?"✨ Konten Baru":"✏️ Detail Konten"}
+                        {isNew?<><Sparkles size={12}/> Konten Baru</>:<><Edit2 size={12}/> Detail Konten</>}
                      </span>
                   </div>
                   
@@ -432,7 +495,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                     {isReaderMode ? (
                       <>
                         <span style={{fontSize: "12px", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 5}}>
-                          📅 {(() => {
+                          <Calendar size={12} /> {(() => {
                             const daysIndo = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
                             const monthsIndo = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
                             if (d.day && d.month && d.year) {
@@ -448,14 +511,14 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                         </span>
                         <div style={{height: "10px", width: "1px", background: "rgba(255,255,255,0.3)"}} />
                         <span style={{fontSize: "12px", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 5}}>
-                          🕒 {d.uploadHour !== undefined && d.uploadHour !== null ? String(d.uploadHour).padStart(2, '0') : "00"}:{d.uploadMinute !== undefined && d.uploadMinute !== null ? String(d.uploadMinute).padStart(2, '0') : "00"} {d.timeFormat || '24H'}
+                          <Clock size={12} /> {d.uploadHour !== undefined && d.uploadHour !== null ? String(d.uploadHour).padStart(2, '0') : "00"}:{d.uploadMinute !== undefined && d.uploadMinute !== null ? String(d.uploadMinute).padStart(2, '0') : "00"} {d.timeFormat || '24H'}
                         </span>
                       </>
                     ) : (
                       <div style={{display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap", width: "100%"}}>
                         {/* Compact Edit Date */}
                         <div style={{display: "flex", alignItems: "center", gap: "6px", background: "rgba(255,255,255,0.15)", padding: "4px 8px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.1)"}}>
-                          <span style={{fontSize: "12px", display: "flex", alignItems: "center"}}>📅</span>
+                          <Calendar size={12}/>
                           <input 
                             type="date" 
                             value={`${d.year || new Date().getFullYear()}-${String(d.month || new Date().getMonth()+1).padStart(2, '0')}-${String(d.day || new Date().getDate()).padStart(2, '0')}`} 
@@ -485,12 +548,12 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
 
                         {/* Compact Edit Time */}
                         <div style={{display: "flex", alignItems: "center", gap: "4px", background: "rgba(255,255,255,0.15)", padding: "4px 8px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.1)"}}>
-                          <span style={{fontSize: "12px", display: "flex", alignItems: "center", marginRight: "2px"}}>🕒</span>
+                          <Clock size={12} style={{marginRight: 4}}/>
                           <input 
                             className="hide-number-arrows"
                             type="number" 
-                            min={0} 
-                            max={23} 
+                            min={d.timeFormat === '24H' ? 0 : 1}
+                            max={d.timeFormat === '24H' ? 23 : 12}
                             value={d.uploadHour !== undefined && d.uploadHour !== null ? d.uploadHour : ""} 
                             onChange={handleHourChange} 
                             style={{
@@ -532,7 +595,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                           />
                           <select
                             value={d.timeFormat || '24H'}
-                            onChange={(e: any) => set('timeFormat', e.target.value)}
+                            onChange={handleFormatChange}
                             style={{
                               background: "transparent",
                               border: "none",
@@ -812,7 +875,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
               }}>
                 <div style={GRP}>
                   <label style={{ fontSize: 12, fontWeight: 600, color: "rgba(44,32,22,0.6)", display: "flex", alignItems: "center", gap: 6, margin: 0 }}>
-                    🎯 Objective Konten
+                    <Target size={14} /> Objective Konten
                   </label>
                   <RichTextEditor inputRef={objectiveRef} value={d.objective} onChange={(val)=>set("objective",val)} minRows={3} placeholder="Tujuan atau target output dari konten ini..."/>
                 </div>
@@ -821,7 +884,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                 <div style={GRP}>
                     <div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}>
                         <label style={{ fontSize: 12, fontWeight: 600, color: "rgba(44,32,22,0.6)", display: "flex", alignItems: "center", gap: 6, margin: 0 }}>
-                          📝 Brief Konten
+                          <FileText size={14} /> Brief Konten
                         </label>
                         <button onClick={analyzeContent} disabled={aiLoading} 
                           style={{...B(false), fontSize:10, padding:"4px 10px", borderRadius: 8, background:"#f3f4f6", color:"#1f2937", border:"1px solid #d1d5db", display:"flex", alignItems:"center", gap:4}}>
@@ -836,7 +899,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                 <div style={GRP}>
                     <div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}>
                         <label style={{ fontSize: 12, fontWeight: 600, color: "rgba(44,32,22,0.6)", display: "flex", alignItems: "center", gap: 6, margin: 0 }}>
-                          ✍️ Salinan Caption
+                          <PenTool size={14} /> Salinan Caption
                         </label>
                         <button onClick={generateCaption} disabled={captionLoading} 
                           style={{...B(false), fontSize:10, padding:"4px 10px", borderRadius: 8, background:"#f3f4f6", color:"#1f2937", border:"1px solid #d1d5db", display:"flex", alignItems:"center", gap:4}}>
@@ -861,13 +924,13 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
               }}>
                 <div style={GRP}>
                   <label style={{ fontSize: 12, fontWeight: 600, color: "rgba(44,32,22,0.6)", display: "flex", alignItems: "center", gap: 6, margin: 0 }}>
-                    🔗 Link Aset Final (G-Drive / Dropbox)
+                    <Link size={14} /> Link Aset Final (G-Drive / Dropbox)
                   </label>
                   <input value={d.linkAsset||""} onChange={(e:any)=>set("linkAsset",e.target.value)} style={{...I(), border: "1px solid rgba(44,32,22,0.12)", borderRadius: 10 }} placeholder="https://drive.google.com/..."/>
                 </div>
                 <div style={GRP}>
                   <label style={{ fontSize: 12, fontWeight: 600, color: "rgba(44,32,22,0.6)", display: "flex", alignItems: "center", gap: 6, margin: 0 }}>
-                    🔗 Link Upload / Postingan Sosmed
+                    <Link size={14} /> Link Upload / Postingan Sosmed
                   </label>
                   <input value={d.linkSosmed||""} onChange={(e:any)=>set("linkSosmed",e.target.value)} style={{...I(), border: "1px solid rgba(44,32,22,0.12)", borderRadius: 10 }} placeholder="https://instagram.com/p/..."/>
                 </div>
@@ -875,15 +938,15 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
 
               {/* Reference Section */}
               <div style={{background:"rgba(44,32,22,0.03)",border:"1px solid rgba(44,32,22,0.08)",borderRadius:16,padding:"16px 20px",marginBottom:0}}>
-                <div style={{...L,marginBottom:8}}>📎 Referensi Konten</div>
+                <div style={{...L,marginBottom:8}}><Paperclip size={14} /> Referensi Konten</div>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
                   <div style={GRP}><label style={{...L,marginBottom:2}}>Catatan Referensi</label><TextareaAutosize value={d.referenceText} onChange={(e:any)=>set("referenceText",e.target.value)} style={I({resize:"vertical"})} minRows={3} placeholder="Referensi, mood, arahan visual..."/></div>
                   <div style={GRP}>
-                    <label style={{...L,marginBottom:2}}>Link Referensi <button onClick={()=>set("referenceLinks",[...(d.referenceLinks||[]),""])} style={{background:"none",border:"none",color:"#C4622D",cursor:"pointer",fontSize:10}}>(+ Tambah)</button></label>
+                    <label style={{...L,marginBottom:2}}>Link Referensi <button onClick={()=>set("referenceLinks",[...(dRef.current.referenceLinks||[]),""])} style={{background:"none",border:"none",color:"#C4622D",cursor:"pointer",fontSize:10}}>(+ Tambah)</button></label>
                     {(d.referenceLinks||[]).map((lnk:string,i:number)=>(
                       <div key={i} style={{display:"flex",gap:4,marginBottom:4}}>
-                        <input value={lnk} onChange={(e:any)=>set("referenceLinks", d.referenceLinks.map((l:any,idx:number)=>idx===i?e.target.value:l))} style={I()} placeholder="https://..."/>
-                        <button onClick={()=>set("referenceLinks", d.referenceLinks.filter((_:any,idx:number)=>idx!==i))} style={{background:"none",border:"none",color:"#9C2B4E",cursor:"pointer"}}>✕</button>
+                        <input value={lnk} onChange={(e:any)=>set("referenceLinks", dRef.current.referenceLinks.map((l:any,idx:number)=>idx===i?e.target.value:l))} style={I()} placeholder="https://..."/>
+                        <button onClick={()=>set("referenceLinks", dRef.current.referenceLinks.filter((_:any,idx:number)=>idx!==i))} style={{background:"none",border:"none",color:"#9C2B4E",cursor:"pointer"}}>✕</button>
                       </div>
                     ))}
                   </div>
@@ -904,17 +967,17 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                 boxShadow: "0 4px 20px rgba(44,32,22,0.02)"
               }}>
                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
-                   <label style={{...L, margin: 0}}>➕ Bidang Kustom (Custom Fields)</label>
-                   <button onClick={()=>set("customFields",[...(d.customFields||[]),{name:"Label Baru",value:""}])} style={{...B(false),fontSize:10,padding:"4px 10px", borderRadius: 8}}>+ Tambah Field</button>
+                   <label style={{...L, margin: 0}}><Plus size={14} /> Bidang Kustom (Custom Fields)</label>
+                   <button onClick={()=>set("customFields",[...(dRef.current.customFields||[]),{name:"Label Baru",value:""}])} style={{...B(false),fontSize:10,padding:"4px 10px", borderRadius: 8}}>+ Tambah Field</button>
                  </div>
                  {(d.customFields||[]).length === 0 ? (
                    <div style={{ fontSize: 11, color: "rgba(44,32,22,0.4)", textAlign: "center", padding: "10px 0" }}>Belum ada custom fields kustom.</div>
                  ) : (
                    (d.customFields||[]).map((cf:any,i:number)=>(
                      <div key={i} style={{display:"flex",gap:8,marginBottom:8, alignItems: "center"}}>
-                        <input value={cf.name} onChange={(e:any)=>set("customFields",d.customFields.map((f:any,idx:number)=>idx===i?{...f,name:e.target.value}:f))} style={{...I(),width:130, height: "38px"}} placeholder="Nama Field..."/>
-                        <TextareaAutosize value={cf.value} onChange={(e:any)=>set("customFields",d.customFields.map((f:any,idx:number)=>idx===i?{...f,value:e.target.value}:f))} style={I({resize:"vertical", padding: "8px 12px"})} minRows={1} placeholder="Isi field..."/>
-                        <button onClick={()=>set("customFields", d.customFields.filter((_:any,idx:number)=>idx!==i))} style={{background:"none",border:"none",color:"#9C2B4E",cursor:"pointer", padding: "4px 8px"}}>✕</button>
+                        <input value={cf.name} onChange={(e:any)=>set("customFields",dRef.current.customFields.map((f:any,idx:number)=>idx===i?{...f,name:e.target.value}:f))} style={{...I(),width:130, height: "38px"}} placeholder="Nama Field..."/>
+                        <TextareaAutosize value={cf.value} onChange={(e:any)=>set("customFields",dRef.current.customFields.map((f:any,idx:number)=>idx===i?{...f,value:e.target.value}:f))} style={I({resize:"vertical", padding: "8px 12px"})} minRows={1} placeholder="Isi field..."/>
+                        <button onClick={()=>set("customFields", dRef.current.customFields.filter((_:any,idx:number)=>idx!==i))} style={{background:"none",border:"none",color:"#9C2B4E",cursor:"pointer", padding: "4px 8px"}}>✕</button>
                      </div>
                    ))
                  )}
@@ -939,7 +1002,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                   <div>
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
                       <div style={{...L, display: "flex", alignItems: "center", gap: 6, margin: 0}}>
-                        <span>📊 Jangkauan Organik</span>
+                        <span><BarChart2 size={12} /> Jangkauan Organik</span>
                       </div>
                       {d.metricsUpdatedAt && <div style={{fontSize:9, color:"rgba(44,32,22,0.4)"}}>Last update: {d.metricsUpdatedAt}</div>}
                     </div>
@@ -1067,7 +1130,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
               title="Klik ganda untuk mengedit Objective"
               >
                 <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(44,32,22,0.4)", textTransform: "uppercase", marginBottom: 6, letterSpacing: "0.5px", display: "flex", alignItems: "center", gap: 6 }}>
-                  🎯 Objective Konten
+                  <Target size={14} /> Objective Konten
                 </div>
                 <div style={{ fontSize: 13, color: "#2C2016", lineHeight: 1.5, background: "rgba(44,32,22,0.02)", padding: "12px 16px", borderRadius: 10 }}>
                   {d.objective ? <div className="tiptap-prose" dangerouslySetInnerHTML={{ __html: d.objective }} /> : <span style={{ color: "rgba(44,32,22,0.4)", fontStyle: "italic" }}>Tidak ada spesifikasi objective khusus.</span>}
@@ -1093,7 +1156,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                   <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(44,32,22,0.4)", textTransform: "uppercase", display: "flex", alignItems: "center", gap: 6, letterSpacing: "0.5px" }}>
-                    📝 Arahan Kreatif & Brief Konten
+                    <FileText size={14} /> Arahan Kreatif & Brief Konten
                   </span>
                   {d.briefCopywriting && (
                     <button 
@@ -1141,7 +1204,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                   <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(44,32,22,0.4)", textTransform: "uppercase", display: "flex", alignItems: "center", gap: 6, letterSpacing: "0.5px" }}>
-                    ✍️ Salinan Caption Posting
+                    <PenTool size={14} /> Salinan Caption Posting
                   </span>
                   {d.caption && (
                     <button 
@@ -1179,34 +1242,34 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                 boxShadow: "0 4px 20px rgba(44,32,22,0.02)"
               }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(44,32,22,0.4)", textTransform: "uppercase", marginBottom: 8, letterSpacing: "0.5px" }}>
-                  🔗 Tautan & Folder Sumber Daya
+                  <FolderOpen size={14} /> Tautan & Folder Sumber Daya
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                   {d.linkAsset ? (
-                    <a href={d.linkAsset} target="_blank" rel="noreferrer" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 10, background: "rgba(196,98,45,0.04)", border: "1px solid rgba(196,98,45,0.15)", borderRadius: 12, padding: "12px 16px", transition: "background 0.2s" }} className="hover-scale">
-                      <span style={{ fontSize: 18 }}>📁</span>
-                      <div style={{ overflow: "hidden" }}>
+                    <a href={d.linkAsset} target="_blank" rel="noreferrer" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 10, background: "rgba(196,98,45,0.04)", border: "1px solid rgba(196,98,45,0.15)", borderRadius: 12, padding: "12px 16px", transition: "background 0.2s", minWidth: 0 }} className="hover-scale">
+                      <span style={{ fontSize: 18, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}><FolderOpen size={18} /></span>
+                      <div style={{ flex: 1, minWidth: 0, overflow: "hidden" }}>
                         <div style={{ fontSize: 12, fontWeight: 700, color: "#C4622D" }}>Buka Aset Desain</div>
                         <div style={{ fontSize: 10, color: "rgba(44,32,22,0.5)", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap" }}>{d.linkAsset}</div>
                       </div>
                     </a>
                   ) : (
                     <div style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(44,32,22,0.02)", border: "1px dashed rgba(44,32,22,0.08)", borderRadius: 12, padding: "12px 16px", color: "rgba(44,32,22,0.4)", fontSize: 11 }}>
-                      📁 Link aset belum ditautkan.
+                      <FolderOpen size={14} style={{ flexShrink: 0 }} /> Link aset belum ditautkan.
                     </div>
                   )}
 
                   {d.linkSosmed ? (
-                    <a href={d.linkSosmed} target="_blank" rel="noreferrer" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 10, background: "rgba(59,130,246,0.04)", border: "1px solid rgba(59,130,246,0.15)", borderRadius: 12, padding: "12px 16px", transition: "background 0.2s" }} className="hover-scale">
-                      <span style={{ fontSize: 18 }}>🚀</span>
-                      <div style={{ overflow: "hidden" }}>
+                    <a href={d.linkSosmed} target="_blank" rel="noreferrer" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 10, background: "rgba(59,130,246,0.04)", border: "1px solid rgba(59,130,246,0.15)", borderRadius: 12, padding: "12px 16px", transition: "background 0.2s", minWidth: 0 }} className="hover-scale">
+                      <span style={{ fontSize: 18, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}><ExternalLink size={18} /></span>
+                      <div style={{ flex: 1, minWidth: 0, overflow: "hidden" }}>
                         <div style={{ fontSize: 12, fontWeight: 700, color: "#2563EB" }}>Lihat Sosmed</div>
                         <div style={{ fontSize: 10, color: "rgba(59,130,246,0.6)", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap" }}>{d.linkSosmed}</div>
                       </div>
                     </a>
                   ) : (
                     <div style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(44,32,22,0.02)", border: "1px dashed rgba(44,32,22,0.08)", borderRadius: 12, padding: "12px 16px", color: "rgba(44,32,22,0.4)", fontSize: 11 }}>
-                      🚀 Belum live di sosmed.
+                      <ExternalLink size={14} style={{ flexShrink: 0 }} /> Belum live di sosmed.
                     </div>
                   )}
                 </div>
@@ -1221,8 +1284,8 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                   padding: "16px 20px",
                   boxShadow: "0 4px 20px rgba(44,32,22,0.02)"
                 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(44,32,22,0.4)", textTransform: "uppercase", marginBottom: 8, letterSpacing: "0.5px" }}>
-                    📎 Bahan Referensi Visual & Catatan
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(44,32,22,0.4)", textTransform: "uppercase", marginBottom: 8, letterSpacing: "0.5px", display: "flex", alignItems: "center", gap: 6 }}>
+                    <Paperclip size={14} /> Bahan Referensi Visual & Catatan
                   </div>
                   {d.referenceText && (
                     <div style={{ fontSize: 13, color: "#2C2016", lineHeight: 1.5, marginBottom: 8, padding: "12px 16px", background: "rgba(44,32,22,0.02)", borderRadius: 10 }}>
@@ -1233,7 +1296,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: d.referenceImage ? 8 : 0 }}>
                       {d.referenceLinks.filter((l:string)=>l.trim() !== "").map((lnk:string, idx:number) => (
                         <a key={idx} href={lnk} target="_blank" rel="noreferrer" style={{ textDecoration: "none", fontSize: 11, color: "#C4622D", background: "rgba(196,98,45,0.06)", padding: "4px 8px", borderRadius: 8, fontWeight: 600 }}>
-                          🔗 Link Referensi {idx + 1}
+                          <Link size={12} style={{marginRight: 4}}/> Link Referensi {idx + 1}
                         </a>
                       ))}
                     </div>
@@ -1256,8 +1319,8 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                   padding: "16px 20px",
                   boxShadow: "0 4px 20px rgba(44,32,22,0.02)"
                 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(44,32,22,0.4)", textTransform: "uppercase", marginBottom: 8, letterSpacing: "0.5px" }}>
-                    ➕ Bidang Kustom (Custom Fields)
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(44,32,22,0.4)", textTransform: "uppercase", marginBottom: 8, letterSpacing: "0.5px", display: "flex", alignItems: "center", gap: 6 }}>
+                    <Plus size={14} /> Bidang Kustom (Custom Fields)
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                     {d.customFields.filter((cf:any) => cf.name?.trim() || cf.value?.trim()).map((cf:any, idx:number) => (
@@ -1279,7 +1342,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                 boxShadow: "0 4px 20px rgba(44,32,22,0.02)"
               }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                  <span style={{ fontSize: 11, fontWeight: 800, color: "rgba(44,32,22,0.4)", textTransform: "uppercase", letterSpacing: "0.5px" }}>📊 Laporan Statistik Performa</span>
+                  <span style={{ fontSize: 11, fontWeight: 800, color: "rgba(44,32,22,0.4)", textTransform: "uppercase", letterSpacing: "0.5px", display: "flex", alignItems: "center", gap: 6 }}><BarChart2 size={12} /> Laporan Statistik Performa</span>
                   {d.metricsUpdatedAt && <span style={{ fontSize: 10, color: "rgba(44,32,22,0.4)" }}>Terakhir diupdate: {d.metricsUpdatedAt}</span>}
                 </div>
                 
@@ -1392,7 +1455,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                 transition: "all 0.2s"
               }}
             >
-              {isReaderMode ? "✏️" : "📖"}
+              {isReaderMode ? <Edit2 size={16}/> : <BookOpen size={16}/>}
             </button>
           </div>
         </div>
