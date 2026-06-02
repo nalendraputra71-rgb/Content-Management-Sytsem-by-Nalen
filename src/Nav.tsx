@@ -1530,8 +1530,33 @@ export function Sidebar({
                           </AnimatePresence>
                         </div>
 
-                        {/* Dashboard Section */}
-                        <div style={{ marginBottom: 24 }}>
+                        {/* Core Navigation Section */}
+                        <div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 24 }}>
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              marginBottom: open ? 8 : 0,
+                              padding: "0 8px",
+                              opacity: open ? 1 : 0,
+                              height: open ? "auto" : 0,
+                              pointerEvents: open ? "auto" : "none",
+                              overflow: "hidden",
+                            }}
+                          >
+                            <label
+                              style={{
+                                fontSize: 9,
+                                fontWeight: 700,
+                                color: "rgba(255,255,255,0.3)",
+                                textTransform: "uppercase",
+                                letterSpacing: 1.5,
+                              }}
+                            >
+                              Social Management
+                            </label>
+                          </div>
                           <button
                             className="hover-scale"
                             onClick={() => {
@@ -1592,139 +1617,122 @@ export function Sidebar({
                               )}
                             </AnimatePresence>
                           </button>
-                        </div>
 
-                        {/* Content Planner Section */}
-                        <div style={{ marginBottom: 24 }}>
-                          <div
-                            onClick={() => setShowViews(!showViews)}
+                          <button
+                            className="hover-scale"
+                            onClick={() => {
+                              setTab("content_planner");
+                              if (!open) setOpen(true);
+                            }}
                             style={{
+                              width: "100%",
+                              textAlign: "left",
+                              background:
+                                tab === "content_planner"
+                                  ? "rgba(255,255,255,0.1)"
+                                  : "transparent",
+                              border: "none",
+                              padding: open ? "10px 14px" : "10px 8px",
+                              color:
+                                tab === "content_planner"
+                                  ? "white"
+                                  : "rgba(255,255,255,0.7)",
+                              borderRadius: 12,
                               display: "flex",
                               alignItems: "center",
-                              justifyContent: "space-between",
+                              gap: 12,
+                              fontSize: 13,
+                              fontWeight: 700,
                               cursor: "pointer",
-                              marginBottom: open ? 8 : 0,
-                              padding: "0 8px",
-                              opacity: open ? 1 : 0,
-                              height: open ? "auto" : 0,
-                              pointerEvents: open ? "auto" : "none",
-                              overflow: "hidden",
+                              transition: "all 0.3s ease",
                             }}
                           >
-                            <label
+                            <div
                               style={{
-                                fontSize: 9,
-                                fontWeight: 700,
-                                color: "rgba(255,255,255,0.3)",
-                                textTransform: "uppercase",
-                                letterSpacing: 1.5,
-                                cursor: "pointer",
+                                width: 32,
+                                display: "flex",
+                                justifyContent: "center",
+                                alignItems: "center",
+                                flexShrink: 0,
                               }}
                             >
-                              Content Planner
-                            </label>
-                            {showViews ? (
-                              <ChevronUp
-                                size={14}
-                                color="rgba(255,255,255,0.3)"
-                              />
-                            ) : (
-                              <ChevronDown
-                                size={14}
-                                color="rgba(255,255,255,0.3)"
-                              />
-                            )}
-                          </div>
+                              <Calendar size={18} />
+                            </div>
+                            <AnimatePresence>
+                              {open && (
+                                <motion.span
+                                  initial={{ opacity: 0, width: 0 }}
+                                  animate={{ opacity: 1, width: "auto" }}
+                                  exit={{ opacity: 0, width: 0 }}
+                                  style={{
+                                    overflow: "hidden",
+                                    whiteSpace: "nowrap",
+                                    flex: 1,
+                                  }}
+                                >
+                                  Content Planner
+                                </motion.span>
+                              )}
+                            </AnimatePresence>
+                          </button>
 
-                          <AnimatePresence>
-                            {(showViews || !open) && (
-                              <motion.div
-                                initial={{ height: 0, opacity: 0 }}
-                                animate={{ height: "auto", opacity: 1 }}
-                                exit={{ height: 0, opacity: 0 }}
-                                style={{
-                                  display: "flex",
-                                  flexDirection: "column",
-                                  gap: 4,
-                                  overflow: "visible"
-                                }}
-                              >
-                                {VIEWS.map((v) => (
-                                  <button
-                                    className="hover-scale"
-                                    key={v.id}
-                                    onClick={() => {
-                                      setTab(v.id);
-                                      if (!open) setOpen(true);
-                                    }}
-                                    style={{
-                                      display: "flex",
-                                      alignItems: "center",
-                                      gap: 12,
-                                      width: "100%",
-                                      padding: open ? "10px 14px" : "10px 8px",
-                                      background:
-                                        tab === v.id
-                                          ? "rgba(255,255,255,0.1)"
-                                          : "transparent",
-                                      border: "none",
-                                      borderRadius: 12,
-                                      color:
-                                        tab === v.id
-                                          ? "white"
-                                          : "rgba(250,247,242,0.6)",
-                                      cursor: "pointer",
-                                      transition: "all 0.3s ease",
-                                    }}
-                                  >
-                                    <div
-                                      style={{
-                                        width: 32,
-                                        display: "flex",
-                                        justifyContent: "center",
-                                        alignItems: "center",
-                                        flexShrink: 0,
-                                        color:
-                                          tab === v.id
-                                            ? "white"
-                                            : "currentColor",
-                                      }}
-                                    >
-                                      {v.ic}
-                                    </div>
-                                    <AnimatePresence>
-                                      {open && (
-                                        <motion.span
-                                          initial={{ opacity: 0, width: 0 }}
-                                          animate={{
-                                            opacity: 1,
-                                            width: "auto",
-                                          }}
-                                          exit={{ opacity: 0, width: 0 }}
-                                          style={{
-                                            overflow: "hidden",
-                                            whiteSpace: "nowrap",
-                                            flex: 1,
-                                            textAlign: "left",
-                                          }}
-                                        >
-                                          <span
-                                            style={{
-                                              fontSize: 13,
-                                              fontWeight:
-                                                tab === v.id ? 700 : 500,
-                                            }}
-                                          >
-                                            {v.lb}
-                                          </span>
-                                        </motion.span>
-                                      )}
-                                    </AnimatePresence>
-                                  </button>
-                                ))}
-                              </motion.div>
-                            )}
-                          </AnimatePresence>
+                          <button
+                            className="hover-scale"
+                            onClick={() => {
+                              setTab("analytics");
+                              if (!open) setOpen(true);
+                            }}
+                            style={{
+                              width: "100%",
+                              textAlign: "left",
+                              background:
+                                tab === "analytics"
+                                  ? "rgba(255,255,255,0.1)"
+                                  : "transparent",
+                              border: "none",
+                              padding: open ? "10px 14px" : "10px 8px",
+                              color:
+                                tab === "analytics"
+                                  ? "white"
+                                  : "rgba(255,255,255,0.7)",
+                              borderRadius: 12,
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 12,
+                              fontSize: 13,
+                              fontWeight: 700,
+                              cursor: "pointer",
+                              transition: "all 0.3s ease",
+                            }}
+                          >
+                            <div
+                              style={{
+                                width: 32,
+                                display: "flex",
+                                justifyContent: "center",
+                                alignItems: "center",
+                                flexShrink: 0,
+                              }}
+                            >
+                              <PieChart size={18} />
+                            </div>
+                            <AnimatePresence>
+                              {open && (
+                                <motion.span
+                                  initial={{ opacity: 0, width: 0 }}
+                                  animate={{ opacity: 1, width: "auto" }}
+                                  exit={{ opacity: 0, width: 0 }}
+                                  style={{
+                                    overflow: "hidden",
+                                    whiteSpace: "nowrap",
+                                    flex: 1,
+                                  }}
+                                >
+                                  Analitik
+                                </motion.span>
+                              )}
+                            </AnimatePresence>
+                          </button>
                         </div>
 
                         {/* Social Studio Section */}
@@ -2424,6 +2432,8 @@ export function NavBar({
   setYear,
   month,
   setMonth,
+  contentTab,
+  setContentTab,
   onOpenAdd,
   onOpenAddEvent,
   search,
@@ -2447,15 +2457,22 @@ export function NavBar({
     return () => window.removeEventListener("mousedown", clickOutside);
   }, []);
 
+  const CONTENT_TABS = [
+    { id: "month", label: "Bulan" },
+    { id: "board", label: "Board" },
+    { id: "timeline", label: "Timeline" },
+    { id: "table", label: "Tabel" }
+  ];
+
   return (
     <div
       style={{
         background: "white",
-        borderBottom: "1px solid rgba(44,32,22,0.06)",
+        borderBottom: "1px solid rgba(0,0,0,0.05)",
         display: "flex",
-        alignItems: "flex-end",
+        alignItems: "center",
         justifyContent: "space-between",
-        padding: "24px 24px 16px 24px",
+        padding: "16px 24px",
         position: "sticky",
         top: 0,
         zIndex: 50,
@@ -2464,112 +2481,55 @@ export function NavBar({
       <div
         style={{
           display: "flex",
-          gap: 16,
-          alignItems: "flex-end",
+          gap: 24,
+          alignItems: "center",
           flexWrap: "wrap",
         }}
       >
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          <label
-            style={{
-              fontSize: 10,
-              fontWeight: 700,
-              color: "rgba(0,0,0,0.4)",
-              textTransform: "uppercase",
-              paddingLeft: 4,
-              marginTop: 4,
-            }}
-          >
-            Tahun
-          </label>
-          <div style={{ width: 120 }}>
-            <CustomDropdown
-              value={String(year)}
-              options={YEARS.map((y) => String(y))}
-              onChange={(v: any) => setYear(+v)}
-              style={{ padding: "10px 14px", borderRadius: 12 }}
-            />
-          </div>
+        <div style={{ display: "flex", background: "#F5F5F5", padding: 4, borderRadius: 12 }}>
+          {CONTENT_TABS.map(t => (
+            <button
+              className="hover-scale"
+              key={t.id}
+              onClick={() => setContentTab(t.id)}
+              style={{
+                padding: "8px 16px",
+                borderRadius: 8,
+                border: "none",
+                background: contentTab === t.id ? "white" : "transparent",
+                color: contentTab === t.id ? "var(--theme-primary)" : "#666",
+                fontWeight: 700,
+                fontSize: 13,
+                boxShadow: contentTab === t.id ? "0 2px 8px rgba(0,0,0,0.05)" : "none",
+                cursor: "pointer",
+                transition: "all 0.2s ease"
+              }}
+            >
+              {t.label}
+            </button>
+          ))}
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          <label
-            style={{
-              fontSize: 10,
-              fontWeight: 700,
-              color: "rgba(0,0,0,0.4)",
-              textTransform: "uppercase",
-              paddingLeft: 4,
-              marginTop: 4,
-            }}
-          >
-            Bulan
-          </label>
-          <div style={{ width: 140 }}>
+        
+        <div style={{ width: 1, height: 24, background: "rgba(0,0,0,0.1)", display: "block" }} />
+
+        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+          <div style={{ width: 130 }}>
             <CustomDropdown
               value={String(month)}
               options={MONTHS.map((m, i) => ({ id: String(i + 1), name: m }))}
               onChange={(v: any) => setMonth(+v)}
-              style={{ padding: "10px 14px", borderRadius: 12 }}
+              style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid rgba(0,0,0,0.06)", fontWeight: 600, fontSize: 13 }}
+            />
+          </div>
+          <div style={{ width: 100 }}>
+            <CustomDropdown
+              value={String(year)}
+              options={YEARS.map((y) => String(y))}
+              onChange={(v: any) => setYear(+v)}
+              style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid rgba(0,0,0,0.06)", fontWeight: 600, fontSize: 13 }}
             />
           </div>
         </div>
-        <motion.div ref={addRef} layout style={{ position: "relative", marginLeft: 8, flexShrink: 0, marginBottom: 2, height: 44, display: "flex", alignItems: "center", borderRadius: 22, background: "var(--theme-primary)", boxShadow: "0 6px 16px rgba(156,43,78,0.2)", overflow: "hidden" }}>
-          <AnimatePresence mode="popLayout" initial={false}>
-            {!isAddOpen ? (
-              <motion.button
-                key="btn-tambah"
-                className="hover-scale btn-hover"
-                onClick={() => setIsAddOpen(true)}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.15 }}
-                style={{
-                  ...B(true, "transparent"),
-                  height: 44,
-                  padding: "0 24px",
-                  borderRadius: 22,
-                  fontSize: 13,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 10,
-                  border: "none",
-                  color: "white",
-                  fontWeight: 700,
-                  whiteSpace: "nowrap"
-                }}
-              >
-                <Plus size={20} /> <span style={{ whiteSpace: "nowrap" }}>Tambah</span>
-              </motion.button>
-            ) : (
-              <motion.div
-                key="btn-split"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.15 }}
-                style={{ display: "flex", gap: 6, alignItems: "center", height: 44, padding: "4px 8px" }}
-              >
-                <button
-                  className="hover-scale"
-                  onClick={() => { onOpenAdd(); setIsAddOpen(false); }}
-                  style={{...B(false), background: "transparent", color: "white", border: "none", height: "100%", padding: "0 12px", borderRadius: 18, fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap"}}
-                >
-                  <Edit2 size={16} /> <span style={{ whiteSpace: "nowrap" }}>Konten</span>
-                </button>
-                <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.3)", flexShrink: 0 }} />
-                <button
-                  className="hover-scale"
-                  onClick={() => { onOpenAddEvent(); setIsAddOpen(false); }}
-                  style={{...B(false), background: "transparent", color: "white", border: "none", height: "100%", padding: "0 12px", borderRadius: 18, fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap"}}
-                >
-                  <Calendar size={16} /> <span style={{ whiteSpace: "nowrap" }}>Event</span>
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.div>
       </div>
 
       <div
@@ -2577,14 +2537,12 @@ export function NavBar({
           display: "flex",
           gap: 12,
           alignItems: "center",
-          marginBottom: 2,
-          marginLeft: 8,
         }}
       >
         <motion.div
           animate={{
-            width: localSearchOpen ? 220 : 44,
-            padding: localSearchOpen ? "10px 16px" : "10px",
+            width: localSearchOpen ? 220 : 40,
+            padding: localSearchOpen ? "8px 16px" : "8px",
           }}
           transition={{ type: "spring", stiffness: 400, damping: 30 }}
           style={{
@@ -2592,12 +2550,12 @@ export function NavBar({
             alignItems: "center",
             gap: 8,
             background: "white",
-            borderRadius: 22,
+            borderRadius: 20,
             border: "1px solid rgba(0,0,0,0.1)",
             overflow: "hidden",
             cursor: !localSearchOpen ? "pointer" : "text",
             flexShrink: 0,
-            height: 44,
+            height: 40,
           }}
           onClick={() => {
             if (!localSearchOpen) setLocalSearchOpen(true);
@@ -2631,6 +2589,7 @@ export function NavBar({
                   outline: "none",
                   color: "#2C2016",
                   fontSize: 13,
+                  width: "100%",
                 }}
                 value={search}
                 onChange={(e: any) => onSearch && onSearch(e.target.value)}
@@ -2640,15 +2599,74 @@ export function NavBar({
             )}
           </AnimatePresence>
         </motion.div>
+
+        <motion.div ref={addRef} layout style={{ position: "relative", flexShrink: 0, height: 40, display: "flex", alignItems: "center", borderRadius: 20, background: "var(--theme-primary)", boxShadow: "0 4px 12px rgba(156,43,78,0.2)", overflow: "hidden" }}>
+          <AnimatePresence mode="popLayout" initial={false}>
+            {!isAddOpen ? (
+              <motion.button
+                key="btn-tambah"
+                className="hover-scale btn-hover"
+                onClick={() => setIsAddOpen(true)}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.15 }}
+                style={{
+                  ...B(true, "transparent"),
+                  height: 40,
+                  padding: "0 20px",
+                  borderRadius: 20,
+                  fontSize: 13,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                  border: "none",
+                  color: "white",
+                  fontWeight: 700,
+                  whiteSpace: "nowrap"
+                }}
+              >
+                <Plus size={18} /> <span style={{ whiteSpace: "nowrap" }}>Tambah Baru</span>
+              </motion.button>
+            ) : (
+              <motion.div
+                key="btn-split"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.15 }}
+                style={{ display: "flex", gap: 4, alignItems: "center", height: 40, padding: "2px 6px" }}
+              >
+                <button
+                  className="hover-scale"
+                  onClick={() => { onOpenAdd(); setIsAddOpen(false); }}
+                  style={{...B(false), background: "transparent", color: "white", border: "none", height: "100%", padding: "0 12px", borderRadius: 16, fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap"}}
+                >
+                  <Edit2 size={16} /> <span style={{ whiteSpace: "nowrap" }}>Konten</span>
+                </button>
+                <div style={{ width: 1, height: 16, background: "rgba(255,255,255,0.3)", flexShrink: 0 }} />
+                <button
+                  className="hover-scale"
+                  onClick={() => { onOpenAddEvent(); setIsAddOpen(false); }}
+                  style={{...B(false), background: "transparent", color: "white", border: "none", height: "100%", padding: "0 12px", borderRadius: 16, fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap"}}
+                >
+                  <Calendar size={16} /> <span style={{ whiteSpace: "nowrap" }}>Event</span>
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
+
         <button
           className="hover-scale btn-hover shadow-sm"
           onClick={onShare}
           style={{
             background: "var(--theme-primary)",
             border: "none",
-            borderRadius: 22,
-            width: 44,
-            height: 44,
+            borderRadius: 20,
+            width: 40,
+            height: 40,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",

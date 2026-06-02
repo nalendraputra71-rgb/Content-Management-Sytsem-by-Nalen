@@ -572,6 +572,7 @@ function QuickAddEventModal({ workspace, onClose, onSaveSettings }: any) {
 
 function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
   const [tab, setTab]           = useState("dashboard");
+  const [contentTab, setContentTab] = useState("month");
   const [workspace, setWorkspace] = useState<any>(null);
   const [workspaces, setWorkspaces] = useState<any[]>([]);
   const [content, setContent]   = useState<any[]>([]);
@@ -1273,15 +1274,16 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
         </div>
       )}
 
-      {["month", "board", "timeline", "table"].includes(tab) && (
+      {tab === "content_planner" && (
         <NavBar 
           tab={tab} setTab={setTab} year={year} setYear={setYear} month={month} setMonth={setMonth} 
+          contentTab={contentTab} setContentTab={setContentTab}
           onOpenAdd={()=>openAdd(1)} onOpenAddEvent={()=>setShowEventModal(true)} isRestricted={isRestricted}
           search={search} onSearch={setSearch} onShare={()=>setShareModal(true)} sidebarOpen={sidebarOpen}
         />
       )}
       
-      {["month", "board", "timeline", "table"].includes(tab) && (
+      {tab === "content_planner" && (
         <FilterBar 
           filters={filters} setFilters={setFilters} 
           pillars={pillars} platforms={platforms} pics={pics} statuses={statuses} 
@@ -1301,13 +1303,12 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
           </div>
         )}
         <AnimatePresence mode="wait">
-          <motion.div key={tab} initial={{ opacity: 0, y: 5, scale: 0.99 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -5, scale: 0.99 }} transition={{ duration: 0.15, ease: "easeOut" }}>
+          <motion.div key={tab + "-" + contentTab} initial={{ opacity: 0, y: 5, scale: 0.99 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -5, scale: 0.99 }} transition={{ duration: 0.15, ease: "easeOut" }}>
             {tab==="dashboard"&&<DashboardView user={user} profile={profile} activeWorkspace={workspace} content={filtered} theme={currentTheme} setTab={setTab} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} year={year} month={month} />}
-            {tab==="month"&&<MonthView year={year} month={month} monthContent={monthContent} filtered={filtered} openEdit={openEdit} openAdd={openAdd} showHolidays={showHolidays} holidays={combinedHolidays} customEvents={workspace?.settings?.customEvents || []} pillars={pillars} platforms={platforms} isRestricted={isRestricted} showArchived={showArchived} />}
-            {tab==="week"&&<WeekView year={year} month={month} content={content} filtered={filtered} openEdit={openEdit} openAdd={openAdd} showHolidays={showHolidays} holidays={combinedHolidays} pillars={pillars} platforms={platforms} isRestricted={isRestricted} showArchived={showArchived} />}
-            {tab==="board"&&<BoardView year={year} month={month} content={content} filtered={filtered} openEdit={openEdit} openAdd={openAdd} statuses={statuses} pillars={pillars} platforms={platforms} search={search} isRestricted={isRestricted} showArchived={showArchived} />}
-            {tab==="timeline"&&<TimelineView year={year} month={month} content={content} filtered={filtered} openEdit={openEdit} openAdd={openAdd} pillars={pillars} platforms={platforms} showHolidays={showHolidays} holidays={combinedHolidays} isRestricted={isRestricted} showArchived={showArchived} />}
-            {tab==="table"&&<TableView filtered={filtered} openEdit={openEdit} archiveItem={archiveItem} unarchiveItem={unarchiveItem} deleteItem={deleteItem} pillars={pillars} platforms={platforms} showArchived={showArchived} search={search} bulkIds={bulkIds} setBulkIds={setBulkIds} onBulk={handleBulkActions} isRestricted={isRestricted}/>}
+            {tab==="content_planner"&&contentTab==="month"&&<MonthView year={year} month={month} monthContent={monthContent} filtered={filtered} openEdit={openEdit} openAdd={openAdd} showHolidays={showHolidays} holidays={combinedHolidays} customEvents={workspace?.settings?.customEvents || []} pillars={pillars} platforms={platforms} isRestricted={isRestricted} showArchived={showArchived} />}
+            {tab==="content_planner"&&contentTab==="board"&&<BoardView year={year} month={month} content={content} filtered={filtered} openEdit={openEdit} openAdd={openAdd} statuses={statuses} pillars={pillars} platforms={platforms} search={search} isRestricted={isRestricted} showArchived={showArchived} />}
+            {tab==="content_planner"&&contentTab==="timeline"&&<TimelineView year={year} month={month} content={content} filtered={filtered} openEdit={openEdit} openAdd={openAdd} pillars={pillars} platforms={platforms} showHolidays={showHolidays} holidays={combinedHolidays} isRestricted={isRestricted} showArchived={showArchived} />}
+            {tab==="content_planner"&&contentTab==="table"&&<TableView filtered={filtered} openEdit={openEdit} archiveItem={archiveItem} unarchiveItem={unarchiveItem} deleteItem={deleteItem} pillars={pillars} platforms={platforms} showArchived={showArchived} search={search} bulkIds={bulkIds} setBulkIds={setBulkIds} onBulk={handleBulkActions} isRestricted={isRestricted}/>}
             {tab.startsWith("social")&&<SocialStudioView tab={tab} />}
             {tab==="analytics"&&<AnalyticsView content={content} pillars={pillars} platforms={platforms} pics={pics} statuses={statuses} openEdit={openEdit} isRestricted={isRestricted}/>}
             {tab==="settings"&&<SettingsPanel 
