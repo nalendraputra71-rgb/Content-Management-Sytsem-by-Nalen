@@ -32,7 +32,8 @@ import {
   BarChart2,
   MessageSquare,
   Crown,
-  Trash2
+  Trash2,
+  Check
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { eng, fmt, YEARS, B, I, TAB, MONTHS, CustomDropdown } from "./data";
@@ -2719,24 +2720,36 @@ function MultiSelectFilter({ values, options, onChange, label, style, onUpdateOp
   };
 
   const toggle = (id: string) => {
+    const allIds = baseOptions.map(o => typeof o === 'string' ? o : o.id || o.name || o);
+    const current = values.includes("All") ? allIds : values;
+
     if (id === "All") {
-      onChange(["All"]);
+      if (values.includes("All")) {
+        onChange([]);
+      } else {
+        onChange(["All"]);
+      }
       return;
     }
-    let next = values.filter((v:any) => v !== "All");
-    if (next.includes(id)) {
-      next = next.filter((v:any) => v !== id);
-      if (next.length === 0) next = ["All"];
+
+    let next = [];
+    if (current.includes(id)) {
+      next = current.filter((v:any) => v !== id);
     } else {
-      next = [...next, id];
+      next = [...current, id];
     }
-    onChange(next);
+
+    if (next.length === allIds.length) {
+      onChange(["All"]);
+    } else {
+      onChange(next);
+    }
   };
 
-  const displayLabel = values.includes("All") ? `Semua ${label}` : values.map((v:any) => {
+  const displayLabel = values.includes("All") ? `Semua ${label}` : values.length > 0 ? values.map((v:any) => {
     const o = options.find((opt:any) => (opt.id||opt.name||opt) === v);
     return o ? (o.name||o.id||o) : v;
-  }).join(", ");
+  }).join(", ") : `Tidak ada ${label}`;
 
   return (
     <div ref={ref} style={{ position: "relative", width: "100%" }}>
@@ -2888,19 +2901,21 @@ function MultiSelectFilter({ values, options, onChange, label, style, onUpdateOp
                  {options.map((opt:any, i:any) => {
                    const val = typeof opt === 'string' ? opt : opt.id || opt.name;
                    const name = typeof opt === 'string' ? opt : opt.name || opt.id;
-                   const selected = values.includes(val);
+                   const isAll = values.includes("All");
+                   const selected = val === "All" ? isAll : (isAll || values.includes(val));
+                   
                    return (
                     <button
                       key={i}
                       onClick={() => toggle(val)}
                       style={{
-                        width: "100%", textAlign: "left", padding: "8px 12px", background: selected ? "rgba(156,43,78,0.1)" : "transparent", color: selected ? "#9C2B4E" : "#2C2016", border: "none", borderRadius: 6, fontSize: 13, cursor: "pointer", fontWeight: selected ? 800 : 500, display: "flex", alignItems: "center", gap: 8 
+                        width: "100%", textAlign: "left", padding: "8px 12px", background: selected ? "rgba(156,43,78,0.06)" : "transparent", color: selected ? "#9C2B4E" : "#4B5563", border: "none", borderRadius: 8, fontSize: 13, cursor: "pointer", fontWeight: selected ? 700 : 500, display: "flex", alignItems: "center", gap: 10, transition: "all 0.2s"
                       }}
                     >
-                      <div style={{width: 14, height: 14, border: "1px solid", borderColor: selected ? "#9C2B4E" : "rgba(44,32,22,0.3)", borderRadius: 3, display: "flex", alignItems: "center", justifyContent: "center", background: selected ? "#9C2B4E" : "white", flexShrink: 0}}>
-                         {selected && <div style={{width: 8, height: 8, background: "white", borderRadius: 1}} />}
+                      <div style={{width: 16, height: 16, border: selected ? "none" : "1.5px solid rgba(44,32,22,0.3)", borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", background: selected ? "#9C2B4E" : "white", flexShrink: 0}}>
+                         {selected && <Check size={12} color="white" strokeWidth={3} />}
                       </div>
-                      {name}
+                      <span style={{ flex: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{name}</span>
                     </button>
                    )
                  })}
