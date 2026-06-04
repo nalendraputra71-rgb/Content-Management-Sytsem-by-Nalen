@@ -1335,7 +1335,12 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
         {shareModal && <ShareWorkspaceModal key="share" workspace={workspace} userProfile={profile} onClose={()=>setShareModal(false)} />}
       </AnimatePresence>
       <AnimatePresence>
-        {modal && <ContentModal key="content" modal={modal} onSave={handleSave} onClose={()=>setModal(null)} onArchive={archiveItem} onRestore={unarchiveItem} onDelete={deleteItem} pillars={pillars} platforms={platforms} pics={pics} statuses={statuses} isRestricted={isRestricted} onSettingUpdate={updateWsSettings} />}
+        {modal && <ContentModal key="content" modal={modal} onSave={handleSave} onClose={()=>setModal(null)} onArchive={archiveItem} onRestore={unarchiveItem} onDelete={deleteItem} onDuplicate={(data:any) => {
+          const duplicatedData = {...data, id: gid(), title: data.title + " (Copy)", status: statuses[0]?.name || "Draft", metrics: {}, adsMetrics: {}};
+          handleSave(duplicatedData, true);
+          setTimeout(() => setSaveMsg("Konten berhasil diduplikasi."), 100);
+          setTimeout(()=>setSaveMsg(""), 3100);
+        }} pillars={pillars} platforms={platforms} pics={pics} statuses={statuses} isRestricted={isRestricted} onSettingUpdate={updateWsSettings} />}
       </AnimatePresence>
       <AnimatePresence>
         {showCsv && <CsvModal key="csv" onClose={()=>setShowCsv(false)} onImport={handleBulkImport} workspaceId={workspace?.id} pillars={pillars} platforms={platforms} pics={pics} statuses={statuses} existingContent={content} />}

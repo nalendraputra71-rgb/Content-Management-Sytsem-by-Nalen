@@ -2,7 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from "react";
 import { 
   MONTHS, MS, DAYS_S, MK, MC,
   eng, fmt, fmtD, fmtT, getMin, gps, gpc, gss,
-  I, B, CARD, PBadge, SBadge, getDynamicEvents, htmlToPlainText 
+  I, B, CARD, PBadge, SBadge, PiBadge, getDynamicEvents, htmlToPlainText 
 } from "./data";
 
 export function MonthView({year,month,monthContent,filtered,openEdit,openAdd,showHolidays,holidays,customEvents,pillars,platforms,showArchived}: any) {
@@ -115,11 +115,11 @@ export function MonthView({year,month,monthContent,filtered,openEdit,openAdd,sho
 
               <div style={{display:"flex",flexDirection:"column",gap:2, maxHeight: "150px", overflowY: "auto", paddingRight: "2px", scrollbarWidth: "thin"}}>
                 {items.map((item:any)=>{
-                  const ps = item.archived ? { color: "#7A7976", light: "#EBEAE6" } : gps(pillars,item.pillar);
+                  const ps = item.archived ? { color: "#7A7976", light: "#EBEAE6" } : gps(pillars, String(item.pillar).split(',')[0].trim());
                   return (
                     <button key={item.id} className="hover-scale" onClick={()=>openEdit(item)} style={{background:ps.light,flexShrink:0,border:"none",borderLeft:`3px solid ${ps.color}`,borderRadius:"4px 8px 8px 4px",padding:"4px 6px",textAlign:"left",cursor:"pointer",width:"100%",marginBottom:2}}>
                       <div style={{display:"flex",alignItems:"flex-start",gap:3}}>
-                        <span className="pill-tag" style={{background:item.archived ? "#9E9D9A" : gpc(platforms,item.platform),color:"#FAF7F2",fontSize:8,padding:"1px 4px",marginTop:1}}>{item.platform[0]}</span>
+                        <span className="pill-tag" style={{background:item.archived ? "#9E9D9A" : gpc(platforms, String(item.platform).split(',')[0].trim()),color:"#FAF7F2",fontSize:8,padding:"1px 4px",marginTop:1}}>{String(item.platform).split(',')[0].trim()[0]}</span>
                         {item.isAds&&<span style={{fontSize:8,marginTop:1}}>💰</span>}
                         <span style={{fontSize:10,color:ps.color,fontWeight:700,lineHeight:1.3,display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden"}}>{item.title||"(tanpa judul)"}{item.archived ? " 📦" : ""}</span>
                       </div>
@@ -175,11 +175,12 @@ export function WeekView({year,month,content,filtered,openEdit,openAdd,pillars,p
               {ev&&<div style={{fontSize:8,color:"#A67C1C",fontWeight:700,background:"#FBF5E3",borderRadius:4,padding:"2px 5px",marginBottom:5}}>{ev}</div>}
               <div style={{display:"flex",flexDirection:"column",gap:3}}>
                 {items.map((item:any)=>{
-                  const ps = item.archived ? { color: "#7A7976", light: "#EBEAE6" } : gps(pillars,item.pillar);
+                  const firstPillar = String(item.pillar).split(',')[0].trim();
+                  const ps = item.archived ? { color: "#7A7976", light: "#EBEAE6" } : gps(pillars, firstPillar);
                   return (
                     <button key={item.id} className="hover-scale card-hover" onClick={()=>openEdit(item)} style={{background:ps.light,border:"none",borderLeft:`3px solid ${ps.color}`,borderRadius:"6px 12px 12px 6px",padding:"6px 8px",textAlign:"left",cursor:"pointer",width:"100%",marginBottom:4}}>
                       <div style={{fontSize:10,color:ps.color,fontWeight:700,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{item.title}{item.archived ? " 📦" : ""}</div>
-                      <div style={{fontSize:8,color:"rgba(44,32,22,0.5)",marginTop:2,fontWeight:600}}>{fmtT(item.uploadHour,item.uploadMinute,item.timeFormat)} · {item.platform} {item.isAds?"💰":""}</div>
+                      <div style={{fontSize:8,color:"rgba(44,32,22,0.5)",marginTop:2,fontWeight:600}}>{fmtT(item.uploadHour,item.uploadMinute,item.timeFormat)} · {String(item.platform).split(',')[0].trim()} {String(item.platform).includes(',')?'+':''} {item.isAds?"💰":""}</div>
                     </button>
                   );
                 })}
@@ -228,7 +229,7 @@ export function BoardView({year,month,content,filtered,openEdit,openAdd,statuses
                     <div style={{fontSize:11,fontWeight:600,color:"#2C2016",lineHeight:1.3,marginBottom:5}}><High txt={item.title||"(tanpa judul)"}/>{item.archived ? " 📦" : ""}</div>
                     <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:4}}>
                       <PBadge name={item.platform} platforms={platforms}/>
-                      <span style={{background:ps.light,color:ps.color,fontSize:8,padding:"1px 5px",borderRadius:6}}>{item.pillar}</span>
+                      <PiBadge name={item.pillar} pillars={pillars}/>
                       {item.isAds&&<span style={{fontSize:8,color:"#9C2B4E",fontWeight:700}}>💰 Ads</span>}
                     </div>
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
@@ -274,7 +275,8 @@ export function TimelineView({year,month,content,filtered,openEdit,openAdd,pilla
                 </div>
                 <div style={{display:"flex",flexDirection:"column",gap:4}}>
                   {items.map((item:any)=>{
-                    const ps = item.archived ? { color: "#7A7976", light: "#EBEAE6" } : gps(pillars,item.pillar);
+                    const firstPillar = String(item.pillar).split(',')[0].trim();
+                    const ps = item.archived ? { color: "#7A7976", light: "#EBEAE6" } : gps(pillars, firstPillar);
                     return (
                       <button key={item.id} className="hover-scale card-hover" onClick={()=>openEdit(item)} style={{background:ps.light,border:"none",borderLeft:`3px solid ${ps.color}`,borderRadius:"4px 8px 8px 4px",padding:"4px 6px",textAlign:"left",cursor:"pointer",width:"100%"}}>
                         <div style={{fontSize:9,color:ps.color,fontWeight:700,overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",wordWrap:"break-word"}}>{item.title||"(tanpa judul)"}{item.archived ? " 📦" : ""}</div>
@@ -400,7 +402,7 @@ export function TableView({filtered,openEdit,archiveItem,unarchiveItem,deleteIte
                       <div style={{fontSize:10,color:"rgba(44,32,22,0.4)",fontWeight:600}}>{fmtT(item.uploadHour,item.uploadMinute,item.timeFormat)}</div>
                     </td>
                     <td style={td}><PBadge name={item.platform} platforms={platforms}/></td>
-                    <td style={td}><span className="pill-tag" style={{background:ps.light,color:ps.color}}>{item.pillar}</span></td>
+                    <td style={td}><PiBadge name={item.pillar} pillars={pillars}/></td>
                     <td style={{...td, verticalAlign:"top"}}>
                       <div style={{fontWeight:600,lineHeight:1.4, wordBreak:"break-word"}}><High txt={item.title}/></div>
                       <div style={{display:"flex",gap:4,marginTop:6, flexWrap: "wrap"}}>

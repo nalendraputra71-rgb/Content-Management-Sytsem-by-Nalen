@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from "react";
-import { GoogleGenAI } from "@google/genai";
 import { motion, AnimatePresence } from "motion/react";
 import Markdown from "react-markdown";
 import remarkBreaks from "remark-breaks";
@@ -56,7 +55,19 @@ import {
   FolderOpen,
   ExternalLink,
   Clock,
-  BookOpen
+  BookOpen,
+  Copy,
+  Archive,
+  Trash,
+  RefreshCcw,
+  Leaf,
+  DollarSign,
+  Flag,
+  Smartphone,
+  User,
+  Zap,
+  Check,
+  AlertTriangle
 } from "lucide-react";
 
 const getMetricIcon = (k: string, color?: string, size = 14) => {
@@ -85,7 +96,7 @@ const getMetricIcon = (k: string, color?: string, size = 14) => {
   }
 };
 
-export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,pillars,platforms,pics,statuses,onSettingUpdate}: any) {
+export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,onDuplicate,pillars,platforms,pics,statuses,onSettingUpdate}: any) {
   const [d,setD] = useState({...modal.data,metrics:{...(modal.data.metrics||{})},adsMetrics:{...(modal.data.adsMetrics||{views:0,reach:0,likes:0,comments:0,shares:0,reposts:0,saves:0,clicks:0,conversions:0})},referenceLinks:modal.data.referenceLinks||[],customFields:modal.data.customFields||[]});
   const [aiResult, setAiResult] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
@@ -364,17 +375,19 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
         
         Berikan evaluasi singkat dan 3 poin saran perbaikan untuk meningkatkan engagement. Format dalam Bahasa Indonesia, singkat, padat, dan teknis.`;
         
-        const apiKey = process.env.GEMINI_API_KEY;
-        if (!apiKey) {
-          throw new Error("API Key is missing.");
-        }
-        const ai = new GoogleGenAI({ apiKey });
-        const response = await ai.models.generateContent({
-          model: "gemini-2.5-flash",
-          contents: prompt
+        const req = await fetch("/api/gemini", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt, model: "gemini-2.5-flash" })
         });
-
-        setAiResult(response.text || "Tidak ada respon dari AI.");
+        
+        if (!req.ok) {
+          const err = await req.json();
+          throw new Error(err.error || "Gagal menghubungi server AI");
+        }
+        
+        const data = await req.json();
+        setAiResult(data.text || "Tidak ada respon dari AI.");
     } catch (e: any) {
         console.error("AI Error:", e);
         const errMsg = e.message || "";
@@ -403,17 +416,19 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
         
         Tuliskan HANYA hasil caption akhirnya saja. Jangan berikan pengantar/penutup eksplanasi. Sertakan hashtag yang relevan sesuai dengan platform. Outputkan dalam format tag HTML dasar seperti <p>, <strong>, <em>, <br> untuk styling format typography-nya.`;
         
-        const apiKey = process.env.GEMINI_API_KEY;
-        if (!apiKey) {
-          throw new Error("API Key is missing.");
-        }
-        const ai = new GoogleGenAI({ apiKey });
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: prompt
+        const req = await fetch("/api/gemini", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt, model: "gemini-2.5-flash" })
         });
-
-        set("caption", (response.text || "").trim());
+        
+        if (!req.ok) {
+          const err = await req.json();
+          throw new Error(err.error || "Gagal menghubungi server AI");
+        }
+        
+        const data = await req.json();
+        set("caption", (data.text || "").trim());
     } catch (e: any) {
         console.error("AI Error:", e);
         const errMsg = e.message || "";
@@ -618,42 +633,42 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                         </div>
 
                         {(hourError || minuteError) && (
-                          <span style={{ fontSize: "9px", color: "rgba(255,255,255,0.85)", background: "rgba(156,43,78,0.4)", padding: "2px 6px", borderRadius: "4px", fontWeight: 700 }}>
-                            ⚠️ Input Waktu tidak valid
+                          <span style={{ fontSize: "9px", color: "rgba(255,255,255,0.85)", background: "rgba(156,43,78,0.4)", padding: "2px 6px", borderRadius: "4px", fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}>
+                            <AlertTriangle size={10} /> Input Waktu tidak valid
                           </span>
                         )}
                       </div>
                     )}
                   </div>
 
-                  {/* Row of dropdowns without a single merged shape container */}
+                  {/* Row of dropdowns */}
                   <div style={{
                     display: "grid", 
-                    gridTemplateColumns: "repeat(4, 1fr)", 
+                    gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
                     gap: "12px", 
                     width: "100%", 
                     marginTop: "6px"
                   }}>
                     {/* Pillar */}
-                    <div style={{display:"flex", flexDirection:"column", gap:"4px"}}>
-                      <span style={{fontSize: "9px", fontWeight: 750, textTransform: "uppercase", letterSpacing: "0.5px", color: "rgba(255,255,255,0.7)", display: "flex", alignItems: "center", gap: "3px"}}>
-                        🏁 Pillar
+                    <div style={{display:"flex", flexDirection:"column", gap:"4px", minWidth: 0}}>
+                      <span style={{fontSize: "9px", fontWeight: 750, textTransform: "uppercase", letterSpacing: "0.5px", color: "rgba(255,255,255,0.7)", display: "flex", alignItems: "center"}}>
+                        <Flag size={10} style={{marginRight: 4}} /> Pillar
                       </span>
                       {isReaderMode ? (
-                        <span style={{
+                        <span title={d.pillar || "Tanpa Pillar"} style={{
                           fontSize: "11px", 
                           fontWeight: 700, 
                           color: "#FFF", 
-                          display: "inline-flex", 
-                          alignItems: "center", 
-                          gap: 3, 
+                          display: "inline-block", 
+                          maxWidth: "100%",
                           textOverflow: "ellipsis", 
                           overflow: "hidden", 
                           whiteSpace: "nowrap",
                           background: activePillarColor,
-                          padding: "4px 10px",
+                          padding: "6px 10px",
                           borderRadius: "8px",
                           height: "26px",
+                          lineHeight: "13px",
                           border: `1px solid rgba(255,255,255,0.3)`
                         }}>
                           {d.pillar || "Tanpa Pillar"}
@@ -664,7 +679,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                           value={d.pillar} 
                           options={pillars} 
                           prefix="" 
-                          onChange={(v)=>set("pillar",v)} 
+                          onChange={(v)=>set("pillar", v)} 
                           onUpdateOptions={(opts) => onSettingUpdate && onSettingUpdate({pillars: opts})}
                           style={{ 
                             width: "100%", 
@@ -675,7 +690,8 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                             background: activePillarColor, 
                             color: "#FFF", 
                             border: `1px solid rgba(255,255,255,0.3)`,
-                            height: "26px",
+                            minHeight: "26px",
+                            height: "auto",
                             display: "inline-flex",
                             alignItems: "center",
                             boxShadow: "none"
@@ -685,25 +701,25 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                     </div>
 
                     {/* Platform */}
-                    <div style={{display:"flex", flexDirection:"column", gap:"4px"}}>
-                      <span style={{fontSize: "9px", fontWeight: 750, textTransform: "uppercase", letterSpacing: "0.5px", color: "rgba(255,255,255,0.7)", display: "flex", alignItems: "center", gap: "3px"}}>
-                        📱 Platform
+                    <div style={{display:"flex", flexDirection:"column", gap:"4px", minWidth: 0}}>
+                      <span style={{fontSize: "9px", fontWeight: 750, textTransform: "uppercase", letterSpacing: "0.5px", color: "rgba(255,255,255,0.7)", display: "flex", alignItems: "center"}}>
+                        <Smartphone size={10} style={{marginRight: 4}} /> Platform
                       </span>
                       {isReaderMode ? (
-                        <span style={{
+                        <span title={d.platform || "Tanpa Platform"} style={{
                           fontSize: "11px", 
                           fontWeight: 700, 
                           color: "#FFF", 
-                          display: "inline-flex", 
-                          alignItems: "center", 
-                          gap: 3, 
+                          display: "inline-block", 
+                          maxWidth: "100%",
                           textOverflow: "ellipsis", 
                           overflow: "hidden", 
                           whiteSpace: "nowrap",
                           background: activePlatformColor,
-                          padding: "4px 10px",
+                          padding: "6px 10px",
                           borderRadius: "8px",
                           height: "26px",
+                          lineHeight: "13px",
                           border: `1px solid rgba(255,255,255,0.3)`
                         }}>
                           {d.platform || "Tanpa Platform"}
@@ -714,7 +730,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                           value={d.platform} 
                           options={platforms} 
                           prefix="" 
-                          onChange={(v)=>set("platform",v)} 
+                          onChange={(v)=>set("platform", v)} 
                           onUpdateOptions={(opts) => onSettingUpdate && onSettingUpdate({platforms: opts})}
                           style={{ 
                             width: "100%", 
@@ -725,7 +741,8 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                             background: activePlatformColor, 
                             color: "#FFF", 
                             border: `1px solid rgba(255,255,255,0.3)`,
-                            height: "26px",
+                            minHeight: "26px",
+                            height: "auto",
                             display: "inline-flex",
                             alignItems: "center",
                             boxShadow: "none"
@@ -735,25 +752,25 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                     </div>
 
                     {/* PIC */}
-                    <div style={{display:"flex", flexDirection:"column", gap:"4px"}}>
-                      <span style={{fontSize: "9px", fontWeight: 750, textTransform: "uppercase", letterSpacing: "0.5px", color: "rgba(255,255,255,0.7)", display: "flex", alignItems: "center", gap: "3px"}}>
-                        👤 PIC
+                    <div style={{display:"flex", flexDirection:"column", gap:"4px", minWidth: 0}}>
+                      <span style={{fontSize: "9px", fontWeight: 750, textTransform: "uppercase", letterSpacing: "0.5px", color: "rgba(255,255,255,0.7)", display: "flex", alignItems: "center"}}>
+                        <User size={10} style={{marginRight: 4}} /> PIC
                       </span>
                       {isReaderMode ? (
-                        <span style={{
+                        <span title={d.pic || "Tanpa PIC"} style={{
                           fontSize: "11px", 
                           fontWeight: 700, 
                           color: "#FFF", 
-                          display: "inline-flex", 
-                          alignItems: "center", 
-                          gap: 3, 
+                          display: "inline-block", 
+                          maxWidth: "100%",
                           textOverflow: "ellipsis", 
                           overflow: "hidden", 
                           whiteSpace: "nowrap",
                           background: activePicColor,
-                          padding: "4px 10px",
+                          padding: "6px 10px",
                           borderRadius: "8px",
                           height: "26px",
+                          lineHeight: "13px",
                           border: `1px solid rgba(255,255,255,0.3)`
                         }}>
                           {d.pic || "Tanpa PIC"}
@@ -761,10 +778,11 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                       ) : (
                         <CustomDropdown 
                           dark={true}
+                          multiple={true}
                           value={d.pic} 
                           options={pics} 
                           prefix="" 
-                          onChange={(v)=>set("pic",v)} 
+                          onChange={(v)=>set("pic", Array.isArray(v) ? v.join(", ") : v)} 
                           onUpdateOptions={(opts) => onSettingUpdate && onSettingUpdate({pics: opts})}
                           style={{ 
                             width: "100%", 
@@ -775,7 +793,8 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                             background: activePicColor, 
                             color: "#FFF", 
                             border: `1px solid rgba(255,255,255,0.3)`,
-                            height: "26px",
+                            minHeight: "26px",
+                            height: "auto",
                             display: "inline-flex",
                             alignItems: "center",
                             boxShadow: "none"
@@ -785,25 +804,25 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                     </div>
 
                     {/* Status */}
-                    <div style={{display:"flex", flexDirection:"column", gap:"4px"}}>
-                      <span style={{fontSize: "9px", fontWeight: 750, textTransform: "uppercase", letterSpacing: "0.5px", color: "rgba(255,255,255,0.7)", display: "flex", alignItems: "center", gap: "3px"}}>
-                        ⚡ Status
+                    <div style={{display:"flex", flexDirection:"column", gap:"4px", minWidth: 0}}>
+                      <span style={{fontSize: "9px", fontWeight: 750, textTransform: "uppercase", letterSpacing: "0.5px", color: "rgba(255,255,255,0.7)", display: "flex", alignItems: "center"}}>
+                        <Zap size={10} style={{marginRight: 4}} /> Status
                       </span>
                       {isReaderMode ? (
-                        <span style={{
+                        <span title={d.status || "Draft"} style={{
                           fontSize: "11px", 
                           fontWeight: 800, 
                           color: "#FFF", 
-                          display: "inline-flex", 
-                          alignItems: "center", 
-                          gap: 3, 
+                          display: "inline-block", 
+                          maxWidth: "100%",
                           textOverflow: "ellipsis", 
                           overflow: "hidden", 
                           whiteSpace: "nowrap",
                           background: activeStatusColor,
-                          padding: "4px 10px",
+                          padding: "6px 10px",
                           borderRadius: "8px",
                           height: "26px",
+                          lineHeight: "13px",
                           border: `1px solid rgba(255,255,255,0.3)`
                         }}>
                           {d.status || "Draft"}
@@ -826,7 +845,8 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                             background: activeStatusColor, 
                             color: "#FFF", 
                             border: `1px solid rgba(255,255,255,0.3)`,
-                            height: "26px",
+                            minHeight: "26px",
+                            height: "auto",
                             display: "inline-flex",
                             alignItems: "center",
                             boxShadow: "none"
@@ -1068,7 +1088,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                       }}>
                         <div>
                           <div style={{...L, marginBottom:12, color:"#9C2B4E", display: "flex", alignItems: "center", gap: 6}}>
-                            <span>💰 Hasil Kampanye Berbayar</span>
+                            <span><DollarSign size={14} style={{marginRight: 4}} /> Hasil Kampanye Berbayar</span>
                           </div>
                           <div style={{display:"grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8}}>
                             {[...MK,"clicks","conversions"].map((k:string)=>(
@@ -1176,7 +1196,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                         <>
                           <CheckIcon /> Berhasil disalin
                         </>
-                      ) : "📋 Salin Brief"}
+                      ) : <><Copy size={12} style={{marginRight: 4}} /> Salin Brief</>}
                     </button>
                   )}
                 </div>
@@ -1224,7 +1244,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                         <>
                           <CheckIcon /> Berhasil disalin
                         </>
-                      ) : "📋 Salin Caption"}
+                      ) : <><Copy size={12} style={{marginRight: 4}} /> Salin Caption</>}
                     </button>
                   )}
                 </div>
@@ -1354,7 +1374,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                   {/* Organik Card Inside Reader */}
                   <div style={{ background: "rgba(196,98,45,0.03)", border: "1px solid rgba(196,98,45,0.08)", borderRadius: 12, padding: 14, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
                     <div>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: "#C4622D", marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>🍃 Jangkauan Organik</div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: "#C4622D", marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}><Leaf size={14} style={{marginRight: 4}} /> Jangkauan Organik</div>
                       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(148px, 1fr))", gap: 8, marginBottom: 10 }}>
                         {MK.map((k:string) => (
                           <div key={k} style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(44,32,22,0.02)", padding: "6px 10px", borderRadius: 8 }}>
@@ -1384,7 +1404,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                     {d.isAds ? (
                       <>
                         <div>
-                          <div style={{ fontSize: 12, fontWeight: 700, color: "#9C2B4E", marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>💰 Hasil Kampanye Berbayar</div>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: "#9C2B4E", marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}><DollarSign size={14} style={{marginRight: 4}} /> Hasil Kampanye Berbayar</div>
                           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(148px, 1fr))", gap: 6, marginBottom: 8 }}>
                             {[...MK, "clicks", "conversions"].map((k:string) => (
                               <div key={k} style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(156,43,78,0.02)", padding: "5px 8px", borderRadius: 8 }}>
@@ -1410,7 +1430,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                       </>
                     ) : (
                       <div style={{ textAlign: "center", padding: "10px 0" }}>
-                        <div style={{ fontSize: 18, marginBottom: 2 }}>🍃</div>
+                        <div style={{ fontSize: 18, marginBottom: 2, display: "flex", justifyContent: "center", color: "rgba(44,32,22,0.4)" }}><Leaf size={20} /></div>
                         <div style={{ fontSize: 12, fontWeight: 750, color: "rgba(44,32,22,0.4)" }}>Bukan Konten Berbayar</div>
                         <div style={{ fontSize: 10, color: "rgba(44,32,22,0.3)", marginTop: 2 }}>Metrik ads tidak aktif untuk posting organik.</div>
                       </div>
@@ -1426,12 +1446,15 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
 
         <div style={{display:"flex", gap:10, justifyContent:"space-between", alignItems:"center", padding: "16px 28px", borderTop: "1px solid rgba(44,32,22,0.08)", background: "white", borderRadius: "0 0 24px 24px", zIndex: 10, flexShrink: 0}}>
           <div style={{display:"flex", gap:8}}>
-            {d.archived ? (
-              <button onClick={()=>onRestore(d.id)} className="hover-scale" style={{...B(false), background:"#E8F5E9", border:"1.5px solid #2E7D32", color:"#2E7D32", padding:"7px 14px", fontSize:12, fontWeight:700}}>🔄 Tampilkan Lagi</button>
-            ) : (
-              canArchive && <button onClick={()=>onArchive(d.id)} className="hover-scale" style={{...B(false), background:"#FAFAFA", border:"1.5px solid rgba(44,32,22,0.1)", color:"#666", padding:"7px 14px", fontSize:12, fontWeight:700}}>📦 Arsipkan</button>
+            {onDuplicate && (
+              <button onClick={()=>onDuplicate(d)} className="hover-scale" style={{...B(false), background:"rgba(44,32,22,0.05)", border:"1.5px solid rgba(44,32,22,0.1)", color:"#2C2016", padding:"7px 14px", fontSize:12, fontWeight:700}}><Copy size={14} style={{marginRight: 4}} /> Duplikasi</button>
             )}
-            {canDelete && <button onClick={()=>onDelete(d.id)} className="hover-scale" style={{...B(false), background:"#FDF5F8", border:"1.5px solid #9C2B4E", color:"#9C2B4E", padding:"7px 14px", fontSize:12, fontWeight:700}}>🗑️ Hapus</button>}
+            {d.archived ? (
+              <button onClick={()=>onRestore(d.id)} className="hover-scale" style={{...B(false), background:"#E8F5E9", border:"1.5px solid #2E7D32", color:"#2E7D32", padding:"7px 14px", fontSize:12, fontWeight:700}}><RefreshCcw size={14} style={{marginRight: 4}} /> Tampilkan Lagi</button>
+            ) : (
+              canArchive && <button onClick={()=>onArchive(d.id)} className="hover-scale" style={{...B(false), background:"#FAFAFA", border:"1.5px solid rgba(44,32,22,0.1)", color:"#666", padding:"7px 14px", fontSize:12, fontWeight:700}}><Archive size={14} style={{marginRight: 4}} /> Arsipkan</button>
+            )}
+            {canDelete && <button onClick={()=>onDelete(d.id)} className="hover-scale" style={{...B(false), background:"#FDF5F8", border:"1.5px solid #9C2B4E", color:"#9C2B4E", padding:"7px 14px", fontSize:12, fontWeight:700}}><Trash size={14} style={{marginRight: 4}} /> Hapus</button>}
           </div>
           <div style={{display:"flex", gap:12, alignItems:"center"}}>
             {isSaving && (

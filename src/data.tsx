@@ -19,7 +19,7 @@ export const htmlToPlainText = (html: any) => {
   return text.trim();
 };
 
-export function CustomDropdown({ value, options = [], onChange, dark = false, style = {}, prefix = "", alignRight = false, onUpdateOptions }: { value: string, options?: any[], onChange: (val: string) => void, dark?: boolean, style?: any, prefix?: string, alignRight?: boolean, onUpdateOptions?: (newOptions: any[]) => void }) {
+export function CustomDropdown({ value, options = [], onChange, dark = false, style = {}, prefix = "", alignRight = false, onUpdateOptions, multiple = false }: { value: any, options?: any[], onChange: (val: any) => void, dark?: boolean, style?: any, prefix?: string, alignRight?: boolean, onUpdateOptions?: (newOptions: any[]) => void, multiple?: boolean }) {
   const [open, setOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -53,9 +53,26 @@ export function CustomDropdown({ value, options = [], onChange, dark = false, st
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [editMode, localOptions, onUpdateOptions]);
 
-  const activeOption = options.find(o => (typeof o === 'string' ? o : o.id || o.name || o) === value);
-  const displayLabel = activeOption ? (typeof activeOption === 'string' ? activeOption : activeOption.label || activeOption.name || activeOption) : value;
-  const activeColor = (activeOption && typeof activeOption !== 'string') ? activeOption.color : null;
+  const valuesArray = multiple ? (Array.isArray(value) ? value : (value ? String(value).split(',').map(s=>s.trim()).filter(Boolean) : [])) : [value];
+  const activeOptions = valuesArray.map(v => options.find(o => (typeof o === 'string' ? o : o.id || o.name || o) === v)).filter(Boolean);
+  
+  let displayLabel: any = value;
+  let activeColor = null;
+
+  if (multiple) {
+    if (activeOptions.length === 0) displayLabel = value || "Pilih opsi...";
+    else if (activeOptions.length === 1) {
+      const opt = activeOptions[0];
+      displayLabel = typeof opt === 'string' ? opt : opt.label || opt.name || opt;
+      activeColor = typeof opt === 'string' ? null : opt.color;
+    } else {
+      displayLabel = activeOptions.map(opt => typeof opt === 'string' ? opt : opt.label || opt.name || opt).join(", ");
+    }
+  } else {
+    const activeOption = activeOptions[0];
+    displayLabel = activeOption ? (typeof activeOption === 'string' ? activeOption : activeOption.label || activeOption.name || activeOption) : value;
+    activeColor = (activeOption && typeof activeOption !== 'string') ? activeOption.color : null;
+  }
 
   return (
     <div ref={ref} style={{ position: "relative", width: "100%" }}>
@@ -69,12 +86,15 @@ export function CustomDropdown({ value, options = [], onChange, dark = false, st
           background: dark ? (activeColor ? activeColor : "rgba(255,255,255,0.1)") : (activeColor ? activeColor + "15" : "white"), 
           fontSize: 13, fontWeight: 700, cursor: "pointer", 
           color: dark ? "white" : (activeColor || "#2C2016"),
+          textAlign: "left",
+          height: "auto",
+          minHeight: "36px",
           ...style
         }}
       >
-        <div style={{display: "flex", alignItems: "center", gap: 8, overflow: "hidden"}}>
+        <div style={{display: "flex", alignItems: "center", gap: 8, overflow: "hidden", flex: 1}} title={typeof displayLabel === 'string' ? displayLabel : ''}>
            {activeColor && !dark && <div style={{width:8, height:8, borderRadius:"50%", background:activeColor, flexShrink:0}}/>}
-           <span style={{overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap"}}>{prefix}{displayLabel}</span>
+           <span style={{whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", lineHeight: "1.4"}}>{prefix}{displayLabel}</span>
          </div>
          <ChevronDown size={14} style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'all 0.2s', opacity: 0.6, flexShrink: 0 }} />
       </button>
@@ -224,14 +244,24 @@ export function CustomDropdown({ value, options = [], onChange, dark = false, st
               <>
                 {options.map((o, i) => {
                   const val = typeof o === 'string' ? o : o.id || o.name || o;
-                  const isSelected = val === value;
+                  const isSelected = multiple ? valuesArray.includes(val) : val === value;
                   const label = typeof o === 'string' ? o : o.label || o.name || o;
                   const color = (typeof o !== 'string') ? o.color : null;
                   
                   return (
                     <div 
                       key={i} 
-                      onClick={() => { onChange(val); setOpen(false); }}
+                      onClick={() => { 
+                        if (multiple) {
+                           let v = [...valuesArray];
+                           if (v.includes(val)) v = v.filter(x => x !== val);
+                           else v.push(val);
+                           onChange(v);
+                        } else {
+                           onChange(val); 
+                           setOpen(false); 
+                        }
+                      }}
                       style={{ 
                         padding: "10px 12px", borderRadius: 8, fontSize: 13, fontWeight: isSelected?800:600, cursor: "pointer", 
                         background: isSelected ? (color ? color + "20" : "rgba(var(--theme-primary-rgb), 0.1)") : "transparent", 
@@ -243,8 +273,14 @@ export function CustomDropdown({ value, options = [], onChange, dark = false, st
                       onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = "#FAFAFA"; }}
                       onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = "transparent"; }}
                     >
-                      {color && <div style={{width:10, height:10, borderRadius:"50%", background:color}}/>}
-                      <span style={{flex: 1, whiteSpace: "nowrap"}}>{prefix}{label}</span>
+                      {multiple && (
+                        <div style={{width: 14, height: 14, borderRadius: 4, border: "1px solid", borderColor: isSelected ? (color || "var(--theme-primary)") : "#D1D5DB", background: isSelected ? (color || "var(--theme-primary)") : "white", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0}}>
+                          {isSelected && <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M10 3L4.5 8.5L2 6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                        </div>
+                      )}
+                      {color && !multiple && <div style={{width:10, height:10, borderRadius:"50%", background:color}}/>}
+                      {color && multiple && <div style={{width:10, height:10, borderRadius:"50%", background:color}}/>}
+                      <span style={{flex: 1, wordBreak: "break-word"}}>{prefix}{label}</span>
                     </div>
                   );
                 })}
@@ -512,10 +548,28 @@ export const GRP = {display:"flex",flexDirection:"column" as any,gap:8};
 // ─── TINY COMPONENTS ─────────────────────────────────────────────────────────
 export const SBadge = ({status}: any) => { const s=gss(status); return <span className="pill-tag" style={{background:s.bg,color:s.color}}>{status}</span>; };
 export const PBadge = ({name,platforms}: any) => { 
-  const bg = gpc(platforms,name); 
-  // Add transparency to the hex background colors defined in DP/DPL if needed for pastel, but we have 'light' variant.
-  // Actually, we'll just stick to the text color = thick, bg = pastel. We can use the 'light' color.
-  const p = platforms?.find((x:any)=>x.name===name);
-  const light = p?.light || `${bg}20`; // 20% opacity as fallback pastel
-  return <span className="pill-tag" style={{background:light,color:bg}}>{name}</span>; 
+  if (!name) return null;
+  const names = String(name).split(',').map(s=>s.trim()).filter(Boolean);
+  return (
+    <div style={{display:"flex", flexWrap:"wrap", gap:4}}>
+      {names.map((n, i) => {
+        const bg = gpc(platforms, n); 
+        const p = platforms?.find((x:any)=>x.name?.trim()?.toLowerCase()===n.toLowerCase());
+        const light = p?.light || `${bg}20`;
+        return <span key={i} className="pill-tag" style={{background:light,color:bg}}>{n}</span>; 
+      })}
+    </div>
+  );
+};
+export const PiBadge = ({name,pillars}: any) => {
+  if (!name) return null;
+  const names = String(name).split(',').map(s=>s.trim()).filter(Boolean);
+  return (
+    <div style={{display:"flex", flexWrap:"wrap", gap:4}}>
+      {names.map((n, i) => {
+        const ps = gps(pillars, n);
+        return <span key={i} style={{background:ps.light,color:ps.color,fontSize:8,padding:"1px 5px",borderRadius:6, fontWeight: 700}}>{n}</span>;
+      })}
+    </div>
+  );
 };
