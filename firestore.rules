@@ -119,6 +119,35 @@ service cloud.firestore {
     }
 
     // ─── WORKSPACES ──────────────────────────────────────────────────────────
+    match /soc_posts/{postId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && incoming().authorId == request.auth.uid;
+      allow update: if isSignedIn() && (
+        (incoming().diff(existing()).affectedKeys().hasAny(['likes', 'reposts']) && !incoming().diff(existing()).affectedKeys().hasAny(['authorId', 'authorName', 'authorAvatar', 'authorUsername', 'content', 'createdAt', 'replyTo'])) ||
+        (request.auth.uid == existing().authorId && incoming().diff(existing()).affectedKeys().hasOnly(['content', 'updatedAt']))
+      );
+      allow delete: if isAdmin() || (isSignedIn() && existing().authorId == request.auth.uid);
+    }
+
+    match /soc_chats/{chatId} {
+      allow read: if isSignedIn() && request.auth.uid in resource.data.participants;
+      allow create: if isSignedIn() && request.auth.uid in incoming().participants;
+      allow update: if isSignedIn() && request.auth.uid in existing().participants && incoming().diff(existing()).affectedKeys().hasOnly(['lastMessage', 'updatedAt']);
+    }
+
+    match /soc_messages/{messageId} {
+      allow read: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/soc_chats/$(resource.data.chatId)).data.participants;
+      allow create: if isSignedIn() && request.auth.uid == incoming().senderId && request.auth.uid in get(/databases/$(database)/documents/soc_chats/$(incoming().chatId)).data.participants;
+    }
+
+    match /notifications/{notifId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    // ─── WORKSPACES ──────────────────────────────────────────────────────────
     match /workspaces/{wsId} {
       allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || resource.data.get('publicLinkEnabled', false) == true);
       allow get: if isMember(wsId) || (isSignedIn() && (resource == null || resource.data.get('publicLinkEnabled', false) == true));

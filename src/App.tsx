@@ -17,6 +17,7 @@ import { Header, NavBar, FilterBar, Sidebar } from "./Nav";
 import { MonthView, WeekView, BoardView, TimelineView, TableView } from "./Views";
 import { AnalyticsView } from "./AnalyticsView";
 import { SocialStudioView } from "./SocialStudioView";
+import { SocHubView } from "./SocHubView";
 import { SettingsPanel, HOLIDAY_API_OPTIONS } from "./SettingsPanel";
 import { AdminPanel } from "./AdminPanel";
 import { ContentModal } from "./ContentModal";
@@ -1311,6 +1312,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
             {tab==="content_planner"&&contentTab==="table"&&<TableView filtered={filtered} openEdit={openEdit} archiveItem={archiveItem} unarchiveItem={unarchiveItem} deleteItem={deleteItem} pillars={pillars} platforms={platforms} showArchived={showArchived} search={search} bulkIds={bulkIds} setBulkIds={setBulkIds} onBulk={handleBulkActions} isRestricted={isRestricted}/>}
             {tab.startsWith("social")&&<SocialStudioView tab={tab} />}
             {tab==="analytics"&&<AnalyticsView content={content} pillars={pillars} platforms={platforms} pics={pics} statuses={statuses} openEdit={openEdit} isRestricted={isRestricted}/>}
+            {tab==="soc_hub"&&<SocHubView user={user} profile={profile} />}
             {tab==="settings"&&<SettingsPanel 
               initialSettings={{pillars, platforms, pics, statuses, holidays, holidayApis, customEvents: workspace?.settings?.customEvents || []}} 
               onSave={async (d:any) => {

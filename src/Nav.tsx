@@ -8,6 +8,7 @@ import {
   PieChart,
   Settings,
   Sun,
+  Users,
   Cloud,
   Edit2,
   Search,
@@ -989,37 +990,31 @@ export function Sidebar({
       id: "social-dashboard",
       ic: <Activity size={18} />,
       lb: "Overview",
-      soon: true,
     },
     {
       id: "social-analytics",
       ic: <BarChart2 size={18} />,
       lb: "Analytics Expert",
-      soon: true,
     },
     {
       id: "social-competitor",
       ic: <Search size={18} />,
       lb: "Analisis Kompetitor",
-      soon: true,
     },
     {
       id: "social-calendar",
       ic: <Calendar size={18} />,
       lb: "Kalender Konten",
-      soon: true,
     },
     {
       id: "social-inbox",
       ic: <MessageSquare size={18} />,
       lb: "Inbox & Komen",
-      soon: true,
     },
     {
       id: "social-content",
       ic: <Layout size={18} />,
       lb: "Konten",
-      soon: true,
     },
   ];
 
@@ -1091,7 +1086,7 @@ export function Sidebar({
       />
       <motion.div
         initial={false}
-        animate={{ width: open ? 270 : 64 }}
+        animate={{ width: open ? 230 : 64 }}
         transition={{ duration: 0.3, ease: "easeOut" }}
         style={{
           background: "var(--theme-sidebar)",
@@ -1109,7 +1104,7 @@ export function Sidebar({
       >
         <div
           style={{
-            minWidth: open ? 270 : 64,
+            minWidth: open ? 230 : 64,
             height: "100%",
             display: "flex",
             flexDirection: "column",
@@ -1225,7 +1220,7 @@ export function Sidebar({
                           display: "flex",
                           flexDirection: "column",
                           height: "100%",
-                          width: 270,
+                          width: 230,
                         }}
                       >
                         <NotificationPanel
@@ -1340,8 +1335,8 @@ export function Sidebar({
                                           border: "none",
                                           borderRadius: 12,
                                           padding: open
-                                            ? "10px 14px"
-                                            : "10px 8px",
+                                            ? "8px 12px"
+                                            : "8px",
                                           color:
                                             activeWorkspace?.id === ws.id
                                               ? "white"
@@ -1572,7 +1567,7 @@ export function Sidebar({
                                   ? "var(--theme-gradient)"
                                   : "transparent",
                               border: "none",
-                              padding: open ? "10px 14px" : "10px 8px",
+                              padding: open ? "8px 12px" : "8px",
                               color:
                                 tab === "dashboard"
                                   ? "white"
@@ -1581,7 +1576,7 @@ export function Sidebar({
                               display: "flex",
                               alignItems: "center",
                               gap: 12,
-                              fontSize: 13,
+                              fontSize: 12,
                               fontWeight: 700,
                               cursor: "pointer",
                               transition: "all 0.3s ease",
@@ -1633,7 +1628,7 @@ export function Sidebar({
                                   ? "rgba(255,255,255,0.1)"
                                   : "transparent",
                               border: "none",
-                              padding: open ? "10px 14px" : "10px 8px",
+                              padding: open ? "8px 12px" : "8px",
                               color:
                                 tab === "content_planner"
                                   ? "white"
@@ -1642,7 +1637,7 @@ export function Sidebar({
                               display: "flex",
                               alignItems: "center",
                               gap: 12,
-                              fontSize: 13,
+                              fontSize: 12,
                               fontWeight: 700,
                               cursor: "pointer",
                               transition: "all 0.3s ease",
@@ -1691,7 +1686,7 @@ export function Sidebar({
                                   ? "rgba(255,255,255,0.1)"
                                   : "transparent",
                               border: "none",
-                              padding: open ? "10px 14px" : "10px 8px",
+                              padding: open ? "8px 12px" : "8px",
                               color:
                                 tab === "analytics"
                                   ? "white"
@@ -1700,7 +1695,7 @@ export function Sidebar({
                               display: "flex",
                               alignItems: "center",
                               gap: 12,
-                              fontSize: 13,
+                              fontSize: 12,
                               fontWeight: 700,
                               cursor: "pointer",
                               transition: "all 0.3s ease",
@@ -1730,6 +1725,66 @@ export function Sidebar({
                                   }}
                                 >
                                   Analitik
+                                </motion.span>
+                              )}
+                            </AnimatePresence>
+                          </button>
+                        </div>
+                        
+                        <div style={{ marginBottom: 24 }}>
+                          <button
+                            className="hover-scale"
+                            onClick={() => {
+                              setTab("soc_hub");
+                              if (!open) setOpen(true);
+                            }}
+                            style={{
+                              width: "100%",
+                              textAlign: "left",
+                              background:
+                                tab === "soc_hub"
+                                  ? "rgba(255,255,255,0.1)"
+                                  : "transparent",
+                              border: "none",
+                              padding: open ? "8px 12px" : "8px",
+                              color:
+                                tab === "soc_hub"
+                                  ? "white"
+                                  : "rgba(255,255,255,0.7)",
+                              borderRadius: 12,
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 12,
+                              fontSize: 12,
+                              fontWeight: 700,
+                              cursor: "pointer",
+                              transition: "all 0.3s ease",
+                            }}
+                          >
+                            <div
+                              style={{
+                                width: 32,
+                                display: "flex",
+                                justifyContent: "center",
+                                alignItems: "center",
+                                flexShrink: 0,
+                              }}
+                            >
+                              <Users size={18} />
+                            </div>
+                            <AnimatePresence>
+                              {open && (
+                                <motion.span
+                                  initial={{ opacity: 0, width: 0 }}
+                                  animate={{ opacity: 1, width: "auto" }}
+                                  exit={{ opacity: 0, width: 0 }}
+                                  style={{
+                                    overflow: "hidden",
+                                    whiteSpace: "nowrap",
+                                    flex: 1,
+                                  }}
+                                >
+                                  SocHub
                                 </motion.span>
                               )}
                             </AnimatePresence>
@@ -1812,7 +1867,7 @@ export function Sidebar({
                                       alignItems: "center",
                                       gap: 12,
                                       width: "100%",
-                                      padding: open ? "10px 14px" : "10px 8px",
+                                      padding: open ? "8px 12px" : "8px",
                                       background:
                                         tab === v.id
                                           ? "rgba(255,255,255,0.1)"
@@ -1862,7 +1917,7 @@ export function Sidebar({
                                           >
                                             <span
                                               style={{
-                                                fontSize: 13,
+                                                fontSize: 12,
                                                 fontWeight:
                                                   tab === v.id ? 700 : 500,
                                               }}
@@ -1922,7 +1977,7 @@ export function Sidebar({
                                 alignItems: "center",
                                 gap: 12,
                                 width: "100%",
-                                padding: open ? "10px 14px" : "10px 8px",
+                                padding: open ? "8px 12px" : "8px",
                                 background:
                                   tab === v.id
                                     ? "rgba(255,255,255,0.1)"
@@ -1969,7 +2024,7 @@ export function Sidebar({
                                     >
                                       <span
                                         style={{
-                                          fontSize: 13,
+                                          fontSize: 12,
                                           fontWeight: tab === v.id ? 700 : 500,
                                         }}
                                       >

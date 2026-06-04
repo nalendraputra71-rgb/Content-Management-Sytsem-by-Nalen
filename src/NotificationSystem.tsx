@@ -187,6 +187,50 @@ export function useNotifications(userProfile: any) {
          }, (err:any) => {
             console.warn("Invites onSnapshot error:", err);
          });
+
+         let unsubPersonal = onSnapshot(query(collection(db, "notifications"), where("userId", "==", userProfile.uid)), (snap) => {
+            if (!isMounted) return;
+            const personalNotifs: any[] = [];
+            snap.forEach(d => {
+               const data = d.data();
+               personalNotifs.push({
+                   id: `personal_${d.id}`,
+                   type: data.type || "social",
+                   icon: <Bell size={20} color="#3B82F6" />,
+                   title: data.title,
+                   desc: data.body,
+                   link: data.link,
+                   time: data.createdAt?.toMillis ? new Date(data.createdAt.toMillis()).toLocaleString("id-ID", {dateStyle:"short", timeStyle:"short"}) : new Date().toLocaleString("id-ID", {dateStyle:"short", timeStyle:"short"}),
+                   unread: !data.read
+               });
+            });
+            
+            // Sort by time descending
+            personalNotifs.sort((a,b) => {
+               const timeA = a.time.split(" ")[0].split("/").reverse().join() + a.time.split(" ")[1];
+               const timeB = b.time.split(" ")[0].split("/").reverse().join() + b.time.split(" ")[1];
+               return timeA < timeB ? 1 : -1;
+            });
+
+            setNotifications(prev => {
+                const others = prev.filter(p => !p.id.startsWith("personal_"));
+                const newPersonal = personalNotifs.filter(n => !others.some(o => o.id === n.id));
+                const finalNotifs = applyArchive([...personalNotifs, ...others]);
+                
+                if (newPersonal.length > 0) {
+                     const unarchivedNew = newPersonal.filter(n => !archivedIds.includes(n.id));
+                     if (unarchivedNew.length > 0 && typeof window !== "undefined") {
+                         setTimeout(() => setToast(unarchivedNew[0]), 500); 
+                     }
+                }
+                return finalNotifs;
+            });
+         }, (err:any) => {
+            console.warn("Personal onSnapshot error:", err);
+         });
+         
+         // Attach to window so we can clean it up
+         (window as any)._unsubPersonal = unsubPersonal;
       }
     });
 
@@ -198,6 +242,7 @@ export function useNotifications(userProfile: any) {
        if (unsubGlobal) unsubGlobal();
        if (unsubTickets) unsubTickets();
        if (unsubInvites) unsubInvites();
+       if ((window as any)._unsubPersonal) (window as any)._unsubPersonal();
     };
   }, [userProfile]);
 

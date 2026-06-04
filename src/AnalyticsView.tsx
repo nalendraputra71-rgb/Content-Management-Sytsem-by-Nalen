@@ -524,22 +524,14 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
       </div>
 
       {/* Filters (Sticky) */}
-      <div style={{position:"sticky", top:0, zIndex:50, background: "#FDFDFD", paddingBottom: 16, paddingTop: 8, borderBottom: "1px solid rgba(0,0,0,0.05)", display:"flex",justifyContent:"flex-end",alignItems:"center",flexWrap:"wrap",gap:16}}>
-        <div style={{display:"flex",gap:12,flexWrap:"wrap", alignItems: "center"}}>
-          <div style={{display:"flex",gap:4,background:"white",padding:"4px",borderRadius:12,border:"1px solid rgba(0,0,0,0.08)", boxShadow:"0 2px 8px rgba(0,0,0,0.02)"}}>
+      <div className="sticky top-0 z-50 bg-[#FDFDFD] pb-4 pt-2 border-b border-black/5 flex items-center justify-start gap-3 overflow-x-auto no-scrollbar w-full">
+        <div className="flex gap-3 items-center min-w-max pb-1 pr-4">
+          <div className="flex gap-2 bg-white p-1 rounded-xl border border-black/5 shadow-sm">
             <select
               value={platformFilter}
               onChange={(e) => setPlatformFilter(e.target.value)}
-              style={{
-                border: "none",
-                background: "transparent",
-                color: platformFilter === "all" ? "rgba(0,0,0,0.5)" : "#111827",
-                fontSize: 13,
-                fontWeight: 600,
-                padding: "6px 12px",
-                cursor: "pointer",
-                outline: "none"
-              }}
+              className="border-none bg-transparent outline-none text-sm font-semibold cursor-pointer px-3 py-1.5"
+              style={{ color: platformFilter === "all" ? "rgba(0,0,0,0.5)" : "#111827" }}
             >
               <option value="all">Semua Platform</option>
               {platforms?.map((p: any) => (
@@ -550,25 +542,25 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
             </select>
           </div>
 
-          <div style={{width:1,height:24,background:"rgba(0,0,0,0.1)"}}/>
+          <div className="w-px h-6 bg-black/10 shrink-0"/>
 
-          <div style={{display:"flex",gap:4,background:"white",padding:"4px",borderRadius:12,border:"1px solid rgba(0,0,0,0.08)", boxShadow:"0 2px 8px rgba(0,0,0,0.02)"}}>
+          <div className="flex gap-1 bg-white p-1 rounded-xl border border-black/5 shadow-sm">
             {[["all","Semua Data"],["organic","Organic"],["ads","Ads Only"]].map(([k,l])=>(
-              <button key={k} onClick={()=>setAdsFilter(k)} style={{background:adsFilter===k?"#F3F4F6":"transparent",color:adsFilter===k?"#111827":"rgba(0,0,0,0.5)",border:"none",borderRadius:8,padding:"6px 12px",fontSize:13,fontWeight:600,cursor:"pointer", transition:"all 0.2s"}}>{l}</button>
+              <button key={k} onClick={()=>setAdsFilter(k)} className={`text-sm font-semibold px-3 py-1.5 rounded-lg border-none cursor-pointer transition-colors ${adsFilter===k ? "bg-gray-100 text-gray-900" : "bg-transparent text-gray-500 hover:bg-gray-50"}`}>{l}</button>
             ))}
           </div>
 
-          <div style={{width:1,height:24,background:"rgba(0,0,0,0.1)"}}/>
+          <div className="w-px h-6 bg-black/10 shrink-0"/>
 
-          <div style={{display:"flex",gap:4,flexWrap:"wrap", background:"white",padding:"4px",borderRadius:12,border:"1px solid rgba(0,0,0,0.08)", boxShadow:"0 2px 8px rgba(0,0,0,0.02)"}}>
+          <div className="flex gap-1 bg-white p-1 rounded-xl border border-black/5 shadow-sm">
             {[["all","Sepanjang Waktu"],["tm","Bulan Ini"],["lm","Bulan Lalu"],["3m","3 Bln"],["6m","6 Bln"],["1y","1 Thn"],["custom","Custom"]].map(([k,l])=>(
-              <button key={k} onClick={()=>setDateFilt(k)} style={{background:dateFilt===k?"#111827":"transparent",color:dateFilt===k?"white":"rgba(0,0,0,0.6)",border:"none",borderRadius:8,padding:"6px 12px",fontSize:13,fontWeight:600,cursor:"pointer", transition:"all 0.2s"}}>{l}</button>
+              <button key={k} onClick={()=>setDateFilt(k)} className={`text-sm font-semibold px-3 py-1.5 rounded-lg border-none cursor-pointer transition-colors ${dateFilt===k ? "bg-gray-900 text-white" : "bg-transparent text-gray-500 hover:bg-gray-50"}`}>{l}</button>
             ))}
             {dateFilt==="custom" && (
-               <div style={{display:"flex",gap:6,alignItems:"center", paddingLeft: 8}}>
-                 <input type="date" value={customS} onChange={(e)=>setCustomS(e.target.value)} style={{...I(),padding:"4px 8px", background:"#FAFAFA", borderRadius:6, border:"1px solid rgba(0,0,0,0.1)"}}/>
-                 <span style={{fontSize:12,color:"rgba(44,32,22,0.4)", fontWeight:600}}>s/d</span>
-                 <input type="date" value={customE} onChange={(e)=>setCustomE(e.target.value)} style={{...I(),padding:"4px 8px", background:"#FAFAFA", borderRadius:6, border:"1px solid rgba(0,0,0,0.1)"}}/>
+               <div className="flex gap-2 items-center pl-2">
+                 <input type="date" value={customS} onChange={(e)=>setCustomS(e.target.value)} className="text-sm px-2 py-1 bg-gray-50 rounded-md border border-black/10 outline-none"/>
+                 <span className="text-xs text-gray-400 font-semibold">s/d</span>
+                 <input type="date" value={customE} onChange={(e)=>setCustomE(e.target.value)} className="text-sm px-2 py-1 bg-gray-50 rounded-md border border-black/10 outline-none"/>
                </div>
             )}
           </div>
@@ -579,8 +571,8 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
       <div style={{display:"grid",gap:16,gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))"}}>
         <MCard label="Total Konten" val={total} sub={`Dipublikasikan: ${pub}`} color="#3B82F6" icon={PieChart} pctStr={calcPct(total, prevTotal)} bg="#111827" />
         <MCard label="Views (Impresi)" val={fmt(tV)} pctStr={calcPct(tV, prevTV)} color="#EAB308" icon={Activity}/>
-        <MCard label="Total Reach" val={fmt(tR)} pctStr={calcPct(tR, prevTR)} color="#8B5CF6" icon={Users}/>
-        <MCard label="Tot. Engagement" val={fmt(tE)} sub={`Tingkat Interaksi: ${er}% (vs ${(prevER).toFixed(2)}%)`} pctStr={calcPct(tE, prevTE)} color="#10B981" icon={Target}/>
+        <MCard label="Reach" val={fmt(tR)} pctStr={calcPct(tR, prevTR)} color="#8B5CF6" icon={Users}/>
+        <MCard label="Engagement" val={fmt(tE)} sub={`Tingkat Interaksi: ${er}% (vs ${(prevER).toFixed(2)}%)`} pctStr={calcPct(tE, prevTE)} color="#10B981" icon={Target}/>
         {(adsFilter==="all"||adsFilter==="ads") && <>
           <MCard label="Ad Clicks" val={fmt(tClicks)} color="#EC4899" icon={Zap} pctStr={calcPct(tClicks, prevTClicks)}/>
           <MCard label="Ad Conversions" val={fmt(tConv)} color="#EC4899" icon={Star} pctStr={calcPct(tConv, prevTConv)}/>
