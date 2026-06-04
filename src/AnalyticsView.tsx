@@ -118,6 +118,7 @@ export function AnalyticsView({content,pillars,platforms,pics,statuses,openEdit,
   const [platformMetric, setPlatformMetric] = useState("engagement");
   const [platformChartType, setPlatformChartType] = useState("doughnut");
   const [picChartType, setPicChartType] = useState("doughnut");
+  const [heatmapMetric, setHeatmapMetric] = useState("engagement");
   
   const [aiInsight, setAiInsight] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
@@ -337,10 +338,14 @@ export function AnalyticsView({content,pillars,platforms,pics,statuses,openEdit,
     base.filter((c:any)=>c.status==="Published").forEach((c:any) => {
       let cd = new Date(c.year, c.month-1, c.day).getDay();
       let h = c.uploadHour || 9;
-      if (h>=0 && h<24) m[cd][h] += getEng(c); 
+      if (h>=0 && h<24) {
+        if (heatmapMetric === "engagement") m[cd][h] += getEng(c);
+        else if (heatmapMetric === "views") m[cd][h] += getV(c);
+        else if (heatmapMetric === "reach") m[cd][h] += getR(c);
+      }
     });
     return m;
-  }, [base]);
+  }, [base, heatmapMetric]);
 
   // Platform Data
   const platformData = useMemo(() => {
@@ -618,15 +623,16 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                     <button onClick={()=>setPlatformChartType("doughnut")} style={{background:platformChartType==="doughnut"?"white":"transparent",border:"none",borderRadius:6,padding:"4px 8px",fontSize:11,fontWeight:700,color:platformChartType==="doughnut"?"#111827":"rgba(0,0,0,0.5)",cursor:"pointer",boxShadow:platformChartType==="doughnut"?"0 2px 4px rgba(0,0,0,0.05)":"none"}}>Doughnut</button>
                     <button onClick={()=>setPlatformChartType("bar")} style={{background:platformChartType==="bar"?"white":"transparent",border:"none",borderRadius:6,padding:"4px 8px",fontSize:11,fontWeight:700,color:platformChartType==="bar"?"#111827":"rgba(0,0,0,0.5)",cursor:"pointer",boxShadow:platformChartType==="bar"?"0 2px 4px rgba(0,0,0,0.05)":"none"}}>Bar</button>
                   </div>
-                  <select 
+                  <CustomDropdown 
                     value={platformMetric} 
-                    onChange={(e) => setPlatformMetric(e.target.value)} 
-                    style={{ fontSize: 12, padding: "6px 12px", borderRadius: 8, border: "1px solid rgba(0,0,0,0.1)", background: "white", outline: "none", cursor: "pointer", fontWeight: 600 }}
-                  >
-                    <option value="engagement">Engagement</option>
-                    <option value="views">Views</option>
-                    <option value="reach">Reach</option>
-                  </select>
+                    onChange={setPlatformMetric} 
+                    options={[
+                      {id:"engagement", label:"Engagement"},
+                      {id:"views", label:"Views"},
+                      {id:"reach", label:"Reach"}
+                    ]} 
+                    style={{ width: 120 }} 
+                  />
                 </div>
               </div>
               <ResponsiveContainer width="100%" height={260} style={{marginTop: "auto"}}>
@@ -747,13 +753,25 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
           {/* Heatmap (Full Width) */}
           <div style={{...CARD({background: "white", padding: "24px", borderRadius: 20, border: "1px solid rgba(0,0,0,0.06)", boxShadow: "0 4px 24px rgba(0,0,0,0.02)", width: "100%", overflow: "hidden"})}}>
             <div style={{width: "100%"}}>
-              <div style={{display:"flex", alignItems:"center", gap: 10, marginBottom: 24}}>
-                <div style={{background:"#FEE2E2", padding: 8, borderRadius: 10}}><Clock size={20} color="#DC2626" /></div>
-                <h4 style={{fontSize:16,fontWeight:800,margin:0, color:"#111827", letterSpacing: "-0.5px"}}>Heatmap Aktivitas (Best Time)</h4>
+              <div style={{display:"flex", alignItems:"center", gap: 10, marginBottom: 24, justifyContent: "space-between", flexWrap: "wrap"}}>
+                <div style={{display:"flex", alignItems:"center", gap: 10}}>
+                  <div style={{background:"#FEE2E2", padding: 8, borderRadius: 10}}><Clock size={20} color="#DC2626" /></div>
+                  <h4 style={{fontSize:16,fontWeight:800,margin:0, color:"#111827", letterSpacing: "-0.5px"}}>Heatmap Aktivitas (Best Time)</h4>
+                </div>
+                <CustomDropdown 
+                  value={heatmapMetric} 
+                  onChange={setHeatmapMetric} 
+                  options={[
+                    {id:"engagement", label:"Engagement"},
+                    {id:"reach", label:"Awareness (Reach)"},
+                    {id:"views", label:"Awareness (Views)"}
+                  ]} 
+                  style={{ width: 170 }} 
+                />
               </div>
               <div style={{display:"flex",gap:"1%",marginBottom:8}}>
                 <div style={{width:24}}/>
-                {Array.from({length:24}).map((_,i)=><div key={`h${i}`} style={{flex:1,textAlign:"center",fontSize:9,color:"rgba(0,0,0,0.5)", fontWeight:700}}>{i%2===0?i:""}</div>)}
+                {Array.from({length:24}).map((_,i)=><div key={`h${i}`} style={{flex:1,textAlign:"center",fontSize:9,color:"rgba(0,0,0,0.5)", fontWeight:700}}>{i}</div>)}
               </div>
               {heatmap.map((row,di) => {
                 const rowMax = Math.max(...row, 1);
@@ -761,7 +779,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                   <div key={di} style={{display:"flex",gap:"1%",marginBottom:4,alignItems:"center"}}>
                     <div style={{width:24,fontSize:10,fontWeight:700, color:"#111827"}}>{DAYS_S[di]}</div>
                     {row.map((val,hi) => (
-                      <div key={hi} title={`${DAYS_ID[di]} Jam ${hi} - ${fmt(val)} Eng`} style={{flex:1,height:28,borderRadius:4,background:val===0?'#F3F4F6':`#3B82F6` , opacity: val===0 ? 1 : Math.max(0.15, val/rowMax), transition: "all 0.2s"}}/>
+                      <div key={hi} title={`${DAYS_ID[di]} Jam ${hi} - ${fmt(val)} ${heatmapMetric==="engagement"?"Eng":heatmapMetric==="reach"?"Reach":"Views"}`} style={{flex:1,height:28,borderRadius:4,background:val===0?'#F3F4F6':(heatmapMetric==="engagement"?`#3B82F6`:`#8B5CF6`) , opacity: val===0 ? 1 : Math.max(0.15, val/rowMax), transition: "all 0.2s"}}/>
                     ))}
                   </div>
                 );

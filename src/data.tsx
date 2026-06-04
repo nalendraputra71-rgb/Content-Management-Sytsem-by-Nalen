@@ -334,7 +334,7 @@ export const DH: any = {
 // ─── UTILS ───────────────────────────────────────────────────────────────────
 export const gid  = () => `${Date.now()}-${Math.random().toString(36).slice(2,7)}`;
 export const eng  = (m: any)  => m ? (m.likes||0)+(m.comments||0)+(m.shares||0)+(m.reposts||0)+(m.saves||0) : 0;
-export const fmt  = (n: any)  => String(n||0);
+export const fmt  = (n: any)  => Number(n||0).toLocaleString('id-ID');
 export const fmtD = (y: any,mo: any,d: any) => { const w=new Date(y,mo-1,d).getDay(); return `${DAYS_ID[w]}, ${String(d).padStart(2,"0")}/${String(mo).padStart(2,"0")}/${y}`; };
 export const fmtT = (h: any, m: any, format?: string) => {
   const hh = String(h !== undefined && h !== null ? h : 9).padStart(2,"0");
