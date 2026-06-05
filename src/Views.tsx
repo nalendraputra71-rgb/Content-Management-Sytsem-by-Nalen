@@ -5,7 +5,7 @@ import {
   I, B, CARD, PBadge, SBadge, PiBadge, getDynamicEvents, htmlToPlainText 
 } from "./data";
 
-export function MonthView({year,month,monthContent,filtered,openEdit,openAdd,showHolidays,holidays,customEvents,pillars,platforms,showArchived}: any) {
+export function MonthView({year,month,monthContent,filtered,openEdit,openAdd,showHolidays,holidays,customEvents,pillars,platforms,showArchived,contentTypes}: any) {
   const dim = new Date(year,month,0).getDate();
   const sd = new Date(year,month-1,1).getDay();
   
@@ -116,10 +116,17 @@ export function MonthView({year,month,monthContent,filtered,openEdit,openAdd,sho
               <div style={{display:"flex",flexDirection:"column",gap:2, maxHeight: "150px", overflowY: "auto", paddingRight: "2px", scrollbarWidth: "thin"}}>
                 {items.map((item:any)=>{
                   const ps = item.archived ? { color: "#7A7976", light: "#EBEAE6" } : gps(pillars, String(item.pillar).split(',')[0].trim());
+                  const ctName = String(item.contentType || "").split(',')[0].trim();
+                  const ctChar = ctName ? ctName[0].toUpperCase() : (item.platform ? String(item.platform).split(',')[0].trim()[0].toUpperCase() : "T");
+                  const ctBg = item.archived 
+                    ? "#9E9D9A" 
+                    : (ctName 
+                        ? gpc(contentTypes || [], ctName) 
+                        : gpc(platforms, String(item.platform || "").split(',')[0].trim()));
                   return (
                     <button key={item.id} className="hover-scale" onClick={()=>openEdit(item)} style={{background:ps.light,flexShrink:0,border:"none",borderLeft:`3px solid ${ps.color}`,borderRadius:"4px 8px 8px 4px",padding:"4px 6px",textAlign:"left",cursor:"pointer",width:"100%",marginBottom:2}}>
                       <div style={{display:"flex",alignItems:"flex-start",gap:3}}>
-                        <span className="pill-tag" style={{background:item.archived ? "#9E9D9A" : gpc(platforms, String(item.platform).split(',')[0].trim()),color:"#FAF7F2",fontSize:8,padding:"1px 4px",marginTop:1}}>{String(item.platform).split(',')[0].trim()[0]}</span>
+                        <span className="pill-tag" style={{background:ctBg,color:"#FAF7F2",fontSize:8,padding:"1px 4px",marginTop:1}}>{ctChar}</span>
                         {item.isAds&&<span style={{fontSize:8,marginTop:1}}>💰</span>}
                         <span style={{fontSize:10,color:ps.color,fontWeight:700,lineHeight:1.3,display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden"}}>{item.title||"(tanpa judul)"}{item.archived ? " 📦" : ""}</span>
                       </div>
