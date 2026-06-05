@@ -229,7 +229,7 @@ export function CustomDropdown({ value, options = [], onChange, dark = false, st
                   onClick={(e) => {
                     e.stopPropagation();
                     const isObj = localOptions.length > 0 && typeof localOptions[0] !== 'string';
-                    const newItem = isObj ? {name: "Opsi Baru", id: "opsi-" + Date.now(), color: "#3B82F6"} : "Opsi Baru";
+                    const newItem = isObj ? {name: "Opsi Baru", id: "Opsi Baru", color: "#3B82F6"} : "Opsi Baru";
                     const newOpts = [...localOptions, newItem];
                     setLocalOptions(newOpts);
                   }}
@@ -360,6 +360,15 @@ export const SS: any = {
   "Ready to Post":{bg:"#EAF1E5",color:"#3E5E28"},
   "Published":{bg:"#E5F4EE",color:"#2D7A5E"},
 };
+
+export const DCT = [
+  {name: "Feed", color: "#2B4C7E"},
+  {name: "Video Pendek", color: "#FF6B00"},
+  {name: "Video Panjang", color: "#3E5E28"},
+  {name: "Single Post", color: "#9C2B4E"},
+  {name: "Story", color: "#A67C1C"}
+];
+
 export const DH: any = {
   "2025-5-1":"🛠️ Hari Buruh","2025-5-2":"📚 Hari Pendidikan","2025-5-12":"🙏 Waisak",
   "2025-5-14":"🎉 Launch Day!","2025-5-20":"🇮🇩 Kebangkitan Nasional",
@@ -407,10 +416,11 @@ export const gps  = (ps: any,name: any) => {
 export const gpc  = (pls: any,name: any) => (pls.find((p:any)=>p.name?.trim()?.toLowerCase()===name?.trim()?.toLowerCase())||{color:"#2C2016"}).color;
 export const gss  = (name: any) => SS[name]||{bg:"#F5F0E8",color:"#A67C1C"};
 
-export const emptyItem = (y:any,mo:any,d:any,pillars:any,platforms:any,pics:any,statuses:any) => ({
+export const emptyItem = (y:any,mo:any,d:any,pillars:any,platforms:any,pics:any,statuses:any,contentTypes:any) => ({
   id:gid(),year:y,month:mo,day:d,
   uploadHour:9,uploadMinute:0,
   pillar:pillars[0]?.name||pillars[0]||"",platform:platforms[0]?.name||platforms[0]||"",
+  contentType:contentTypes?.[0]?.name||contentTypes?.[0]||"",
   pic:pics[0]?.name||pics[0]||"",status:statuses[0]?.name||statuses[0]||"Draft",
   title:"",caption:"",briefCopywriting:"",objective:"",
   referenceText:"",referenceLinks:[],referenceImage:"",

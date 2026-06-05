@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid, Cell, PieChart as RPieChart, Pie } from "recharts";
 import Markdown from "react-markdown";
 import { motion, AnimatePresence } from "motion/react";
-import { ChevronDown, TrendingUp, Sparkles, PieChart, Users, BarChart2, Activity, Calendar, Zap, AlertCircle, ArrowUpRight, ArrowDownRight, Clock, Target, Star } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, TrendingUp, Sparkles, PieChart, Users, BarChart2, Activity, Calendar, Zap, AlertCircle, ArrowUpRight, ArrowDownRight, Clock, Target, Star } from "lucide-react";
 
 const GeminiIcon = ({ size = 18 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -106,8 +106,255 @@ function CustomDropdown({ value, options = [], onChange, style }: { value: strin
   );
 }
 
+function PlatformFilterPopover({ platformFilter, setPlatformFilter, platforms }: any) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (ref.current && !ref.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const activeLabel = platformFilter === "all" ? "Semua Platform" : platformFilter;
+
+  return (
+    <div ref={ref} className="relative">
+      <button onClick={() => setOpen(!open)} className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-black/10 shadow-sm cursor-pointer hover:bg-gray-50 transition-colors">
+        <PieChart size={16} className="text-gray-500" />
+        <span className="text-sm font-semibold text-gray-800">{activeLabel}</span>
+        <ChevronDown size={14} className="text-gray-500 ml-1" />
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div 
+            initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }} transition={{ duration: 0.15 }}
+            className="absolute top-full left-0 mt-2 bg-white rounded-xl shadow-2xl border border-black/10 z-[9999] overflow-hidden flex flex-col w-max min-w-[160px] text-left max-h-[350px] overflow-y-auto"
+          >
+             <label className="flex items-center gap-2.5 px-3 py-2 hover:bg-gray-50 cursor-pointer">
+               <div className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center bg-white ${platformFilter === "all" ? 'border-blue-500' : 'border-gray-300'}`}>
+                 {platformFilter === "all" && <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>}
+               </div>
+               <span className="text-sm font-semibold text-gray-700">Semua Platform</span>
+               <input type="radio" className="hidden" value="all" checked={platformFilter === "all"} onChange={() => { setPlatformFilter("all"); setOpen(false); }} />
+             </label>
+             {platforms?.map((p: any) => {
+               const val = typeof p === 'string' ? p : p.name;
+               return (
+                 <label key={val} className="flex items-center gap-2.5 px-3 py-2 hover:bg-gray-50 cursor-pointer border-t border-gray-100">
+                   <div className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center bg-white ${platformFilter === val ? 'border-blue-500' : 'border-gray-300'}`}>
+                     {platformFilter === val && <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>}
+                   </div>
+                   <span className="text-sm font-semibold text-gray-700">{val}</span>
+                   <input type="radio" className="hidden" value={val} checked={platformFilter === val} onChange={() => { setPlatformFilter(val); setOpen(false); }} />
+                 </label>
+               )
+             })}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+function DateFilterPopover({ dateFilt, setDateFilt, customS, setCustomS, customE, setCustomE }: any) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  const OPTIONS = [
+    {id:"yesterday", label:"Yesterday"},
+    {id:"7d", label:"Last 7 days"},
+    {id:"28d", label:"Last 28 days"},
+    {id:"90d", label:"Last 90 days"},
+    {id:"tw", label:"This week"},
+    {id:"tm", label:"This month"},
+    {id:"ty", label:"This year"},
+    {id:"lw", label:"Last week"},
+    {id:"lm", label:"Last month"},
+    {id:"custom", label:"Custom"},
+  ];
+
+  let activeLabel = OPTIONS.find(o => o.id === dateFilt)?.label || "Sepanjang Waktu";
+  if (dateFilt === "custom") {
+    const formatDate = (dStr: string) => {
+      if (!dStr) return "";
+      const d = new Date(dStr);
+      return isNaN(d.getTime()) ? "" : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    };
+    if (customS && customE) activeLabel = `${formatDate(customS)} - ${formatDate(customE)}`;
+    else if (customS) activeLabel = formatDate(customS);
+  }
+
+  const [tempFilt, setTempFilt] = useState(dateFilt);
+  const [tempS, setTempS] = useState(customS);
+  const [tempE, setTempE] = useState(customE);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (ref.current && !ref.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleUpdate = () => {
+    setDateFilt(tempFilt);
+    if(tempFilt === "custom") {
+      setCustomS(tempS);
+      setCustomE(tempE);
+    }
+    setOpen(false);
+  };
+
+  const handleCancel = () => {
+    setTempFilt(dateFilt);
+    setTempS(customS);
+    setTempE(customE);
+    setOpen(false);
+  };
+
+  const [navDate, setNavDate] = useState(new Date());
+
+  const handleDateClick = (y: number, m: number, d: number) => {
+    setTempFilt("custom");
+    const clickedDateStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    
+    if (!tempS || (tempS && tempE)) {
+      setTempS(clickedDateStr);
+      setTempE("");
+    } else {
+      const sDate = new Date(tempS);
+      const clickedDate = new Date(clickedDateStr);
+      if (clickedDate < sDate) {
+        setTempE(tempS);
+        setTempS(clickedDateStr);
+      } else {
+        setTempE(clickedDateStr);
+      }
+    }
+  };
+
+  const isExactDate = (y: number, m: number, d: number) => {
+    if (tempFilt !== "custom") return false;
+    if (!tempS) return false;
+    const curDateStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    return curDateStr === tempS || curDateStr === tempE;
+  };
+
+  const isDateInRange = (y: number, m: number, d: number) => {
+    if (tempFilt !== "custom") return false;
+    if (!tempS || !tempE) return false;
+    const curDateStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    return curDateStr > tempS && curDateStr < tempE;
+  };
+
+  const renderCalendar = (offset: number) => {
+    const baseDate = new Date(navDate.getFullYear(), navDate.getMonth() + offset, 1);
+    const y = baseDate.getFullYear();
+    const m = baseDate.getMonth();
+    const firstDay = new Date(y, m, 1).getDay();
+    const daysInMonth = new Date(y, m+1, 0).getDate();
+    
+    let days = [];
+    for(let i=0;i<firstDay;i++) days.push(null);
+    for(let i=1;i<=daysInMonth;i++) days.push(i);
+
+    const monthName = baseDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+
+    return (
+      <div className="flex-1 w-52 bg-white">
+         <div className="font-semibold text-gray-800 text-sm mb-3 text-center">{monthName}</div>
+         <div className="grid grid-cols-7 gap-1 text-center text-xs text-gray-500 mb-2 font-medium">
+           {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d=><div key={d}>{d}</div>)}
+         </div>
+         <div className="grid grid-cols-7 gap-y-1 gap-x-0 cursor-default">
+           {days.map((d, i) => {
+             if(!d) return <div key={i} />;
+             const isSel = isExactDate(y, m, d);
+             const inRange = isDateInRange(y, m, d);
+             
+             return (
+               <div 
+                 key={i} 
+                 onClick={() => handleDateClick(y, m, d)}
+                 className={`text-xs p-1.5 rounded-md text-center transition-colors cursor-pointer ${isSel ? 'bg-blue-600 text-white font-bold' : inRange ? 'bg-blue-50 text-blue-800' : 'text-gray-700 hover:bg-gray-100'}`}
+               >
+                 {d}
+               </div>
+             );
+           })}
+         </div>
+      </div>
+    )
+  }
+
+  return (
+    <div ref={ref} className="relative">
+      <button onClick={() => { setTempFilt(dateFilt); setTempS(customS); setTempE(customE); setOpen(!open); }} className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-black/10 shadow-sm cursor-pointer hover:bg-gray-50 transition-colors">
+        <Calendar size={16} className="text-gray-500" />
+        <span className="text-sm font-semibold text-gray-800">{activeLabel}</span>
+        <ChevronDown size={14} className="text-gray-500 ml-1" />
+      </button>
+
+      {open && (
+        <div className="absolute top-full left-0 mt-2 bg-white rounded-xl shadow-2xl border border-black/10 z-[9999] overflow-hidden flex flex-col md:flex-row w-max text-left">
+          {/* Left Sidebar */}
+          <div className="w-40 bg-gray-50 border-r border-gray-200 p-2 flex flex-col gap-1 overflow-y-auto max-h-[350px]">
+             {OPTIONS.map(o => (
+               <label key={o.id} className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md hover:bg-gray-100 cursor-pointer">
+                 <div className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center bg-white ${tempFilt === o.id ? 'border-blue-500' : 'border-gray-300'}`}>
+                   {tempFilt === o.id && <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>}
+                 </div>
+                 <span className="text-xs font-semibold text-gray-700">{o.label}</span>
+                 <input type="radio" className="hidden" name="dateFiltRadio" value={o.id} checked={tempFilt === o.id} onChange={() => setTempFilt(o.id)} />
+               </label>
+             ))}
+          </div>
+
+          {/* Right Area */}
+          <div className="flex flex-col p-4 max-w-lg bg-white">
+             {/* Calendars */}
+             <div className="flex gap-4 relative justify-center">
+               <button onClick={() => setNavDate(new Date(navDate.getFullYear(), navDate.getMonth()-1, 1))} className="absolute -left-1 top-0 p-1 hover:bg-gray-100 rounded-full"><ChevronLeft size={16}/></button>
+               {renderCalendar(0)}
+               <button onClick={() => setNavDate(new Date(navDate.getFullYear(), navDate.getMonth()+1, 1))} className="absolute -right-1 top-0 p-1 hover:bg-gray-100 rounded-full"><ChevronRight size={16}/></button>
+             </div>
+
+             {/* Footer Form */}
+             <div className="mt-4 pt-3 border-t border-gray-100 flex flex-col gap-3">
+               <div className="flex items-center justify-between gap-4">
+                 {tempFilt === "custom" ? (
+                   <div className="flex gap-1.5 items-center">
+                     <input type="date" value={tempS} onChange={(e)=>setTempS(e.target.value)} className="text-xs px-2 py-1 bg-white border border-gray-300 rounded outline-none focus:border-blue-500 font-medium"/>
+                     <span className="text-gray-400 font-semibold text-xs">-</span>
+                     <input type="date" value={tempE} onChange={(e)=>setTempE(e.target.value)} className="text-xs px-2 py-1 bg-white border border-gray-300 rounded outline-none focus:border-blue-500 font-medium"/>
+                   </div>
+                 ) : (
+                   <div className="font-semibold text-gray-800 text-sm">{OPTIONS.find(o=>o.id===tempFilt)?.label}</div>
+                 )}
+               </div>
+               
+               <div className="flex items-center gap-2 self-end">
+                 <button onClick={handleCancel} className="px-4 py-1.5 rounded-lg border border-gray-300 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors">Cancel</button>
+                 <button onClick={handleUpdate} className="px-4 py-1.5 rounded-lg bg-blue-600 border border-blue-600 text-xs font-semibold text-white hover:bg-blue-700 transition-colors">Update</button>
+               </div>
+             </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function AnalyticsView({content,pillars,platforms,pics,statuses,openEdit,isRestricted}: any) {
-  const [dateFilt,setDateFilt] = useState("all"); 
+  const [dateFilt,setDateFilt] = useState("28d"); 
   const [customS,setCustomS] = useState("");
   const [customE,setCustomE] = useState("");
   const [adsFilter,setAdsFilter] = useState("organic"); 
@@ -134,6 +381,7 @@ export function AnalyticsView({content,pillars,platforms,pics,statuses,openEdit,
   const isDateMatch = (c:any, isPrev:boolean=false) => {
     let cdt = new Date(c.year, c.month-1, c.day);
     const now = new Date();
+    now.setHours(0,0,0,0);
     
     if(dateFilt==="custom") {
       const sDate = customS ? new Date(customS) : new Date(0);
@@ -142,37 +390,46 @@ export function AnalyticsView({content,pillars,platforms,pics,statuses,openEdit,
       const diff = eDate.getTime() - sDate.getTime();
       return cdt >= new Date(sDate.getTime()-diff) && cdt < sDate;
     }
-    if(dateFilt==="all") return !isPrev; // No prev period for "All"
+    if(dateFilt==="all") return !isPrev;
     
-    if(dateFilt==="tm") {
-      const targetMonth = isPrev ? now.getMonth()-1 : now.getMonth();
-      const targetYear = now.getFullYear();
-      let expectedDate = new Date(targetYear, targetMonth, 1);
-      return cdt.getMonth()===expectedDate.getMonth() && cdt.getFullYear()===expectedDate.getFullYear();
+    let targetS = new Date(now);
+    let targetE = new Date(now);
+    
+    const dayOfWeek = now.getDay();
+
+    if(dateFilt==="yesterday") {
+      targetS.setDate(now.getDate()-1);
+      targetE = new Date(targetS);
+    } else if(dateFilt==="7d") {
+      targetS.setDate(now.getDate()-7);
+    } else if(dateFilt==="28d") {
+      targetS.setDate(now.getDate()-28);
+    } else if(dateFilt==="90d") {
+      targetS.setDate(now.getDate()-90);
+    } else if(dateFilt==="tw") {
+      targetS.setDate(now.getDate() - dayOfWeek);
+    } else if(dateFilt==="tm") {
+      targetS.setDate(1);
+    } else if(dateFilt==="ty") {
+      targetS.setMonth(0);
+      targetS.setDate(1);
+    } else if(dateFilt==="lw") {
+      targetS.setDate(now.getDate() - dayOfWeek - 7);
+      targetE = new Date(targetS);
+      targetE.setDate(targetS.getDate() + 6);
+    } else if(dateFilt==="lm") {
+      targetS.setMonth(now.getMonth()-1);
+      targetS.setDate(1);
+      targetE = new Date(now.getFullYear(), now.getMonth(), 0); 
     }
-    if(dateFilt==="lm") {
-      const targetMonth = isPrev ? now.getMonth()-2 : now.getMonth()-1;
-      const targetYear = now.getFullYear();
-      let expectedDate = new Date(targetYear, targetMonth, 1);
-      return cdt.getMonth()===expectedDate.getMonth() && cdt.getFullYear()===expectedDate.getFullYear();
+
+    if(isPrev) {
+      const diff = targetE.getTime() - targetS.getTime() + 86400000;
+      targetE = new Date(targetS.getTime() - 86400000);
+      targetS = new Date(targetS.getTime() - diff);
     }
-    if(dateFilt==="3m") {
-      const start = new Date(now.getFullYear(), now.getMonth()-3, now.getDate());
-      if(!isPrev) return cdt >= start;
-      const prevStart = new Date(start.getFullYear(), start.getMonth()-3, start.getDate());
-      return cdt >= prevStart && cdt < start;
-    }
-    if(dateFilt==="6m") {
-      const start = new Date(now.getFullYear(), now.getMonth()-6, now.getDate());
-      if(!isPrev) return cdt >= start;
-      const prevStart = new Date(start.getFullYear(), start.getMonth()-6, start.getDate());
-      return cdt >= prevStart && cdt < start;
-    }
-    if(dateFilt==="1y") {
-      const targetYear = isPrev ? now.getFullYear()-1 : now.getFullYear();
-      return cdt.getFullYear()===targetYear;
-    }
-    return !isPrev;
+    
+    return cdt >= targetS && cdt <= targetE;
   };
 
   const base = content.filter((c:any)=>isDateMatch(c)&&(adsFilter==="all"||((adsFilter==="ads")===c.isAds))&&(platformFilter==="all"||String(c.platform).split(',').map(s=>s.trim()).includes(platformFilter)));
@@ -224,12 +481,10 @@ export function AnalyticsView({content,pillars,platforms,pics,statuses,openEdit,
   };
 
   const getPeriodText = () => {
-    if(dateFilt==="tm") return "vs last month";
-    if(dateFilt==="lm") return "vs prev month";
-    if(dateFilt==="3m" || dateFilt==="6m") return "vs prev period";
-    if(dateFilt==="1y") return "vs last year";
-    if(dateFilt==="custom") return "vs prev period";
-    return "";
+    if(dateFilt==="all") return "";
+    if(dateFilt==="yesterday") return "vs prev day";
+    if(dateFilt==="ty") return "vs last year";
+    return "vs prev period";
   }
 
   const pTotal = calcPct(total, prevTotal);
@@ -253,10 +508,26 @@ export function AnalyticsView({content,pillars,platforms,pics,statuses,openEdit,
 
     if (dateFilt === "tm") {
        sDate = new Date(now.getFullYear(), now.getMonth(), 1);
-       eDate = new Date(now.getFullYear(), now.getMonth() + 1, 0); // end of month
+       eDate = new Date(now.getFullYear(), now.getMonth() + 1, 0); 
     } else if (dateFilt === "lm") {
        sDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
        eDate = new Date(now.getFullYear(), now.getMonth(), 0);
+    } else if (dateFilt === "yesterday") {
+       sDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+       eDate = new Date(sDate);
+    } else if (dateFilt === "7d") {
+       sDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
+    } else if (dateFilt === "28d") {
+       sDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 28);
+    } else if (dateFilt === "90d") {
+       sDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 90);
+    } else if (dateFilt === "tw") {
+       sDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
+    } else if (dateFilt === "lw") {
+       sDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay() - 7);
+       eDate = new Date(sDate.getFullYear(), sDate.getMonth(), sDate.getDate() + 6);
+    } else if (dateFilt === "ty") {
+       sDate = new Date(now.getFullYear(), 0, 1);
     } else if (dateFilt === "3m") {
        sDate = new Date(now.getFullYear(), now.getMonth() - 2, 1);
     } else if (dateFilt === "6m") {
@@ -524,23 +795,13 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
       </div>
 
       {/* Filters (Sticky) */}
-      <div className="sticky top-0 z-50 bg-[#FDFDFD] pb-4 pt-2 border-b border-black/5 flex items-center justify-start gap-3 overflow-x-auto no-scrollbar w-full">
-        <div className="flex gap-3 items-center min-w-max pb-1 pr-4">
-          <div className="flex gap-2 bg-white p-1 rounded-xl border border-black/5 shadow-sm">
-            <select
-              value={platformFilter}
-              onChange={(e) => setPlatformFilter(e.target.value)}
-              className="border-none bg-transparent outline-none text-sm font-semibold cursor-pointer px-3 py-1.5"
-              style={{ color: platformFilter === "all" ? "rgba(0,0,0,0.5)" : "#111827" }}
-            >
-              <option value="all">Semua Platform</option>
-              {platforms?.map((p: any) => (
-                <option key={typeof p === 'string' ? p : p.id} value={typeof p === 'string' ? p : p.name}>
-                  {typeof p === 'string' ? p : p.name}
-                </option>
-              ))}
-            </select>
-          </div>
+      <div className="sticky top-0 z-50 bg-[#FDFDFD] pb-4 pt-2 border-b border-black/5 flex items-center justify-start gap-4 flex-wrap w-full">
+        <div className="flex gap-3 items-center pb-1">
+          <PlatformFilterPopover 
+            platformFilter={platformFilter} 
+            setPlatformFilter={setPlatformFilter} 
+            platforms={platforms} 
+          />
 
           <div className="w-px h-6 bg-black/10 shrink-0"/>
 
@@ -552,18 +813,11 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
 
           <div className="w-px h-6 bg-black/10 shrink-0"/>
 
-          <div className="flex gap-1 bg-white p-1 rounded-xl border border-black/5 shadow-sm">
-            {[["all","Sepanjang Waktu"],["tm","Bulan Ini"],["lm","Bulan Lalu"],["3m","3 Bln"],["6m","6 Bln"],["1y","1 Thn"],["custom","Custom"]].map(([k,l])=>(
-              <button key={k} onClick={()=>setDateFilt(k)} className={`text-sm font-semibold px-3 py-1.5 rounded-lg border-none cursor-pointer transition-colors ${dateFilt===k ? "bg-gray-900 text-white" : "bg-transparent text-gray-500 hover:bg-gray-50"}`}>{l}</button>
-            ))}
-            {dateFilt==="custom" && (
-               <div className="flex gap-2 items-center pl-2">
-                 <input type="date" value={customS} onChange={(e)=>setCustomS(e.target.value)} className="text-sm px-2 py-1 bg-gray-50 rounded-md border border-black/10 outline-none"/>
-                 <span className="text-xs text-gray-400 font-semibold">s/d</span>
-                 <input type="date" value={customE} onChange={(e)=>setCustomE(e.target.value)} className="text-sm px-2 py-1 bg-gray-50 rounded-md border border-black/10 outline-none"/>
-               </div>
-            )}
-          </div>
+          <DateFilterPopover 
+            dateFilt={dateFilt} setDateFilt={setDateFilt}
+            customS={customS} setCustomS={setCustomS}
+            customE={customE} setCustomE={setCustomE}
+          />
         </div>
       </div>
 

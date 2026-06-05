@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { HashRouter, Routes, Route, Navigate, useParams } from "react-router-dom";
 import * as XLSX from "xlsx";
 import { 
-  MONTHS, YEARS, DP, DPL, DPIC, DST, DH, 
+  MONTHS, YEARS, DP, DPL, DPIC, DST, DCT, DH, 
   gid, eng, fmtD, fmtT, emptyItem, makeSeed, 
   I, B, CARD, THEMES, htmlToPlainText
 } from "./data";
@@ -598,7 +598,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
 
   const [showHolidays, setShowHolidays] = useState(true);
   const [showArchived, setShowArchived] = useState(false);
-  const [filters, setFilters]   = useState({pillar:["All"],platform:["All"],pic:["All"],status:"All"});
+  const [filters, setFilters]   = useState({pillar:["All"],platform:["All"],contentType:["All"],pic:["All"],status:"All"});
   const [title, setTitle]       = useState("Content Management");
   const [tagline, setTagline]   = useState("Content Management System");
   const [headerImage, setHeaderImage] = useState<string|null>(null);
@@ -612,6 +612,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
 
   const [pillars, setPillars]   = useState(DP);
   const [platforms, setPlatforms] = useState(DPL);
+  const [contentTypes, setContentTypes] = useState(DCT);
   const [pics, setPics]         = useState(DPIC);
   const [statuses, setStatuses] = useState(DST);
   const [holidays, setHolidays] = useState(DH);
@@ -969,6 +970,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
             // Real-time synchronization for all settings categories
             if (data.settings.pillars) setPillars(data.settings.pillars);
             if (data.settings.platforms) setPlatforms(data.settings.platforms);
+            if (data.settings.contentTypes) setContentTypes(data.settings.contentTypes);
             if (data.settings.pics) setPics(data.settings.pics);
             if (data.settings.statuses) setStatuses(data.settings.statuses);
             if (data.settings.holidays) setHolidays(data.settings.holidays);
@@ -1000,6 +1002,123 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
 
     return () => { unsubWs(); unsubContent(); };
   }, [workspace?.id, user?.uid]);
+
+  // Run dynamic data migration for workspace "Fadkhy" / "Fadkhera"
+  useEffect(() => {
+    if (!workspace?.id) return;
+    const wsName = (workspace.name || workspace.settings?.title || "").toLowerCase();
+    const userEmail = (user?.email || "").toLowerCase();
+    
+    // Check if it fits the fadkhy / fadkhera workspace or the user's email
+    if (
+      wsName.includes("fadkh") || 
+      wsName.includes("fadkhe") || 
+      wsName.includes("fadkhera") || 
+      wsName.includes("fadkhy") ||
+      userEmail === "marcom@fadkhera.com"
+    ) {
+      const targetPlatforms = ["feed", "reels", "stories", "kol", "motion graphic"];
+      
+      const needsContentMigration = content.some((item: any) => 
+        item.platform && targetPlatforms.includes(item.platform.trim().toLowerCase())
+      );
+
+      const hasInstagramPlatform = workspace.settings?.platforms?.some((p: any) => {
+        const pName = typeof p === 'string' ? p : p?.name;
+        return pName?.trim().toLowerCase() === "instagram";
+      });
+
+      const hasOldPlatforms = workspace.settings?.platforms?.some((p: any) => {
+        const pName = typeof p === 'string' ? p : p?.name;
+        return targetPlatforms.includes(pName?.trim().toLowerCase());
+      });
+
+      if (needsContentMigration || !hasInstagramPlatform || hasOldPlatforms) {
+        console.log("Fadkhy workspace needs migration! Starting...");
+
+        const runMigration = async () => {
+          try {
+            let currentPlatforms = workspace.settings?.platforms || [];
+            let currentContentTypes = workspace.settings?.contentTypes || [];
+
+            const ensureObject = (item: any, defaultColor = "#3B82F6") => {
+              if (typeof item === 'string') {
+                return { name: item, color: defaultColor };
+              }
+              return item;
+            };
+
+            let updatedPlatforms = currentPlatforms
+              .map((p: any) => ensureObject(p))
+              .filter((p: any) => !targetPlatforms.includes(p.name?.trim().toLowerCase()));
+
+            if (!updatedPlatforms.some((p: any) => p.name?.trim().toLowerCase() === "instagram")) {
+              updatedPlatforms.push({ name: "Instagram", color: "#E1306C" });
+            }
+            if (!updatedPlatforms.some((p: any) => p.name?.trim().toLowerCase() === "tiktok")) {
+              updatedPlatforms.push({ name: "TikTok", color: "#111111" });
+            }
+
+            let updatedContentTypes = [...currentContentTypes.map((ct: any) => ensureObject(ct))];
+            
+            const newContentTypesToAdd = [
+              { name: "Feed", color: "#2C2016" },
+              { name: "Reels", color: "#FF6B00" },
+              { name: "Stories", color: "#A67C1C" },
+              { name: "KOL", color: "#E52D27" },
+              { name: "Motion Graphic", color: "#723680" }
+            ];
+
+            newContentTypesToAdd.forEach((nct) => {
+              if (!updatedContentTypes.some((ct: any) => ct.name?.trim().toLowerCase() === nct.name.toLowerCase())) {
+                updatedContentTypes.push(nct);
+              }
+            });
+
+            const wsRef = doc(db, "workspaces", workspace.id);
+            await updateDoc(wsRef, {
+              "settings.platforms": updatedPlatforms,
+              "settings.contentTypes": updatedContentTypes
+            });
+            console.log("Fadkhy settings updated!");
+
+            const batch = writeBatch(db);
+            let updateCount = 0;
+
+            content.forEach((item: any) => {
+              if (item.platform) {
+                const platLower = item.platform.trim().toLowerCase();
+                if (targetPlatforms.includes(platLower)) {
+                  const oldPlatform = item.platform;
+                  const ref = doc(db, "workspaces", workspace.id, "content", item.id);
+                  batch.update(ref, {
+                    platform: "Instagram",
+                    contentType: oldPlatform,
+                    updatedAt: new Date().toISOString()
+                  });
+                  updateCount++;
+                }
+              }
+            });
+
+            if (updateCount > 0) {
+              await batch.commit();
+              console.log(`Successfully migrated ${updateCount} content items!`);
+              setSaveMsg(`Migrasi Fadkhy Selesai: Berhasil mengubah ${updateCount} konten ke platform Instagram.`);
+              setTimeout(() => setSaveMsg(""), 5000);
+            } else {
+              console.log("No content items needed migration.");
+            }
+
+          } catch (err) {
+            console.error("Fadkhy migration error:", err);
+          }
+        };
+
+        runMigration();
+      }
+    }
+  }, [workspace?.id, workspace?.name, workspace?.settings?.title, content, user?.email]);
 
   const handleSave = async (data: any, closeModal = true) => {
     console.log("handleSave called with data:", data);
@@ -1069,7 +1188,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
   const openAdd  = (day:any) => {
     if (isRestricted) return alert("Akses Terbatas: Fitur ini dikunci pada masa uji coba yang telah habis.");
     if (isUnverified) return alert("Akses Terbatas: Silakan lengkapi nama panggilan dan verifikasi email Anda terlebih dahulu.");
-    setModal({mode:"add",data:emptyItem(year,month,day,pillars,platforms,pics,statuses)});
+    setModal({mode:"add",data:emptyItem(year,month,day,pillars,platforms,pics,statuses,contentTypes)});
   };
   const deleteItem = async (id:string, force:boolean = false) => { 
     if(!workspace || !id || isRestricted) return;
@@ -1159,11 +1278,17 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
     if (!workspace) return;
     try {
       const wsRef = doc(db, "workspaces", workspace.id);
-      const fsUpdates: any = {};
+      const currentSettings = workspace.settings || {};
+      const newSettings = { ...currentSettings };
+      
       Object.keys(updates).forEach(k => {
-        fsUpdates[`settings.${k}`] = updates[k];
-        if (k === "title") fsUpdates.name = updates[k];
+        newSettings[k] = updates[k];
       });
+      
+      const fsUpdates: any = { settings: newSettings };
+      if (updates.title) {
+        fsUpdates.name = updates.title;
+      }
       await updateDoc(wsRef, fsUpdates);
       
       if (updates.title) {
@@ -1209,7 +1334,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
   const monthContent = content.filter(c=>c.year===year&&c.month===month);
   const filtered = useMemo(()=> {
     let items = search ? content.filter(c=>[c.title,c.caption].join(" ").toLowerCase().includes(search.toLowerCase())) : monthContent;
-    return items.filter((c:any)=>(filters.pillar.includes("All")||filters.pillar.includes(c.pillar))&&(filters.platform.includes("All")||filters.platform.includes(c.platform))&&(filters.pic.includes("All")||filters.pic.includes(c.pic))&&(filters.status==="All"||c.status===filters.status));
+    return items.filter((c:any)=>(filters.pillar.includes("All")||filters.pillar.includes(c.pillar))&&(filters.platform.includes("All")||filters.platform.includes(c.platform))&&(!filters.contentType||filters.contentType.includes("All")||filters.contentType.includes(c.contentType))&&(filters.pic.includes("All")||filters.pic.includes(c.pic))&&(filters.status==="All"||c.status===filters.status));
   },[monthContent,content,search,filters]);
 
   const provLock = useRef(false);
@@ -1287,7 +1412,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
       {tab === "content_planner" && (
         <FilterBar 
           filters={filters} setFilters={setFilters} 
-          pillars={pillars} platforms={platforms} pics={pics} statuses={statuses} 
+          pillars={pillars} platforms={platforms} contentTypes={contentTypes} pics={pics} statuses={statuses} 
           showHolidays={showHolidays} setShowHolidays={setShowHolidays} 
           showArchived={showArchived} setShowArchived={setShowArchived}
           onImportClick={()=>setShowCsv(true)}
@@ -1314,7 +1439,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
             {tab==="analytics"&&<AnalyticsView content={content} pillars={pillars} platforms={platforms} pics={pics} statuses={statuses} openEdit={openEdit} isRestricted={isRestricted}/>}
             {tab==="soc_hub"&&<SocHubView user={user} profile={profile} />}
             {tab==="settings"&&<SettingsPanel 
-              initialSettings={{pillars, platforms, pics, statuses, holidays, holidayApis, customEvents: workspace?.settings?.customEvents || []}} 
+              initialSettings={{pillars, platforms, contentTypes, pics, statuses, holidays, holidayApis, customEvents: workspace?.settings?.customEvents || []}} 
               onSave={async (d:any) => {
                 await updateWsSettings(d);
                 setIsSettingsDirty(false);
@@ -1342,10 +1467,10 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
           handleSave(duplicatedData, true);
           setTimeout(() => setSaveMsg("Konten berhasil diduplikasi."), 100);
           setTimeout(()=>setSaveMsg(""), 3100);
-        }} pillars={pillars} platforms={platforms} pics={pics} statuses={statuses} isRestricted={isRestricted} onSettingUpdate={updateWsSettings} />}
+        }} pillars={pillars} platforms={platforms} contentTypes={contentTypes} pics={pics} statuses={statuses} isRestricted={isRestricted} onSettingUpdate={updateWsSettings} />}
       </AnimatePresence>
       <AnimatePresence>
-        {showCsv && <CsvModal key="csv" onClose={()=>setShowCsv(false)} onImport={handleBulkImport} workspaceId={workspace?.id} pillars={pillars} platforms={platforms} pics={pics} statuses={statuses} existingContent={content} />}
+        {showCsv && <CsvModal key="csv" onClose={()=>setShowCsv(false)} onImport={handleBulkImport} workspaceId={workspace?.id} pillars={pillars} platforms={platforms} contentTypes={contentTypes} pics={pics} statuses={statuses} existingContent={content} />}
       </AnimatePresence>
       <AnimatePresence>
         {showEventModal && <QuickAddEventModal key="quckAddEvent" workspace={workspace} onClose={() => setShowEventModal(false)} onSaveSettings={updateWsSettings} />}
@@ -1365,6 +1490,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
                     "Menit": c.uploadMinute || 0,
                     "Pillar": c.pillar || "",
                     "Platform": c.platform || "",
+                    "Tipe Konten": c.contentType || "",
                     "PIC": c.pic || "",
                     "Status": c.status || "",
                     "Ads (Y/N)": c.isAds ? "Y" : "N",

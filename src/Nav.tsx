@@ -2528,7 +2528,7 @@ export function NavBar({
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        padding: "16px 24px",
+        padding: "10px 20px",
         position: "sticky",
         top: 0,
         zIndex: 50,
@@ -2537,25 +2537,25 @@ export function NavBar({
       <div
         style={{
           display: "flex",
-          gap: 24,
+          gap: 16,
           alignItems: "center",
           flexWrap: "wrap",
         }}
       >
-        <div style={{ display: "flex", background: "#F5F5F5", padding: 4, borderRadius: 12 }}>
+        <div style={{ display: "flex", background: "#F5F5F5", padding: 4, borderRadius: 10 }}>
           {CONTENT_TABS.map(t => (
             <button
               className="hover-scale"
               key={t.id}
               onClick={() => setContentTab(t.id)}
               style={{
-                padding: "8px 16px",
-                borderRadius: 8,
+                padding: "6px 12px",
+                borderRadius: 6,
                 border: "none",
                 background: contentTab === t.id ? "white" : "transparent",
                 color: contentTab === t.id ? "var(--theme-primary)" : "#666",
                 fontWeight: 700,
-                fontSize: 13,
+                fontSize: 12,
                 boxShadow: contentTab === t.id ? "0 2px 8px rgba(0,0,0,0.05)" : "none",
                 cursor: "pointer",
                 transition: "all 0.2s ease"
@@ -2566,23 +2566,23 @@ export function NavBar({
           ))}
         </div>
         
-        <div style={{ width: 1, height: 24, background: "rgba(0,0,0,0.1)", display: "block" }} />
+        <div style={{ width: 1, height: 20, background: "rgba(0,0,0,0.1)", display: "block" }} />
 
-        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-          <div style={{ width: 130 }}>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <div style={{ width: 110 }}>
             <CustomDropdown
               value={String(month)}
               options={MONTHS.map((m, i) => ({ id: String(i + 1), name: m }))}
               onChange={(v: any) => setMonth(+v)}
-              style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid rgba(0,0,0,0.06)", fontWeight: 600, fontSize: 13 }}
+              style={{ padding: "6px 10px", borderRadius: 8, border: "1px solid rgba(0,0,0,0.06)", fontWeight: 600, fontSize: 12 }}
             />
           </div>
-          <div style={{ width: 100 }}>
+          <div style={{ width: 80 }}>
             <CustomDropdown
               value={String(year)}
               options={YEARS.map((y) => String(y))}
               onChange={(v: any) => setYear(+v)}
-              style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid rgba(0,0,0,0.06)", fontWeight: 600, fontSize: 13 }}
+              style={{ padding: "6px 10px", borderRadius: 8, border: "1px solid rgba(0,0,0,0.06)", fontWeight: 600, fontSize: 12 }}
             />
           </div>
         </div>
@@ -2591,14 +2591,14 @@ export function NavBar({
       <div
         style={{
           display: "flex",
-          gap: 12,
+          gap: 8,
           alignItems: "center",
         }}
       >
         <motion.div
           animate={{
-            width: localSearchOpen ? 220 : 40,
-            padding: localSearchOpen ? "8px 16px" : "8px",
+            width: localSearchOpen ? 200 : 36,
+            padding: localSearchOpen ? "6px 14px" : "6px",
           }}
           transition={{ type: "spring", stiffness: 400, damping: 30 }}
           style={{
@@ -2606,19 +2606,19 @@ export function NavBar({
             alignItems: "center",
             gap: 8,
             background: "white",
-            borderRadius: 20,
+            borderRadius: 18,
             border: "1px solid rgba(0,0,0,0.1)",
             overflow: "hidden",
             cursor: !localSearchOpen ? "pointer" : "text",
             flexShrink: 0,
-            height: 40,
+            height: 36,
           }}
           onClick={() => {
             if (!localSearchOpen) setLocalSearchOpen(true);
           }}
         >
           <Search
-            size={18}
+            size={16}
             style={{
               opacity: 0.5,
               flexShrink: 0,
@@ -2644,7 +2644,7 @@ export function NavBar({
                   border: "none",
                   outline: "none",
                   color: "#2C2016",
-                  fontSize: 13,
+                  fontSize: 12,
                   width: "100%",
                 }}
                 value={search}
@@ -2656,7 +2656,7 @@ export function NavBar({
           </AnimatePresence>
         </motion.div>
 
-        <motion.div ref={addRef} layout style={{ position: "relative", flexShrink: 0, height: 40, display: "flex", alignItems: "center", borderRadius: 20, background: "var(--theme-primary)", boxShadow: "0 4px 12px rgba(156,43,78,0.2)", overflow: "hidden" }}>
+        <motion.div ref={addRef} layout style={{ position: "relative", flexShrink: 0, height: 36, display: "flex", alignItems: "center", borderRadius: 18, background: "var(--theme-primary)", boxShadow: "0 4px 12px rgba(156,43,78,0.2)", overflow: "hidden" }}>
           <AnimatePresence mode="popLayout" initial={false}>
             {!isAddOpen ? (
               <motion.button
@@ -2669,21 +2669,21 @@ export function NavBar({
                 transition={{ duration: 0.15 }}
                 style={{
                   ...B(true, "transparent"),
-                  height: 40,
-                  padding: "0 20px",
-                  borderRadius: 20,
-                  fontSize: 13,
+                  height: 36,
+                  padding: "0 16px",
+                  borderRadius: 18,
+                  fontSize: 12,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  gap: 8,
+                  gap: 6,
                   border: "none",
                   color: "white",
                   fontWeight: 700,
                   whiteSpace: "nowrap"
                 }}
               >
-                <Plus size={18} /> <span style={{ whiteSpace: "nowrap" }}>Tambah Baru</span>
+                <Plus size={16} /> <span style={{ whiteSpace: "nowrap" }}>Tambah Baru</span>
               </motion.button>
             ) : (
               <motion.div
@@ -2692,22 +2692,22 @@ export function NavBar({
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.15 }}
-                style={{ display: "flex", gap: 4, alignItems: "center", height: 40, padding: "2px 6px" }}
+                style={{ display: "flex", gap: 4, alignItems: "center", height: 36, padding: "2px 6px" }}
               >
                 <button
                   className="hover-scale"
                   onClick={() => { onOpenAdd(); setIsAddOpen(false); }}
-                  style={{...B(false), background: "transparent", color: "white", border: "none", height: "100%", padding: "0 12px", borderRadius: 16, fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap"}}
+                  style={{...B(false), background: "transparent", color: "white", border: "none", height: "100%", padding: "0 10px", borderRadius: 14, fontSize: 12, fontWeight: 700, display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap"}}
                 >
-                  <Edit2 size={16} /> <span style={{ whiteSpace: "nowrap" }}>Konten</span>
+                  <Edit2 size={14} /> <span style={{ whiteSpace: "nowrap" }}>Konten</span>
                 </button>
-                <div style={{ width: 1, height: 16, background: "rgba(255,255,255,0.3)", flexShrink: 0 }} />
+                <div style={{ width: 1, height: 14, background: "rgba(255,255,255,0.3)", flexShrink: 0 }} />
                 <button
                   className="hover-scale"
                   onClick={() => { onOpenAddEvent(); setIsAddOpen(false); }}
-                  style={{...B(false), background: "transparent", color: "white", border: "none", height: "100%", padding: "0 12px", borderRadius: 16, fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap"}}
+                  style={{...B(false), background: "transparent", color: "white", border: "none", height: "100%", padding: "0 10px", borderRadius: 14, fontSize: 12, fontWeight: 700, display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap"}}
                 >
-                  <Calendar size={16} /> <span style={{ whiteSpace: "nowrap" }}>Event</span>
+                  <Calendar size={14} /> <span style={{ whiteSpace: "nowrap" }}>Event</span>
                 </button>
               </motion.div>
             )}
@@ -2720,9 +2720,9 @@ export function NavBar({
           style={{
             background: "var(--theme-primary)",
             border: "none",
-            borderRadius: 20,
-            width: 40,
-            height: 40,
+            borderRadius: 18,
+            width: 36,
+            height: 36,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -2731,7 +2731,7 @@ export function NavBar({
           }}
           title="Bagikan Link Workspace"
         >
-          <Share2 size={18} />
+          <Share2 size={16} />
         </button>
       </div>
     </div>
@@ -2812,12 +2812,13 @@ function MultiSelectFilter({ values, options, onChange, label, style, onUpdateOp
         onClick={() => setOpen(!open)} 
         className="hover-scale"
         style={{ 
-          width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, 
-          padding: "8px 12px", borderRadius: 12, 
+          width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, 
+          padding: "6px 10px", borderRadius: 10, 
           border: "1px solid rgba(44,32,22,0.1)", 
           background: "white", 
-          fontSize: 13, fontWeight: 700, cursor: "pointer", 
+          fontSize: 12, fontWeight: 700, cursor: "pointer", 
           color: "#2C2016",
+          height: 32,
           ...style
         }}
       >
@@ -3007,6 +3008,7 @@ export function FilterBar({
   setFilters,
   pillars,
   platforms,
+  contentTypes,
   pics,
   statuses,
   showHolidays,
@@ -3022,9 +3024,9 @@ export function FilterBar({
       style={{
         background: "#FAFAFA",
         borderBottom: "1px solid rgba(44,32,22,0.05)",
-        padding: "16px 24px",
+        padding: "12px 20px",
         display: "flex",
-        gap: 24,
+        gap: 16,
         alignItems: "flex-end",
         flexWrap: "wrap",
       }}
@@ -3032,7 +3034,7 @@ export function FilterBar({
       <div
         style={{
           display: "flex",
-          gap: 12,
+          gap: 10,
           flexWrap: "wrap",
           alignItems: "flex-end",
         }}
@@ -3040,21 +3042,22 @@ export function FilterBar({
         {[
           ["Pillar", pillars, "pillar"],
           ["Platform", platforms, "platform"],
+          ["Tipe Konten", contentTypes, "contentType"],
           ["PIC", pics, "pic"],
         ].map(([l, opt, key]) => (
           <div
             key={key as string}
             style={{
-              width: 160,
+              width: 130,
               display: "flex",
               flexDirection: "column",
-              gap: 6,
+              gap: 4,
             }}
           >
             <label
               style={{
-                fontSize: 10,
-                fontWeight: 700,
+                fontSize: 9,
+                fontWeight: 750,
                 color: "rgba(0,0,0,0.4)",
                 textTransform: "uppercase",
                 paddingLeft: 4,
@@ -3078,9 +3081,9 @@ export function FilterBar({
       <div
         style={{
           display: "flex",
-          gap: 12,
+          gap: 10,
           alignItems: "center",
-          marginBottom: 2,
+          marginBottom: 1,
         }}
       >
         <button
@@ -3092,9 +3095,10 @@ export function FilterBar({
             border: showHolidays
               ? "1px solid rgba(44,32,22,0.2)"
               : "1px solid rgba(44,32,22,0.1)",
-            fontSize: 12,
-            padding: "8px 16px",
-            borderRadius: 20,
+            fontSize: 11,
+            padding: "0 12px",
+            height: 32,
+            borderRadius: 16,
           }}
         >
           {showHolidays ? "Tampil" : "Sembunyi"} Hari Besar
@@ -3108,9 +3112,10 @@ export function FilterBar({
             border: showArchived
               ? "1px solid var(--theme-primary)44"
               : "1px solid rgba(44,32,22,0.1)",
-            fontSize: 12,
-            padding: "8px 16px",
-            borderRadius: 20,
+            fontSize: 11,
+            padding: "0 12px",
+            height: 32,
+            borderRadius: 16,
           }}
         >
           📦 Arsip
@@ -3124,17 +3129,17 @@ export function FilterBar({
           ...B(false, "#2C2016"),
           background: "white",
           border: "1px solid rgba(44,32,22,0.1)",
-          height: 38,
-          padding: "0 16px",
-          fontSize: 12,
+          height: 32,
+          padding: "0 12px",
+          fontSize: 11,
           fontWeight: 700,
           display: "flex",
           alignItems: "center",
-          gap: 8,
-          marginBottom: 2,
+          gap: 6,
+          marginBottom: 1,
         }}
       >
-        <Plus size={16} style={{ opacity: 0.6 }} /> Import CSV
+        <Plus size={14} style={{ opacity: 0.6 }} /> Import CSV
       </button>
     </div>
   );

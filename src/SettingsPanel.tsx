@@ -61,6 +61,7 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
   // Local state for all settings
   const [localPillars, setLocalPillars] = useState(initialSettings.pillars || []);
   const [localPlatforms, setLocalPlatforms] = useState(initialSettings.platforms || []);
+  const [localContentTypes, setLocalContentTypes] = useState(initialSettings.contentTypes || []);
   const [localPics, setLocalPics] = useState(initialSettings.pics || []);
   const [localStatuses, setLocalStatuses] = useState(initialSettings.statuses || []);
   const [localHolidays, setLocalHolidays] = useState(initialSettings.holidays || {});
@@ -96,6 +97,7 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
   // Dirty check logic
   const isDirty = JSON.stringify(localPillars) !== JSON.stringify(initialSettings.pillars || []) ||
                   JSON.stringify(localPlatforms) !== JSON.stringify(initialSettings.platforms || []) ||
+                  JSON.stringify(localContentTypes) !== JSON.stringify(initialSettings.contentTypes || []) ||
                   JSON.stringify(localPics) !== JSON.stringify(initialSettings.pics || []) ||
                   JSON.stringify(localStatuses) !== JSON.stringify(initialSettings.statuses || []) ||
                   JSON.stringify(localHolidays) !== JSON.stringify(initialSettings.holidays || {}) ||
@@ -110,6 +112,7 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
   useEffect(() => {
     setLocalPillars(initialSettings.pillars || []);
     setLocalPlatforms(initialSettings.platforms || []);
+    setLocalContentTypes(initialSettings.contentTypes || []);
     setLocalPics(initialSettings.pics || []);
     setLocalStatuses(initialSettings.statuses || []);
     setLocalHolidays(initialSettings.holidays || {});
@@ -122,6 +125,7 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
     ["visual", "Tema Visual"],
     ["pillars", "Content Pillars"],
     ["platforms", "Platforms"],
+    ["contentTypes", "Tipe Konten"],
     ["pics", "Team PIC"],
     ["statuses", "Status Workflow"],
     ["holidays", "Hari Besar"],
@@ -159,6 +163,7 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
       await onSave({
         pillars: localPillars,
         platforms: localPlatforms,
+        contentTypes: localContentTypes,
         pics: localPics,
         statuses: localStatuses,
         holidays: localHolidays,
@@ -185,6 +190,10 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
   const addPlatform = () => { if (!newVal.trim()) return; setLocalPlatforms((p: any) => [...p, { name: newVal.trim(), color: newColor }]); setNewVal(""); };
   const editPlatform = (i: any, name: any, color: any) => setLocalPlatforms((p: any) => p.map((x: any, idx: any) => idx === i ? { name, color } : x));
   const delPlatform = (i: any) => setLocalPlatforms((p: any) => p.filter((_: any, idx: any) => idx !== i));
+
+  const addContentType = () => { if (!newVal.trim()) return; setLocalContentTypes((p: any) => [...p, { name: newVal.trim(), color: newColor }]); setNewVal(""); };
+  const editContentType = (i: any, name: any, color: any) => setLocalContentTypes((p: any) => p.map((x: any, idx: any) => idx === i ? { name, color } : x));
+  const delContentType = (i: any) => setLocalContentTypes((p: any) => p.filter((_: any, idx: any) => idx !== i));
 
   const addPic = () => { if (!newVal.trim()) return; setLocalPics((p: any) => [...p, { name: newVal.trim(), color: newColor }]); setNewVal(""); };
   const editPic = (i: any, name: any, color: any) => setLocalPics((p: any) => p.map((x: any, idx: any) => idx === i ? { name, color } : x));
@@ -445,6 +454,29 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
               ))}
               </div>
               {renderInputRow("Nama platform baru...", newVal, setNewVal, addPlatform, true)}
+            </div>
+          )}
+          {section === "contentTypes" && (
+            <div className="fade-in">
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+                <div style={{ background: "var(--theme-primary)22", padding: 10, borderRadius: 12, color: "var(--theme-primary)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <ClipboardList size={20} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: 18, margin: 0, color: "#2C2016" }}>Tipe Konten</h3>
+                  <p style={{ fontSize: 12, color: "rgba(44,32,22,0.5)", margin: "4px 0 0" }}>Bentuk dan format konten (Video, Feed, dll)</p>
+                </div>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {localContentTypes.map((p: any, i: any) => (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", background: "white", borderRadius: 12, border: "1px solid rgba(44,32,22,0.05)", boxShadow: "0 2px 8px rgba(44,32,22,0.02)", transition: "all 0.2s" }} className="hover:border-[var(--theme-primary)44]">
+                  <div style={{width: 28, height: 28, borderRadius: 8, overflow: "hidden", border: "2px solid white", boxShadow: "0 2px 6px rgba(0,0,0,0.1)", flexShrink: 0}}><input type="color" value={p.color} onChange={(e: any) => editContentType(i, p.name, e.target.value)} title="Warna Tipe Konten" style={{ width: "200%", height: "200%", transform: "translate(-25%, -25%)", border: "none", cursor: "pointer" }} /></div>
+                  <input value={p.name} onChange={(e: any) => editContentType(i, e.target.value, p.color)} style={{ flex: 1, fontSize: 14, fontWeight: 600, border: "none", background: "transparent", outline: "none", color: "#2C2016" }} />
+                  <button onClick={() => delContentType(i)} style={{ background: "#FDF5F8", border: "none", borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#9C2B4E", transition: "all 0.2s" }} className="hover:bg-[#9C2B4E] hover:text-white">Hapus</button>
+                </div>
+              ))}
+              </div>
+              {renderInputRow("Nama tipe konten baru...", newVal, setNewVal, addContentType, true)}
             </div>
           )}
           {section === "pics" && (

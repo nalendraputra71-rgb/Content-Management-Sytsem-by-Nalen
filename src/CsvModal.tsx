@@ -3,7 +3,7 @@ import * as XLSX from "xlsx";
 import { emptyItem, gid } from "./data";
 import { motion } from "motion/react";
 
-export function CsvModal({onClose, onImport, pillars, platforms, pics, statuses, existingContent}: any) {
+export function CsvModal({onClose, onImport, pillars, platforms, contentTypes, pics, statuses, existingContent}: any) {
   const [dataPreview, setDataPreview] = useState<any[]>([]);
   const [errorMsg, setErrorMsg] = useState("");
   const [step, setStep] = useState(1);
@@ -32,8 +32,8 @@ export function CsvModal({onClose, onImport, pillars, platforms, pics, statuses,
   };
 
   const template = [
-    ["Judul Konten", "Tanggal (1-31)", "Bulan (1-12)", "Tahun", "Jam (0-23)", "Menit", "Pillar", "Platform", "PIC", "Status Konten", "Status Ads", "Views", "Reach", "Likes", "Comments", "Shares", "Saves", "Objective", "Brief Konten", "Caption"],
-    ["Contoh Konten Instagram", "15", "5", "2025", "10", "30", pillars[0]?.name||"Pillar Utama", platforms[0]?.name||"Instagram", pics[0]||"PIC 1", statuses[0]||"Draft", "N", "100", "80", "10", "2", "1", "5", "Meningkatkan brand awareness", "Gunakan nada bicara santai", "Keren banget nih!"]
+    ["Judul Konten", "Tanggal (1-31)", "Bulan (1-12)", "Tahun", "Jam (0-23)", "Menit", "Pillar", "Platform", "Tipe Konten", "PIC", "Status Konten", "Status Ads", "Views", "Reach", "Likes", "Comments", "Shares", "Saves", "Objective", "Brief Konten", "Caption"],
+    ["Contoh Konten Instagram", "15", "5", "2025", "10", "30", pillars[0]?.name||"Pillar Utama", platforms[0]?.name||"Instagram", contentTypes?.[0]?.name||"Video Pendek", pics[0]||"PIC 1", statuses[0]||"Draft", "N", "100", "80", "10", "2", "1", "5", "Meningkatkan brand awareness", "Gunakan nada bicara santai", "Keren banget nih!"]
   ];
 
   const handleDownloadTemplate = () => {
@@ -83,6 +83,7 @@ export function CsvModal({onClose, onImport, pillars, platforms, pics, statuses,
             const idxMin = getColIdx(["menit"]);
             const idxPillar = getColIdx(["pillar"]);
             const idxPlatform = getColIdx(["platform"]);
+            const idxContentType = getColIdx(["tipe konten", "tipe"]);
             const idxPic = getColIdx(["pic"]);
             const idxStatus = getColIdx(["status konten", "status"]);
             const idxAds = getColIdx(["status ads", "ads"]);
@@ -97,12 +98,13 @@ export function CsvModal({onClose, onImport, pillars, platforms, pics, statuses,
             const idxCaption = getColIdx(["caption"]);
 
             const parsedData = json.slice(1).filter(r => r.length > 0 && idxTitle !== -1 && String(r[idxTitle]||"").trim() !== "").map((row: any) => {
-                const item = emptyItem(Number(row[idxYear])||2025, Number(row[idxMonth])||1, Number(row[idxDate])||1, pillars, platforms, pics, statuses);
+                const item = emptyItem(Number(row[idxYear])||2025, Number(row[idxMonth])||1, Number(row[idxDate])||1, pillars, platforms, pics, statuses, contentTypes);
                 item.title = cleanStr(row[idxTitle]);
                 if (idxHour !== -1) item.uploadHour = Number(row[idxHour])||9;
                 if (idxMin !== -1) item.uploadMinute = Number(row[idxMin])||0;
                 if (idxPillar !== -1) item.pillar = String(row[idxPillar]||item.pillar);
                 if (idxPlatform !== -1) item.platform = String(row[idxPlatform]||item.platform);
+                if (idxContentType !== -1) item.contentType = String(row[idxContentType]||item.contentType);
                 if (idxPic !== -1) item.pic = String(row[idxPic]||item.pic);
                 if (idxStatus !== -1) item.status = String(row[idxStatus]||item.status);
                 if (idxAds !== -1) item.isAds = String(row[idxAds]).toUpperCase() === "Y";

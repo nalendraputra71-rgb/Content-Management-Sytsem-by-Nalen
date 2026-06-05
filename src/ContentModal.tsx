@@ -96,7 +96,7 @@ const getMetricIcon = (k: string, color?: string, size = 14) => {
   }
 };
 
-export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,onDuplicate,pillars,platforms,pics,statuses,onSettingUpdate}: any) {
+export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,onDuplicate,pillars,platforms,contentTypes,pics,statuses,onSettingUpdate}: any) {
   const [d,setD] = useState({...modal.data,metrics:{...(modal.data.metrics||{})},adsMetrics:{...(modal.data.adsMetrics||{views:0,reach:0,likes:0,comments:0,shares:0,reposts:0,saves:0,clicks:0,conversions:0})},referenceLinks:modal.data.referenceLinks||[],customFields:modal.data.customFields||[]});
   const [aiResult, setAiResult] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
@@ -243,6 +243,12 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
     return name?.trim()?.toLowerCase() === d.platform?.trim()?.toLowerCase();
   }) || platforms?.[0];
   const activePlatformColor = (activePlatformOption && typeof activePlatformOption !== 'string') ? activePlatformOption.color || "#2C2016" : "#2C2016";
+
+  const activeContentTypeOption = contentTypes?.find((x:any) => {
+    const name = typeof x === 'string' ? x : x?.name;
+    return name?.trim()?.toLowerCase() === d.contentType?.trim()?.toLowerCase();
+  }) || contentTypes?.[0];
+  const activeContentTypeColor = (activeContentTypeOption && typeof activeContentTypeOption !== 'string') ? activeContentTypeOption.color || "#2C2016" : "#2C2016";
 
   // PIC lookup
   const activePicOption = pics?.find((x:any) => {
@@ -644,7 +650,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                   {/* Row of dropdowns */}
                   <div style={{
                     display: "grid", 
-                    gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+                    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
                     gap: "12px", 
                     width: "100%", 
                     marginTop: "6px"
@@ -739,6 +745,65 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                             fontSize: "11px", 
                             fontWeight: 700, 
                             background: activePlatformColor, 
+                            color: "#FFF", 
+                            border: `1px solid rgba(255,255,255,0.3)`,
+                            minHeight: "26px",
+                            height: "auto",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            boxShadow: "none"
+                          }}
+                        />
+                      )}
+                    </div>
+                  </div>
+
+                  <div style={{
+                    display: "grid", 
+                    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+                    gap: "12px", 
+                    width: "100%", 
+                    marginTop: "12px"
+                  }}>
+                    {/* Content Type */}
+                    <div style={{display:"flex", flexDirection:"column", gap:"4px", minWidth: 0}}>
+                      <span style={{fontSize: "9px", fontWeight: 750, textTransform: "uppercase", letterSpacing: "0.5px", color: "rgba(255,255,255,0.7)", display: "flex", alignItems: "center"}}>
+                        <FileText size={10} style={{marginRight: 4}} /> Tipe Konten
+                      </span>
+                      {isReaderMode ? (
+                        <span title={d.contentType || "Tanpa Tipe"} style={{
+                          fontSize: "11px", 
+                          fontWeight: 700, 
+                          color: "#FFF", 
+                          display: "inline-block", 
+                          maxWidth: "100%",
+                          textOverflow: "ellipsis", 
+                          overflow: "hidden", 
+                          whiteSpace: "nowrap",
+                          background: activeContentTypeColor,
+                          padding: "6px 10px",
+                          borderRadius: "8px",
+                          height: "26px",
+                          lineHeight: "13px",
+                          border: `1px solid rgba(255,255,255,0.3)`
+                        }}>
+                          {d.contentType || "Tanpa Tipe"}
+                        </span>
+                      ) : (
+                        <CustomDropdown 
+                          dark={true}
+                          value={d.contentType} 
+                          options={contentTypes} 
+                          prefix="" 
+                          onChange={(v)=>set("contentType", v)} 
+                          onUpdateOptions={(opts) => onSettingUpdate && onSettingUpdate({contentTypes: opts})}
+                          style={{ 
+                            width: "100%", 
+                            padding: "4px 10px", 
+                            borderRadius: "8px", 
+                            fontSize: "11px", 
+                            fontWeight: 700, 
+                            background: activeContentTypeColor, 
                             color: "#FFF", 
                             border: `1px solid rgba(255,255,255,0.3)`,
                             minHeight: "26px",

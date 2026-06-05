@@ -299,7 +299,7 @@ export function TableView({filtered,openEdit,archiveItem,unarchiveItem,deleteIte
   const [sort,setSort] = useState({col:"day",dir:"asc"});
 
   const defaultWidths: Record<string, number> = {
-    "Tgl": 60, "Platform": 100, "Pillar": 120, "Judul Konten": 200, "Brief Konten": 250, "PIC": 100, "Status": 120, "Views": 80, "Reach": 80, "Engagement": 100, "Aksi": 160
+    "Tgl": 60, "Platform": 100, "Pillar": 120, "Tipe Konten": 120, "Judul Konten": 200, "Brief Konten": 250, "PIC": 100, "Status": 120, "Views": 80, "Reach": 80, "Engagement": 100, "Aksi": 160
   };
   const [colWidths, setColWidths] = useState<Record<string, number>>(()=>{
     const saved = localStorage.getItem("socialStudioColWidths");
@@ -381,7 +381,7 @@ export function TableView({filtered,openEdit,archiveItem,unarchiveItem,deleteIte
             <thead>
               <tr>
                 <th style={{padding:"10px",borderBottom:"2px solid rgba(44,32,22,0.08)",width:40}}><input type="checkbox" checked={bulkIds.length===sorted.length&&sorted.length>0} onChange={toggleAll}/></th>
-                {[["Tgl","day"],["Platform","platform"],["Pillar","pillar"],["Judul Konten","title"],["Brief Konten","briefCopywriting"],["PIC","pic"],["Status","status"],["Views","views"],["Reach","reach"],["Engagement","engagement"],["Aksi",""]].map(([h,col])=>(
+                {[["Tgl","day"],["Platform","platform"],["Pillar","pillar"],["Tipe Konten","contentType"],["Judul Konten","title"],["Brief Konten","briefCopywriting"],["PIC","pic"],["Status","status"],["Views","views"],["Reach","reach"],["Engagement","engagement"],["Aksi",""]].map(([h,col])=>(
                   <th key={h} style={{...th(col), position: "relative", width: colWidths[h] || 100}} onClick={()=>col&&setS(col)}>
                     {h}{col&&<span style={{marginLeft:3,opacity:0.5}}>{arrow(col)}</span>}
                     <Resizer col={h} currentWidth={colWidths[h]} />
