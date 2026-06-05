@@ -117,7 +117,7 @@ export function MonthView({year,month,monthContent,filtered,openEdit,openAdd,sho
                 {items.map((item:any)=>{
                   const ps = item.archived ? { color: "#7A7976", light: "#EBEAE6" } : gps(pillars, String(item.pillar).split(',')[0].trim());
                   const ctName = String(item.contentType || "").split(',')[0].trim();
-                  const ctChar = ctName ? ctName[0].toUpperCase() : (item.platform ? String(item.platform).split(',')[0].trim()[0].toUpperCase() : "T");
+                  const ctChar = ctName ? ctName.charAt(0).toUpperCase() : (item.platform ? (String(item.platform).split(',')[0].trim().charAt(0).toUpperCase() || "T") : "T");
                   const ctBg = item.archived 
                     ? "#9E9D9A" 
                     : (ctName 

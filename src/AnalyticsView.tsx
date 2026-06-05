@@ -241,18 +241,61 @@ function DateFilterPopover({ dateFilt, setDateFilt, customS, setCustomS, customE
     }
   };
 
+  const activeDateRange = useMemo(() => {
+    if (tempFilt === "custom" || tempFilt === "all") return { sDateStr: tempS, eDateStr: tempE };
+    const now = new Date();
+    now.setHours(0,0,0,0);
+    let targetS = new Date(now);
+    let targetE = new Date(now);
+    const dayOfWeek = now.getDay();
+
+    if(tempFilt==="yesterday") {
+      targetS.setDate(now.getDate()-1);
+      targetE = new Date(targetS);
+    } else if(tempFilt==="7d") {
+      targetS.setDate(now.getDate()-7);
+    } else if(tempFilt==="28d") {
+      targetS.setDate(now.getDate()-28);
+    } else if(tempFilt==="90d") {
+      targetS.setDate(now.getDate()-90);
+    } else if(tempFilt==="tw") {
+      targetS.setDate(now.getDate() - dayOfWeek);
+    } else if(tempFilt==="tm") {
+      targetS.setDate(1);
+    } else if(tempFilt==="ty") {
+      targetS.setMonth(0);
+      targetS.setDate(1);
+    } else if(tempFilt==="lw") {
+      targetS.setDate(now.getDate() - dayOfWeek - 7);
+      targetE = new Date(targetS);
+      targetE.setDate(targetS.getDate() + 6);
+    } else if(tempFilt==="lm") {
+      targetS.setMonth(now.getMonth()-1);
+      targetS.setDate(1);
+      targetE = new Date(now.getFullYear(), now.getMonth(), 0); 
+    }
+
+    const fmt = (d: Date) => {
+      if (isNaN(d.getTime())) return "";
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    };
+    return { sDateStr: fmt(targetS), eDateStr: fmt(targetE) };
+  }, [tempFilt, tempS, tempE]);
+
   const isExactDate = (y: number, m: number, d: number) => {
-    if (tempFilt !== "custom") return false;
-    if (!tempS) return false;
+    if (tempFilt === "all") return false;
+    const { sDateStr, eDateStr } = activeDateRange;
+    if (!sDateStr) return false;
     const curDateStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-    return curDateStr === tempS || curDateStr === tempE;
+    return curDateStr === sDateStr || curDateStr === eDateStr;
   };
 
   const isDateInRange = (y: number, m: number, d: number) => {
-    if (tempFilt !== "custom") return false;
-    if (!tempS || !tempE) return false;
+    if (tempFilt === "all") return false;
+    const { sDateStr, eDateStr } = activeDateRange;
+    if (!sDateStr || !eDateStr) return false;
     const curDateStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-    return curDateStr > tempS && curDateStr < tempE;
+    return curDateStr > sDateStr && curDateStr < eDateStr;
   };
 
   const renderCalendar = (offset: number) => {
