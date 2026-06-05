@@ -131,9 +131,9 @@ export const ShareWorkspaceModal: React.FC<{ workspace: any, userProfile: any, o
           </div>
 
           {searchResult && searchResult !== "none" && (
-             <div style={{background:"white", border:"1.5px solid rgba(196,98,45,0.2)", borderRadius:16, padding:12, display:"flex", alignItems:"center", justifyContent:"space-between"}}>
+             <div style={{background:"white", border:"1.5px solid rgba(59,130,246,0.2)", borderRadius:16, padding:12, display:"flex", alignItems:"center", justifyContent:"space-between"}}>
                 <div style={{display:"flex", alignItems:"center", gap:10}}>
-                   <div style={{width:32, height:32, borderRadius:8, background:"#C4622D", color:"white", display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, fontWeight:700}}>{String(searchResult.fullName || searchResult.nickname || searchResult.email || "?").charAt(0).toUpperCase()}</div>
+                   <div style={{width:32, height:32, borderRadius:8, background:"#3B82F6", color:"white", display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, fontWeight:700}}>{String(searchResult.fullName || searchResult.nickname || searchResult.email || "?").charAt(0).toUpperCase()}</div>
                    <div>
                       <div style={{fontSize:13, fontWeight:600}}>{searchResult.fullName || searchResult.nickname || searchResult.email}</div>
                       <div style={{fontSize:11, color:"rgba(44,32,22,0.5)"}}>@{searchResult.username || searchResult.email.split('@')[0]}</div>
@@ -144,7 +144,7 @@ export const ShareWorkspaceModal: React.FC<{ workspace: any, userProfile: any, o
                       <option value="viewer">Viewer</option>
                       <option value="editor">Editor</option>
                    </select>
-                   <button onClick={()=>inviteMember(searchResult)} disabled={loading} style={{...B(true), height:32, padding:"0 12px", border:"none", background:"#C4622D", color:"white", fontSize:11}}>Invite</button>
+                   <button onClick={()=>inviteMember(searchResult)} disabled={loading} style={{...B(true), height:32, padding:"0 12px", border:"none", background:"#3B82F6", color:"white", fontSize:11}}>Invite</button>
                 </div>
              </div>
           )}

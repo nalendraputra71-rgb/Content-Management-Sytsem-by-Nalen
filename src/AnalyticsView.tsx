@@ -91,7 +91,7 @@ function CustomDropdown({ value, options = [], onChange, style }: { value: strin
                 <div 
                   key={i} 
                   onClick={() => { onChange(val); setOpen(false); }}
-                  style={{ padding: "8px 12px", borderRadius: 6, fontSize: 12, fontWeight: isSelected?800:600, cursor: "pointer", background: isSelected ? "#FDF0EB" : "transparent", color: isSelected ? "#C4622D" : "#2C2016", transition: "all 0.1s", whiteSpace: "nowrap" }}
+                  style={{ padding: "8px 12px", borderRadius: 6, fontSize: 12, fontWeight: isSelected?800:600, cursor: "pointer", background: isSelected ? "#FDF0EB" : "transparent", color: isSelected ? "#3B82F6" : "#2C2016", transition: "all 0.1s", whiteSpace: "nowrap" }}
                   onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = "#FAFAFA"; }}
                   onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = "transparent"; }}
                 >
@@ -884,7 +884,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
               <AlertCircle size={40} color="var(--theme-primary)" style={{margin: "0 auto 12px"}} />
               <h3 style={{fontSize:18,fontWeight:800,marginBottom:8,color:"#111827", letterSpacing: "-0.5px"}}>Akses Analitik Premium</h3>
               <p style={{fontSize:13,color:"rgba(0,0,0,0.6)",marginBottom:20, lineHeight:1.6}}>Upgrade ke paket Pro untuk membuka analisis prediktif, AI Insights mendalam, heatmap performa, dan integrasi multi-platform tak terbatas.</p>
-              <button className="hover-scale" onClick={()=>window.location.hash="/billing"} style={{background:"var(--theme-primary)",color:"white",padding:"12px 24px",borderRadius:10,fontWeight:700,fontSize:14,border:"none",cursor:"pointer",width:"100%", boxShadow: "0 4px 14px rgba(196,98,45,0.4)"}}>Upgrade Sekarang</button>
+              <button className="hover-scale" onClick={()=>window.location.hash="/billing"} style={{background:"var(--theme-primary)",color:"white",padding:"12px 24px",borderRadius:10,fontWeight:700,fontSize:14,border:"none",cursor:"pointer",width:"100%", boxShadow: "0 4px 14px rgba(59,130,246,0.4)"}}>Upgrade Sekarang</button>
             </div>
           </div>
         )}
@@ -1058,15 +1058,15 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                          <XAxis dataKey="name" tick={{fontSize:11,fill:"rgba(0,0,0,0.4)"}} axisLine={false} tickLine={false} dy={10}/>
                          <YAxis tick={{fontSize:11,fill:"rgba(0,0,0,0.4)"}} axisLine={false} tickLine={false} tickFormatter={fmt} width={55}/>
                          <Tooltip cursor={{fill:"rgba(0,0,0,0.04)"}} contentStyle={{borderRadius:12,fontSize:12,border:"1px solid rgba(0,0,0,0.05)",boxShadow:"0 4px 12px rgba(0,0,0,0.05)"}} labelStyle={{marginBottom:6,color:"rgba(0,0,0,0.5)"}} />
-                         <Bar dataKey={`${k}_org`} stackId={k} name={`Org`} fill={MC[k]||"#C4622D"} radius={[0,0,4,4]} barSize={16}/>
-                         <Bar dataKey={`${k}_ads`} stackId={k} name={`Ads`} fill={(MC[k]||"#C4622D")+"66"} radius={[4,4,0,0]} barSize={16}/>
+                         <Bar dataKey={`${k}_org`} stackId={k} name={`Org`} fill={MC[k]||"#3B82F6"} radius={[0,0,4,4]} barSize={16}/>
+                         <Bar dataKey={`${k}_ads`} stackId={k} name={`Ads`} fill={(MC[k]||"#3B82F6")+"66"} radius={[4,4,0,0]} barSize={16}/>
                        </BarChart>
                     ) : (
                       <LineChart data={lineData} margin={{top:5,right:10,left:0,bottom:0}}>
                         <XAxis dataKey="name" tick={{fontSize:11,fill:"rgba(0,0,0,0.4)"}} axisLine={false} tickLine={false} dy={10}/>
                         <YAxis tick={{fontSize:11,fill:"rgba(0,0,0,0.4)"}} axisLine={false} tickLine={false} tickFormatter={fmt} width={55}/>
                         <Tooltip contentStyle={{borderRadius:12,fontSize:12,border:"1px solid rgba(0,0,0,0.05)",boxShadow:"0 4px 12px rgba(0,0,0,0.05)"}} labelStyle={{marginBottom:6,color:"rgba(0,0,0,0.5)"}} />
-                        <Line type="monotone" dataKey={k} stroke={MC[k]||"#C4622D"} strokeWidth={3} dot={{r:0}} activeDot={{r:5, strokeWidth:0}} name={k} />
+                        <Line type="monotone" dataKey={k} stroke={MC[k]||"#3B82F6"} strokeWidth={3} dot={{r:0}} activeDot={{r:5, strokeWidth:0}} name={k} />
                       </LineChart>
                     )}
                   </ResponsiveContainer>

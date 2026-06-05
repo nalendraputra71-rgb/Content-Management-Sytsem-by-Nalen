@@ -327,7 +327,7 @@ export function SocialStudioView({ tab }: { tab: string }) {
                        </div>
                        <div style={{flex:1}}>
                          <div style={{fontSize:15, fontWeight:800, color:"#2C2016"}}>{p.name}</div>
-                         <div style={{fontSize:12, color:isConn?"#FF6B00":"rgba(44,32,22,0.4)", fontWeight:700}}>{isConn?"1 akun terhubung":"Tambahkan akun"}</div>
+                         <div style={{fontSize:12, color:isConn?"#3B82F6":"rgba(44,32,22,0.4)", fontWeight:700}}>{isConn?"1 akun terhubung":"Tambahkan akun"}</div>
                        </div>
                      </div>
                    )

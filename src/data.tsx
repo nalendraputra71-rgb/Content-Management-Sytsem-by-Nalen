@@ -310,7 +310,7 @@ export function CustomDropdown({ value, options = [], onChange, dark = false, st
 // ─── CONSTANTS ───────────────────────────────────────────────────────────────
 export const THEMES = [
   { id: "modern-blue", name: "Modern Blue (Default)", primary: "#1D4D7A", rgb: "29, 77, 122", sidebar: "#0B2A4A", header: "#FFFFFF", text: "#FFFFFF", gradient: "linear-gradient(135deg, #0B2A4A 0%, #1D4D7A 100%)", bg: "#F5F7FB", textMain: "#111827", textSec: "#6B7280", border: "#E5E7EB" },
-  { id: "sunset", name: "Sunset Orange", primary: "#FF6B00", rgb: "255, 107, 0", sidebar: "#1A140F", header: "#2C2016", text: "#FFFFFF" },
+  { id: "sunset", name: "Sunset Orange", primary: "#3B82F6", rgb: "255, 107, 0", sidebar: "#1A140F", header: "#2C2016", text: "#FFFFFF" },
   { id: "midnight", name: "Midnight Navy", primary: "#3B82F6", rgb: "59, 130, 246", sidebar: "#0F172A", header: "#1E293B", text: "#FFFFFF" },
   { id: "graphite", name: "Slate Graphite", primary: "#64748B", rgb: "100, 116, 139", sidebar: "#18181B", header: "#27272A", text: "#FFFFFF" },
   { id: "ocean", name: "Deep Ocean", primary: "#0D9488", rgb: "13, 148, 136", sidebar: "#042F2E", header: "#134E4A", text: "#FFFFFF" },
@@ -328,16 +328,16 @@ export const DAYS_ID = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"
 export const DAYS_S = ["Min","Sen","Sel","Rab","Kam","Jum","Sab"];
 export const YEARS = [2024,2025,2026,2027,2028];
 export const MK = ["views","reach","likes","comments","shares","reposts","saves"];
-export const MC: any = {views:"#2C2016",reach:"#FF6B00",likes:"#9C2B4E",comments:"#2B4C7E",shares:"#2D7A5E",reposts:"#A67C1C",saves:"#723680"};
+export const MC: any = {views:"#2C2016",reach:"#3B82F6",likes:"#9C2B4E",comments:"#2B4C7E",shares:"#2D7A5E",reposts:"#A67C1C",saves:"#723680"};
 
 export const DP = [
-  {name:"Pillar 1", color:"#FF6B00",light:"#FDF0EB"},
+  {name:"Pillar 1", color:"#3B82F6",light:"#FDF0EB"},
   {name:"Pillar 2", color:"#2B4C7E",light:"#E5EEF7"},
   {name:"Pillar 3", color:"#2D7A5E",light:"#E5F4EE"}
 ];
 export const DPL = [
   {name:"Feed",   color:"#2C2016"},
-  {name:"Reels",  color:"#FF6B00"},
+  {name:"Reels",  color:"#3B82F6"},
   {name:"Stories",color:"#A67C1C"},
   {name:"TikTok", color:"#2D7A5E"},
 ];
@@ -363,7 +363,7 @@ export const SS: any = {
 
 export const DCT = [
   {name: "Feed", color: "#2B4C7E"},
-  {name: "Video Pendek", color: "#FF6B00"},
+  {name: "Video Pendek", color: "#3B82F6"},
   {name: "Video Panjang", color: "#3E5E28"},
   {name: "Single Post", color: "#9C2B4E"},
   {name: "Story", color: "#A67C1C"}
@@ -409,7 +409,7 @@ export const getDynamicEvents = (y: number, m: number, d: number) => {
 export const nowTs= () => new Date().toLocaleString("id-ID",{dateStyle:"medium",timeStyle:"short"});
 export const gps  = (ps: any,name: any) => {
   const p = ps?.find((x:any)=>x?.name?.trim()?.toLowerCase()===name?.trim()?.toLowerCase()) || ps?.[0];
-  const color = p?.color || "#C4622D";
+  const color = p?.color || "#3B82F6";
   const light = p?.light || color + "22";
   return { name: p?.name || name, color, light };
 };

@@ -235,8 +235,8 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
       {/* Header */}
       <div style={{background:"#2C2016", padding:"14px 24px", display:"flex", justifyContent:"space-between", alignItems:"center", color:"white", zIndex:10}}>
         <div style={{display:"flex", alignItems:"center", gap: 12}}>
-          <div style={{width:40, height:40, background:"rgba(196,98,45,0.2)", borderRadius:12, display:"flex", alignItems:"center", justifyContent:"center"}}>
-            <Shield size={24} color="#C4622D" />
+          <div style={{width:40, height:40, background:"rgba(59,130,246,0.2)", borderRadius:12, display:"flex", alignItems:"center", justifyContent:"center"}}>
+            <Shield size={24} color="#3B82F6" />
           </div>
           <div>
             <h1 style={{margin:0, fontSize:16, fontWeight:800, letterSpacing:"-0.5px"}}>Admin Central</h1>
@@ -306,8 +306,8 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                     </div>
                     <div style={CARD({padding:24, borderRadius:20})}>
                       <div style={{display:"flex", justifyContent:"space-between", marginBottom:16}}>
-                        <div style={{width:40, height:40, background:"rgba(196,98,45,0.1)", borderRadius:12, display:"flex", alignItems:"center", justifyContent:"center"}}>
-                          <DollarSign size={20} color="#C4622D"/>
+                        <div style={{width:40, height:40, background:"rgba(59,130,246,0.1)", borderRadius:12, display:"flex", alignItems:"center", justifyContent:"center"}}>
+                          <DollarSign size={20} color="#3B82F6"/>
                         </div>
                       </div>
                       <div style={{fontSize:12, color:"rgba(44,32,22,0.5)", fontWeight:700}}>Total Revenue (Lifetime)</div>
@@ -392,12 +392,12 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                           </td>
                           <td style={{padding:"16px 24px", textAlign:"center"}}>
                              <div style={{display:"inline-flex", alignItems:"center", gap:6, padding:"4px 10px", borderRadius:20, background: u.emailVerified ? "#E5F4EE" : "#FFF4E5"}}>
-                               <div style={{width:6, height:6, borderRadius:"50%", background: u.emailVerified ? "#2D7A5E" : "#C4622D"}} />
-                               <span style={{fontSize:11, fontWeight:800, color: u.emailVerified ? "#2D7A5E" : "#C4622D"}}>{u.emailVerified ? "Verified" : "Unverified"}</span>
+                               <div style={{width:6, height:6, borderRadius:"50%", background: u.emailVerified ? "#2D7A5E" : "#3B82F6"}} />
+                               <span style={{fontSize:11, fontWeight:800, color: u.emailVerified ? "#2D7A5E" : "#3B82F6"}}>{u.emailVerified ? "Verified" : "Unverified"}</span>
                              </div>
                           </td>
                           <td style={{padding:"16px 24px", textAlign:"center"}}>
-                             <div style={{display:"inline-flex", alignItems:"center", gap:4, background: u.plan==="vip"?"#FFF8D6":(u.plan==="pro"?"#FDF0EB":"#F5F5F5"), color:u.plan==="vip"?"#FBC02D":(u.plan==="pro"?"#C4622D":"#666"), padding:"4px 12px", borderRadius:10, fontWeight:900, fontSize:10, border:u.plan==="vip"?"1px solid rgba(251,192,45,0.4)":(u.plan==="pro"?"1px solid rgba(196,98,45,0.2)":"1px solid transparent")}}>
+                             <div style={{display:"inline-flex", alignItems:"center", gap:4, background: u.plan==="vip"?"#FFF8D6":(u.plan==="pro"?"#FDF0EB":"#F5F5F5"), color:u.plan==="vip"?"#FBC02D":(u.plan==="pro"?"#3B82F6":"#666"), padding:"4px 12px", borderRadius:10, fontWeight:900, fontSize:10, border:u.plan==="vip"?"1px solid rgba(251,192,45,0.4)":(u.plan==="pro"?"1px solid rgba(59,130,246,0.2)":"1px solid transparent")}}>
                                {u.plan==="vip" && <Crown size={12} />}
                                {u.plan ? u.plan.toUpperCase() : "FREE"}
                              </div>
@@ -594,7 +594,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                                <td style={{padding:16}}>
                                   <span style={{fontSize:11, fontWeight:800, background:"rgba(0,0,0,0.05)", padding:"4px 8px", borderRadius:6}}>{t.planName}</span>
                                </td>
-                               <td style={{padding:16, color: t.voucherCode ? "#C4622D" : "#999", fontWeight: t.voucherCode ? 800 : 400}}>{t.voucherCode || "-"}</td>
+                               <td style={{padding:16, color: t.voucherCode ? "#3B82F6" : "#999", fontWeight: t.voucherCode ? 800 : 400}}>{t.voucherCode || "-"}</td>
                                <td style={{padding:16, fontWeight:800, color:"#4CAF50"}}>{fmtRp(t.amount)}</td>
                                <td style={{padding:16, fontSize:12, color:"#666"}}>{t.paymentMethod}</td>
                             </tr>
@@ -1079,7 +1079,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
           <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.7)", zIndex:2000, display:"flex", alignItems:"center", justifyContent:"center", padding:20, backdropFilter:"blur(8px)"}}>
             <motion.div initial={{scale:0.95, y:20}} animate={{scale:1, y:0}} exit={{scale:0.95, y:20}} 
               style={{background:"white", borderRadius:32, padding:"40px", textAlign:"center", maxWidth:400, boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
-              <div style={{width:80, height:80, background:"rgba(196,98,45,0.1)", borderRadius:30, display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 24px"}}>
+              <div style={{width:80, height:80, background:"rgba(59,130,246,0.1)", borderRadius:30, display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 24px"}}>
                 <AlertCircle color="var(--theme-primary)" size={48} />
               </div>
               <h3 style={{fontSize:22, fontWeight:800, color:"#2C2016", margin:0, letterSpacing:"-0.5px"}}>{confirmAction.title}</h3>

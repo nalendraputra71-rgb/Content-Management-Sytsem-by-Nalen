@@ -12,6 +12,11 @@ async function startServer() {
 
   app.use(express.json());
 
+  app.post("/api/log-error", (req, res) => {
+    require("fs").writeFileSync("client-error.log", JSON.stringify(req.body, null, 2) + "\n", { flag: "a" });
+    res.json({ ok: true });
+  });
+
   // API Route untuk Gemini Proxy
   app.post("/api/gemini", async (req, res) => {
     const { prompt, model = "gemini-2.5-flash" } = req.body;

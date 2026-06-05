@@ -228,7 +228,7 @@ export function DashboardView({ user, profile, activeWorkspace, content, theme, 
              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", textAlign: "right" }}>
                 <div style={{ fontSize: 16, fontWeight: 700, color: "rgba(0,0,0,0.5)", textTransform: "uppercase" }}>{weather.city}</div>
                 <div style={{ display: "flex", alignItems: "center", gap: 12, color: "#2C2016", fontSize: 32, fontWeight: 800 }}>
-                   {weather?.temp > 30 ? <Sun size={32} color="#FF6B00" /> : <Cloud size={32} color="#3F51B5" />}
+                   {weather?.temp > 30 ? <Sun size={32} color="#3B82F6" /> : <Cloud size={32} color="#3F51B5" />}
                    <span>{weather?.temp}°C</span>
                 </div>
                 <div style={{ fontSize: 16, fontWeight: 600, color: "rgba(0,0,0,0.5)" }}>{weather.desc}</div>
@@ -241,13 +241,13 @@ export function DashboardView({ user, profile, activeWorkspace, content, theme, 
                    onClick={() => setClockMenu(!clockMenu)}
                    style={{ width: 100, height: 100, borderRadius: "50%", background: "white", border: "5px solid #2C2016", position: "relative", cursor: "pointer" }}
                  >
-                   <div style={{ position: "absolute", top: "50%", left: "50%", width: 6, height: 6, background: "#FF6B00", borderRadius: "50%", transform: "translate(-50%, -50%)", zIndex: 10 }} />
+                   <div style={{ position: "absolute", top: "50%", left: "50%", width: 6, height: 6, background: "#3B82F6", borderRadius: "50%", transform: "translate(-50%, -50%)", zIndex: 10 }} />
                    {/* Hour Hand */}
                    <div style={{ position: "absolute", top: "25%", left: "calc(50% - 2.5px)", width: 5, height: "25%", background: "#2C2016", borderRadius: 4, transformOrigin: "bottom center", transform: `rotate(${(time.getHours() % 12) * 30 + time.getMinutes() * 0.5}deg)` }} />
                    {/* Minute Hand */}
                    <div style={{ position: "absolute", top: "15%", left: "calc(50% - 2px)", width: 4, height: "35%", background: "#666", borderRadius: 4, transformOrigin: "bottom center", transform: `rotate(${time.getMinutes() * 6}deg)` }} />
                    {/* Second Hand */}
-                   <div style={{ position: "absolute", top: "10%", left: "calc(50% - 1px)", width: 2, height: "40%", background: "#FF6B00", borderRadius: 4, transformOrigin: "bottom center", transform: `rotate(${time.getSeconds() * 6}deg)` }} />
+                   <div style={{ position: "absolute", top: "10%", left: "calc(50% - 1px)", width: 2, height: "40%", background: "#3B82F6", borderRadius: 4, transformOrigin: "bottom center", transform: `rotate(${time.getSeconds() * 6}deg)` }} />
                  </div>
                ) : (
                  <div 
@@ -709,7 +709,7 @@ function ResizeHandle({ item, onResize }: any) {
       onPointerDown={handlePointerDown}
       style={{
         position: "absolute", bottom: -4, right: -4, width: 20, height: 20, 
-        background: "var(--theme-primary, #C4622D)", borderRadius: "50%", cursor: "nwse-resize",
+        background: "var(--theme-primary, #3B82F6)", borderRadius: "50%", cursor: "nwse-resize",
         zIndex: 30, display: "flex", alignItems: "center", justifyContent: "center",
         boxShadow: "0 2px 8px rgba(0,0,0,0.3)"
       }}
@@ -1070,7 +1070,7 @@ function TodoItem({ todo, onToggle, onRename, onDelete, theme, disableAnimation 
           </div>
         )}
         <div style={{ display: "flex", gap: "clamp(4px, 2cqw, 8px)", marginTop: "clamp(2px, 1cqw, 6px)" }}>
-          <span style={{ fontSize: "clamp(8px, 3cqw, 10px)", fontWeight: 800, color: todo.type === "KONTEN" ? "#9C2B4E" : "#C4622D", background: todo.type === "KONTEN" ? "#9C2B4E15" : "#C4622D15", padding: "2px 6px", borderRadius: 4 }}>
+          <span style={{ fontSize: "clamp(8px, 3cqw, 10px)", fontWeight: 800, color: todo.type === "KONTEN" ? "#9C2B4E" : "#3B82F6", background: todo.type === "KONTEN" ? "#9C2B4E15" : "#3B82F615", padding: "2px 6px", borderRadius: 4 }}>
             {todo.type}
           </span>
           <span style={{ fontSize: "clamp(8px, 3cqw, 10px)", fontWeight: 700, color: "rgba(0,0,0,0.3)" }}>

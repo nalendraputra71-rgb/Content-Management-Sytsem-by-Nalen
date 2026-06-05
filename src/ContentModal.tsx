@@ -235,7 +235,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
     return hex;
   };
 
-  const activePillarColor = activePillar?.color || "#FF6B00";
+  const activePillarColor = activePillar?.color || "#3B82F6";
 
   // Platform lookup
   const activePlatformOption = platforms?.find((x:any) => {
@@ -1031,7 +1031,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
                   <div style={GRP}><label style={{...L,marginBottom:2}}>Catatan Referensi</label><TextareaAutosize value={d.referenceText} onChange={(e:any)=>set("referenceText",e.target.value)} style={I({resize:"vertical"})} minRows={3} placeholder="Referensi, mood, arahan visual..."/></div>
                   <div style={GRP}>
-                    <label style={{...L,marginBottom:2}}>Link Referensi <button onClick={()=>set("referenceLinks",[...(dRef.current.referenceLinks||[]),""])} style={{background:"none",border:"none",color:"#C4622D",cursor:"pointer",fontSize:10}}>(+ Tambah)</button></label>
+                    <label style={{...L,marginBottom:2}}>Link Referensi <button onClick={()=>set("referenceLinks",[...(dRef.current.referenceLinks||[]),""])} style={{background:"none",border:"none",color:"#3B82F6",cursor:"pointer",fontSize:10}}>(+ Tambah)</button></label>
                     {(d.referenceLinks||[]).map((lnk:string,i:number)=>(
                       <div key={i} style={{display:"flex",gap:4,marginBottom:4}}>
                         <input value={lnk} onChange={(e:any)=>set("referenceLinks", dRef.current.referenceLinks.map((l:any,idx:number)=>idx===i?e.target.value:l))} style={I()} placeholder="https://..."/>
@@ -1098,8 +1098,8 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                     <div style={{display:"grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8}}>
                       {MK.map((k:string)=>(
                         <div key={k} style={GRP}>
-                          <label style={{...L, marginBottom: 4, color: MC[k]||"#C4622D", display: "flex", alignItems: "center", gap: 4, textTransform: "capitalize", fontSize: "11px"}}>
-                            {getMetricIcon(k, MC[k]||"#C4622D", 12)}
+                          <label style={{...L, marginBottom: 4, color: MC[k]||"#3B82F6", display: "flex", alignItems: "center", gap: 4, textTransform: "capitalize", fontSize: "11px"}}>
+                            {getMetricIcon(k, MC[k]||"#3B82F6", 12)}
                             {k}
                           </label>
                           <input 
@@ -1114,14 +1114,14 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                       ))}
                     </div>
                   </div>
-                  <div style={{marginTop:12, padding:"8px 10px", background:"rgba(196,98,45,0.06)", borderRadius:8, display:"flex", flexDirection: "column", gap:2}}>
+                  <div style={{marginTop:12, padding:"8px 10px", background:"rgba(59,130,246,0.06)", borderRadius:8, display:"flex", flexDirection: "column", gap:2}}>
                     <span style={{fontSize:11, color:"rgba(44,32,22,0.6)", display: "flex", justifyContent: "space-between"}}>
                       <span>Total Engagement:</span>
-                      <strong style={{color:"#C4622D"}}>{fmt(eng(d.metrics))}</strong>
+                      <strong style={{color:"#3B82F6"}}>{fmt(eng(d.metrics))}</strong>
                     </span>
                     <span style={{fontSize:11, color:"rgba(44,32,22,0.6)", display: "flex", justifyContent: "space-between"}}>
                       <span>ER Rate:</span>
-                      <strong style={{color:"#C4622D"}}>{(d.metrics?.reach||0)>0?((eng(d.metrics)/(d.metrics.reach))*100).toFixed(2):0}%</strong>
+                      <strong style={{color:"#3B82F6"}}>{(d.metrics?.reach||0)>0?((eng(d.metrics)/(d.metrics.reach))*100).toFixed(2):0}%</strong>
                     </span>
                   </div>
                   
@@ -1255,7 +1255,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                         setCopiedBrief(true);
                         setTimeout(() => setCopiedBrief(false), 2000);
                       }} 
-                      style={{ background: copiedBrief ? "rgba(46,125,50,0.1)" : "rgba(196,98,45,0.08)", border: "none", color: copiedBrief ? "#2E7D32" : "#C4622D", padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 750, cursor: copiedBrief ? "default" : "pointer", display: "flex", alignItems: "center", transition: "all 0.3s ease" }}
+                      style={{ background: copiedBrief ? "rgba(46,125,50,0.1)" : "rgba(59,130,246,0.08)", border: "none", color: copiedBrief ? "#2E7D32" : "#3B82F6", padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 750, cursor: copiedBrief ? "default" : "pointer", display: "flex", alignItems: "center", transition: "all 0.3s ease" }}
                     >
                       {copiedBrief ? (
                         <>
@@ -1303,7 +1303,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                         setCopiedCaption(true);
                         setTimeout(() => setCopiedCaption(false), 2000);
                       }} 
-                      style={{ background: copiedCaption ? "rgba(46,125,50,0.1)" : "rgba(196,98,45,0.08)", border: "none", color: copiedCaption ? "#2E7D32" : "#C4622D", padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 750, cursor: copiedCaption ? "default" : "pointer", display: "flex", alignItems: "center", transition: "all 0.3s ease" }}
+                      style={{ background: copiedCaption ? "rgba(46,125,50,0.1)" : "rgba(59,130,246,0.08)", border: "none", color: copiedCaption ? "#2E7D32" : "#3B82F6", padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 750, cursor: copiedCaption ? "default" : "pointer", display: "flex", alignItems: "center", transition: "all 0.3s ease" }}
                     >
                       {copiedCaption ? (
                         <>
@@ -1335,10 +1335,10 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                   {d.linkAsset ? (
-                    <a href={d.linkAsset} target="_blank" rel="noreferrer" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 10, background: "rgba(196,98,45,0.04)", border: "1px solid rgba(196,98,45,0.15)", borderRadius: 12, padding: "12px 16px", transition: "background 0.2s", minWidth: 0 }} className="hover-scale">
+                    <a href={d.linkAsset} target="_blank" rel="noreferrer" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 10, background: "rgba(59,130,246,0.04)", border: "1px solid rgba(59,130,246,0.15)", borderRadius: 12, padding: "12px 16px", transition: "background 0.2s", minWidth: 0 }} className="hover-scale">
                       <span style={{ fontSize: 18, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}><FolderOpen size={18} /></span>
                       <div style={{ flex: 1, minWidth: 0, overflow: "hidden" }}>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: "#C4622D" }}>Buka Aset Desain</div>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: "#3B82F6" }}>Buka Aset Desain</div>
                         <div style={{ fontSize: 10, color: "rgba(44,32,22,0.5)", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap" }}>{d.linkAsset}</div>
                       </div>
                     </a>
@@ -1384,7 +1384,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                   {d.referenceLinks && d.referenceLinks.filter((l:string)=>l.trim() !== "").length > 0 && (
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: d.referenceImage ? 8 : 0 }}>
                       {d.referenceLinks.filter((l:string)=>l.trim() !== "").map((lnk:string, idx:number) => (
-                        <a key={idx} href={lnk} target="_blank" rel="noreferrer" style={{ textDecoration: "none", fontSize: 11, color: "#C4622D", background: "rgba(196,98,45,0.06)", padding: "4px 8px", borderRadius: 8, fontWeight: 600 }}>
+                        <a key={idx} href={lnk} target="_blank" rel="noreferrer" style={{ textDecoration: "none", fontSize: 11, color: "#3B82F6", background: "rgba(59,130,246,0.06)", padding: "4px 8px", borderRadius: 8, fontWeight: 600 }}>
                           <Link size={12} style={{marginRight: 4}}/> Link Referensi {idx + 1}
                         </a>
                       ))}
@@ -1437,13 +1437,13 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                 
                 <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                   {/* Organik Card Inside Reader */}
-                  <div style={{ background: "rgba(196,98,45,0.03)", border: "1px solid rgba(196,98,45,0.08)", borderRadius: 12, padding: 14, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                  <div style={{ background: "rgba(59,130,246,0.03)", border: "1px solid rgba(59,130,246,0.08)", borderRadius: 12, padding: 14, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
                     <div>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: "#C4622D", marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}><Leaf size={14} style={{marginRight: 4}} /> Jangkauan Organik</div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: "#3B82F6", marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}><Leaf size={14} style={{marginRight: 4}} /> Jangkauan Organik</div>
                       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(148px, 1fr))", gap: 8, marginBottom: 10 }}>
                         {MK.map((k:string) => (
                           <div key={k} style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(44,32,22,0.02)", padding: "6px 10px", borderRadius: 8 }}>
-                            {getMetricIcon(k, MC[k]||"#C4622D", 14)}
+                            {getMetricIcon(k, MC[k]||"#3B82F6", 14)}
                             <div>
                               <div style={{ fontSize: 9, color: "rgba(44,32,22,0.5)", textTransform: "capitalize", lineHeight: 1.1 }}>{k}</div>
                               <div style={{ fontSize: 12, fontWeight: 805, color: "#2C2016" }}>{fmt(d.metrics[k] || 0)}</div>
@@ -1452,14 +1452,14 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                         ))}
                       </div>
                     </div>
-                    <div style={{ borderTop: "1px dashed rgba(196,98,45,0.15)", paddingTop: 8, display: "flex", flexDirection: "column", gap: 2 }}>
+                    <div style={{ borderTop: "1px dashed rgba(59,130,246,0.15)", paddingTop: 8, display: "flex", flexDirection: "column", gap: 2 }}>
                       <div style={{ fontSize: 11, color: "rgba(44,32,22,0.7)", display: "flex", justifyContent: "space-between" }}>
                         <span>Total Interaksi:</span>
-                        <strong style={{ color: "#C4622D" }}>{fmt(eng(d.metrics))}</strong>
+                        <strong style={{ color: "#3B82F6" }}>{fmt(eng(d.metrics))}</strong>
                       </div>
                       <div style={{ fontSize: 11, color: "rgba(44,32,22,0.7)", display: "flex", justifyContent: "space-between" }}>
                         <span>Engagement Rate:</span>
-                        <strong style={{ color: "#C4622D" }}>{(d.metrics?.reach || 0) > 0 ? ((eng(d.metrics) / d.metrics.reach) * 100).toFixed(2) : 0}%</strong>
+                        <strong style={{ color: "#3B82F6" }}>{(d.metrics?.reach || 0) > 0 ? ((eng(d.metrics) / d.metrics.reach) * 100).toFixed(2) : 0}%</strong>
                       </div>
                     </div>
                   </div>
@@ -1523,7 +1523,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
           </div>
           <div style={{display:"flex", gap:12, alignItems:"center"}}>
             {isSaving && (
-              <span style={{ fontSize: 11, color: "#C4622D", fontWeight: 700, display: "flex", alignItems: "center" }} className="animate-pulse">
+              <span style={{ fontSize: 11, color: "#3B82F6", fontWeight: 700, display: "flex", alignItems: "center" }} className="animate-pulse">
                 Menyimpan...
               </span>
             )}
@@ -1536,7 +1536,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                 height: 44,
                 borderRadius: "50%",
                 border: "none",
-                background: isReaderMode ? "#C4622D" : "#2E7D32",
+                background: isReaderMode ? "#3B82F6" : "#2E7D32",
                 color: "white",
                 fontSize: 18,
                 cursor: "pointer",
@@ -1573,7 +1573,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                    </button>
                    <button onClick={()=>{
                      setShowExitConfirm(false);
-                   }} style={{flex:1,padding:"12px 16px",background:"var(--theme-primary, #C4622D)",border:"none",color:"white",borderRadius:24,fontWeight:700,cursor:"pointer"}}>
+                   }} style={{flex:1,padding:"12px 16px",background:"var(--theme-primary, #3B82F6)",border:"none",color:"white",borderRadius:24,fontWeight:700,cursor:"pointer"}}>
                       Lanjutkan Edit
                    </button>
                 </div>

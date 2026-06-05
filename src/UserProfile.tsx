@@ -95,7 +95,7 @@ export function UserProfile({ userProfile, activeWorkspace, onUpdate }: { userPr
          <head><title>Invoice ${tx.id}</title>
          <style>
             body { font-family: sans-serif; padding: 40px; color: #2C2016; }
-            h1 { color: #FF6B00; }
+            h1 { color: #3B82F6; }
             .header { display: flex; justify-content: space-between; border-bottom: 2px solid #EEE; padding-bottom: 20px; margin-bottom: 20px; }
             .details { margin-bottom: 20px; }
             table { width: 100%; border-collapse: collapse; }

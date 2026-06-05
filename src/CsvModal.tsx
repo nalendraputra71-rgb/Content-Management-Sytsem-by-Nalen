@@ -199,7 +199,7 @@ export function CsvModal({onClose, onImport, pillars, platforms, contentTypes, p
                 </div>
                 <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
                     <button onClick={redo} style={{background:"transparent",border:"none",color:"#2C2016",padding:"8px 16px",fontWeight:600,cursor:"pointer",textDecoration:"underline"}}>Ulangi (Redo)</button>
-                    <button onClick={handleImportClick} style={{background:"#C4622D",border:"none",color:"white",padding:"8px 24px",borderRadius:8,fontWeight:600,cursor:"pointer"}}>Mulai Import</button>
+                    <button onClick={handleImportClick} style={{background:"#3B82F6",border:"none",color:"white",padding:"8px 24px",borderRadius:8,fontWeight:600,cursor:"pointer"}}>Mulai Import</button>
                 </div>
             </div>
         )}

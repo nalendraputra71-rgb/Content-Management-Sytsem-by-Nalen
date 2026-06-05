@@ -18,7 +18,7 @@ export function MonthView({year,month,monthContent,filtered,openEdit,openAdd,sho
     
     // 2. Dynamic Holidays (Launch days etc)
     const dynamicEv = getDynamicEvents(year, month, d);
-    if (dynamicEv) result.push({ name: dynamicEv, color: "#C4622D" });
+    if (dynamicEv) result.push({ name: dynamicEv, color: "#3B82F6" });
 
     // 3. Custom Events
     if (customEvents && Array.isArray(customEvents)) {
@@ -82,7 +82,7 @@ export function MonthView({year,month,monthContent,filtered,openEdit,openAdd,sho
               background: isToday ? "rgba(var(--theme-primary-rgb), 0.15)" : evs.length>0 ? "#F5F0E8" : "white",
               borderRadius: 8,
               padding: 6,
-              border: isToday ? "2px solid var(--theme-primary)" : evs.length>0 ? "1px solid rgba(196,98,45,0.2)" : "1px solid rgba(44,32,22,0.06)",
+              border: isToday ? "2px solid var(--theme-primary)" : evs.length>0 ? "1px solid rgba(59,130,246,0.2)" : "1px solid rgba(44,32,22,0.06)",
               boxShadow: isToday ? "0 4px 12px rgba(var(--theme-primary-rgb), 0.2)" : "none"
             }}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:3}}>
@@ -99,7 +99,7 @@ export function MonthView({year,month,monthContent,filtered,openEdit,openAdd,sho
                 {evs.map((e, idx) => (
                   <div key={idx} style={{
                     fontSize:7, 
-                    color: e.color || (isSpec ? "#C4622D" : "#A67C1C"), 
+                    color: e.color || (isSpec ? "#3B82F6" : "#A67C1C"), 
                     background: e.color ? `${e.color}15` : "transparent",
                     padding: e.color ? "1px 4px" : "0",
                     borderRadius: 4,
@@ -274,7 +274,7 @@ export function TimelineView({year,month,content,filtered,openEdit,openAdd,pilla
             const dow=new Date(year,month-1,day).getDay();
             const isWe=dow===0||dow===6;
             return (
-              <div key={day} style={{flex:"0 0 120px",background:isWe?"#F5F0E8":ev?"#FDF5E8":"white",borderRadius:10,padding:8,border:ev?"1.5px solid rgba(196,98,45,0.3)":"1px solid rgba(44,32,22,0.07)",minHeight:220}}>
+              <div key={day} style={{flex:"0 0 120px",background:isWe?"#F5F0E8":ev?"#FDF5E8":"white",borderRadius:10,padding:8,border:ev?"1.5px solid rgba(59,130,246,0.3)":"1px solid rgba(44,32,22,0.07)",minHeight:220}}>
                 <div style={{borderBottom:"1.5px solid rgba(44,32,22,0.08)",paddingBottom:6,marginBottom:6}}>
                   <div style={{fontSize:9,textTransform:"uppercase",fontWeight:700,color:"rgba(44,32,22,0.4)"}}>{DAYS_S[dow]}</div>
                   <div style={{fontSize:24,fontWeight:800,lineHeight:1,color:isWe?"rgba(44,32,22,0.3)":"#2C2016"}}>{day}</div>
@@ -372,9 +372,9 @@ export function TableView({filtered,openEdit,archiveItem,unarchiveItem,deleteIte
   return (
     <div style={{background:"white",borderRadius:12,overflow:"auto",boxShadow:"0 1px 4px rgba(44,32,22,0.08)"}}>
       {bulkIds.length>0 && (
-        <div style={{padding:"8px 16px",background:"rgba(196,98,45,0.05)",borderBottom:"1px solid rgba(196,98,45,0.1)",display:"flex",gap:12,alignItems:"center"}}>
-          <span style={{fontSize:13,fontWeight:600,color:"#C4622D"}}>{bulkIds.length} terpilih</span>
-          <div style={{width:1,height:14,background:"rgba(196,98,45,0.2)"}}/>
+        <div style={{padding:"8px 16px",background:"rgba(59,130,246,0.05)",borderBottom:"1px solid rgba(59,130,246,0.1)",display:"flex",gap:12,alignItems:"center"}}>
+          <span style={{fontSize:13,fontWeight:600,color:"#3B82F6"}}>{bulkIds.length} terpilih</span>
+          <div style={{width:1,height:14,background:"rgba(59,130,246,0.2)"}}/>
           <button onClick={()=>onBulk("archive")} style={{background:"none",border:"none",color:"#723680",fontSize:13,fontWeight:600,cursor:"pointer"}}>📦 Arsip Massal</button>
           <button onClick={()=>onBulk("restore")} style={{background:"none",border:"none",color:"#2E7D32",fontSize:13,fontWeight:600,cursor:"pointer"}}>🔄 Pulihkan Massal</button>
           <button onClick={()=>onBulk("delete")} style={{background:"none",border:"none",color:"#9C2B4E",fontSize:13,fontWeight:600,cursor:"pointer"}}>🗑️ Hapus Massal</button>
@@ -402,7 +402,7 @@ export function TableView({filtered,openEdit,archiveItem,unarchiveItem,deleteIte
                 const v=(item.metrics?.views||0)+(item.adsMetrics?.views||0);
                 const r=(item.metrics?.reach||0)+(item.adsMetrics?.reach||0);
                 return (
-                  <tr key={item.id} style={{background:item.archived?"rgba(114,54,128,0.04)":bulkIds.includes(item.id)?"rgba(196,98,45,0.03)":"white",opacity:item.archived?0.7:1}} onMouseEnter={x=>x.currentTarget.style.background="#FAFAF8"} onMouseLeave={x=>x.currentTarget.style.background=item.archived?"rgba(114,54,128,0.04)":bulkIds.includes(item.id)?"rgba(196,98,45,0.03)":"white"}>
+                  <tr key={item.id} style={{background:item.archived?"rgba(114,54,128,0.04)":bulkIds.includes(item.id)?"rgba(59,130,246,0.03)":"white",opacity:item.archived?0.7:1}} onMouseEnter={x=>x.currentTarget.style.background="#FAFAF8"} onMouseLeave={x=>x.currentTarget.style.background=item.archived?"rgba(114,54,128,0.04)":bulkIds.includes(item.id)?"rgba(59,130,246,0.03)":"white"}>
                     <td style={td}><input type="checkbox" checked={bulkIds.includes(item.id)} onChange={()=>toggleBulk(item.id)}/></td>
                     <td style={td}>
                       <span style={{fontWeight:800,fontSize:16,color:"#2C2016"}}>{item.day}</span>
@@ -425,7 +425,7 @@ export function TableView({filtered,openEdit,archiveItem,unarchiveItem,deleteIte
                     <td style={td}><SBadge status={item.status}/></td>
                     <td style={{...td,textAlign:"right",fontVariantNumeric:"tabular-nums"}}>{fmt(v)}</td>
                     <td style={{...td,textAlign:"right",fontVariantNumeric:"tabular-nums"}}>{fmt(r)}</td>
-                    <td style={{...td,textAlign:"right",fontVariantNumeric:"tabular-nums",fontWeight:600,color:"#C4622D"}}>{fmt(e)}</td>
+                    <td style={{...td,textAlign:"right",fontVariantNumeric:"tabular-nums",fontWeight:600,color:"#3B82F6"}}>{fmt(e)}</td>
                     <td style={td}>
                       <div style={{display:"flex",gap:3,flexWrap:"wrap"}}>
                         <button onClick={()=>openEdit(item)} style={{background:"#F5F0E8",border:"none",borderRadius:6,padding:"3px 8px",fontSize:10,cursor:"pointer",color:"#2C2016",fontWeight:500}}>Edit</button>

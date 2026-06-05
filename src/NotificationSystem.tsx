@@ -47,7 +47,7 @@ export function useNotifications(userProfile: any) {
       } else {
       notifs.push({
         id: "welcome",
-        icon: <PartyPopper size={20} color="#FF6B00" />,
+        icon: <PartyPopper size={20} color="#3B82F6" />,
         title: "Selamat Datang!",
         desc: "Nikmati 7 hari free trial penuh fitur.",
         time: "Sistem",
@@ -122,7 +122,7 @@ export function useNotifications(userProfile: any) {
                if (lastMsg && lastMsg.sender === "admin") {
                   ticketNotifs.push({
                      id: `ticket_${d.id}`,
-                     icon: <Bell size={20} color="#FF6B00" />,
+                     icon: <Bell size={20} color="#3B82F6" />,
                      title: "Balasan Tiket Bantuan",
                      desc: lastMsg.text,
                      time: new Date(lastMsg.timestamp).toLocaleString("id-ID", {dateStyle:"short", timeStyle:"short"}),
@@ -160,7 +160,7 @@ export function useNotifications(userProfile: any) {
                    type: "invite",
                    workspaceId: data.workspaceId,
                    memberId: d.id,
-                   icon: <Bell size={20} color="#C4622D" />,
+                   icon: <Bell size={20} color="#3B82F6" />,
                    title: "Undangan Workspace Baru",
                    desc: `${inviter} mengundang Anda untuk bergabung ke "${wsName}".`,
                    time: new Date(data.joinedAt || Date.now()).toLocaleString("id-ID", {dateStyle:"short", timeStyle:"short"}),
@@ -304,7 +304,7 @@ export function NotificationToast({ toast, onClose, onClick, onInviteAction }: {
                  {toast.desc}
                  {toast.type === "invite" && (
                     <div style={{display: "flex", gap: 8, marginTop: 12}}>
-                        <button onClick={(e)=>{ e.stopPropagation(); onInviteAction?.(toast.workspaceId, toast.memberId, 'accept'); }} style={{flex:1, padding:"8px", background:"#C4622D", border:"none", borderRadius:8, color:"white", fontSize:12, fontWeight:700, cursor:"pointer"}}>Terima</button>
+                        <button onClick={(e)=>{ e.stopPropagation(); onInviteAction?.(toast.workspaceId, toast.memberId, 'accept'); }} style={{flex:1, padding:"8px", background:"#3B82F6", border:"none", borderRadius:8, color:"white", fontSize:12, fontWeight:700, cursor:"pointer"}}>Terima</button>
                         <button onClick={(e)=>{ e.stopPropagation(); onInviteAction?.(toast.workspaceId, toast.memberId, 'reject'); }} style={{flex:1, padding:"8px", background:"#F5F5F5", border:"none", borderRadius:8, color:"#2C2016", fontSize:12, fontWeight:700, cursor:"pointer"}}>Tolak</button>
                     </div>
                  )}
@@ -379,7 +379,7 @@ export function NotificationPanel({ notifications, onClose, onRead, onContactSup
                     {n.desc}
                     {n.type === "invite" && (
                         <div style={{display: "flex", gap: 8, marginTop: 8}}>
-                            <button onClick={(e)=>{ e.stopPropagation(); onInviteAction?.(n.workspaceId, n.memberId, 'accept'); }} style={{flex:1, padding:"6px", background:"#C4622D", border:"none", borderRadius:6, color:"white", fontSize:11, fontWeight:700, cursor:"pointer"}}>Terima</button>
+                            <button onClick={(e)=>{ e.stopPropagation(); onInviteAction?.(n.workspaceId, n.memberId, 'accept'); }} style={{flex:1, padding:"6px", background:"#3B82F6", border:"none", borderRadius:6, color:"white", fontSize:11, fontWeight:700, cursor:"pointer"}}>Terima</button>
                             <button onClick={(e)=>{ e.stopPropagation(); onInviteAction?.(n.workspaceId, n.memberId, 'reject'); }} style={{flex:1, padding:"6px", background:"rgba(255,255,255,0.1)", border:"none", borderRadius:6, color:"white", fontSize:11, fontWeight:700, cursor:"pointer"}}>Tolak</button>
                         </div>
                     )}
@@ -389,7 +389,7 @@ export function NotificationPanel({ notifications, onClose, onRead, onContactSup
                     {n.desc}
                     {n.type === "invite" && !n.isArchived && (
                         <div style={{display: "flex", gap: 8, marginTop: 8}}>
-                            <button onClick={(e)=>{ e.stopPropagation(); onInviteAction?.(n.workspaceId, n.memberId, 'accept'); }} style={{flex:1, padding:"6px", background:"#C4622D", border:"none", borderRadius:6, color:"white", fontSize:11, fontWeight:700, cursor:"pointer"}}>Terima</button>
+                            <button onClick={(e)=>{ e.stopPropagation(); onInviteAction?.(n.workspaceId, n.memberId, 'accept'); }} style={{flex:1, padding:"6px", background:"#3B82F6", border:"none", borderRadius:6, color:"white", fontSize:11, fontWeight:700, cursor:"pointer"}}>Terima</button>
                             <button onClick={(e)=>{ e.stopPropagation(); onInviteAction?.(n.workspaceId, n.memberId, 'reject'); }} style={{flex:1, padding:"6px", background:"rgba(255,255,255,0.1)", border:"none", borderRadius:6, color:"white", fontSize:11, fontWeight:700, cursor:"pointer"}}>Tolak</button>
                         </div>
                     )}

@@ -69,12 +69,12 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
   const [localCustomEvents, setLocalCustomEvents] = useState(initialSettings.customEvents || []);
 
   const [newVal, setNewVal] = useState("");
-  const [newColor, setNewColor] = useState("#C4622D");
+  const [newColor, setNewColor] = useState("#3B82F6");
   const [newHKey, setNewHKey] = useState("");
   const [newHVal, setNewHVal] = useState("");
 
   const [newEvName, setNewEvName] = useState("");
-  const [newEvColor, setNewEvColor] = useState("#C4622D");
+  const [newEvColor, setNewEvColor] = useState("#3B82F6");
   const [newEvStart, setNewEvStart] = useState("");
   const [newEvEnd, setNewEvEnd] = useState("");
   const [newEvMonthly, setNewEvMonthly] = useState(false);
@@ -182,7 +182,7 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
   const addPillar = () => {
     if (!newVal.trim()) return;
     setLocalPillars((p: any) => [...p, { name: newVal.trim(), color: newColor, light: newColor + "22" }]);
-    setNewVal(""); setNewColor("#C4622D");
+    setNewVal(""); setNewColor("#3B82F6");
   };
   const editPillar = (i: any, name: any, color: any) => setLocalPillars((p: any) => p.map((x: any, idx: any) => idx === i ? { name, color, light: color + "22" } : x));
   const delPillar = (i: any) => setLocalPillars((p: any) => p.filter((_: any, idx: any) => idx !== i));
@@ -237,7 +237,7 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
   const startEditCustomEvent = (ev: any) => {
     setEditingEvId(ev.id);
     setEditEvName(ev.name);
-    setEditEvColor(ev.color || "#C4622D");
+    setEditEvColor(ev.color || "#3B82F6");
     setEditEvStart(ev.start || "");
     setEditEvEnd(ev.end || "");
     setEditEvMonthly(ev.monthly || false);

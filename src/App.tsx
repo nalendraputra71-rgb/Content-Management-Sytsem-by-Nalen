@@ -499,7 +499,7 @@ function QuickAddEventModal({ workspace, onClose, onSaveSettings }: any) {
   const [name, setName] = useState("");
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
-  const [color, setColor] = useState("#C4622D");
+  const [color, setColor] = useState("#3B82F6");
   const [monthly, setMonthly] = useState(false);
   const [error, setError] = useState("");
 
@@ -603,7 +603,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
   const [tagline, setTagline]   = useState("Content Management System");
   const [headerImage, setHeaderImage] = useState<string|null>(null);
   const [headerStyle, setHeaderStyle] = useState({
-    titleColor: "#C4622D", taglineColor: "#FAF7F2", subtitleColor: "rgba(250,247,242,0.8)",
+    titleColor: "#3B82F6", taglineColor: "#FAF7F2", subtitleColor: "rgba(250,247,242,0.8)",
     bgColor: "#2C2016", titleFont: "inherit", taglineFont: "inherit", subtitleFont: "inherit"
   });
   const [qYear, setQYear]       = useState(new Date().getFullYear());
@@ -1063,7 +1063,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
             
             const newContentTypesToAdd = [
               { name: "Feed", color: "#2C2016" },
-              { name: "Reels", color: "#FF6B00" },
+              { name: "Reels", color: "#3B82F6" },
               { name: "Stories", color: "#A67C1C" },
               { name: "KOL", color: "#E52D27" },
               { name: "Motion Graphic", color: "#723680" }
@@ -1525,7 +1525,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
                <p style={{fontSize:14, color:"rgba(44,32,22,0.6)", marginBottom:24, lineHeight:1.5}}>{confirmAction.msg}</p>
                <div style={{display:"flex",gap:12,justifyContent:"center"}}>
                  <button className="hover-scale" onClick={()=>setConfirmAction(null)} style={{...B(false), flex:1, height:48, fontSize:14, borderRadius:24}}>Batal</button>
-                 <button className="hover-scale btn-hover" onClick={()=>{confirmAction.onConfirm(); setConfirmAction(null);}} style={{...B(true, confirmAction.title.includes("Hapus") ? "#9C2B4E" : "#C4622D"), flex:1, height:48, fontSize:14, borderRadius:24}}>{confirmAction.title.includes("Hapus") ? (confirmAction.title.includes("Keluar") ? "Keluar" : "Hapus") : "Lanjutkan"}</button>
+                 <button className="hover-scale btn-hover" onClick={()=>{confirmAction.onConfirm(); setConfirmAction(null);}} style={{...B(true, confirmAction.title.includes("Hapus") ? "#9C2B4E" : "#3B82F6"), flex:1, height:48, fontSize:14, borderRadius:24}}>{confirmAction.title.includes("Hapus") ? (confirmAction.title.includes("Keluar") ? "Keluar" : "Hapus") : "Lanjutkan"}</button>
                </div>
             </motion.div>
           </motion.div>
