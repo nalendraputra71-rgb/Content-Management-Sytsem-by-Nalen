@@ -149,40 +149,30 @@ service cloud.firestore {
 
     // ─── WORKSPACES ──────────────────────────────────────────────────────────
     match /workspaces/{wsId} {
-      allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || resource.data.get('publicLinkEnabled', false) == true);
-      allow get: if isMember(wsId) || (isSignedIn() && (resource == null || resource.data.get('publicLinkEnabled', false) == true));
+      allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || resource.data.get('publicLinkEnabled', false) == true || isAdmin());
+      allow get: if isMember(wsId) || (isSignedIn() && (resource == null || resource.data.get('publicLinkEnabled', false) == true || isAdmin()));
       allow create: if isSignedIn() && incoming().ownerId == request.auth.uid;
-      allow delete: if isOwner(wsId);
-      allow update: if isEditor(wsId) && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'publicLinkEnabled', 'settings']);
+      allow delete: if isOwner(wsId) || isAdmin();
+      allow update: if (isEditor(wsId) || isAdmin()) && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'publicLinkEnabled', 'settings']);
 
       // ─── MEMBERS ───────────────────────────────────────────────────────────
       match /members/{memberId} {
-        allow read: if isMember(wsId);
+        allow read: if isMember(wsId) || isAdmin();
         allow create: if isSignedIn() && (
-          isOwner(wsId) || 
+          isOwner(wsId) || isAdmin() ||
           (request.auth.uid == memberId && incoming().role == "owner" && 
            getAfter(/databases/$(database)/documents/workspaces/$(wsId)).data.ownerId == request.auth.uid)
         );
-        allow delete: if isOwner(wsId) || (request.auth.uid == memberId && existing().role != "owner");
-        allow update: if (isOwner(wsId) && incoming().diff(existing()).affectedKeys().hasOnly(['role'])) || (request.auth.uid == memberId && incoming().diff(existing()).affectedKeys().hasOnly(['status']) && incoming().status == "active");
+        allow delete: if isOwner(wsId) || isAdmin() || (request.auth.uid == memberId && existing().role != "owner");
+        allow update: if (isOwner(wsId) && incoming().diff(existing()).affectedKeys().hasOnly(['role'])) || (request.auth.uid == memberId && incoming().diff(existing()).affectedKeys().hasOnly(['status']) && incoming().status == "active") || isAdmin();
       }
 
       // ─── CONTENT ───────────────────────────────────────────────────────────
       match /content/{contentId} {
-        allow read: if isMember(wsId) || get(/databases/$(database)/documents/workspaces/$(wsId)).data.publicLinkEnabled == true;
-        allow create: if isEditor(wsId) && incoming().workspaceId == wsId && incoming().userId == request.auth.uid;
-        allow delete: if isEditor(wsId);
-        allow update: if isEditor(wsId) && (
-          isOwner(wsId) ||
-          (incoming().diff(existing()).affectedKeys().hasOnly([
-            'status', 'metrics', 'adsMetrics', 'title', 'caption', 
-            'pillar', 'platform', 'pic', 'isAds', 'uploadHour', 
-            'uploadMinute', 'day', 'month', 'year', 'briefCopywriting',
-            'objective', 'referenceText', 'referenceLink', 'referenceLinks', 'referenceImage', 'customFields',
-            'linkAsset', 'linkUpload', 'linkSosmed', 'archived', 'updatedAt', 'metricsUpdatedAt',
-            'id', 'workspaceId', 'userId'
-          ]))
-        );
+        allow read: if isMember(wsId) || isAdmin() || get(/databases/$(database)/documents/workspaces/$(wsId)).data.publicLinkEnabled == true;
+        allow create: if (isEditor(wsId) || isAdmin()) && incoming().workspaceId == wsId && (incoming().userId == request.auth.uid || isAdmin());
+        allow delete: if isEditor(wsId) || isAdmin();
+        allow update: if isEditor(wsId) || isAdmin();
       }
     }
   }

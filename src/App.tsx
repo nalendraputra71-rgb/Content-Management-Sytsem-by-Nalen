@@ -1077,8 +1077,11 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
 
             const wsRef = doc(db, "workspaces", workspace.id);
             await updateDoc(wsRef, {
-              "settings.platforms": updatedPlatforms,
-              "settings.contentTypes": updatedContentTypes
+              settings: {
+                ...(workspace.settings || {}),
+                platforms: updatedPlatforms,
+                contentTypes: updatedContentTypes
+              }
             });
             console.log("Fadkhy settings updated!");
 
