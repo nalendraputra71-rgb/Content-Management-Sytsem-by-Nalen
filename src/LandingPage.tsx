@@ -39,7 +39,10 @@ export function LandingPage() {
       <header className={`fixed top-0 w-full z-50 transition-all duration-300 ${scrollY > 20 ? 'bg-white/80 backdrop-blur-md border-b border-black/5 py-4' : 'bg-transparent py-6'}`}>
         <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-[#1D4D7A] to-[#0B2A4A] flex items-center justify-center text-white font-bold">H</div>
+            <div className="w-8 h-8 rounded-xl overflow-hidden flex items-center justify-center">
+              <img src="/icon.png" alt="Hubify" className="w-full h-full object-cover scale-110" onError={(e) => { e.currentTarget.parentElement!.style.display = 'none'; e.currentTarget.parentElement!.nextElementSibling!.style.display = 'flex' }} />
+            </div>
+            <div className="hidden w-8 h-8 rounded-lg bg-gradient-to-tr from-[#1D4D7A] to-[#0B2A4A] items-center justify-center text-white font-bold">H</div>
             <a href="#" className="font-extrabold text-xl tracking-tight text-[#0B2A4A]">Hubify</a>
           </div>
           
@@ -180,8 +183,11 @@ export function LandingPage() {
               {/* Sidebar */}
               <div className="w-64 border-r border-black/5 bg-white p-4 hidden md:flex flex-col gap-2 shrink-0">
                 <div className="flex items-center gap-2 mb-8 px-2">
-                  <div className="w-8 h-8 rounded bg-gradient-to-tr from-[#1D4D7A] to-[#0B2A4A] flex items-center justify-center text-white font-bold">H</div>
-                  <div className="font-extrabold text-[#0B2A4A] tracking-tight">Hubify</div>
+                  <div className="w-8 h-8 rounded-xl overflow-hidden flex items-center justify-center">
+                    <img src="/icon.png" alt="Hubify" className="w-full h-full object-cover scale-110" onError={(e) => { e.currentTarget.parentElement!.style.display = 'none'; e.currentTarget.parentElement!.nextElementSibling!.style.display = 'flex' }} />
+                  </div>
+                  <div className="hidden w-8 h-8 rounded bg-gradient-to-tr from-[#1D4D7A] to-[#0B2A4A] items-center justify-center text-white font-bold">H</div>
+                  <div className="font-extrabold text-xl text-[#0B2A4A] tracking-tight">Hubify</div>
                 </div>
                 <div className="h-10 rounded-md bg-[#1D4D7A]/10 text-[#1D4D7A] font-bold text-sm flex items-center px-3 mb-1"><LayoutDashboard size={16} className="mr-3" /> Dashboard</div>
                 <div className="h-10 rounded-md bg-white hover:bg-slate-50 text-slate-500 font-bold text-sm flex items-center px-3 mb-1 transition-colors"><Calendar size={16} className="mr-3" /> Kalender</div>
@@ -635,8 +641,8 @@ export function LandingPage() {
           <div className="font-extrabold text-xl tracking-tight">Hubify</div>
           <div className="text-slate-400">&copy; 2026 Hubify. All rights reserved.</div>
           <div className="flex gap-6">
-            <a href="#" className="text-slate-400 hover:text-white transition-colors">Privacy</a>
-            <a href="#" className="text-slate-400 hover:text-white transition-colors">Terms</a>
+            <button onClick={() => navigate('/privacy')} className="text-slate-400 hover:text-white transition-colors">Privacy Policy</button>
+            <button onClick={() => navigate('/terms')} className="text-slate-400 hover:text-white transition-colors">Terms of Service</button>
           </div>
         </div>
       </footer>

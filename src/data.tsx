@@ -6,9 +6,25 @@ import { ChevronDown, Pencil, Plus, Trash2 } from "lucide-react";
 
 export const htmlToPlainText = (html: any) => {
   if (!html || typeof html !== 'string') return "";
-  let text = html.replace(/<br\s*[\/]?>/gi, "\n");
-  text = text.replace(/<\/p>/gi, "\n");
-  text = text.replace(/<\/h[1-6]>/gi, "\n");
+  let text = html;
+
+  // Convert common block elements to newlines
+  text = text.replace(/<br\s*[\/]?>/gi, "\n");
+  text = text.replace(/<\/p>/gi, "\n\n");
+  text = text.replace(/<\/h[1-6]>/gi, "\n\n");
+  text = text.replace(/<\/div>/gi, "\n");
+  
+  // Convert lists
+  text = text.replace(/<li[^>]*>/gi, "• ");
+  text = text.replace(/<\/li>/gi, "\n");
+  
+  // Convert formatting to simple markdown equivalents for readable export
+  text = text.replace(/<strong[^>]*>(.*?)<\/strong>/gi, "**$1**");
+  text = text.replace(/<b[^>]*>(.*?)<\/b>/gi, "**$1**");
+  text = text.replace(/<em[^>]*>(.*?)<\/em>/gi, "_$1_");
+  text = text.replace(/<i[^>]*>(.*?)<\/i>/gi, "_$1_");
+  
+  // Remove any remaining HTML tags
   text = text.replace(/<(?:.|\n)*?>/gm, "");
   
   if (typeof document !== "undefined") {
@@ -16,6 +32,8 @@ export const htmlToPlainText = (html: any) => {
     textarea.innerHTML = text;
     text = textarea.value;
   }
+  
+  text = text.replace(/\n{3,}/g, "\n\n");
   return text.trim();
 };
 

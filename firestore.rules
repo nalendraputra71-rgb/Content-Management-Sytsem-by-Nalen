@@ -39,15 +39,11 @@ service cloud.firestore {
     // ─── USERS ───────────────────────────────────────────────────────────────
     match /users/{userId} {
       allow get: if isSignedIn();
-      // Allow searching for users by email (limited to prevent scraping)
-      allow list: if isSignedIn() && (
-        resource.data.email == request.auth.token.email || 
-        isAdmin() ||
-        (request.query.limit <= 5)
-      );
+      allow list: if isSignedIn();
       allow create: if isSignedIn() && request.auth.uid == userId && incoming().uid == userId;
       allow update: if isSignedIn() && (
-        (request.auth.uid == userId && incoming().diff(existing()).affectedKeys().hasOnly(['fullName', 'nickname', 'avatar', 'username', 'activeUntil', 'plan', 'hasUsedPromo', 'emailVerified', 'createdAt', 'themeId'])) ||
+        (request.auth.uid == userId && incoming().diff(existing()).affectedKeys().hasOnly(['fullName', 'nickname', 'avatar', 'username', 'activeUntil', 'plan', 'hasUsedPromo', 'emailVerified', 'createdAt', 'themeId', 'bio', 'following', 'followers'])) ||
+        (incoming().diff(existing()).affectedKeys().hasOnly(['followers'])) ||
         isAdmin()
       );
       allow delete: if isAdmin();
@@ -123,21 +119,23 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow create: if isSignedIn() && incoming().authorId == request.auth.uid;
       allow update: if isSignedIn() && (
-        (incoming().diff(existing()).affectedKeys().hasAny(['likes', 'reposts']) && !incoming().diff(existing()).affectedKeys().hasAny(['authorId', 'authorName', 'authorAvatar', 'authorUsername', 'content', 'createdAt', 'replyTo'])) ||
+        (incoming().diff(existing()).affectedKeys().hasAny(['likes', 'reposts', 'pollData', 'repliesCount', 'isArchived'])) ||
         (request.auth.uid == existing().authorId && incoming().diff(existing()).affectedKeys().hasOnly(['content', 'updatedAt']))
       );
       allow delete: if isAdmin() || (isSignedIn() && existing().authorId == request.auth.uid);
     }
 
     match /soc_chats/{chatId} {
-      allow read: if isSignedIn() && request.auth.uid in resource.data.participants;
-      allow create: if isSignedIn() && request.auth.uid in incoming().participants;
-      allow update: if isSignedIn() && request.auth.uid in existing().participants && incoming().diff(existing()).affectedKeys().hasOnly(['lastMessage', 'updatedAt']);
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
     }
 
     match /soc_messages/{messageId} {
-      allow read: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/soc_chats/$(resource.data.chatId)).data.participants;
-      allow create: if isSignedIn() && request.auth.uid == incoming().senderId && request.auth.uid in get(/databases/$(database)/documents/soc_chats/$(incoming().chatId)).data.participants;
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
     }
 
     match /notifications/{notifId} {

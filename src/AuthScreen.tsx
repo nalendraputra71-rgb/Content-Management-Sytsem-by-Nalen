@@ -28,6 +28,22 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
   const [fullName, setFullName] = useState("");
   const [nickname, setNickname] = useState("");
 
+  const getFriendlyError = (e: any) => {
+    switch(e.code) {
+      case 'auth/popup-closed-by-user': return "Login dibatalkan, kamu menutup popup sebelum selesai.";
+      case 'auth/operation-not-allowed': return "Metode login ini belum aktif nih. Coba cara lain ya.";
+      case 'auth/email-already-in-use': return "Email ini udah pernah didaftarin.";
+      case 'auth/wrong-password':
+      case 'auth/user-not-found':
+      case 'auth/invalid-credential': return "Username atau passwordnya salah, coba cek lagi ya.";
+      case 'auth/too-many-requests': return "Udah terlalu sering nyoba nih. Wait sebentar trus coba lagi ya.";
+      case 'auth/invalid-email': return "Format emailnya kurang pas nih.";
+      case 'auth/weak-password': return "Passwordnya terlalu gampang ditebak, minimal 6 karakter ya.";
+      case 'auth/network-request-failed': return "Wah internetnya lagi ngadat nih, cek koneksi dulu yuk.";
+      default: return "Ups, ada kendala teknis. Coba sebentar lagi ya.";
+    }
+  };
+
   const checkUserDocument = async (user: any, providedFullName?: string, providedNickname?: string) => {
     try {
       const userRef = doc(db, "users", user.uid);
@@ -69,7 +85,7 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
       }
       onUserCreated(user);
     } catch (e: any) {
-      setError("Error checkUser: " + e.message);
+      setError(getFriendlyError(e));
     }
   };
 
@@ -78,7 +94,7 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
     try {
       const res = await signInWithPopup(auth, googleProvider);
       await checkUserDocument(res.user);
-    } catch (e: any) { setError(e.message); }
+    } catch (e: any) { setError(getFriendlyError(e)); }
     finally { setLoading(false); }
   };
 
@@ -92,11 +108,7 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
       await sendPasswordResetEmail(auth, email);
       setMsg("Link udah dikirim ke email kamu, buruan cek ya!");
     } catch (e: any) { 
-      if (e.code === 'auth/user-not-found') {
-        setError("Email itu ga kedaftar nih.");
-      } else {
-        setError(e.message);
-      }
+      setError(getFriendlyError(e));
     }
     finally { setLoading(false); }
   };
@@ -120,15 +132,7 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
          await checkUserDocument(res.user, fullName, nickname);
       }
     } catch (e: any) { 
-      if (e.code === 'auth/operation-not-allowed') {
-        setError("Firebase Error (auth/operation-not-allowed). Fitur Email/Password belum aktif. Silakan masuk ke project Firebase Anda, menu Authentication > Sign-in method, dan aktifkan Email/Password.");
-      } else if (e.code === 'auth/email-already-in-use') {
-        setError("Email sudah terdaftar.");
-      } else if (e.code === 'auth/wrong-password' || e.code === 'auth/user-not-found' || e.code === 'auth/invalid-credential') {
-        setError("Username atau passwordnya salah, coba cek dan masukin ulang ya.");
-      } else {
-        setError(e.message); 
-      }
+      setError(getFriendlyError(e));
     }
     finally { setLoading(false); }
   };
@@ -162,7 +166,10 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
           />
           
           <div className="relative z-10 flex items-center gap-3 mb-12">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-400 to-blue-200 flex items-center justify-center text-[#0B2A4A] font-extrabold text-xl shadow-lg">
+            <div className="w-10 h-10 rounded-2xl overflow-hidden shadow-lg flex items-center justify-center">
+              <img src="/icon.png" alt="Hubify" className="w-full h-full object-cover scale-110" onError={(e) => { e.currentTarget.parentElement!.style.display = 'none'; e.currentTarget.parentElement!.nextElementSibling!.style.display = 'flex' }} />
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-400 to-blue-200 hidden items-center justify-center text-[#0B2A4A] font-extrabold text-xl shadow-lg">
               H
             </div>
             <span className="text-2xl font-extrabold tracking-tight">Hubify</span>

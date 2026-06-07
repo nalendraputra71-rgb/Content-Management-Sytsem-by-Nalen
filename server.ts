@@ -3,6 +3,7 @@ import { createServer as createViteServer } from "vite";
 import path from "path";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
+import fs from "fs";
 
 dotenv.config();
 
@@ -13,7 +14,7 @@ async function startServer() {
   app.use(express.json());
 
   app.post("/api/log-error", (req, res) => {
-    require("fs").writeFileSync("client-error.log", JSON.stringify(req.body, null, 2) + "\n", { flag: "a" });
+    fs.writeFileSync("client-error.log", JSON.stringify(req.body, null, 2) + "\n", { flag: "a" });
     res.json({ ok: true });
   });
 

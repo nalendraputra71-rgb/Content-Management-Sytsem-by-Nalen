@@ -21,8 +21,18 @@ export function CsvModal({onClose, onImport, pillars, platforms, contentTypes, p
       .replace(/â/g, "");
   };
 
+  const textToHtml = (str: string) => {
+    if (!str) return "";
+    if (/<[a-z][\s\S]*>/i.test(str)) return str;
+    let html = str;
+    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/_(.*?)_/g, '<em>$1</em>');
+    html = html.replace(/\r?\n/g, "<br>");
+    return html;
+  };
+
   const handleImportClick = () => {
-    const hasDups = dataPreview.some(d => existingContent?.some((ec:any) => ec.title === d.title && ec.year === d.year && ec.month === d.month && ec.day === d.day));
+    const hasDups = dataPreview.some(d => existingContent?.some((ec:any) => ec.id !== d.id && ec.title === d.title && ec.year === d.year && ec.month === d.month && ec.day === d.day));
     if (hasDups) {
        setShowConfirm(true);
     } else {
@@ -32,8 +42,8 @@ export function CsvModal({onClose, onImport, pillars, platforms, contentTypes, p
   };
 
   const template = [
-    ["Judul Konten", "Tanggal (1-31)", "Bulan (1-12)", "Tahun", "Jam (0-23)", "Menit", "Pillar", "Platform", "Tipe Konten", "PIC", "Status Konten", "Status Ads", "Views", "Reach", "Likes", "Comments", "Shares", "Saves", "Objective", "Brief Konten", "Caption"],
-    ["Contoh Konten Instagram", "15", "5", "2025", "10", "30", pillars[0]?.name||"Pillar Utama", platforms[0]?.name||"Instagram", contentTypes?.[0]?.name||"Video Pendek", pics[0]||"PIC 1", statuses[0]||"Draft", "N", "100", "80", "10", "2", "1", "5", "Meningkatkan brand awareness", "Gunakan nada bicara santai", "Keren banget nih!"]
+    ["Judul Konten", "Tanggal (1-31)", "Bulan (1-12)", "Tahun", "Jam (0-23)", "Menit", "Pillar", "Platform", "Tipe Konten", "PIC", "Status Konten", "Status Ads", "Views", "Reach", "Likes", "Comments", "Shares", "Saves", "Objective", "Brief Konten", "Caption", "Link Aset", "Link Sosmed", "Link Referensi"],
+    ["Contoh Konten Instagram", "15", "5", "2025", "10", "30", pillars[0]?.name||"Pillar Utama", platforms[0]?.name||"Instagram", contentTypes?.[0]?.name||"Video Pendek", pics[0]||"PIC 1", statuses[0]||"Draft", "N", "100", "80", "10", "2", "1", "5", "Meningkatkan brand awareness", "Gunakan nada bicara santai", "Keren banget nih!", "https://drive.google.com/...", "https://instagram.com/...", "https://contoh.com, https://contoh2.com"]
   ];
 
   const handleDownloadTemplate = () => {
@@ -75,6 +85,7 @@ export function CsvModal({onClose, onImport, pillars, platforms, contentTypes, p
                 return idx;
             };
             
+            const idxId = getColIdx(["id system", "id"]);
             const idxTitle = getColIdx(["judul"]);
             const idxDate = getColIdx(["tanggal"]);
             const idxMonth = getColIdx(["bulan"]);
@@ -96,9 +107,13 @@ export function CsvModal({onClose, onImport, pillars, platforms, contentTypes, p
             const idxObjective = getColIdx(["objective"]);
             const idxBrief = getColIdx(["brief"]);
             const idxCaption = getColIdx(["caption"]);
+            const idxLinkAset = getColIdx(["link aset", "aset"]);
+            const idxLinkSosmed = getColIdx(["link sosmed", "sosmed"]);
+            const idxLinkRefer = getColIdx(["link referensi", "referensi"]);
 
             const parsedData = json.slice(1).filter(r => r.length > 0 && idxTitle !== -1 && String(r[idxTitle]||"").trim() !== "").map((row: any) => {
                 const item = emptyItem(Number(row[idxYear])||2025, Number(row[idxMonth])||1, Number(row[idxDate])||1, pillars, platforms, pics, statuses, contentTypes);
+                if (idxId !== -1 && row[idxId]) item.id = cleanStr(row[idxId]);
                 item.title = cleanStr(row[idxTitle]);
                 if (idxHour !== -1) item.uploadHour = Number(row[idxHour])||9;
                 if (idxMin !== -1) item.uploadMinute = Number(row[idxMin])||0;
@@ -118,9 +133,15 @@ export function CsvModal({onClose, onImport, pillars, platforms, contentTypes, p
                     saves: idxSaves !== -1 ? Number(row[idxSaves])||0 : 0,
                     reposts: 0
                 };
-                if (idxObjective !== -1) item.objective = cleanStr(row[idxObjective]) || "";
-                if (idxBrief !== -1) item.briefCopywriting = cleanStr(row[idxBrief]) || "";
-                if (idxCaption !== -1) item.caption = cleanStr(row[idxCaption]) || "";
+                if (idxObjective !== -1) item.objective = textToHtml(cleanStr(row[idxObjective])) || "";
+                if (idxBrief !== -1) item.briefCopywriting = textToHtml(cleanStr(row[idxBrief])) || "";
+                if (idxCaption !== -1) item.caption = textToHtml(cleanStr(row[idxCaption])) || "";
+                if (idxLinkAset !== -1) item.linkAsset = cleanStr(row[idxLinkAset]) || "";
+                if (idxLinkSosmed !== -1) item.linkSosmed = cleanStr(row[idxLinkSosmed]) || "";
+                if (idxLinkRefer !== -1) {
+                    const refs = cleanStr(row[idxLinkRefer]);
+                    if (refs) item.referenceLinks = refs.split(",").map((s:string) => s.trim()).filter(Boolean);
+                }
                 return item;
             });
             
@@ -153,11 +174,11 @@ export function CsvModal({onClose, onImport, pillars, platforms, contentTypes, p
                 </p>
                 <div style={{display:"flex",gap:12,marginBottom:24,flexWrap:"wrap"}}>
                     <button onClick={handleDownloadTemplate} style={{background:"white",border:"1.5px solid var(--theme-primary)",color:"var(--theme-primary)",padding:"8px 16px",borderRadius:8,fontWeight:600,cursor:"pointer"}}>
-                        Download Template
+                        Download Template CSV
                     </button>
                     <label style={{background:"var(--theme-primary)",border:"1.5px solid var(--theme-primary)",color:"white",padding:"8px 16px",borderRadius:8,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center"}}>
-                        Pilih File CSV
-                        <input type="file" accept=".csv" onChange={handleFile} ref={fileInputRef} style={{display:"none"}}/>
+                        Pilih File CSV / Excel (XLSX)
+                        <input type="file" accept=".csv, .xlsx" onChange={handleFile} ref={fileInputRef} style={{display:"none"}}/>
                     </label>
                 </div>
                 {errorMsg && <div style={{padding:"8px 12px",background:"#FDF5F8",color:"#9C2B4E",borderRadius:6,fontSize:12,fontWeight:500}}>{errorMsg}</div>}
@@ -209,11 +230,16 @@ export function CsvModal({onClose, onImport, pillars, platforms, contentTypes, p
             <div style={{background:"white",padding:32,borderRadius:16,maxWidth:400,textAlign:"center",boxShadow:"0 10px 40px rgba(0,0,0,0.15)",border:"1px solid rgba(44,32,22,0.1)"}}>
               <h3 style={{fontSize:18,color:"#9C2B4E",fontWeight:800,marginBottom:12}}>⚠️ Data duplikat terdeteksi</h3>
               <p style={{fontSize:14,color:"rgba(44,32,22,0.7)",marginBottom:24,lineHeight:1.5}}>
-                Beberapa konten yang akan diimpor memiliki judul dan tanggal yang sama dengan data yang sudah ada di database. Apakah Anda yakin ingin tetap memasukkannya?
+                Beberapa konten yang akan diimpor memiliki judul dan tanggal yang sama dengan data yang sudah ada di database. Bagaimana Anda ingin memprosesnya?
               </p>
-              <div style={{display:"flex",gap:12,justifyContent:"center"}}>
-                <button onClick={()=>setShowConfirm(false)} style={{background:"#F5F0E8",border:"none",color:"#2C2016",padding:"10px 24px",borderRadius:8,fontWeight:600,cursor:"pointer"}}>Tidak, Batal</button>
-                <button onClick={()=>{onImport(dataPreview); onClose();}} style={{background:"#9C2B4E",border:"none",color:"white",padding:"10px 24px",borderRadius:8,fontWeight:600,cursor:"pointer"}}>Ya, Lanjutkan</button>
+              <div style={{display:"flex",flexDirection:"column",gap:12,justifyContent:"center"}}>
+                <button onClick={()=>{
+                  const filtered = dataPreview.filter(d => !existingContent?.some((ec:any) => ec.id !== d.id && ec.title === d.title && ec.year === d.year && ec.month === d.month && ec.day === d.day));
+                  onImport(filtered);
+                  onClose();
+                }} style={{background:"#3B82F6",border:"none",color:"white",padding:"10px 16px",borderRadius:8,fontWeight:600,cursor:"pointer"}}>Masukkin yang baru aja (Lewati duplikat)</button>
+                <button onClick={()=>{onImport(dataPreview); onClose();}} style={{background:"white",border:"1.5px solid #9C2B4E",color:"#9C2B4E",padding:"10px 16px",borderRadius:8,fontWeight:600,cursor:"pointer"}}>Timpa / Tetap Impor Semua</button>
+                <button onClick={()=>setShowConfirm(false)} style={{background:"transparent",border:"none",color:"#2C2016",padding:"10px 16px",borderRadius:8,fontWeight:600,cursor:"pointer"}}>Batal</button>
               </div>
             </div>
           </div>

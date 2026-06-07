@@ -28,6 +28,8 @@ import { BillingView } from "./BillingView";
 import { ShareWorkspaceModal } from "./ShareWorkspaceModal";
 import { DashboardView } from "./DashboardView";
 
+import { TermsOfService, PrivacyPolicy } from "./TermsAndPrivacy";
+
 import { motion, AnimatePresence } from "motion/react";
 
 import { LandingPage } from "./LandingPage";
@@ -401,6 +403,8 @@ export default function App() {
   return (
     <HashRouter>
       <Routes>
+        <Route path="/terms" element={<TermsOfService />} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/login" element={(user && profile) ? <Navigate to="/" /> : <AuthScreen currentUser={user && !profile ? user : null} onUserCreated={(u)=>setUser(u)} />} />
         <Route path="/profile" element={(user && profile) ? <CMSLayout><UserProfile userProfile={profile} activeWorkspace={null} onUpdate={setProfile} /></CMSLayout> : <Navigate to="/login" />} />
         <Route path="/billing" element={(user && profile) ? <CMSLayout><BillingView userProfile={profile} activeWorkspace={null} onUpdate={setProfile} /></CMSLayout> : <Navigate to="/login" />} />
@@ -1389,7 +1393,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
         }}
       />
       <div style={{flex:1, minWidth:0, display:"flex", flexDirection:"column", height:"100vh", overflow:"auto", position:"relative"}}>
-        {(!["dashboard", "settings", "admin"].includes(tab) && !tab.startsWith("social")) && (
+        {(!["dashboard", "settings", "admin", "soc_hub"].includes(tab) && !tab.startsWith("social")) && (
           <Header 
             profile={profile}
           />
@@ -1419,6 +1423,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
           showHolidays={showHolidays} setShowHolidays={setShowHolidays} 
           showArchived={showArchived} setShowArchived={setShowArchived}
           onImportClick={()=>setShowCsv(true)}
+          onExportClick={()=>setExportModal(true)}
           isRestricted={isRestricted}
           onSettingUpdate={updateWsSettings}
         />
@@ -1485,6 +1490,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
              <p style={{fontSize:14, color:"rgba(44,32,22,0.6)", marginBottom:24, lineHeight:1.5}}>Unduh seluruh data konten dalam format Excel (XLSX) untuk workspace <strong style={{color:"var(--theme-primary)"}}>{workspace?.name}</strong>.</p>
              <button className="btn-hover hover-scale" onClick={() => {
                 const exportData = content.map((c: any) => ({
+                    "ID System (Jangan Diubah)": c.id || "",
                     "Judul Konten": c.title || "",
                     "Tanggal (1-31)": c.day || 1,
                     "Bulan (1-12)": c.month || 1,
@@ -1495,8 +1501,8 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
                     "Platform": c.platform || "",
                     "Tipe Konten": c.contentType || "",
                     "PIC": c.pic || "",
-                    "Status": c.status || "",
-                    "Ads (Y/N)": c.isAds ? "Y" : "N",
+                    "Status Konten": c.status || "",
+                    "Status Ads": c.isAds ? "Y" : "N",
                     "Views": c.metrics?.views || 0,
                     "Reach": c.metrics?.reach || 0,
                     "Likes": c.metrics?.likes || 0,
@@ -1505,7 +1511,10 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
                     "Saves": c.metrics?.saves || 0,
                     "Objective": htmlToPlainText(c.objective || ""),
                     "Brief Konten": htmlToPlainText(c.briefCopywriting || ""),
-                    "Caption": htmlToPlainText(c.caption || "")
+                    "Caption": htmlToPlainText(c.caption || ""),
+                    "Link Aset": c.linkAsset || "",
+                    "Link Sosmed": c.linkSosmed || c.linkUpload || "",
+                    "Link Referensi": Array.isArray(c.referenceLinks) ? c.referenceLinks.join(", ") : ""
                 }));
                 const ws = XLSX.utils.json_to_sheet(exportData);
                 const wb = XLSX.utils.book_new();

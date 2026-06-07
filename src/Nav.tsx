@@ -34,7 +34,8 @@ import {
   MessageSquare,
   Crown,
   Trash2,
-  Check
+  Check,
+  Download
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { eng, fmt, YEARS, B, I, TAB, MONTHS, CustomDropdown } from "./data";
@@ -715,7 +716,7 @@ function ChatSupportPanel({
               padding: 16,
               display: "flex",
               flexDirection: "column",
-              gap: 12,
+              gap: open ? 12 : 0,
             }}
           >
             {allTickets.map((t) => (
@@ -858,7 +859,7 @@ function ChatSupportPanel({
                 overflowY: "auto",
                 display: "flex",
                 flexDirection: "column",
-                gap: 12,
+                gap: open ? 12 : 0,
               }}
             >
               {(selectedTicket.messages || []).map((m: any, i: number) => (
@@ -1124,7 +1125,7 @@ export function Sidebar({
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: 12,
+                gap: open ? 12 : 0,
                 justifyContent: "flex-start",
                 width: "100%",
               }}
@@ -1143,7 +1144,10 @@ export function Sidebar({
                     style={{ overflow: "hidden", whiteSpace: "nowrap" }}
                   >
                     <div style={{ display: "flex", alignItems: "center", gap: 8, paddingLeft: 4 }}>
-                      <div style={{ width: 28, height: 28, borderRadius: 6, background: "linear-gradient(to top right, #1D4D7A, #0B2A4A)", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: "bold", fontSize: 16 }}>H</div>
+                      <div style={{ width: 28, height: 28, borderRadius: 8, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <img src="/icon.png" alt="Hubify" style={{ width: "100%", height: "100%", objectFit: "cover", transform: "scale(1.1)" }} onError={(e) => { e.currentTarget.parentElement!.style.display = 'none'; e.currentTarget.parentElement!.nextElementSibling!.style.display = 'flex' }} />
+                      </div>
+                      <div style={{ display: "none", width: 28, height: 28, borderRadius: 6, background: "linear-gradient(to top right, #1D4D7A, #0B2A4A)", alignItems: "center", justifyContent: "center", color: "white", fontWeight: "bold", fontSize: 16 }}>H</div>
                       <div style={{ fontWeight: 800, color: "white", fontSize: 20, letterSpacing: "-0.5px" }}>Hubify</div>
                     </div>
                   </motion.div>
@@ -1185,17 +1189,14 @@ export function Sidebar({
             )}
           </div>
 
-          <AnimatePresence>
-            {open && (
+          <>
               <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto", flex: 1 }}
-                exit={{ opacity: 0, height: 0 }}
                 style={{
                   display: "flex",
                   flexDirection: "column",
-                  overflow: "visible",
+                  overflow: "hidden",
                   minHeight: 0,
+                  flex: 1
                 }}
               >
                 <div
@@ -1242,7 +1243,7 @@ export function Sidebar({
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: 20 }}
-                        style={{ padding: "20px 16px" }}
+                        style={{ padding: open ? "20px 16px" : "20px 12px" }}
                       >
                         {/* Workspaces Section */}
                         <div style={{ marginBottom: 24 }}>
@@ -1336,7 +1337,8 @@ export function Sidebar({
                                           borderRadius: 12,
                                           padding: open
                                             ? "8px 12px"
-                                            : "8px",
+                                            : "10px 0",
+                                          justifyContent: open ? "flex-start" : "center",
                                           color:
                                             activeWorkspace?.id === ws.id
                                               ? "white"
@@ -1347,7 +1349,7 @@ export function Sidebar({
                                           transition: "all 0.3s ease",
                                           display: "flex",
                                           alignItems: "center",
-                                          gap: 12,
+                                          gap: open ? 12 : 0,
                                         }}
                                       >
                                         <div
@@ -1567,7 +1569,8 @@ export function Sidebar({
                                   ? "var(--theme-gradient)"
                                   : "transparent",
                               border: "none",
-                              padding: open ? "8px 12px" : "8px",
+                              padding: open ? "8px 12px" : "10px 0",
+                              justifyContent: open ? "flex-start" : "center",
                               color:
                                 tab === "dashboard"
                                   ? "white"
@@ -1575,7 +1578,7 @@ export function Sidebar({
                               borderRadius: 12,
                               display: "flex",
                               alignItems: "center",
-                              gap: 12,
+                              gap: open ? 12 : 0,
                               fontSize: 12,
                               fontWeight: 700,
                               cursor: "pointer",
@@ -1628,7 +1631,8 @@ export function Sidebar({
                                   ? "rgba(255,255,255,0.1)"
                                   : "transparent",
                               border: "none",
-                              padding: open ? "8px 12px" : "8px",
+                              padding: open ? "8px 12px" : "10px 0",
+                              justifyContent: open ? "flex-start" : "center",
                               color:
                                 tab === "content_planner"
                                   ? "white"
@@ -1636,7 +1640,7 @@ export function Sidebar({
                               borderRadius: 12,
                               display: "flex",
                               alignItems: "center",
-                              gap: 12,
+                              gap: open ? 12 : 0,
                               fontSize: 12,
                               fontWeight: 700,
                               cursor: "pointer",
@@ -1686,7 +1690,8 @@ export function Sidebar({
                                   ? "rgba(255,255,255,0.1)"
                                   : "transparent",
                               border: "none",
-                              padding: open ? "8px 12px" : "8px",
+                              padding: open ? "8px 12px" : "10px 0",
+                              justifyContent: open ? "flex-start" : "center",
                               color:
                                 tab === "analytics"
                                   ? "white"
@@ -1694,7 +1699,7 @@ export function Sidebar({
                               borderRadius: 12,
                               display: "flex",
                               alignItems: "center",
-                              gap: 12,
+                              gap: open ? 12 : 0,
                               fontSize: 12,
                               fontWeight: 700,
                               cursor: "pointer",
@@ -1746,7 +1751,8 @@ export function Sidebar({
                                   ? "rgba(255,255,255,0.1)"
                                   : "transparent",
                               border: "none",
-                              padding: open ? "8px 12px" : "8px",
+                              padding: open ? "8px 12px" : "10px 0",
+                              justifyContent: open ? "flex-start" : "center",
                               color:
                                 tab === "soc_hub"
                                   ? "white"
@@ -1754,7 +1760,7 @@ export function Sidebar({
                               borderRadius: 12,
                               display: "flex",
                               alignItems: "center",
-                              gap: 12,
+                              gap: open ? 12 : 0,
                               fontSize: 12,
                               fontWeight: 700,
                               cursor: "pointer",
@@ -1865,9 +1871,10 @@ export function Sidebar({
                                     style={{
                                       display: "flex",
                                       alignItems: "center",
-                                      gap: 12,
+                                      gap: open ? 12 : 0,
                                       width: "100%",
-                                      padding: open ? "8px 12px" : "8px",
+                                      padding: open ? "8px 12px" : "10px 0",
+                              justifyContent: open ? "flex-start" : "center",
                                       background:
                                         tab === v.id
                                           ? "rgba(255,255,255,0.1)"
@@ -1975,9 +1982,10 @@ export function Sidebar({
                               style={{
                                 display: "flex",
                                 alignItems: "center",
-                                gap: 12,
+                                gap: open ? 12 : 0,
                                 width: "100%",
-                                padding: open ? "8px 12px" : "8px",
+                                padding: open ? "8px 12px" : "10px 0",
+                              justifyContent: open ? "flex-start" : "center",
                                 background:
                                   tab === v.id
                                     ? "rgba(255,255,255,0.1)"
@@ -2084,7 +2092,7 @@ export function Sidebar({
 
                 <div
                   style={{
-                    padding: "20px 16px",
+                    padding: open ? "20px 16px" : "20px 12px",
                     borderTop: "1px solid rgba(255,255,255,0.05)",
                   }}
                 >
@@ -2096,8 +2104,9 @@ export function Sidebar({
                     style={{
                       display: "flex",
                       alignItems: "center",
-                      gap: 12,
-                      padding: 12,
+                      gap: open ? 12 : 0,
+                      padding: open ? 12 : "8px 0",
+                      justifyContent: open ? "flex-start" : "center",
                       borderRadius: 16,
                       background: "rgba(255,255,255,0.05)",
                       cursor: "pointer",
@@ -2129,76 +2138,83 @@ export function Sidebar({
                         }}
                       />
                     </div>
-                    <motion.div
-                      style={{
-                        flex: 1,
-                        minWidth: 0,
-                        overflow: "hidden",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          flexWrap: "wrap",
-                          alignItems: "baseline",
-                          gap: 4,
-                        }}
-                      >
-                        <span
+                    <AnimatePresence>
+                      {open && (
+                        <motion.div
+                          initial={{ opacity: 0, width: 0 }}
+                          animate={{ opacity: 1, width: "auto" }}
+                          exit={{ opacity: 0, width: 0 }}
                           style={{
-                            fontSize: 13,
-                            fontWeight: 800,
-                            color: "white",
-                            whiteSpace: "normal",
-                            wordBreak: "break-word",
+                            flex: 1,
+                            minWidth: 0,
+                            overflow: "hidden",
+                            whiteSpace: "nowrap",
                           }}
                         >
-                          {profile?.fullName || user?.displayName || "User"}
-                        </span>
-                        <span
-                          style={{
-                            background:
-                              profile?.plan === "vip"
-                                ? "#FBC02D"
+                          <div
+                            style={{
+                              display: "flex",
+                              flexWrap: "wrap",
+                              alignItems: "baseline",
+                              gap: 4,
+                            }}
+                          >
+                            <span
+                              style={{
+                                fontSize: 13,
+                                fontWeight: 800,
+                                color: "white",
+                                whiteSpace: "normal",
+                                wordBreak: "break-word",
+                              }}
+                            >
+                              {profile?.fullName || user?.displayName || "User"}
+                            </span>
+                            <span
+                              style={{
+                                background:
+                                  profile?.plan === "vip"
+                                    ? "#FBC02D"
+                                    : profile?.activeUntil &&
+                                        new Date(profile.activeUntil) > new Date()
+                                      ? "var(--theme-primary)"
+                                      : "#9C2B4E",
+                                color:
+                                  profile?.plan === "vip" ? "#2C2016" : "white",
+                                padding: "2px 6px",
+                                borderRadius: 4,
+                                fontSize: 9,
+                                fontWeight: 900,
+                                flexShrink: 0,
+                                lineHeight: 1,
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 4,
+                                marginTop: 2,
+                              }}
+                            >
+                              {profile?.plan === "vip" && <Crown size={10} />}
+                              {profile?.plan === "vip"
+                                ? "VIP"
                                 : profile?.activeUntil &&
                                     new Date(profile.activeUntil) > new Date()
-                                  ? "var(--theme-primary)"
-                                  : "#9C2B4E",
-                            color:
-                              profile?.plan === "vip" ? "#2C2016" : "white",
-                            padding: "2px 6px",
-                            borderRadius: 4,
-                            fontSize: 9,
-                            fontWeight: 900,
-                            flexShrink: 0,
-                            lineHeight: 1,
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 4,
-                            marginTop: 2,
-                          }}
-                        >
-                          {profile?.plan === "vip" && <Crown size={10} />}
-                          {profile?.plan === "vip"
-                            ? "VIP"
-                            : profile?.activeUntil &&
-                                new Date(profile.activeUntil) > new Date()
-                              ? "PRO"
-                              : "FREE"}
-                        </span>
-                      </div>
-                      <div
-                        style={{
-                          fontSize: 10,
-                          color: "rgba(255,255,255,0.4)",
-                          fontWeight: 600,
-                          marginTop: 4,
-                        }}
-                      >
-                        Pengaturan Profil
-                      </div>
-                    </motion.div>
+                                  ? "PRO"
+                                  : "FREE"}
+                            </span>
+                          </div>
+                          <div
+                            style={{
+                              fontSize: 10,
+                              color: "rgba(255,255,255,0.4)",
+                              fontWeight: 600,
+                              marginTop: 4,
+                            }}
+                          >
+                            Pengaturan Profil
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                   <button
                     onClick={handleLogout}
@@ -2208,7 +2224,7 @@ export function Sidebar({
                       background: "rgba(156, 43, 78, 0.1)",
                       border: "1.5px solid rgba(156, 43, 78, 0.2)",
                       borderRadius: 12,
-                      padding: "10px",
+                      padding: open ? "10px" : "10px 0",
                       color: "#E57373",
                       fontSize: 11,
                       fontWeight: 700,
@@ -2229,16 +2245,22 @@ export function Sidebar({
                     >
                       <LogOut size={14} />
                     </div>
-                    <motion.span
-                      style={{ overflow: "hidden", whiteSpace: "nowrap" }}
-                    >
-                      LOG OUT / KELUAR
-                    </motion.span>
+                    <AnimatePresence>
+                      {open && (
+                        <motion.span
+                          initial={{ opacity: 0, width: 0 }}
+                          animate={{ opacity: 1, width: "auto" }}
+                          exit={{ opacity: 0, width: 0 }}
+                          style={{ overflow: "hidden", whiteSpace: "nowrap" }}
+                        >
+                          LOG OUT / KELUAR
+                        </motion.span>
+                      )}
+                    </AnimatePresence>
                   </button>
                 </div>
               </motion.div>
-            )}
-          </AnimatePresence>
+          </>
 
           {/* Logout Confirm Modal */}
           <AnimatePresence>
@@ -3016,6 +3038,7 @@ export function FilterBar({
   showArchived,
   setShowArchived,
   onImportClick,
+  onExportClick,
   onSettingUpdate,
 }: any) {
   const set = (k: any, v: any) => setFilters((p: any) => ({ ...p, [k]: v }));
@@ -3122,6 +3145,26 @@ export function FilterBar({
         </button>
       </div>
       <div style={{ flex: 1 }} />
+      <button
+        className="hover-scale btn-hover"
+        onClick={onExportClick}
+        style={{
+          ...B(false, "#10B981"),
+          background: "white",
+          border: "1px solid rgba(16,185,129,0.3)",
+          color: "#10B981",
+          height: 32,
+          padding: "0 12px",
+          fontSize: 11,
+          fontWeight: 700,
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          marginBottom: 1,
+        }}
+      >
+        <Download size={14} style={{ opacity: 0.6 }} /> Export Excel
+      </button>
       <button
         className="hover-scale btn-hover"
         onClick={onImportClick}

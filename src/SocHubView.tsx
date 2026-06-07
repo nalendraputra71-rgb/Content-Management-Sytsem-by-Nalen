@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { db, collection, query, orderBy, onSnapshot, doc, setDoc, updateDoc, deleteDoc, serverTimestamp, getDoc, where } from "./firebase";
+import { db, collection, query, orderBy, onSnapshot, doc, setDoc, updateDoc, deleteDoc, serverTimestamp, getDoc, where, limit } from "./firebase";
 import { Heart, MessageCircle, Repeat2, Share, Send, MoreHorizontal, MessageSquare, ArrowLeft, Image as ImageIcon, Home, PlusSquare, User as UserIcon, Bell, BarChart2, ChevronDown, Trash2, Edit2, Archive as ArchiveIcon } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { id as dfnsId } from "date-fns/locale";
@@ -19,6 +19,27 @@ function NavButton({ icon: Icon, active, onClick, label, badge }: any) {
       </div>
       <span className={`text-sm sm:text-[15px] ${active ? 'font-bold' : 'font-medium'}`}>{label}</span>
     </button>
+  );
+}
+
+function FormattedText({ text }: { text: string }) {
+  if (!text) return null;
+  const parts = text.split(/(#\w+|@\w+|https?:\/\/[^\s]+)/g);
+  return (
+    <>
+      {parts.map((part, i) => {
+        if (part.startsWith('#')) {
+          return <span key={i} className="text-[var(--theme-primary)] hover:underline cursor-pointer" onClick={(e) => { e.stopPropagation(); }}>{part}</span>;
+        }
+        if (part.startsWith('@')) {
+          return <span key={i} className="text-[var(--theme-primary)] font-semibold hover:underline cursor-pointer" onClick={(e) => { e.stopPropagation(); }}>{part}</span>;
+        }
+        if (part.match(/^https?:\/\/[^\s]+/)) {
+          return <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="text-[var(--theme-primary)] hover:underline" onClick={e => e.stopPropagation()}>{part}</a>;
+        }
+        return <span key={i}>{part}</span>;
+      })}
+    </>
   );
 }
 
@@ -72,7 +93,7 @@ function PostItem({ post, currentUser, onReply, onLike, onRepost, onShare, onPro
         </div>
       </div>
       
-      <p className="m-0 mb-4 text-sm sm:text-[15px] text-gray-700 leading-relaxed whitespace-pre-wrap break-words">{post.content}</p>
+      <p className="m-0 mb-4 text-sm sm:text-[15px] text-gray-700 leading-relaxed whitespace-pre-wrap break-words"><FormattedText text={post.content} /></p>
 
       {post.type === "poll" && post.pollData && (
          <div className="mb-5 flex flex-col gap-2.5">
@@ -135,17 +156,78 @@ export function SocHubView({ user, profile }: any) {
   // Activity state
   const [activities, setActivities] = useState<any[]>([]);
   
+  // Suggested users
+  const [suggestedUsers, setSuggestedUsers] = useState<any[]>([]);
+
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
   const [editingPost, setEditingPost] = useState<any>(null);
   const [editContent, setEditContent] = useState("");
   const [deletingPost, setDeletingPost] = useState<any>(null);
   
+  const [viewedUserId, setViewedUserId] = useState<string | null>(null);
+  const [viewedProfile, setViewedProfile] = useState<any>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+
   const unreadCount = activities.filter(a => !a.read).length;
+
+  useEffect(() => {
+    if (!viewedUserId) {
+      setViewedProfile(null);
+      return;
+    }
+    const unsub = onSnapshot(doc(db, "users", viewedUserId), (docSnap) => {
+      if (docSnap.exists()) {
+        setViewedProfile({uid: docSnap.id, ...docSnap.data()});
+      } else {
+        setViewedProfile(null);
+      }
+    });
+    return () => unsub();
+  }, [viewedUserId]);
+
+  useEffect(() => {
+    if (searchQuery.trim().length === 0) {
+      setSearchResults([]);
+      return;
+    }
+    const q = query(collection(db, "users")); // Simplified search, no complex text search in firestore
+    const unsub = onSnapshot(q, (snap) => {
+      const allUsers = snap.docs.map(d => ({uid: d.id, ...(d.data() as any)}));
+      const lowerQuery = searchQuery.toLowerCase();
+      setSearchResults(allUsers.filter((u: any) => 
+        (u.fullName && u.fullName.toLowerCase().includes(lowerQuery)) || 
+        (u.nickname && u.nickname.toLowerCase().includes(lowerQuery)) ||
+        (u.username && u.username.toLowerCase().includes(lowerQuery))
+      ));
+    }, (error) => { console.error("Snapshot error on", "q", error); });
+    return () => unsub();
+  }, [searchQuery]);
+
+  useEffect(() => {
+    if (!user) return;
+    // Fetch some recent users (up to 5 for suggestions)
+    const q = query(collection(db, "users"), limit(5));
+    const unsub = onSnapshot(q, (snap) => {
+      setSuggestedUsers(snap.docs.map(d => ({id: d.id, ...d.data()})).filter(u => u.id !== user.uid));
+    }, (error) => { console.error("Snapshot error on", "q", error); });
+    return () => unsub();
+  }, [user]);
 
   useEffect(() => {
     const q = query(collection(db, "soc_posts"), where("replyTo", "==", null), orderBy("createdAt", "desc"));
     const unsub = onSnapshot(q, (snap) => {
       setPosts(snap.docs.map(d => ({id: d.id, ...d.data()})));
-    });
+    }, (error) => { console.error("Snapshot error on", "q", error); });
     return () => unsub();
   }, []);
 
@@ -154,7 +236,7 @@ export function SocHubView({ user, profile }: any) {
     const q = query(collection(db, "soc_posts"), where("replyTo", "==", selectedPost.id), orderBy("createdAt", "asc"));
     const unsub = onSnapshot(q, (snap) => {
       setReplies(snap.docs.map(d => ({id: d.id, ...d.data()})));
-    });
+    }, (error) => { console.error("Snapshot error on", "q", error); });
     return () => unsub();
   }, [view, selectedPost]);
 
@@ -163,7 +245,7 @@ export function SocHubView({ user, profile }: any) {
     const q = query(collection(db, "soc_chats"), where("participants", "array-contains", user.uid), orderBy("updatedAt", "desc"));
     const unsub = onSnapshot(q, (snap) => {
       setChats(snap.docs.map(d => ({id: d.id, ...d.data()})));
-    });
+    }, (error) => { console.error("Snapshot error on", "q", error); });
     return () => unsub();
   }, [user]);
 
@@ -172,7 +254,7 @@ export function SocHubView({ user, profile }: any) {
     const q = query(collection(db, "notifications"), where("userId", "==", user.uid), orderBy("createdAt", "desc"));
     const unsub = onSnapshot(q, (snap) => {
       setActivities(snap.docs.map(d => ({id: d.id, ...d.data()})));
-    });
+    }, (error) => { console.error("Snapshot error on", "q", error); });
     return () => unsub();
   }, [user]);
 
@@ -182,7 +264,7 @@ export function SocHubView({ user, profile }: any) {
     const q = query(collection(db, "soc_messages"), where("chatId", "==", chatId), orderBy("createdAt", "asc"));
     const unsub = onSnapshot(q, (snap) => {
       setMessages(snap.docs.map(d => ({id: d.id, ...d.data()})));
-    });
+    }, (error) => { console.error("Snapshot error on", "q", error); });
     return () => unsub();
   }, [chatUser, user]);
 
@@ -304,7 +386,7 @@ export function SocHubView({ user, profile }: any) {
 
     try {
       await updateDoc(postRef, {
-        "pollData.options": newOptions
+        pollData: { ...postData.pollData, options: newOptions }
       });
       if (isNewVote) {
         createNotification(postData.authorId, "vote", postId, postData.content);
@@ -389,6 +471,52 @@ export function SocHubView({ user, profile }: any) {
     setEditContent(post.content);
   };
 
+  const handleFollow = async (targetId: string) => {
+    if (!user || user.uid === targetId) return;
+    try {
+      const targetDoc = await getDoc(doc(db, "users", targetId));
+      if (targetDoc.exists()) {
+        const targetFollowers = targetDoc.data()?.followers || [];
+        await updateDoc(doc(db, "users", targetId), {
+          followers: [...new Set([...targetFollowers, user.uid])]
+        });
+      }
+      const myDoc = await getDoc(doc(db, "users", user.uid));
+      if (myDoc.exists()) {
+        const myFollowing = myDoc.data()?.following || [];
+        await updateDoc(doc(db, "users", user.uid), {
+          following: [...new Set([...myFollowing, targetId])]
+        });
+      }
+      createNotification(targetId, "follow", "", "mulai mengikuti Anda");
+    } catch(e) { console.error(e) }
+  };
+
+  const handleUnfollow = async (targetId: string) => {
+    if (!user || user.uid === targetId) return;
+    try {
+      const targetDoc = await getDoc(doc(db, "users", targetId));
+      if (targetDoc.exists()) {
+        const targetFollowers = targetDoc.data()?.followers || [];
+        await updateDoc(doc(db, "users", targetId), {
+          followers: targetFollowers.filter((id: string) => id !== user.uid)
+        });
+      }
+      const myDoc = await getDoc(doc(db, "users", user.uid));
+      if (myDoc.exists()) {
+        const myFollowing = myDoc.data()?.following || [];
+        await updateDoc(doc(db, "users", user.uid), {
+          following: myFollowing.filter((id: string) => id !== targetId)
+        });
+      }
+    } catch(e) { console.error(e) }
+  };
+
+  const onProfileClick = (uid: string) => {
+    setViewedUserId(uid);
+    setView("profile");
+  };
+
   const handleSaveBio = async () => {
     if (!user) return;
     try {
@@ -470,39 +598,56 @@ export function SocHubView({ user, profile }: any) {
            <NavButton icon={MessageCircle} active={view === "dms"} onClick={() => setView("dms")} />
         </div>
 
-        <div className="flex justify-end hidden md:flex items-center lg:w-60 shrink-0">
+        <div className="flex justify-end hidden md:flex items-center lg:w-60 shrink-0 relative">
            <div className="bg-gray-100 rounded-full px-4 py-2 flex items-center w-full min-w-0">
-             <input type="text" placeholder="Search" className="bg-transparent border-none outline-none text-sm w-full min-w-0" />
+             <input type="text" placeholder="Search user..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="bg-transparent border-none outline-none text-sm w-full min-w-0" />
            </div>
+           {searchQuery && (
+             <div className="absolute top-12 left-0 right-0 bg-white rounded-xl shadow-lg border border-gray-100 p-2 max-h-60 overflow-y-auto z-50">
+               {searchResults.length === 0 ? (
+                 <div className="p-3 text-sm text-center text-gray-500">Tidak temukan pengguna.</div>
+               ) : (
+                 searchResults.map(s => (
+                   <div key={s.uid} onClick={() => { setSearchQuery(""); onProfileClick(s.uid); }} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer">
+                     <img src={s.avatar || `https://api.dicebear.com/7.x/notionists/svg?seed=${s.uid}&backgroundColor=ffffff`} className="w-8 h-8 rounded-full object-cover" />
+                     <div className="min-w-0 flex-1">
+                       <div className="font-bold text-sm text-gray-900 truncate">{s.fullName || s.nickname || "User"}</div>
+                       <div className="text-xs text-gray-500 truncate">@{s.username || "user_" + s.uid.substring(0,5)}</div>
+                     </div>
+                   </div>
+                 ))
+               )}
+             </div>
+           )}
         </div>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6 flex-1 lg:overflow-hidden">
         
         {/* Left Column */}
-        <div className={`flex flex-col w-full lg:w-[280px] shrink-0 gap-6 lg:overflow-y-auto lg:pb-[60px] hide-scrollbar ${view === "profile" ? 'hidden lg:hidden' : 'hidden lg:flex'}`}>
+        <div className={`flex flex-col w-full lg:w-[240px] shrink-0 gap-6 lg:overflow-y-auto lg:pb-[60px] hide-scrollbar ${view === "profile" ? 'hidden lg:hidden' : 'hidden lg:flex'}`}>
           {/* Profile Card */}
           <div className="bg-white rounded-3xl overflow-hidden shadow-sm">
-            <div style={{ height: 80, background: "linear-gradient(135deg, #E2E8F0 0%, #F1F5F9 100%)" }} />
-            <div style={{ padding: "0 24px 24px 24px", display: "flex", flexDirection: "column", alignItems: "center", marginTop: -40 }}>
-               <img src={profile?.avatar || getAvatar(profile, user?.uid)} style={{ width: 80, height: 80, borderRadius: "50%", border: "4px solid white", objectFit: "cover", marginBottom: 16 }} />
-               <div style={{ fontWeight: 800, fontSize: 18, color: "#111827" }}>{profile?.fullName || user?.displayName || "User"}</div>
-               <div style={{ fontSize: 14, color: "#6B7280", marginBottom: 20 }}>@{profile?.username || "user_" + user?.uid?.substring(0,5)}</div>
-               <div style={{ display: "flex", gap: 32, marginBottom: 24 }}>
+            <div style={{ height: 60, background: "linear-gradient(135deg, #E2E8F0 0%, #F1F5F9 100%)" }} />
+            <div style={{ padding: "0 20px 20px 20px", display: "flex", flexDirection: "column", alignItems: "center", marginTop: -30 }}>
+               <img src={profile?.avatar || getAvatar(profile, user?.uid)} style={{ width: 60, height: 60, borderRadius: "50%", border: "3px solid white", objectFit: "cover", marginBottom: 12 }} />
+               <div style={{ fontWeight: 800, fontSize: 16, color: "#111827" }}>{profile?.fullName || user?.displayName || "User"}</div>
+               <div style={{ fontSize: 13, color: "#6B7280", marginBottom: 16 }}>@{profile?.username || "user_" + user?.uid?.substring(0,5)}</div>
+               <div style={{ display: "flex", gap: 20, marginBottom: 20 }}>
                   <div style={{ textAlign: "center" }}>
-                    <div style={{ fontWeight: 800, fontSize: 16, color: "#111827" }}>{posts.filter((p:any) => p.authorId === user?.uid).length}</div>
-                    <div style={{ fontSize: 12, color: "#6B7280" }}>Post</div>
+                    <div style={{ fontWeight: 800, fontSize: 14, color: "#111827" }}>{posts.filter((p:any) => p.authorId === user?.uid).length}</div>
+                    <div style={{ fontSize: 11, color: "#6B7280" }}>Post</div>
                   </div>
                   <div style={{ textAlign: "center" }}>
-                    <div style={{ fontWeight: 800, fontSize: 16, color: "#111827" }}>2022</div>
-                    <div style={{ fontSize: 12, color: "#6B7280" }}>Followers</div>
+                    <div style={{ fontWeight: 800, fontSize: 14, color: "#111827" }}>2k</div>
+                    <div style={{ fontSize: 11, color: "#6B7280" }}>Followers</div>
                   </div>
                   <div style={{ textAlign: "center" }}>
-                    <div style={{ fontWeight: 800, fontSize: 16, color: "#111827" }}>590</div>
-                    <div style={{ fontSize: 12, color: "#6B7280" }}>Following</div>
+                    <div style={{ fontWeight: 800, fontSize: 14, color: "#111827" }}>590</div>
+                    <div style={{ fontSize: 11, color: "#6B7280" }}>Following</div>
                   </div>
                </div>
-               <button onClick={() => setView("profile")} style={{ width: "100%", padding: "12px", borderRadius: 16, background: "var(--theme-primary)", color: "white", fontWeight: 700, fontSize: 15, border: "none", cursor: "pointer" }}>My Profile</button>
+               <button onClick={() => setView("profile")} style={{ width: "100%", padding: "10px", borderRadius: 12, background: "var(--theme-primary)", color: "white", fontWeight: 700, fontSize: 13, border: "none", cursor: "pointer" }}>My Profile</button>
             </div>
           </div>
         </div>
@@ -555,21 +700,29 @@ export function SocHubView({ user, profile }: any) {
                ))}
              </div>
            )}
-           {view === "profile" && (
+           {view === "profile" && (() => {
+             const isMe = !viewedUserId || viewedUserId === user?.uid;
+             const pData = isMe ? profile : viewedProfile;
+             const pUid = isMe ? user?.uid : viewedUserId;
+             const isFollowing = (pData?.followers || []).includes(user?.uid);
+             
+             if (!isMe && !pData) return <div className="text-center p-10 text-gray-500">Memuat profil...</div>;
+
+             return (
              <div className="flex flex-col gap-6">
                 <div className="bg-white rounded-3xl p-6 shadow-sm overflow-hidden relative">
                    <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-r from-blue-100 to-indigo-100 z-0"></div>
                    
                    <div className="relative z-10 mt-12 flex justify-between items-start">
                      <div>
-                       <h2 className="text-2xl font-black text-gray-900 m-0">{profile?.fullName || user?.displayName || "User"}</h2>
-                       <div className="text-gray-500 mb-4">@{profile?.username || "user_" + user?.uid?.substring(0,5)}</div>
+                       <h2 className="text-2xl font-black text-gray-900 m-0">{pData?.fullName || pData?.nickname || "User"}</h2>
+                       <div className="text-gray-500 mb-4">@{pData?.username || "user_" + (pUid || "").substring(0,5)}</div>
                      </div>
-                     <img src={profile?.avatar || getAvatar(profile, user?.uid)} className="w-24 h-24 rounded-full border-4 border-white object-cover bg-white" />
+                     <img src={pData?.avatar || getAvatar(pData, pUid)} className="w-24 h-24 rounded-full border-4 border-white object-cover bg-white" />
                    </div>
 
                    <div className="relative z-10 mb-6">
-                     {isEditingBio ? (
+                     {isMe && isEditingBio ? (
                        <div className="flex flex-col gap-3">
                          <textarea 
                            className="w-full bg-gray-50 rounded-xl p-3 border-none outline-none resize-none text-sm text-gray-800 font-medium" 
@@ -586,26 +739,37 @@ export function SocHubView({ user, profile }: any) {
                      ) : (
                        <div>
                          <p className="text-gray-800 text-sm whitespace-pre-wrap leading-relaxed m-0 mb-4">
-                           {profile?.bio || "Belum ada bio."}
+                           {pData?.bio || "Belum ada bio."}
                          </p>
-                         <button onClick={() => setIsEditingBio(true)} className="px-5 py-2 rounded-xl bg-gray-100 text-gray-800 hover:bg-gray-200 text-sm font-bold transition-colors w-full sm:w-auto">
-                           Edit Bio
-                         </button>
+                         {isMe ? (
+                           <button onClick={() => setIsEditingBio(true)} className="px-5 py-2 rounded-xl bg-gray-100 text-gray-800 hover:bg-gray-200 text-sm font-bold transition-colors w-full sm:w-auto">
+                             Edit Bio
+                           </button>
+                         ) : (
+                           <div className="flex gap-2">
+                             <button onClick={() => isFollowing ? handleUnfollow(pUid) : handleFollow(pUid)} className={`px-5 py-2 rounded-xl text-sm font-bold transition-colors w-full sm:w-auto ${isFollowing ? 'bg-gray-100 text-gray-800' : 'bg-[var(--theme-primary)] text-white hover:bg-blue-600'}`}>
+                                {isFollowing ? 'Mengikuti' : 'Ikuti'}
+                             </button>
+                             <button onClick={() => startDM(pUid, pData?.fullName || pData?.nickname || "User", pData?.avatar)} className="px-5 py-2 rounded-xl bg-gray-100 text-gray-800 hover:bg-gray-200 text-sm font-bold transition-colors w-full sm:w-auto">
+                                Pesan
+                             </button>
+                           </div>
+                         )}
                        </div>
                      )}
                    </div>
 
                    <div className="relative z-10 flex gap-6 text-sm">
                       <div className="flex items-center gap-1.5 border-b-2 border-transparent">
-                        <span className="font-black text-gray-900">{posts.filter((p:any) => p.authorId === user?.uid).length}</span>
+                        <span className="font-black text-gray-900">{posts.filter((p:any) => p.authorId === pUid).length}</span>
                         <span className="text-gray-500">Post</span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <span className="font-black text-gray-900">2022</span>
+                        <span className="font-black text-gray-900">{pData?.followers?.length || 0}</span>
                         <span className="text-gray-500">Followers</span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <span className="font-black text-gray-900">590</span>
+                        <span className="font-black text-gray-900">{pData?.following?.length || 0}</span>
                         <span className="text-gray-500">Following</span>
                       </div>
                    </div>
@@ -630,23 +794,23 @@ export function SocHubView({ user, profile }: any) {
                   {posts
                     .filter((p:any) => {
                       if (p.isArchived) return false;
-                      if (profileTab === "threads") return p.authorId === user?.uid; // Since posts are already replyTo=null
+                      if (profileTab === "threads") return p.authorId === pUid; // Since posts are already replyTo=null
                       if (profileTab === "replies") return false; // Not fetched in main query natively, we can fallback to nothing or if we fetched everything... wait, replies might be slow.
-                      if (profileTab === "reposts") return p.reposts?.includes(user?.uid);
+                      if (profileTab === "reposts") return p.reposts?.includes(pUid);
                       return false;
                     })
                     .map(p => (
-                      <PostItem key={p.id} post={p} currentUser={user} onReply={() => handleReplyClick(p)} onLike={handleLike} onRepost={handleRepost} onShare={() => {}} onProfile={() => {}} onVote={handleVote} onOpenPost={openThread} onDelete={handleDelete} onEdit={handleEdit} onArchive={handleArchive} />
+                      <PostItem key={p.id} post={p} currentUser={user} onReply={() => handleReplyClick(p)} onLike={handleLike} onRepost={handleRepost} onShare={() => {}} onProfile={() => onProfileClick(p.authorId)} onVote={handleVote} onOpenPost={openThread} onDelete={handleDelete} onEdit={handleEdit} onArchive={handleArchive} />
                     ))}
                   
-                  {posts.filter((p:any) => p.isArchived === false && (profileTab === "threads" ? p.authorId === user?.uid : profileTab === "reposts" ? p.reposts?.includes(user?.uid) : false)).length === 0 && (
+                  {posts.filter((p:any) => p.isArchived === false && (profileTab === "threads" ? p.authorId === pUid : profileTab === "reposts" ? p.reposts?.includes(pUid) : false)).length === 0 && (
                     <div className="p-10 text-center text-gray-400">
                       {profileTab === "threads" ? "Belum ada thread yang dibuat." : profileTab === "replies" ? "Fitur replies sedang disempurnakan." : "Belum ada postingan yang di-repost."}
                     </div>
                   )}
                 </div>
              </div>
-           )}
+           )})()}
            
            {view === "post" && selectedPost && (
              <div style={{ display: "flex", flexDirection: "column" }}>
@@ -676,6 +840,11 @@ export function SocHubView({ user, profile }: any) {
                 <div style={{ width: 300, borderRight: "1px solid rgba(0,0,0,0.06)", display: "flex", flexDirection: "column", background: "#F9FAFB" }}>
                    <div style={{ padding: "24px", fontWeight: 800, fontSize: 18, color: "#111827" }}>Messages</div>
                    <div style={{ flex: 1, overflowY: "auto" }}>
+                     {chats.length === 0 && (
+                       <div className="p-6 text-center text-gray-400 text-sm">
+                         Belum ada pesan. Kunjungi profil pengguna untuk mulai mengirim pesan.
+                       </div>
+                     )}
                      {chats.map(chat => {
                        const otherId = chat.participants.find((p: string) => p !== user.uid);
                        const otherData = chat.participantData?.[otherId] || { name: "User", avatar: "" };
@@ -712,6 +881,7 @@ export function SocHubView({ user, profile }: any) {
                             </div>
                           )
                         })}
+                        <div ref={messagesEndRef} />
                       </div>
                       <div style={{ padding: 24, borderTop: "1px solid rgba(0,0,0,0.06)" }}>
                         <div style={{ display: "flex", gap: 12, alignItems: "center", background: "#F9FAFB", padding: "8px 16px", borderRadius: 24, border: "1px solid rgba(0,0,0,0.04)" }}>
@@ -787,22 +957,18 @@ export function SocHubView({ user, profile }: any) {
                  <div style={{ fontSize: 13, color: "#9CA3AF", cursor: "pointer", fontWeight: 600 }}>See all</div>
                </div>
                <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-                  {[
-                    {name: "Najid", subtitle: "Followed by Dims", avatar: "najid"},
-                    {name: "Sheila Dara", subtitle: "Suggested for you", avatar: "sheila"},
-                    {name: "Divaaurey", subtitle: "Suggested for you", avatar: "diva"},
-                  ].map((s, i) => (
-                    <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                        <img src={`https://api.dicebear.com/7.x/notionists/svg?seed=${s.avatar}&backgroundColor=ffffff`} style={{ width: 44, height: 44, borderRadius: "50%", border: "1px solid #F3F4F6", objectFit: "cover" }} />
-                        <div>
-                          <div style={{ fontWeight: 700, fontSize: 14, color: "#111827" }}>{s.name}</div>
-                          <div style={{ fontSize: 13, color: "#9CA3AF" }}>{s.subtitle}</div>
-                        </div>
-                      </div>
-                      <button style={{ background: "none", border: "none", color: "var(--theme-primary)", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>Follow</button>
-                    </div>
-                  ))}
+                                     {suggestedUsers.length > 0 ? suggestedUsers.map((s) => (
+                     <div key={s.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+                       <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+                         <img src={s.avatar || `https://api.dicebear.com/7.x/notionists/svg?seed=${s.id}&backgroundColor=ffffff`} style={{ width: 44, height: 44, borderRadius: "50%", border: "1px solid #F3F4F6", objectFit: "cover", flexShrink: 0 }} />
+                         <div style={{ minWidth: 0 }}>
+                           <div style={{ fontWeight: 700, fontSize: 14, color: "#111827", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.fullName || s.nickname || "User"}</div>
+                           <div style={{ fontSize: 13, color: "#9CA3AF", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>@{s.username || "user_" + s.id.substring(0,5)}</div>
+                         </div>
+                       </div>
+                       <button onClick={(e) => { e.stopPropagation(); onProfileClick(s.id); }} style={{ background: "none", border: "none", color: "var(--theme-primary)", fontWeight: 700, fontSize: 13, cursor: "pointer", flexShrink:0 }}>View</button>
+                     </div>
+                   )) : <div style={{ fontSize: 13, color: "#9CA3AF" }}>Tidak ada saran.</div>}
                </div>
              </div>
           </div>
