@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Check, Calendar, BarChart2, Zap, Sparkles, LayoutDashboard, Share2, TrendingUp, Users, Clock, Instagram, Twitter, Facebook, CloudRain, CheckCircle, StickyNote, Target, ChevronRight, Flame, Activity, ArrowLeft, Bell, ChevronUp, PieChart, Search, MessageSquare, LogOut, Cloud, LayoutGrid, Edit2, Eye, Plus, FileText } from 'lucide-react';
+import { Check, Calendar, BarChart2, Zap, Sparkles, LayoutDashboard, Share2, TrendingUp, Users, Clock, Instagram, Twitter, Facebook, CloudRain, CheckCircle, StickyNote, Target, ChevronRight, Flame, Activity, ArrowLeft, Bell, ChevronUp, PieChart, Search, MessageSquare, LogOut, Cloud, LayoutGrid, Edit2, Eye, Plus, FileText, Menu } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 
@@ -480,152 +480,260 @@ export function LandingPage() {
               <p className="text-slate-600">Atur strategi besarmu dengan Board, Timeline, Tabel, atau Calendar view. Geser dan jatuhkan idemu seolah sedang bermain Lego.</p>
             </div>
             {/* Visual stacked securely below text */}
-            <div className="flex-1 w-full bg-slate-50/50 rounded-2xl border border-black/5 p-4 flex flex-col relative overflow-hidden min-h-[450px]">
-              <div className="flex justify-between items-center z-10 relative mb-4">
-                <div className="flex gap-1 bg-white p-1 rounded-lg border border-slate-200">
-                  <div className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${calendarViewIdx === 0 ? 'bg-slate-100 shadow-sm text-blue-600' : 'text-slate-500'}`}>Bulan</div>
-                  <div className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${calendarViewIdx === 1 ? 'bg-slate-100 shadow-sm text-blue-600' : 'text-slate-500'}`}>Board</div>
-                  <div className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${calendarViewIdx === 2 ? 'bg-slate-100 shadow-sm text-blue-600' : 'text-slate-500'}`}>Timeline</div>
-                  <div className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${calendarViewIdx === 3 ? 'bg-slate-100 shadow-sm text-blue-600' : 'text-slate-500'}`}>Tabel</div>
+            <div className="flex-1 w-full bg-[#f8f9fa] rounded-2xl border border-black/5 flex flex-row relative overflow-hidden min-h-[550px]">
+              {/* Left Sidebar (App Navigation Mock) */}
+              <div className="w-64 bg-[#11233A] flex flex-col pt-4 pb-4 shrink-0 z-10 hidden md:flex border-r border-[#1D4D7A]/20">
+                {/* Header */}
+                <div className="px-4 flex items-center justify-between mb-8">
+                   <div className="flex items-center gap-3 text-white">
+                      <ArrowLeft className="w-5 h-5 cursor-pointer text-slate-300 hover:text-white transition-colors" />
+                      <div className="flex items-center gap-2">
+                         <div className="w-6 h-6 bg-white rounded-md flex items-center justify-center">
+                            <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                               <div className="w-1.5 h-1.5 bg-white rounded-full translate-x-[-2px] translate-y-[-1px]"></div>
+                               <div className="w-1.5 h-1.5 bg-white rounded-full translate-x-[2px] translate-y-[-1px]"></div>
+                            </div>
+                         </div>
+                         <span className="font-extrabold text-xl tracking-tight">Hubify</span>
+                      </div>
+                   </div>
+                   <Bell className="w-4 h-4 text-slate-300 cursor-pointer hover:text-white transition-colors" />
+                </div>
+
+                {/* Scroller Container */}
+                <div className="flex-1 overflow-y-auto overflow-x-hidden nice-scrollbar px-3 flex flex-col gap-6">
+                  {/* WORKSPACES */}
+                  <div>
+                    <div className="flex items-center justify-between text-[#5b7a9e] text-[10px] font-extrabold tracking-wider mb-2 px-2 uppercase">
+                      <span>Workspaces</span>
+                      <ChevronUp className="w-3.5 h-3.5 cursor-pointer" />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-3 px-2 py-2 rounded-lg text-slate-300 hover:bg-white/5 cursor-pointer transition-colors group">
+                        <div className="w-6 h-6 bg-slate-700/50 rounded flex items-center justify-center text-xs font-bold text-white group-hover:bg-slate-600 transition-colors">N</div>
+                        <span className="text-sm font-semibold">Nalen's</span>
+                      </div>
+                      <div className="flex items-center gap-3 py-2 pr-2 bg-[#1b3b64] rounded-r-lg relative cursor-pointer text-white">
+                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-400 rounded-r-full" />
+                        <div className="w-6 h-6 bg-slate-700/50 rounded flex items-center justify-center text-xs font-bold ml-2">F</div>
+                        <span className="text-sm font-bold">Fadkhy's</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* SOCIAL MANAGEMENT */}
+                  <div>
+                    <div className="flex items-center justify-between text-[#5b7a9e] text-[10px] font-extrabold tracking-wider mb-2 px-2 uppercase">
+                      <span>Social Management</span>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-3 px-2 py-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-white/5 cursor-pointer transition-colors">
+                        <LayoutGrid className="w-4 h-4" />
+                        <span className="text-sm font-semibold">Dashboard</span>
+                      </div>
+                      <div className="flex items-center gap-3 px-2 py-2 rounded-lg text-white bg-white/10 cursor-pointer">
+                        <Calendar className="w-4 h-4 text-blue-400" />
+                        <span className="text-sm font-bold">Content Planner</span>
+                      </div>
+                      <div className="flex items-center gap-3 px-2 py-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-white/5 cursor-pointer transition-colors">
+                        <PieChart className="w-4 h-4" />
+                        <span className="text-sm font-semibold">Analitik</span>
+                      </div>
+                      <div className="flex items-center gap-3 px-2 py-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-white/5 cursor-pointer transition-colors">
+                        <Users className="w-4 h-4" />
+                        <span className="text-sm font-semibold">SocHub</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* SOCIAL STUDIO */}
+                  <div>
+                    <div className="flex items-center justify-between text-[#5b7a9e] text-[10px] font-extrabold tracking-wider mb-2 px-2 uppercase">
+                      <span>Social Studio</span>
+                      <ChevronUp className="w-3.5 h-3.5 cursor-pointer" />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-3 px-2 py-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-white/5 cursor-pointer transition-colors">
+                        <Activity className="w-4 h-4" />
+                        <span className="text-sm font-semibold">Overview</span>
+                      </div>
+                      <div className="flex items-center gap-3 px-2 py-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-white/5 cursor-pointer transition-colors">
+                        <BarChart2 className="w-4 h-4" />
+                        <span className="text-sm font-semibold">Analytics Expert</span>
+                      </div>
+                      <div className="flex items-center gap-3 px-2 py-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-white/5 cursor-pointer transition-colors">
+                        <Search className="w-4 h-4" />
+                        <span className="text-sm font-semibold">Analisis Kompetitor</span>
+                      </div>
+                      <div className="flex items-center gap-3 px-2 py-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-white/5 cursor-pointer transition-colors">
+                        <Calendar className="w-4 h-4" />
+                        <span className="text-sm font-semibold">Kalender Konten</span>
+                      </div>
+                      <div className="flex items-center gap-3 px-2 py-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-white/5 cursor-pointer transition-colors">
+                        <MessageSquare className="w-4 h-4" />
+                        <span className="text-sm font-semibold">Inbox & Komen</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bottom Section */}
+                <div className="px-4 mt-6">
+                   <div className="flex items-center gap-3 px-2 py-2 mb-4 bg-black/20 rounded-xl">
+                      <div className="w-9 h-9 rounded-full bg-slate-400 overflow-hidden shrink-0">
+                         <div className="w-full h-full bg-gradient-to-tr from-orange-300 to-indigo-400" />
+                      </div>
+                      <div className="flex flex-col overflow-hidden">
+                         <span className="text-sm font-bold text-white truncate">Nalendra Putra</span>
+                         <div className="flex items-center gap-2">
+                            <span className="text-[8px] font-extrabold bg-blue-500 text-white px-1.5 py-0.5 rounded">PRO</span>
+                            <span className="text-[9px] text-slate-400 hover:text-slate-300 cursor-pointer truncate">Pengaturan Profil</span>
+                         </div>
+                      </div>
+                   </div>
+                   <button className="w-full flex items-center justify-center gap-2 bg-[#1b3b64] hover:bg-[#224675] text-[#f87171] py-2.5 rounded-lg text-xs font-bold transition-colors">
+                      <LogOut className="w-4 h-4" /> LOG OUT / KELUAR
+                   </button>
                 </div>
               </div>
-              <div className="relative flex-1 bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
-                <AnimatePresence mode="wait">
-                  {calendarViewIdx === 0 && (
-                    <motion.div key="v0" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-10}} className="absolute inset-0 flex flex-col p-4 bg-[#F8FAFC]">
-                      <div className="grid grid-cols-7 gap-2 mb-2 text-center text-[10px] font-bold text-slate-400">
-                        <div>MIN</div><div>SEN</div><div>SEL</div><div>RAB</div><div>KAM</div><div>JUM</div><div>SAB</div>
-                      </div>
-                      <div className="grid grid-cols-7 grid-rows-5 gap-2 flex-1">
-                        {Array.from({ length: 35 }).map((_, idx) => {
-                          const date = idx - 1; // start index to offset
-                          const empty = date < 1 || date > 30;
-                          
-                          // Mock items based on the date
-                          let items = [];
-                          if (date === 2) items = [{label: 'Koko Kak Erlan', initial: 'F', color: 'bg-orange-100 text-orange-700'}, {label: 'Kenalin 1 orang...', initial: 'V', color: 'bg-blue-100 text-blue-700'}];
-                          if (date === 3) items = [{label: 'Post Collabs', initial: 'S', color: 'bg-green-100 text-green-700'}];
-                          if (date === 5) items = [{label: 'Twin Date 6.6', initial: 'R', color: 'bg-indigo-100 text-indigo-700'}];
-                          if (date === 8) items = [{label: 'Koko Badrison', initial: 'F', color: 'bg-orange-100 text-orange-700'}];
-                          if (date === 10) items = [{label: 'Riset Marketing', initial: 'V', color: 'bg-blue-100 text-blue-700'}, {label: 'Review Influencer', initial: 'S', color: 'bg-green-100 text-green-700'}];
-                          if (date === 15) items = [{label: 'Live Sales', initial: 'R', color: 'bg-red-100 text-red-700'}];
-                          if (date === 17) items = [{label: 'Meeting Klien', initial: 'V', color: 'bg-purple-100 text-purple-700'}];
-                          if (date === 22) items = [{label: 'Koko Rumaysho', initial: 'F', color: 'bg-orange-100 text-orange-700'}];
-                          if (date === 25) items = [{label: 'Promo Payday', initial: 'R', color: 'bg-rose-100 text-rose-700'}];
-
-                           return (
-                             <div key={idx} className={`rounded-lg border ${empty ? 'bg-transparent border-transparent' : 'bg-white border-slate-200'} p-1.5 flex flex-col gap-1 overflow-hidden relative`}>
-                               {!empty && (
-                                 <>
-                                   <div className="text-[10px] font-bold text-slate-700 ml-1 mb-1">{date}</div>
-                                   {items.map((item, j) => (
-                                     <div key={j} className={`pl-1 pr-1.5 py-0.5 rounded text-[8px] font-bold truncate flex items-center gap-1 ${item.color}`}>
-                                       <span className="w-3 h-3 rounded-sm bg-white/50 flex items-center justify-center shrink-0">{item.initial}</span>
-                                       <span className="truncate">{item.label}</span>
-                                     </div>
-                                   ))}
-                                 </>
-                               )}
-                             </div>
-                           );
-                        })}
-                      </div>
-                    </motion.div>
-                  )}
-                  {calendarViewIdx === 1 && (
-                    <motion.div key="v1" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-10}} className="absolute inset-0 flex gap-4 p-4 bg-[#F8FAFC] overflow-x-auto no-scrollbar">
-                      {[
-                        { title: 'Draft', color: 'bg-[#D97706]', items: ['Koko Erkan Akta', 'Pay Day Sale'] },
-                        { title: 'Waiting Approval', color: 'bg-blue-600', items: [] },
-                        { title: 'Revise', color: 'bg-rose-600', items: [] },
-                        { title: 'Ready to Post', color: 'bg-green-500', items: [] },
-                        { title: 'Published', color: 'bg-emerald-600', items: ['Twin Date 6.6', 'Koko Badrison'] }
-                      ].map((col, i) => (
-                        <div key={i} className="min-w-[180px] flex flex-col gap-3">
-                          <div className="flex items-center gap-2">
-                            <div className={`w-2 h-2 rounded-full ${col.color}`} />
-                            <div className="text-[10px] font-bold text-slate-700 flex-1">{col.title}</div>
-                            <div className="bg-slate-200 text-slate-500 text-[9px] px-1.5 py-0.5 rounded-full">{col.items.length}</div>
-                          </div>
-                          {col.items.length === 0 ? (
-                            <div className="border border-dashed border-slate-300 rounded-xl p-3 text-center text-[10px] text-slate-400 font-medium bg-slate-50/50">+ Tambah</div>
-                          ) : (
-                            col.items.map((item, j) => (
-                              <div key={j} className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex flex-col gap-2 relative">
-                                <div className="text-[11px] font-bold text-slate-800 pr-4 leading-snug">{item}</div>
-                                <div className="bg-slate-100 text-slate-600 self-start px-2 py-0.5 rounded-full text-[8px] font-bold">INSTAGRAM</div>
-                                <div className="text-[8px] text-orange-500 font-semibold mt-1">Product Value</div>
-                                <div className="absolute right-2 top-2 text-[9px] text-slate-400">10/06</div>
-                              </div>
-                            ))
-                          )}
+              
+              {/* Main Workspace */}
+              <div className="flex-1 flex flex-col bg-white overflow-hidden relative">
+                 {/* Header (Greeting & Time) */}
+                 <div className="flex justify-between items-end px-4 md:px-6 py-4 bg-[#fcfdfd] border-b border-black/5">
+                   <div>
+                     <h2 className="text-xl md:text-3xl font-extrabold text-[#11233A] leading-tight tracking-tight">Selamat Malam,<br/><span className="text-[#1f5f99]">Nalen!</span> 🌙</h2>
+                   </div>
+                   <div className="text-2xl md:text-4xl font-black text-[#11233A] tracking-tighter">07:41<span className="text-sm md:text-lg font-bold text-slate-500 ml-1 tracking-normal">PM</span></div>
+                 </div>
+                 
+                 {/* Toolbar */}
+                 <div className="flex flex-wrap items-center gap-3 px-4 md:px-6 py-3 border-b border-black/5 bg-white">
+                    <div className="flex bg-slate-50/80 border border-slate-200/60 rounded-full p-1 shadow-sm">
+                      <div className="px-3 md:px-5 py-1.5 bg-white text-blue-700 rounded-full text-xs font-bold shadow-sm border border-slate-200/50 cursor-pointer">Bulan</div>
+                      <div className="px-3 md:px-5 py-1.5 text-slate-500 rounded-full text-xs font-bold hover:bg-slate-100/50 cursor-pointer transition-colors">Board</div>
+                      <div className="px-3 md:px-5 py-1.5 text-slate-500 rounded-full text-xs font-bold hover:bg-slate-100/50 cursor-pointer transition-colors">Timeline</div>
+                      <div className="px-3 md:px-5 py-1.5 text-slate-500 rounded-full text-xs font-bold hover:bg-slate-100/50 cursor-pointer transition-colors">Tabel</div>
+                    </div>
+                    <div className="w-[1px] h-6 bg-slate-200 mx-1 hidden md:block" />
+                    <div className="flex gap-2">
+                       <select className="border border-slate-200 rounded-full px-4 py-1.5 text-xs font-bold text-slate-700 bg-white outline-none cursor-pointer hover:border-slate-300 transition-colors"><option>Juni</option></select>
+                       <select className="border border-slate-200 rounded-full px-4 py-1.5 text-xs font-bold text-slate-700 bg-white outline-none cursor-pointer hover:border-slate-300 transition-colors"><option>2026</option></select>
+                    </div>
+                    <div className="ml-auto flex items-center gap-3 w-full md:w-auto mt-2 md:mt-0">
+                       <div className="relative flex-1 md:flex-none">
+                          <Search className="absolute left-3 top-2 text-slate-400 w-3.5 h-3.5" />
+                          <input placeholder="Cari konten..." className="w-full md:w-64 border border-slate-200 rounded-full pl-9 pr-4 py-1.5 text-xs focus:outline-none focus:border-blue-400 transition-colors" />
+                       </div>
+                       <button className="bg-[#1f5f99] hover:bg-[#184a78] text-white px-4 md:px-5 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 shadow-sm transition-colors shrink-0">
+                          <Plus className="w-3.5 h-3.5" /> Tambah Baru
+                       </button>
+                       <button className="bg-[#1f5f99] hover:bg-[#184a78] text-white p-2 md:p-2 rounded-full shadow-sm transition-colors shrink-0"><Share2 className="w-3.5 h-3.5" /></button>
+                    </div>
+                 </div>
+            
+                 {/* Filters */}
+                 <div className="flex flex-nowrap items-end gap-3 px-4 md:px-6 py-3 border-b border-black/5 bg-[#fcfdfd] overflow-x-auto custom-scrollbar pb-3">
+                    <div className="flex flex-col gap-1 min-w-[130px] shrink-0">
+                      <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider ml-1">Pillar</span>
+                      <select className="border border-slate-200 rounded-full px-3 py-1.5 text-[11px] md:text-xs font-bold text-slate-700 outline-none hover:border-slate-300 transition-colors bg-white"><option>Semua Pillar</option></select>
+                    </div>
+                    <div className="flex flex-col gap-1 min-w-[130px] shrink-0">
+                      <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider ml-1">Platform</span>
+                      <select className="border border-slate-200 rounded-full px-3 py-1.5 text-[11px] md:text-xs font-bold text-slate-700 outline-none hover:border-slate-300 transition-colors bg-white"><option>Semua Platform</option></select>
+                    </div>
+                    <div className="flex flex-col gap-1 min-w-[130px] shrink-0">
+                      <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider ml-1">Tipe Konten</span>
+                      <select className="border border-slate-200 rounded-full px-3 py-1.5 text-[11px] md:text-xs font-bold text-slate-700 outline-none hover:border-slate-300 transition-colors bg-white"><option>Semua Tipe...</option></select>
+                    </div>
+                    <div className="flex flex-col gap-1 min-w-[130px] shrink-0">
+                      <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider ml-1">PIC</span>
+                      <select className="border border-slate-200 rounded-full px-3 py-1.5 text-[11px] md:text-xs font-bold text-slate-700 outline-none hover:border-slate-300 transition-colors bg-white"><option>Semua PIC</option></select>
+                    </div>
+                    <div className="flex gap-2 shrink-0 h-[30px] md:h-[32px]">
+                      <button className="border border-slate-200 bg-white rounded-full px-4 text-[11px] md:text-xs font-bold hover:bg-slate-50 text-slate-600 transition-colors shadow-sm whitespace-nowrap h-full">Tampil Hari Besar</button>
+                      <button className="border border-slate-200 bg-white rounded-full px-4 text-[11px] md:text-xs font-bold hover:bg-slate-50 text-slate-600 transition-colors shadow-sm flex items-center gap-1.5 whitespace-nowrap h-full"><span>📦</span> Arsip</button>
+                    </div>
+                    <div className="ml-auto flex gap-2 shrink-0 h-[30px] md:h-[32px]">
+                      <button className="border border-green-200 text-green-700 bg-green-50 rounded-full px-4 text-[11px] md:text-xs font-bold flex items-center gap-1.5 hover:bg-green-100 transition-colors shadow-sm whitespace-nowrap h-full">
+                        <ArrowLeft className="w-3.5 h-3.5 rotate-[90deg]" /> Export Excel
+                      </button>
+                      <button className="border border-slate-200 bg-white rounded-full px-4 text-[11px] md:text-xs font-bold hover:bg-slate-50 flex items-center gap-1.5 text-slate-600 transition-colors shadow-sm whitespace-nowrap h-full">
+                        <Plus className="w-3.5 h-3.5 text-slate-400" /> Import CSV
+                      </button>
+                    </div>
+                 </div>
+                 
+                 {/* Calendar Grid */}
+                 <div className="flex-1 overflow-y-auto overflow-x-auto bg-[#F8FAFC] p-4 custom-scrollbar">
+                    <div className="min-w-[1050px] h-full flex flex-col">
+                        {/* Days Header */}
+                        <div className="grid grid-cols-7 gap-3 mb-2 text-center text-[10px] font-extrabold text-slate-400 uppercase tracking-widest px-1">
+                           <div>MIN</div><div>SEN</div><div>SEL</div><div>RAB</div><div>KAM</div><div>JUM</div><div>SAB</div>
                         </div>
-                      ))}
-                    </motion.div>
-                  )}
-                  {calendarViewIdx === 2 && (
-                    <motion.div key="v2" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-10}} className="absolute inset-0 flex flex-col p-4 bg-[#F8FAFC]">
-                      <h4 className="font-bold text-slate-800 text-xs mb-3">Timeline — Juni 2026</h4>
-                      <div className="flex gap-3 flex-1 overflow-x-auto no-scrollbar">
-                        {[
-                          { day: 'SEN', num: '1', items: [{ title: 'Koko Kak Erlan', time: '09:00', border: 'border-orange-300', bg: 'bg-orange-50' }] },
-                          { day: 'SEL', num: '2', items: [{ title: 'Koko Rumaysho', time: '09:00', border: 'border-orange-300', bg: 'bg-orange-50' }, { title: 'Riset Marketing', time: '19:00', border: 'border-green-300', bg: 'bg-green-50' }] },
-                          { day: 'RAB', num: '3', items: [{ title: 'Post Collabs', time: '14:00', border: 'border-blue-300', bg: 'bg-blue-50' }] },
-                          { day: 'KAM', num: '4', items: [{ title: 'Koko Badrison', time: '09:00', border: 'border-orange-300', bg: 'bg-orange-50' }] },
-                          { day: 'JUM', num: '5', items: [{ title: 'Twin Date 6.6', time: '14:29', border: 'border-blue-300', bg: 'bg-blue-50' }] },
-                          { day: 'SAB', num: '6', items: [{ title: 'Visit Store', time: '10:00', border: 'border-slate-300', bg: 'bg-slate-50' }] }
-                        ].map((col, i) => (
-                           <div key={i} className="min-w-[140px] bg-white border border-slate-200 rounded-xl p-2 flex flex-col gap-2 shadow-sm">
-                             <div className="flex items-baseline gap-1">
-                               <span className="text-slate-400 font-bold text-[10px] uppercase">{col.day}</span>
-                               <span className="text-lg font-extrabold text-slate-800">{col.num}</span>
-                             </div>
-                             {col.items.map((item, j) => (
-                               <div key={j} className={`p-2 rounded-lg border flex flex-col gap-1 ${item.border} ${item.bg}`}>
-                                 <div className="text-[10px] font-bold text-slate-700 leading-tight">{item.title}</div>
-                                 <div className="text-[8px] text-slate-500 font-semibold">{item.time}</div>
+                        {/* Grid */}
+                        <div className="grid grid-cols-7 flex-1 gap-3 content-start">
+                           {Array.from({ length: 35 }).map((_, idx) => {
+                             const date = idx; // idx 0 is MIN, idx 1 is SEN.
+                             const empty = date < 1 || date > 30;
+                             
+                             // Mock items mimicking the full month screenshot but with random new content
+                             let holiday = null;
+                             let count = 0;
+                             let items: any[] = [];
+                             // Example Data Generation
+                             let eventBanner = null;
+                             let eventBanner2 = null;
+
+                             if (date === 1) { holiday = "Hari Lahir Pancasila"; items = [{l: 'Welcome June! ☀️', f: 'IG', c: 'bg-blue-100 text-blue-700'}]; count = 1;}
+                             if (date === 2) { eventBanner = "Flash Sale"; items = [{l: 'Promo Gajian', f: 'TK', c: 'bg-orange-100 text-[#c25a0e]'}]; count = 1;}
+                             if (date === 4) { items = [{l: 'Review Produk A', f: 'YT', c: 'bg-red-100 text-red-700'}, {l: 'Behind The Scene', f: 'IG', c: 'bg-[#d8edd9] text-[#2c6530]'}]; count = 2;}
+                             if (date === 6) { eventBanner = "6.6 BIG SALE"; items = [{l: 'Live TikTok 6.6', f: 'TK', c: 'bg-[#e2e8f0] text-slate-700'}, {l: 'Highlight Produk', f: 'IG', c: 'bg-blue-100 text-blue-700'}]; count = 2;}
+                             if (date === 7) { items = [{l: 'Q&A Session', f: 'FB', c: 'bg-orange-100 text-[#c25a0e]'}]; count = 1;}
+                             if (date === 9) { eventBanner = "Campaign Baru"; items = [{l: 'Teaser Project X', f: 'IG', c: 'bg-[#d8edd9] text-[#2c6530]'}]; count = 1;}
+                             if (date === 12) { items = [{l: 'Podcast Eps 4', f: 'SP', c: 'bg-[#e2e8f0] text-slate-700'}]; count = 1;}
+                             if (date === 15) { eventBanner = "Mid Month"; items = [{l: 'Katalog Update', f: 'WEB', c: 'bg-slate-200 text-slate-700'}]; count = 1;}
+                             if (date === 16) { holiday = "Tahun Baru Islam"; items = [{l: 'Greeting Card', f: 'ALL', c: 'bg-[#d8edd9] text-[#2c6530]'}]; count = 1;}
+                             if (date === 18) { items = [{l: 'Tips & Tricks #12', f: 'IG', c: 'bg-blue-100 text-blue-700'}]; count = 1;}
+                             if (date === 22) { items = [{l: 'User Testimonial', f: 'TK', c: 'bg-orange-100 text-[#c25a0e]'}]; count = 1;}
+                             if (date === 25) { eventBanner = "Payday Promo"; items = [{l: 'Payday Announcement', f: 'ALL', c: 'bg-[#e2e8f0] text-slate-700'}]; count = 1;}
+                             if (date === 28) { items = [{l: 'Vlog Setup Meja', f: 'YT', c: 'bg-red-100 text-red-700'}]; count = 1;}
+                             if (date === 30) { items = [{l: 'Monthly Wrap Up', f: 'IG', c: 'bg-blue-100 text-blue-700'}]; count = 1;}
+    
+                             return (
+                               <div key={idx} className={`rounded-xl border ${empty ? 'bg-transparent border-transparent' : date === 7 ? 'bg-blue-50/50 border-blue-400 border-2' : 'bg-white border-slate-200'} p-2.5 flex flex-col gap-1.5 shadow-sm hover:shadow-md transition-shadow min-h-[140px]`}>
+                                 {!empty && (
+                                   <>
+                                     <div className="flex justify-between items-start mb-1">
+                                        <div className="text-xl font-extrabold text-[#11233A] leading-none tracking-tight">{date}</div>
+                                        {count > 0 && (
+                                          <div className="flex gap-1">
+                                             <div className="bg-[#11233A] text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold">{count}</div>
+                                             <div className="text-blue-500 hover:text-blue-600 cursor-pointer w-5 h-5 flex items-center justify-center font-bold text-lg leading-none">+</div>
+                                          </div>
+                                        )}
+                                     </div>
+                                     <div className="flex flex-col gap-0.5 mb-1.5">
+                                        {holiday && <div className="text-[8.5px] font-extrabold text-[#d97706] leading-tight tracking-wide uppercase px-1">{holiday}</div>}
+                                        {eventBanner && <div className="bg-[#fad4b4]/60 text-[#c25a0e] text-[8px] font-extrabold px-1.5 py-0.5 rounded-sm uppercase tracking-wide inline-block self-start leading-tight">{eventBanner}</div>}
+                                        {eventBanner2 && <div className="bg-[#fad4b4]/60 text-[#c25a0e] text-[8px] font-extrabold px-1.5 py-0.5 rounded-sm uppercase tracking-wide inline-block self-start leading-tight mt-0.5">{eventBanner2}</div>}
+                                     </div>
+                                     <div className="flex flex-col gap-1.5 flex-1">
+                                       {items.map((item, j) => (
+                                         <div key={j} className={`px-2 py-1.5 rounded-lg text-[9px] font-bold flex items-center gap-1.5 ${item.c}`}>
+                                           <div className="w-4 h-4 rounded-full bg-[#11233A] text-white flex items-center justify-center shrink-0 shadow-sm text-[8px] transform scale-90">{item.f}</div>
+                                           <span className="truncate flex-1 tracking-tight">{item.l}</span>
+                                         </div>
+                                       ))}
+                                     </div>
+                                   </>
+                                 )}
                                </div>
-                             ))}
-                           </div>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-                  {calendarViewIdx === 3 && (
-                    <motion.div key="v3" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-10}} className="absolute inset-0 flex flex-col bg-white overflow-hidden">
-                      <div className="grid grid-cols-12 gap-2 p-3 border-b border-slate-100 bg-slate-50 text-[9px] font-bold text-slate-400 tracking-wider">
-                         <div className="col-span-1 pl-2">TGL</div>
-                         <div className="col-span-2">PLATFORM</div>
-                         <div className="col-span-2">PILLAR</div>
-                         <div className="col-span-3">TIPE KONTEN</div>
-                         <div className="col-span-4">JUDUL KONTEN</div>
-                      </div>
-                      <div className="flex-1 overflow-y-auto p-2 flex flex-col gap-1 no-scrollbar">
-                         {[
-                           { tgl: '1', time: '23:00', platform: 'INSTAGRAM', pillar: 'Islamic Insight', tipe: 'Baru mulai tarawih, tapi rasanya...', judul: 'Meta export | Account: @fhadhera' },
-                           { tgl: '1', time: '19:07', platform: 'INSTAGRAM', pillar: 'Product & Promo', tipe: 'akhirnya @fadkheraofficial udah...', judul: 'Meta export | Account: @fhadhera' },
-                           { tgl: '1', time: '09:00', platform: 'INSTAGRAM', pillar: 'Product Value', tipe: 'Reels @xandearyy - akhirnya...', judul: 'Meta export | Account: @xandearyy' },
-                           { tgl: '2', time: '09:00', platform: 'INSTAGRAM', pillar: 'Product Value', tipe: 'Koleksi Koko Badrison', judul: 'Meta export | Account: @xandearyy' },
-                         ].map((row, i) => (
-                           <div key={i} className="grid grid-cols-12 gap-2 p-2 items-center border-b border-slate-50 hover:bg-slate-50 rounded-lg transition-colors">
-                             <div className="col-span-1 pl-2 flex flex-col">
-                               <span className="font-extrabold text-[11px] text-slate-700">{row.tgl}</span>
-                               <span className="text-[8px] text-slate-400">{row.time}</span>
-                             </div>
-                             <div className="col-span-2">
-                               <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full text-[8px] font-bold">{row.platform}</span>
-                             </div>
-                             <div className="col-span-2">
-                               <span className="bg-orange-50 text-orange-600 px-2 py-0.5 rounded-full text-[8px] font-semibold">{row.pillar}</span>
-                             </div>
-                             <div className="col-span-3 text-[10px] font-bold text-slate-700 truncate pr-2">{row.tipe}</div>
-                             <div className="col-span-4 text-[9px] text-slate-400 truncate">{row.judul}</div>
-                           </div>
-                         ))}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                             );
+                           })}
+                        </div>
+                    </div>
+                 </div>
               </div>
             </div>
           </div>
