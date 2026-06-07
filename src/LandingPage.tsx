@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Check, Calendar, BarChart2, Zap, Sparkles, LayoutDashboard, Share2, TrendingUp, Users, Clock, Instagram, Twitter, Facebook, CloudRain, CheckCircle, StickyNote, Target, ChevronRight, Flame, Activity } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import { Check, Calendar, BarChart2, Zap, Sparkles, LayoutDashboard, Share2, TrendingUp, Users, Clock, Instagram, Twitter, Facebook, CloudRain, CheckCircle, StickyNote, Target, ChevronRight, Flame, Activity, ArrowLeft, Bell, ChevronUp, PieChart, Search, MessageSquare, LogOut, Cloud, LayoutGrid, Edit2, Eye, Plus, FileText } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 
@@ -27,7 +27,7 @@ export function LandingPage() {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setCalendarViewIdx(v => (v + 1) % 3);
+      setCalendarViewIdx(v => (v + 1) % 4);
     }, 4000);
     return () => clearInterval(interval);
   }, []);
@@ -40,10 +40,10 @@ export function LandingPage() {
         <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-xl overflow-hidden flex items-center justify-center">
-              <img src="/icon.png" alt="Hubify" className="w-full h-full object-cover scale-110" onError={(e) => { e.currentTarget.parentElement!.style.display = 'none'; e.currentTarget.parentElement!.nextElementSibling!.style.display = 'flex' }} />
+              <img src="/icon.png" alt="Hubify Social" className="w-full h-full object-cover scale-110" onError={(e) => { e.currentTarget.parentElement!.style.display = 'none'; e.currentTarget.parentElement!.nextElementSibling!.style.display = 'flex' }} />
             </div>
             <div className="hidden w-8 h-8 rounded-lg bg-gradient-to-tr from-[#1D4D7A] to-[#0B2A4A] items-center justify-center text-white font-bold">H</div>
-            <a href="#" className="font-extrabold text-xl tracking-tight text-[#0B2A4A]">Hubify</a>
+            <a href="#" className="font-extrabold text-xl tracking-tight text-[#0B2A4A]">Hubify Social</a>
           </div>
           
           <nav className="hidden md:flex gap-8 items-center font-semibold text-sm text-[#1D4D7A]">
@@ -132,7 +132,7 @@ export function LandingPage() {
             transition={{ delay: 0.1 }}
             className="text-lg md:text-xl text-slate-600 max-w-2xl mx-auto mb-10 leading-relaxed"
           >
-            Rancang, jadwalin, dan viralin kontenmu tanpa ribet. Hubify menggabungkan kalender cerdas, asisten AI, dan analitik mendalam untuk bantu kamu kuasai algoritma.
+            Rancang, jadwalin, dan viralin kontenmu tanpa ribet. Hubify Social menggabungkan kalender cerdas, asisten AI, dan analitik mendalam untuk bantu kamu kuasai algoritma.
           </motion.p>
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
@@ -168,114 +168,294 @@ export function LandingPage() {
             Sticky Notes Digital 📝
           </motion.div>
 
-          <div className="rounded-2xl border border-black/10 bg-white shadow-2xl shadow-slate-200/50 overflow-hidden flex flex-col h-[650px] relative">
+          <div className="rounded-2xl border border-black/10 bg-white shadow-2xl shadow-slate-200/50 overflow-hidden flex flex-col h-[950px] relative">
             {/* Window Header */}
             <div className="h-12 bg-slate-50 border-b border-black/5 flex items-center px-4 gap-2 shrink-0">
               <div className="w-3 h-3 rounded-full bg-red-400" />
               <div className="w-3 h-3 rounded-full bg-yellow-400" />
               <div className="w-3 h-3 rounded-full bg-green-400" />
               <div className="mx-auto px-10 py-1 bg-white rounded-md text-xs font-semibold text-slate-400 border border-black/5 shadow-sm">
-                Hubify Personal Dashboard
+                Hubify Social Personal Dashboard
               </div>
             </div>
             
-            <div className="flex flex-1 overflow-hidden bg-[#FAFAF8]">
+            <div className="flex flex-1 overflow-hidden bg-[#F4F6F8]">
               {/* Sidebar */}
-              <div className="w-64 border-r border-black/5 bg-white p-4 hidden md:flex flex-col gap-2 shrink-0">
-                <div className="flex items-center gap-2 mb-8 px-2">
-                  <div className="w-8 h-8 rounded-xl overflow-hidden flex items-center justify-center">
-                    <img src="/icon.png" alt="Hubify" className="w-full h-full object-cover scale-110" onError={(e) => { e.currentTarget.parentElement!.style.display = 'none'; e.currentTarget.parentElement!.nextElementSibling!.style.display = 'flex' }} />
-                  </div>
-                  <div className="hidden w-8 h-8 rounded bg-gradient-to-tr from-[#1D4D7A] to-[#0B2A4A] items-center justify-center text-white font-bold">H</div>
-                  <div className="font-extrabold text-xl text-[#0B2A4A] tracking-tight">Hubify</div>
+              <div className="w-64 bg-[#1B293C] text-white hidden md:flex flex-col shrink-0 text-sm overflow-hidden h-full">
+                {/* Logo area */}
+                <div className="h-16 px-6 flex items-center border-b border-white/5 shrink-0 gap-4">
+                  <ArrowLeft size={16} className="text-white/60"/>
+                  <div className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center bg-white"><img src="/icon.svg" alt="Hubify" className="w-full h-full object-cover scale-110"/></div>
+                  <div className="font-extrabold text-xl tracking-tight flex-1">Hubify</div>
+                  <Bell size={16} className="text-white/60"/>
                 </div>
-                <div className="h-10 rounded-md bg-[#1D4D7A]/10 text-[#1D4D7A] font-bold text-sm flex items-center px-3 mb-1"><LayoutDashboard size={16} className="mr-3" /> Dashboard</div>
-                <div className="h-10 rounded-md bg-white hover:bg-slate-50 text-slate-500 font-bold text-sm flex items-center px-3 mb-1 transition-colors"><Calendar size={16} className="mr-3" /> Kalender</div>
-                <div className="h-10 rounded-md bg-white hover:bg-slate-50 text-slate-500 font-bold text-sm flex items-center px-3 mb-1 transition-colors"><BarChart2 size={16} className="mr-3" /> Analitik</div>
-              </div>
-              
-              {/* Main Content */}
-              <div className="flex-1 p-8 flex flex-col gap-6 overflow-y-auto">
-                {/* Greetings & Info Context */}
-                <div className="flex justify-between items-end mb-2">
+                <div className="flex-1 overflow-y-auto pt-6 px-4 pb-4 space-y-8 no-scrollbar scrollbar-hide">
+                  
+                  {/* WORKSPACES */}
                   <div>
-                    <h2 className="text-3xl font-extrabold text-[#0B2A4A] mb-1">Halo, Raditya! 👋</h2>
-                    <p className="text-slate-500 font-medium">Ini ringkasan amunisimu hari ini.</p>
-                  </div>
-                  <div className="flex gap-4">
-                    <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-xl shadow-sm border border-black/5">
-                      <CloudRain size={20} className="text-blue-400" />
-                      <div className="text-sm font-bold text-[#0B2A4A]">Hujan Ringan, 28°C</div>
+                    <div className="text-[10px] font-bold text-white/40 mb-3 px-2 flex justify-between uppercase tracking-wider">
+                      Workspaces <ChevronUp size={12}/>
                     </div>
-                    <div className="flex items-center gap-3 bg-[#0B2A4A] text-white px-5 py-2 rounded-xl shadow-md">
-                      <Clock size={20} className="text-blue-200" />
-                      <div className="text-sm font-bold">16:45 WIB</div>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-3 px-3 py-2 bg-[#2D5A86] rounded-xl font-bold">
+                         <div className="w-6 h-6 rounded bg-black/20 flex items-center justify-center text-xs">A</div>
+                         Alex's Space
+                      </div>
+                      <div className="flex items-center gap-3 px-3 py-2 rounded-xl text-white/60 font-semibold">
+                         <div className="w-6 h-6 rounded bg-white/10 flex items-center justify-center text-xs text-white">C</div>
+                         Client A
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* SOCIAL MANAGEMENT */}
+                  <div>
+                    <div className="text-[10px] font-bold text-white/40 mb-3 px-2 uppercase tracking-wider">Social Management</div>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-3 px-3 py-2 bg-[#2D5A86] rounded-xl font-bold">
+                        <LayoutDashboard size={16}/> Dashboard
+                      </div>
+                      <div className="flex items-center gap-3 px-3 py-2 rounded-xl font-medium text-white/70">
+                        <Calendar size={16}/> Content Planner
+                      </div>
+                      <div className="flex items-center gap-3 px-3 py-2 rounded-xl font-medium text-white/70">
+                        <PieChart size={16}/> Analitik
+                      </div>
+                      <div className="flex items-center gap-3 px-3 py-2 rounded-xl border border-white/10 font-bold mt-2 shadow-sm text-white/90">
+                        <Users size={16}/> SocHub
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* SOCIAL STUDIO */}
+                  <div>
+                    <div className="text-[10px] font-bold text-white/40 mb-3 px-2 flex items-center justify-between uppercase tracking-wider">
+                      Social Studio <ChevronUp size={12}/>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-3 px-3 py-2 rounded-xl font-medium text-white/70">
+                        <Activity size={16}/> Overview
+                      </div>
+                      <div className="flex items-center gap-3 px-3 py-2 rounded-xl font-medium text-white/70">
+                        <BarChart2 size={16}/> Analytics Expert
+                      </div>
+                      <div className="flex items-center gap-3 px-3 py-2 rounded-xl font-medium text-white/70">
+                        <Search size={16}/> Analisis Kompetitor
+                      </div>
+                      <div className="flex items-center gap-3 px-3 py-2 rounded-xl font-medium text-white/70">
+                        <Calendar size={16}/> Kalender Konten
+                      </div>
+                      <div className="flex items-center gap-3 px-3 py-2 rounded-xl font-medium text-white/70">
+                        <MessageSquare size={16}/> Inbox & Komen
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Profile & Logout */}
+                <div className="p-4 border-t border-white/5 space-y-4 shrink-0">
+                  <div className="flex items-center gap-3 p-2">
+                    <div className="w-10 h-10 rounded-full bg-blue-500 overflow-hidden"><img src="https://i.pravatar.cc/150?img=11" alt="Profile" className="w-full h-full object-cover"/></div>
+                    <div>
+                      <div className="font-bold">Alex</div>
+                      <div className="flex items-center gap-2">
+                        <span className="bg-blue-500 text-white text-[9px] px-1.5 py-0.5 rounded uppercase font-bold">PRO</span>
+                        <span className="text-[10px] text-white/50">Pengaturan Profil</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-center gap-2 text-[#EF4444] font-bold p-3 border border-white/10 rounded-xl hover:bg-white/5 cursor-pointer text-xs">
+                    <LogOut size={14}/> LOG OUT / KELUAR
+                  </div>
+                </div>
+              </div>
+
+              {/* Main Content */}
+              <div className="flex-1 overflow-y-auto p-6 md:p-8 flex flex-col gap-8 h-full bg-[#F4F6F8]">
+                {/* Greetings & Top Info */}
+                <div className="flex justify-between items-start">
+                   <div>
+                     <h1 className="text-3xl md:text-5xl font-extrabold text-[#1B293C] leading-none mb-6">Selamat Pagi,<br/><span className="text-[#2D5A86]">Alex! ☀️</span></h1>
+                     
+                     <div className="inline-flex items-center gap-3 bg-[#EAF0F6] text-[#2D5A86] px-4 py-2 rounded-full font-bold text-sm">
+                       <TrendingUp size={16}/> GOOGLE TRENDS NAIK: <span className="text-[#1B293C]">"Work From Anywhere"</span>
+                     </div>
+                   </div>
+
+                   <div className="flex flex-col items-end gap-3 text-right">
+                     <div className="flex items-center gap-6">
+                       <div>
+                         <div className="text-slate-500 font-bold tracking-widest text-[10px] uppercase mb-1">JAKARTA</div>
+                         <div className="flex items-center justify-end gap-2 text-[#1B293C]">
+                           <Cloud size={24} className="text-[#2D5A86]"/> 
+                           <div className="text-3xl font-bold">28.5°C</div>
+                         </div>
+                         <div className="text-slate-500 font-medium text-sm mt-1">Cerah & Berawan</div>
+                       </div>
+                       
+                       <div className="w-20 h-20 rounded-full border-4 border-[#1B293C] relative flex items-center justify-center bg-[#FAFAF8] shadow-sm">
+                         <div className="w-0.5 h-8 bg-[#2D5A86] absolute bottom-1/2 left-1/2 -translate-x-1/2 transform rounded-full rotate-45 origin-[50%_100%]"/>
+                         <div className="w-0.5 h-6 bg-[#1B293C] absolute bottom-1/2 left-1/2 -translate-x-1/2 transform rounded-full -rotate-12 origin-[50%_100%]"/>
+                       </div>
+                     </div>
+                     <button className="flex items-center gap-2 bg-white border border-slate-200 px-4 py-2 rounded-xl text-sm font-bold text-[#1B293C] shadow-sm mt-2">
+                        <LayoutGrid size={14}/> Atur Widget
+                     </button>
+                   </div>
+                </div>
+
+                {/* Goal Metrics Tiap Bulannya */}
+                <div className="bg-[#1C3A5A] rounded-[24px] p-6 shadow-xl relative overflow-hidden">
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                    <h2 className="text-white font-extrabold tracking-wide uppercase text-sm">Goal Metrics Tiap Bulannya</h2>
+                    <button className="flex items-center gap-2 bg-white/10 text-white hover:bg-white/20 px-4 py-2.5 rounded-full text-xs font-bold transition-colors">
+                      <Edit2 size={12}/> Kustomisasi Goals
+                    </button>
+                  </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                    <div className="bg-[#2D4E75] rounded-2xl p-4 border border-white/5">
+                      <div className="flex items-center gap-2 text-white/80 font-bold text-[10px] mb-3">
+                        <Eye size={14}/> TOTAL VIEWS
+                      </div>
+                      <div className="text-lg font-extrabold text-white mb-2">
+                        2,450 <span className="text-[10px] text-white/60 font-semibold">/ 10,000</span>
+                      </div>
+                      <div className="text-orange-300 font-bold text-[10px]">Kurang 7,550 lagi</div>
+                    </div>
+
+                    <div className="bg-[#2D4E75] rounded-2xl p-4 border border-white/5">
+                      <div className="flex items-center gap-2 text-white/80 font-bold text-[10px] mb-3">
+                        <Users size={14}/> TOTAL REACH
+                      </div>
+                      <div className="text-lg font-extrabold text-white mb-2">
+                        420 <span className="text-[10px] text-white/60 font-semibold">/ 1,000</span>
+                      </div>
+                      <div className="text-orange-300 font-bold text-[10px]">Kurang 580 lagi</div>
+                    </div>
+
+                    <div className="bg-[#2D4E75] rounded-2xl p-4 border border-white/5">
+                      <div className="flex items-center gap-2 text-white/80 font-bold text-[10px] mb-3">
+                        <Zap size={14}/> TOTAL ENGAGEMENT
+                      </div>
+                      <div className="text-lg font-extrabold text-white mb-2">
+                        2 <span className="text-[10px] text-white/60 font-semibold">/ 5</span>
+                      </div>
+                      <div className="text-orange-300 font-bold text-[10px]">Kurang 3 lagi</div>
                     </div>
                   </div>
                 </div>
 
-                {/* Dashboard Widgets */}
-                <div className="grid grid-cols-12 gap-6">
-                  {/* Progress Card */}
-                  <div className="col-span-12 md:col-span-8 bg-white rounded-2xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-black/5 p-6 flex items-center gap-8 relative overflow-hidden">
-                    <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-green-400/20 rounded-full blur-3xl"></div>
-                    <div className="w-24 h-24 shrink-0 rounded-full border-[8px] border-green-500 flex items-center justify-center relative">
-                      <span className="text-2xl font-extrabold text-[#0B2A4A]">75%</span>
+                {/* Bottom Widgets */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* Daily Progress */}
+                  <div className="bg-white rounded-[24px] p-6 shadow-sm border border-black/5 flex flex-col items-center justify-center text-center relative">
+                    <h3 className="text-slate-400 font-extrabold tracking-widest text-xs mb-8">DAILY PROGRESS</h3>
+                    <div className="relative w-40 h-40 shrink-0 flex items-center justify-center mb-4">
+                        <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90 overflow-visible">
+                          <circle cx="50" cy="50" r="40" fill="transparent" stroke="#f1f5f9" strokeWidth="12" />
+                          <circle cx="50" cy="50" r="40" fill="transparent" stroke="url(#arc-gradient)" strokeWidth="12" strokeDasharray="251.3" strokeDashoffset="125.6" strokeLinecap="round" />
+                          <defs>
+                            <linearGradient id="arc-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                              <stop offset="0%" stopColor="#22c55e" />
+                              <stop offset="50%" stopColor="#eab308" />
+                              <stop offset="100%" stopColor="#ef4444" />
+                            </linearGradient>
+                          </defs>
+                        </svg>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center pt-4">
+                           <div className="text-4xl font-extrabold text-[#1B293C]">50%</div>
+                           <div className="text-slate-500 font-bold text-sm">Selesai 1/2</div>
+                        </div>
                     </div>
-                    <div>
-                      <h3 className="text-xl font-bold text-[#0B2A4A] mb-2">Kerjaan Hampir Beres! 🔥</h3>
-                      <p className="text-slate-500 text-sm mb-4">Kamu udah nyelesaiin 3 dari 4 tugas hari ini. Tinggal 1 postingan TikTok lagi yang perlu direview sebelum jam 5 sore.</p>
-                      <button className="bg-slate-100 text-[#0B2A4A] px-4 py-2 rounded-lg text-xs font-bold hover:bg-slate-200 transition-colors">Lihat Detail Tugas</button>
-                    </div>
+                    <div className="font-extrabold text-[#1B293C] mt-2">Terus semangat!</div>
                   </div>
 
-                  {/* Target Summary */}
-                  <div className="col-span-12 md:col-span-4 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-2xl shadow-xl p-6 text-white relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
-                    <div className="flex items-center gap-2 mb-6">
-                      <Target size={20} className="text-blue-200" />
-                      <h3 className="font-bold">Target Followers</h3>
+                  {/* To Do List */}
+                  <div className="bg-white rounded-[24px] p-0 shadow-sm border border-black/5 flex flex-col overflow-hidden relative">
+                    <div className="flex justify-between items-center px-6 pt-6 pb-0 border-b border-slate-100">
+                       <div className="flex gap-6">
+                          <div className="font-extrabold text-[#1B293C] border-b-2 border-[#1B293C] pb-3 text-sm">To Do List</div>
+                          <div className="font-bold text-slate-400 pb-3 text-sm">Riwayat</div>
+                       </div>
+                       <button className="w-8 h-8 rounded-full bg-[#1C3A5A] text-white flex items-center justify-center -mt-3 shadow-md">
+                         <Plus size={18}/>
+                       </button>
                     </div>
-                    <div className="text-4xl font-extrabold mb-1">8,450</div>
-                    <div className="text-blue-200 text-sm font-medium mb-4">Dari target 10,000 bulan ini</div>
-                    <div className="w-full bg-white/20 h-2 rounded-full overflow-hidden">
-                      <div className="bg-green-400 h-full w-[84%] rounded-full shadow-[0_0_10px_rgba(74,222,128,0.5)]"></div>
-                    </div>
-                  </div>
+                    
+                    <div className="flex-1 overflow-y-auto p-6 space-y-6 relative no-scrollbar">
+                       <div className="absolute right-4 top-6 bottom-6 w-1.5 bg-slate-100 rounded-full">
+                          <div className="w-full h-1/3 bg-slate-300 rounded-full"></div>
+                       </div>
+                       
+                       <div className="text-center font-extrabold text-[#9C2B4E] uppercase text-[10px] tracking-wider relative">
+                          <div className="absolute border-b border-black/5 w-full top-1/2 z-0"></div>
+                          <span className="bg-white px-3 relative z-10">LEWAT TENGGATWAKTU</span>
+                       </div>
+                       
+                       <div className="flex items-start gap-4">
+                          <div className="w-4 h-4 rounded-full border-2 border-slate-300 shrink-0 mt-0.5 bg-white z-10"></div>
+                          <div className="bg-[#FAF9F7] rounded-xl p-2.5 flex-1 border border-black/5 mr-6 shadow-sm">
+                             <div className="font-extrabold text-[#1B293C] text-[10px] mb-1.5 leading-tight">Review Konten Produk A</div>
+                             <div className="flex items-center gap-2 text-[9px] font-bold">
+                                <span className="bg-[#FBE5E9] text-[#9C2B4E] px-1.5 py-0.5 rounded text-[8px]">KONTEN</span>
+                                <span className="text-slate-400">2026-06-06</span>
+                             </div>
+                          </div>
+                       </div>
 
-                  {/* To-Do List */}
-                  <div className="col-span-12 md:col-span-6 bg-white rounded-2xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-black/5 p-6">
-                    <h3 className="text-lg font-bold text-[#0B2A4A] mb-4 flex items-center gap-2"><CheckCircle size={18} className="text-[#1D4D7A]" /> To-Do List Hari Ini</h3>
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-black/5 opacity-50">
-                        <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center text-white"><Check size={12} /></div>
-                        <div className="text-sm font-semibold line-through text-slate-500">Briefing campaign Kemerdekaan</div>
-                      </div>
-                      <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-black/5 opacity-50">
-                        <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center text-white"><Check size={12} /></div>
-                        <div className="text-sm font-semibold line-through text-slate-500">Approve desain carousel Instagram</div>
-                      </div>
-                      <div className="flex items-center gap-3 p-3 rounded-xl bg-blue-50 border border-blue-200 shadow-sm relative">
-                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 rounded-l-xl"></div>
-                        <div className="w-5 h-5 rounded-full border-2 border-slate-300"></div>
-                        <div className="text-sm font-bold text-[#0B2A4A]">Review script video TikTok "Tips Hemat"</div>
-                      </div>
+                       <div className="flex items-start gap-4">
+                          <div className="w-4 h-4 rounded-full border-2 border-slate-300 shrink-0 mt-0.5 bg-white z-10"></div>
+                          <div className="bg-[#FAF9F7] rounded-xl p-2.5 flex-1 border border-black/5 mr-6 shadow-sm">
+                             <div className="font-extrabold text-[#1B293C] text-[10px] mb-1.5 leading-tight">Meeting Brief Campaign</div>
+                             <div className="flex items-center gap-2 text-[9px] font-bold">
+                                <span className="bg-[#FBE5E9] text-[#9C2B4E] px-1.5 py-0.5 rounded text-[8px]">MEETING</span>
+                                <span className="text-slate-400">2026-06-06</span>
+                             </div>
+                          </div>
+                       </div>
+                       
+                       <div className="text-center font-extrabold text-slate-400 uppercase text-[9px] tracking-wider relative pt-2">
+                          <div className="absolute border-b border-black/5 w-full top-[16px] z-0"></div>
+                          <span className="bg-white px-2 relative z-10">HARI INI</span>
+                       </div>
+
+                       <div className="flex items-start gap-4 pb-2">
+                          <div className="w-4 h-4 rounded-full border-2 border-slate-300 shrink-0 mt-0.5 bg-white z-10"></div>
+                          <div className="bg-[#FAF9F7] rounded-xl p-2.5 flex-1 border border-black/5 mr-6 shadow-sm">
+                             <div className="font-extrabold text-[#1B293C] text-[10px] leading-tight">Upload Edukasi Series AI</div>
+                          </div>
+                       </div>
                     </div>
                   </div>
 
                   {/* Sticky Notes */}
-                  <div className="col-span-12 md:col-span-6 rounded-2xl p-6 bg-[#FEF3C7] shadow-[2px_4px_16px_rgba(0,0,0,0.05)] border border-yellow-200 relative transform rotate-1 hover:rotate-0 transition-transform">
-                    <div className="absolute top-3 right-4 text-yellow-500 opacity-50"><StickyNote size={80} /></div>
-                    <div className="relative z-10">
-                      <h3 className="text-lg font-bold text-yellow-900 mb-3 flex items-center gap-2"><Flame size={18} className="text-orange-500" /> Ide Dadakan (Jangan Lupa!)</h3>
-                      <p className="text-yellow-800 font-medium text-sm leading-relaxed mb-4">
-                        "Coba bikin konten POV orang kantoran pas gajian telat. Kayanya relate banget buat di TikTok minggu ini. Pakai sound yang lagi viral kemaren!"
-                      </p>
-                      <div className="text-xs text-yellow-600 font-bold">- Ditulis 2 jam lalu</div>
+                  <div className="bg-white rounded-[24px] p-6 shadow-sm border border-black/5 flex flex-col">
+                    <div className="flex justify-between items-center mb-6">
+                       <h3 className="font-extrabold tracking-wide text-[#1B293C] flex items-center gap-2 text-sm">
+                          <FileText size={16}/> STICKY NOTES
+                       </h3>
+                       <button className="bg-[#EAF0F6] text-[#2D5A86] px-3 py-1.5 rounded-full text-[10px] font-bold">
+                         Buka Semua (4)
+                       </button>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2.5 flex-1">
+                      <div className="bg-[#FCF5BC] rounded-[10px] p-2.5 relative shadow-sm hover:-rotate-1 transition-transform">
+                         <p className="font-bold text-[#6D6222] text-[9px] leading-snug">Ingat deadline laporan bulanan hari Jumat.</p>
+                      </div>
+                      <div className="bg-[#FCDCA5] rounded-[10px] p-2.5 relative shadow-sm hover:rotate-1 transition-transform">
+                         <p className="font-bold text-[#8C5D20] text-[9px] leading-snug">Kirim invoice ke klien restoran.</p>
+                      </div>
+                      <div className="bg-[#FFB1AD] rounded-[10px] p-2.5 relative shadow-sm hover:-rotate-1 transition-transform">
+                         <p className="font-bold text-[#9D3B36] text-[9px] leading-snug">Ide Konten: Edukasi produk skincare B</p>
+                      </div>
+                      <div className="bg-[#EDAED0] rounded-[10px] p-2.5 relative shadow-sm hover:rotate-1 transition-transform">
+                         <p className="font-bold text-[#8D4468] text-[9px] leading-snug">Cek revisi desain dari tim kreatif.</p>
+                      </div>
                     </div>
                   </div>
                 </div>
-
               </div>
             </div>
           </div>
@@ -291,94 +471,158 @@ export function LandingPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Card 1 */}
-          <div className="bg-white rounded-3xl p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-black/5 hover:border-[#1D4D7A]/30 transition-colors md:col-span-2 overflow-hidden flex flex-col group">
+          <div className="bg-white rounded-3xl p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-black/5 hover:border-[#1D4D7A]/30 transition-colors md:col-span-3 overflow-hidden flex flex-col group min-h-[700px]">
             <div className="relative z-10 w-full mb-8">
               <div className="w-12 h-12 rounded-xl bg-blue-50 text-[#1D4D7A] flex items-center justify-center mb-6">
                 <Calendar size={24} />
               </div>
               <h3 className="text-2xl font-bold text-[#0B2A4A] mb-3">Multi-View Calendar</h3>
-              <p className="text-slate-600">Atur strategi besarmu dengan Kanban board, List, atau Calendar view. Geser dan jatuhkan idemu seolah sedang bermain Lego.</p>
+              <p className="text-slate-600">Atur strategi besarmu dengan Board, Timeline, Tabel, atau Calendar view. Geser dan jatuhkan idemu seolah sedang bermain Lego.</p>
             </div>
             {/* Visual stacked securely below text */}
-            <div className="flex-1 w-full bg-slate-50 rounded-2xl border border-black/5 p-4 flex flex-col relative overflow-hidden min-h-[280px]">
+            <div className="flex-1 w-full bg-slate-50/50 rounded-2xl border border-black/5 p-4 flex flex-col relative overflow-hidden min-h-[450px]">
               <div className="flex justify-between items-center z-10 relative mb-4">
-                <div className="flex gap-1 bg-slate-200/50 p-1 rounded-lg">
-                  <div className={`px-3 py-1 rounded-md text-[10px] font-bold transition-all ${calendarViewIdx === 0 ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500'}`}>30 Hari</div>
-                  <div className={`px-3 py-1 rounded-md text-[10px] font-bold transition-all ${calendarViewIdx === 1 ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500'}`}>Board</div>
-                  <div className={`px-3 py-1 rounded-md text-[10px] font-bold transition-all ${calendarViewIdx === 2 ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500'}`}>Table</div>
+                <div className="flex gap-1 bg-white p-1 rounded-lg border border-slate-200">
+                  <div className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${calendarViewIdx === 0 ? 'bg-slate-100 shadow-sm text-blue-600' : 'text-slate-500'}`}>Bulan</div>
+                  <div className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${calendarViewIdx === 1 ? 'bg-slate-100 shadow-sm text-blue-600' : 'text-slate-500'}`}>Board</div>
+                  <div className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${calendarViewIdx === 2 ? 'bg-slate-100 shadow-sm text-blue-600' : 'text-slate-500'}`}>Timeline</div>
+                  <div className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${calendarViewIdx === 3 ? 'bg-slate-100 shadow-sm text-blue-600' : 'text-slate-500'}`}>Tabel</div>
                 </div>
               </div>
-              <div className="relative flex-1">
+              <div className="relative flex-1 bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
                 <AnimatePresence mode="wait">
                   {calendarViewIdx === 0 && (
-                    <motion.div key="v0" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-10}} className="absolute inset-0 grid grid-cols-7 gap-1">
-                      {[...Array(28)].map((_, i) => (
-                        <div key={i} className="bg-white border border-slate-100 rounded flex flex-col p-1">
-                          <div className="text-[8px] text-slate-400 text-right">{i+1}</div>
-                          {i === 12 || i === 15 || i === 22 || i === 5 ? (
-                            <div className={`w-full h-1 mt-1 rounded-full ${i === 12 ? 'bg-pink-400' : i === 15 ? 'bg-blue-400' : 'bg-green-400'}`} />
-                          ) : null}
-                          {i === 15 || i === 22 ? (
-                            <div className="w-full h-1 mt-0.5 rounded-full bg-indigo-400" />
-                          ) : null}
+                    <motion.div key="v0" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-10}} className="absolute inset-0 flex flex-col p-4 bg-[#F8FAFC]">
+                      <div className="grid grid-cols-7 gap-2 mb-2 text-center text-[10px] font-bold text-slate-400">
+                        <div>MIN</div><div>SEN</div><div>SEL</div><div>RAB</div><div>KAM</div><div>JUM</div><div>SAB</div>
+                      </div>
+                      <div className="grid grid-cols-7 grid-rows-5 gap-2 flex-1">
+                        {Array.from({ length: 35 }).map((_, idx) => {
+                          const date = idx - 1; // start index to offset
+                          const empty = date < 1 || date > 30;
+                          
+                          // Mock items based on the date
+                          let items = [];
+                          if (date === 2) items = [{label: 'Koko Kak Erlan', initial: 'F', color: 'bg-orange-100 text-orange-700'}, {label: 'Kenalin 1 orang...', initial: 'V', color: 'bg-blue-100 text-blue-700'}];
+                          if (date === 3) items = [{label: 'Post Collabs', initial: 'S', color: 'bg-green-100 text-green-700'}];
+                          if (date === 5) items = [{label: 'Twin Date 6.6', initial: 'R', color: 'bg-indigo-100 text-indigo-700'}];
+                          if (date === 8) items = [{label: 'Koko Badrison', initial: 'F', color: 'bg-orange-100 text-orange-700'}];
+                          if (date === 10) items = [{label: 'Riset Marketing', initial: 'V', color: 'bg-blue-100 text-blue-700'}, {label: 'Review Influencer', initial: 'S', color: 'bg-green-100 text-green-700'}];
+                          if (date === 15) items = [{label: 'Live Sales', initial: 'R', color: 'bg-red-100 text-red-700'}];
+                          if (date === 17) items = [{label: 'Meeting Klien', initial: 'V', color: 'bg-purple-100 text-purple-700'}];
+                          if (date === 22) items = [{label: 'Koko Rumaysho', initial: 'F', color: 'bg-orange-100 text-orange-700'}];
+                          if (date === 25) items = [{label: 'Promo Payday', initial: 'R', color: 'bg-rose-100 text-rose-700'}];
+
+                           return (
+                             <div key={idx} className={`rounded-lg border ${empty ? 'bg-transparent border-transparent' : 'bg-white border-slate-200'} p-1.5 flex flex-col gap-1 overflow-hidden relative`}>
+                               {!empty && (
+                                 <>
+                                   <div className="text-[10px] font-bold text-slate-700 ml-1 mb-1">{date}</div>
+                                   {items.map((item, j) => (
+                                     <div key={j} className={`pl-1 pr-1.5 py-0.5 rounded text-[8px] font-bold truncate flex items-center gap-1 ${item.color}`}>
+                                       <span className="w-3 h-3 rounded-sm bg-white/50 flex items-center justify-center shrink-0">{item.initial}</span>
+                                       <span className="truncate">{item.label}</span>
+                                     </div>
+                                   ))}
+                                 </>
+                               )}
+                             </div>
+                           );
+                        })}
+                      </div>
+                    </motion.div>
+                  )}
+                  {calendarViewIdx === 1 && (
+                    <motion.div key="v1" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-10}} className="absolute inset-0 flex gap-4 p-4 bg-[#F8FAFC] overflow-x-auto no-scrollbar">
+                      {[
+                        { title: 'Draft', color: 'bg-[#D97706]', items: ['Koko Erkan Akta', 'Pay Day Sale'] },
+                        { title: 'Waiting Approval', color: 'bg-blue-600', items: [] },
+                        { title: 'Revise', color: 'bg-rose-600', items: [] },
+                        { title: 'Ready to Post', color: 'bg-green-500', items: [] },
+                        { title: 'Published', color: 'bg-emerald-600', items: ['Twin Date 6.6', 'Koko Badrison'] }
+                      ].map((col, i) => (
+                        <div key={i} className="min-w-[180px] flex flex-col gap-3">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-2 h-2 rounded-full ${col.color}`} />
+                            <div className="text-[10px] font-bold text-slate-700 flex-1">{col.title}</div>
+                            <div className="bg-slate-200 text-slate-500 text-[9px] px-1.5 py-0.5 rounded-full">{col.items.length}</div>
+                          </div>
+                          {col.items.length === 0 ? (
+                            <div className="border border-dashed border-slate-300 rounded-xl p-3 text-center text-[10px] text-slate-400 font-medium bg-slate-50/50">+ Tambah</div>
+                          ) : (
+                            col.items.map((item, j) => (
+                              <div key={j} className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex flex-col gap-2 relative">
+                                <div className="text-[11px] font-bold text-slate-800 pr-4 leading-snug">{item}</div>
+                                <div className="bg-slate-100 text-slate-600 self-start px-2 py-0.5 rounded-full text-[8px] font-bold">INSTAGRAM</div>
+                                <div className="text-[8px] text-orange-500 font-semibold mt-1">Product Value</div>
+                                <div className="absolute right-2 top-2 text-[9px] text-slate-400">10/06</div>
+                              </div>
+                            ))
+                          )}
                         </div>
                       ))}
                     </motion.div>
                   )}
-                  {calendarViewIdx === 1 && (
-                    <motion.div key="v1" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-10}} className="absolute inset-0 grid grid-cols-3 gap-2">
-                       <div className="flex flex-col gap-2">
-                         <div className="text-[10px] font-bold text-slate-500">Draft</div>
-                         <div className="bg-white p-3 border border-slate-100 rounded-xl shadow-sm">
-                           <div className="h-2 w-3/4 bg-slate-200 rounded mb-2" />
-                           <div className="h-1.5 w-1/2 bg-slate-100 rounded" />
-                         </div>
-                         <div className="bg-white p-3 border border-slate-100 rounded-xl shadow-sm">
-                           <div className="h-2 w-5/6 bg-slate-200 rounded mb-2" />
-                           <div className="h-1.5 w-2/3 bg-slate-100 rounded" />
-                         </div>
-                       </div>
-                       <div className="flex flex-col gap-2">
-                         <div className="text-[10px] font-bold text-slate-500">Scheduled</div>
-                         <div className="bg-white p-3 border border-blue-100 rounded-xl shadow-[0_4px_12px_rgba(59,130,246,0.1)]">
-                           <div className="h-2 w-3/4 bg-blue-200 rounded mb-2" />
-                           <div className="h-1.5 w-1/2 bg-blue-100 rounded" />
-                         </div>
-                       </div>
-                       <div className="flex flex-col gap-2">
-                         <div className="text-[10px] font-bold text-slate-500">Published</div>
-                         <div className="bg-white p-3 border border-green-100 rounded-xl shadow-sm">
-                           <div className="h-2 w-3/4 bg-green-200 rounded mb-2" />
-                           <div className="h-1.5 w-1/2 bg-green-100 rounded" />
-                         </div>
-                       </div>
+                  {calendarViewIdx === 2 && (
+                    <motion.div key="v2" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-10}} className="absolute inset-0 flex flex-col p-4 bg-[#F8FAFC]">
+                      <h4 className="font-bold text-slate-800 text-xs mb-3">Timeline — Juni 2026</h4>
+                      <div className="flex gap-3 flex-1 overflow-x-auto no-scrollbar">
+                        {[
+                          { day: 'SEN', num: '1', items: [{ title: 'Koko Kak Erlan', time: '09:00', border: 'border-orange-300', bg: 'bg-orange-50' }] },
+                          { day: 'SEL', num: '2', items: [{ title: 'Koko Rumaysho', time: '09:00', border: 'border-orange-300', bg: 'bg-orange-50' }, { title: 'Riset Marketing', time: '19:00', border: 'border-green-300', bg: 'bg-green-50' }] },
+                          { day: 'RAB', num: '3', items: [{ title: 'Post Collabs', time: '14:00', border: 'border-blue-300', bg: 'bg-blue-50' }] },
+                          { day: 'KAM', num: '4', items: [{ title: 'Koko Badrison', time: '09:00', border: 'border-orange-300', bg: 'bg-orange-50' }] },
+                          { day: 'JUM', num: '5', items: [{ title: 'Twin Date 6.6', time: '14:29', border: 'border-blue-300', bg: 'bg-blue-50' }] },
+                          { day: 'SAB', num: '6', items: [{ title: 'Visit Store', time: '10:00', border: 'border-slate-300', bg: 'bg-slate-50' }] }
+                        ].map((col, i) => (
+                           <div key={i} className="min-w-[140px] bg-white border border-slate-200 rounded-xl p-2 flex flex-col gap-2 shadow-sm">
+                             <div className="flex items-baseline gap-1">
+                               <span className="text-slate-400 font-bold text-[10px] uppercase">{col.day}</span>
+                               <span className="text-lg font-extrabold text-slate-800">{col.num}</span>
+                             </div>
+                             {col.items.map((item, j) => (
+                               <div key={j} className={`p-2 rounded-lg border flex flex-col gap-1 ${item.border} ${item.bg}`}>
+                                 <div className="text-[10px] font-bold text-slate-700 leading-tight">{item.title}</div>
+                                 <div className="text-[8px] text-slate-500 font-semibold">{item.time}</div>
+                               </div>
+                             ))}
+                           </div>
+                        ))}
+                      </div>
                     </motion.div>
                   )}
-                  {calendarViewIdx === 2 && (
-                    <motion.div key="v2" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-10}} className="absolute inset-0 flex flex-col gap-2 pt-1">
-                       <div className="flex items-center px-3 pb-2 border-b border-slate-200">
-                         <div className="flex-1 text-[10px] font-bold text-slate-400">KONTEN</div>
-                         <div className="w-20 text-[10px] font-bold text-slate-400 text-center">TANGGAL</div>
-                         <div className="w-20 text-[10px] font-bold text-slate-400 text-right">STATUS</div>
-                       </div>
-                       {[
-                         { status: 'DRAFT', color: 'yellow' },
-                         { status: 'SCHEDULED', color: 'blue' },
-                         { status: 'PUBLISHED', color: 'green' }
-                       ].map((item, i) => (
-                         <div key={i} className="flex items-center bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
-                           <div className="flex-1">
-                             <div className="h-2 w-3/4 bg-slate-200 rounded mb-1.5" />
-                             <div className="h-1.5 w-1/2 bg-slate-100 rounded" />
+                  {calendarViewIdx === 3 && (
+                    <motion.div key="v3" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-10}} className="absolute inset-0 flex flex-col bg-white overflow-hidden">
+                      <div className="grid grid-cols-12 gap-2 p-3 border-b border-slate-100 bg-slate-50 text-[9px] font-bold text-slate-400 tracking-wider">
+                         <div className="col-span-1 pl-2">TGL</div>
+                         <div className="col-span-2">PLATFORM</div>
+                         <div className="col-span-2">PILLAR</div>
+                         <div className="col-span-3">TIPE KONTEN</div>
+                         <div className="col-span-4">JUDUL KONTEN</div>
+                      </div>
+                      <div className="flex-1 overflow-y-auto p-2 flex flex-col gap-1 no-scrollbar">
+                         {[
+                           { tgl: '1', time: '23:00', platform: 'INSTAGRAM', pillar: 'Islamic Insight', tipe: 'Baru mulai tarawih, tapi rasanya...', judul: 'Meta export | Account: @fhadhera' },
+                           { tgl: '1', time: '19:07', platform: 'INSTAGRAM', pillar: 'Product & Promo', tipe: 'akhirnya @fadkheraofficial udah...', judul: 'Meta export | Account: @fhadhera' },
+                           { tgl: '1', time: '09:00', platform: 'INSTAGRAM', pillar: 'Product Value', tipe: 'Reels @xandearyy - akhirnya...', judul: 'Meta export | Account: @xandearyy' },
+                           { tgl: '2', time: '09:00', platform: 'INSTAGRAM', pillar: 'Product Value', tipe: 'Koleksi Koko Badrison', judul: 'Meta export | Account: @xandearyy' },
+                         ].map((row, i) => (
+                           <div key={i} className="grid grid-cols-12 gap-2 p-2 items-center border-b border-slate-50 hover:bg-slate-50 rounded-lg transition-colors">
+                             <div className="col-span-1 pl-2 flex flex-col">
+                               <span className="font-extrabold text-[11px] text-slate-700">{row.tgl}</span>
+                               <span className="text-[8px] text-slate-400">{row.time}</span>
+                             </div>
+                             <div className="col-span-2">
+                               <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full text-[8px] font-bold">{row.platform}</span>
+                             </div>
+                             <div className="col-span-2">
+                               <span className="bg-orange-50 text-orange-600 px-2 py-0.5 rounded-full text-[8px] font-semibold">{row.pillar}</span>
+                             </div>
+                             <div className="col-span-3 text-[10px] font-bold text-slate-700 truncate pr-2">{row.tipe}</div>
+                             <div className="col-span-4 text-[9px] text-slate-400 truncate">{row.judul}</div>
                            </div>
-                           <div className="w-20 text-center">
-                             <div className="h-2 w-12 bg-slate-200 rounded mx-auto" />
-                           </div>
-                           <div className="w-20 flex justify-end">
-                             <div className={`px-2 py-1 rounded text-[8px] font-bold text-${item.color}-700 bg-${item.color}-100`}>{item.status}</div>
-                           </div>
-                         </div>
-                       ))}
+                         ))}
+                      </div>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -386,66 +630,64 @@ export function LandingPage() {
             </div>
           </div>
 
-          {/* Card 2 */}
-          <div className="bg-[#0B2A4A] rounded-3xl p-8 shadow-xl text-white relative overflow-hidden group">
+          {/* Card 2 : AI Copilot */}
+          <div className="bg-[#0B2A4A] rounded-3xl p-8 shadow-xl text-white relative overflow-hidden group md:col-span-1 flex flex-col">
             <div className="absolute top-0 right-0 w-64 h-64 bg-slate-500/20 rounded-full blur-3xl group-hover:bg-blue-400/30 transition-colors" />
-            <div className="relative z-10">
+            <div className="relative z-10 flex flex-col h-full">
               <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center mb-6">
                 <Sparkles size={24} className="text-yellow-400" />
               </div>
               <h3 className="text-2xl font-bold mb-3">AI Copilot</h3>
-              <p className="text-slate-300 mb-8">Habis ide caption atau bingung mulai darimana? Hubify AI siapkan naskah, hashtag, hingga visual ide dalam detik.</p>
+              <p className="text-slate-300 mb-8">Habis ide caption? Hubify Social AI siapkan naskah, hashtag, hingga visual ide dalam detik.</p>
               
-              <div className="bg-white/10 backdrop-blur rounded-xl p-4 border border-white/10">
+              <div className="bg-white/10 backdrop-blur rounded-xl p-4 border border-white/10 mt-auto">
                  <div className="flex gap-2 mb-3 items-end">
-                   <div className="bg-white/20 p-2 rounded-lg rounded-bl-none text-xs w-3/4">Buatkan ide konten makanan untuk 17an dong...</div>
+                   <div className="bg-white/20 p-2 rounded-lg rounded-bl-none text-xs w-[90%]">Ide konten makanan untuk 17an...</div>
                  </div>
                  <div className="flex gap-2 items-start flex-row-reverse">
-                   <div className="bg-gradient-to-r from-blue-500 to-purple-500 p-2 rounded-lg rounded-br-none text-xs w-4/5 text-left shadow-lg">
-                     <p className="font-bold mb-1">Ide 1: "Nasi Goreng Merdeka"</p>
-                     <p className="text-[10px] text-white/80">Hook: Siapa bilang 17an cuma lomba balap karung?</p>
+                   <div className="bg-gradient-to-r from-blue-500 to-purple-500 p-2 rounded-lg rounded-br-none text-xs w-[95%] text-left shadow-lg">
+                     <p className="font-bold mb-1">Ide 1: "Nasi Merdeka"</p>
+                     <p className="text-[10px] text-white/80 leading-snug">Hook: Siapa bilang 17an cuma lomba balap karung?</p>
                    </div>
                  </div>
               </div>
             </div>
           </div>
 
-          {/* Card 3 */}
-          <div className="bg-gradient-to-br from-indigo-50 to-cyan-50 rounded-3xl p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-indigo-100 hover:border-indigo-300 transition-colors md:col-span-3 relative overflow-hidden">
+          {/* Card 3 : Integrasi */}
+          <div className="bg-gradient-to-br from-indigo-50 to-cyan-50 rounded-3xl p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-indigo-100 hover:border-indigo-300 transition-colors md:col-span-2 relative overflow-hidden flex flex-col sm:flex-row items-center gap-8">
              <div className="absolute top-4 right-6 bg-[#0B2A4A] text-white px-3 py-1 rounded-full text-xs font-bold shadow animate-bounce">COMING SOON</div>
-             <div className="flex flex-col md:flex-row items-center gap-12">
-               <div className="flex-1">
-                  <div className="w-12 h-12 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center mb-6">
-                    <Share2 size={24} />
-                  </div>
-                  <h3 className="text-3xl font-bold text-[#0B2A4A] mb-4">Integrasi Tanpa Batas</h3>
-                  <p className="text-slate-600 text-lg mb-6">Hubungkan semua platform dalam satu ekosistem. Distribusi konten kini cuma butuh satu kali klik, sisanya biar sistem yang urus.</p>
+             <div className="flex-1">
+                <div className="w-12 h-12 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center mb-6">
+                  <Share2 size={24} />
+                </div>
+                <h3 className="text-3xl font-bold text-[#0B2A4A] mb-4">Integrasi Tanpa Batas</h3>
+                <p className="text-slate-600 text-lg">Hubungkan semua platform dalam satu ekosistem. Distribusi konten kini cuma butuh satu kali klik, sisanya biar sistem yang urus.</p>
+             </div>
+             
+             {/* Visual Orbit/Nodes */}
+             <div className="flex-1 relative w-full h-48 flex items-center justify-center opacity-80 mix-blend-multiply sm:min-w-[200px]">
+               <div className="absolute w-full h-full border-2 border-indigo-200/50 rounded-full animate-[spin_20s_linear_infinite]" />
+               <div className="absolute w-2/3 h-2/3 border-2 border-indigo-300/60 rounded-full animate-[spin_15s_linear_infinite_reverse]" />
+               
+               {/* Center Node */}
+               <div className="w-16 h-16 bg-[#0B2A4A] rounded-2xl shadow-xl flex items-center justify-center text-white font-extrabold text-2xl z-10 relative">
+                 <motion.div animate={{scale:[1, 1.1, 1]}} transition={{repeat:Infinity, duration:2}}>H.</motion.div>
                </div>
                
-               {/* Visual Orbit/Nodes */}
-               <div className="flex-1 relative w-full h-64 flex items-center justify-center opacity-80 mix-blend-multiply">
-                 <div className="absolute w-full h-full border-2 border-indigo-200/50 rounded-full animate-[spin_20s_linear_infinite]" />
-                 <div className="absolute w-2/3 h-2/3 border-2 border-indigo-300/60 rounded-full animate-[spin_15s_linear_infinite_reverse]" />
-                 
-                 {/* Center Node */}
-                 <div className="w-20 h-20 bg-[#0B2A4A] rounded-2xl shadow-xl flex items-center justify-center text-white font-extrabold text-3xl z-10 relative">
-                   <motion.div animate={{scale:[1, 1.1, 1]}} transition={{repeat:Infinity, duration:2}}>H.</motion.div>
-                 </div>
-                 
-                 {/* Orbiting Icons */}
-                 <motion.div animate={{y:[-10, 10, -10]}} transition={{repeat:Infinity, duration:3}} className="absolute top-4 left-1/4 w-12 h-12 bg-white rounded-xl shadow-lg flex items-center justify-center text-pink-500">
-                    <Instagram size={24}/>
-                 </motion.div>
-                 <motion.div animate={{y:[10, -10, 10]}} transition={{repeat:Infinity, duration:4}} className="absolute bottom-4 right-1/4 w-12 h-12 bg-white rounded-xl shadow-lg flex items-center justify-center text-blue-600">
-                    <Facebook size={24}/>
-                 </motion.div>
-                 <motion.div animate={{x:[-10, 10, -10]}} transition={{repeat:Infinity, duration:3.5}} className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-black rounded-xl shadow-lg flex items-center justify-center text-white">
-                    <Twitter size={24}/>
-                 </motion.div>
-                 <motion.div animate={{x:[10, -10, 10]}} transition={{repeat:Infinity, duration:2.5}} className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white rounded-xl shadow-lg flex items-center justify-center text-blue-400">
-                    <Share2 size={24}/>
-                 </motion.div>
-               </div>
+               {/* Orbiting Icons */}
+               <motion.div animate={{y:[-8, 8, -8]}} transition={{repeat:Infinity, duration:3}} className="absolute top-2 left-1/4 w-10 h-10 bg-white rounded-xl shadow-lg flex items-center justify-center text-pink-500">
+                  <Instagram size={20}/>
+               </motion.div>
+               <motion.div animate={{y:[8, -8, 8]}} transition={{repeat:Infinity, duration:4}} className="absolute bottom-2 right-1/4 w-10 h-10 bg-white rounded-xl shadow-lg flex items-center justify-center text-blue-600">
+                  <Facebook size={20}/>
+               </motion.div>
+               <motion.div animate={{x:[-8, 8, -8]}} transition={{repeat:Infinity, duration:3.5}} className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-black rounded-xl shadow-lg flex items-center justify-center text-white">
+                  <Twitter size={20}/>
+               </motion.div>
+               <motion.div animate={{x:[8, -8, 8]}} transition={{repeat:Infinity, duration:2.5}} className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-white rounded-xl shadow-lg flex items-center justify-center text-blue-400">
+                  <Share2 size={20}/>
+               </motion.div>
              </div>
           </div>
         </div>
@@ -559,7 +801,7 @@ export function LandingPage() {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-5xl font-extrabold text-[#0B2A4A] mb-4">Mulai Secara Gratis.<br/>Upgrade Saat Tumbuh.</h2>
-            <p className="text-lg text-slate-500 max-w-2xl mx-auto">Tanpa komitmen kartu kredit. Semua paket sudah termasuk akses ke fitur dasar Hubify.</p>
+            <p className="text-lg text-slate-500 max-w-2xl mx-auto">Tanpa komitmen kartu kredit. Semua paket sudah termasuk akses ke fitur dasar Hubify Social.</p>
           </div>
           
           <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto items-stretch">
@@ -638,11 +880,11 @@ export function LandingPage() {
       {/* Footer */}
       <footer className="bg-black text-white py-12 px-6 text-sm text-center">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="font-extrabold text-xl tracking-tight">Hubify</div>
-          <div className="text-slate-400">&copy; 2026 Hubify. All rights reserved.</div>
+          <div className="font-extrabold text-xl tracking-tight">Hubify Social</div>
+          <div className="text-slate-400">&copy; 2026 Hubify Social. All rights reserved.</div>
           <div className="flex gap-6">
-            <button onClick={() => navigate('/privacy')} className="text-slate-400 hover:text-white transition-colors">Privacy Policy</button>
-            <button onClick={() => navigate('/terms')} className="text-slate-400 hover:text-white transition-colors">Terms of Service</button>
+            <Link to="/privacy" className="text-slate-400 hover:text-white transition-colors">Privacy Policy</Link>
+            <Link to="/terms" className="text-slate-400 hover:text-white transition-colors">Terms of Service</Link>
           </div>
         </div>
       </footer>
