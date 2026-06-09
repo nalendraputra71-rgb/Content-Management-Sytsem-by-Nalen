@@ -1,11 +1,14 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import { 
   MONTHS, MS, DAYS_S, MK, MC,
   eng, fmt, fmtD, fmtT, getMin, gps, gpc, gss,
   I, B, CARD, PBadge, SBadge, PiBadge, getDynamicEvents, htmlToPlainText 
 } from "./data";
 
-export function MonthView({year,month,monthContent,filtered,openEdit,openAdd,showHolidays,holidays,customEvents,pillars,platforms,showArchived,contentTypes}: any) {
+export function MonthView({year,month,monthContent,filtered,openEdit,openAdd,showHolidays,holidays,customEvents,pillars,platforms,showArchived,contentTypes,moveItemDate}: any) {
+  const [dragOverDate, setDragOverDate] = useState<number | null>(null);
+  
   const dim = new Date(year,month,0).getDate();
   const sd = new Date(year,month-1,1).getDay();
   
@@ -64,6 +67,38 @@ export function MonthView({year,month,monthContent,filtered,openEdit,openAdd,sho
 
   const getF  = (d:any) => filtered.filter((c:any)=>c.day===d&&(!c.archived || showArchived)).sort((a:any,b:any) => getMin(a) - getMin(b));
   const getA  = (d:any) => monthContent.filter((c:any)=>c.day===d&&(!c.archived || showArchived));
+
+  const handleDragStart = (e: React.DragEvent, id: string) => {
+    e.dataTransfer.setData('text/plain', id);
+    if (e.dataTransfer.setDragImage) {
+      // Optional drag image logic can go here
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent, dateTarget: number) => {
+    e.preventDefault();
+    if (dragOverDate !== dateTarget) {
+      setDragOverDate(dateTarget);
+    }
+  };
+
+  const handleDragEnter = (e: React.DragEvent, dateTarget: number) => {
+    e.preventDefault();
+  };
+
+  const handleDragLeave = (e: React.DragEvent, dateTarget: number) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = async (e: React.DragEvent, targetDate: number) => {
+    e.preventDefault();
+    setDragOverDate(null);
+    const id = e.dataTransfer.getData('text/plain');
+    if (id && moveItemDate) {
+      await moveItemDate(id, targetDate);
+    }
+  };
+
   return (
     <div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:3,marginBottom:3}}>
@@ -77,13 +112,19 @@ export function MonthView({year,month,monthContent,filtered,openEdit,openAdd,sho
           const isToday = new Date().toDateString() === new Date(year, month - 1, day).toDateString();
           
           return (
-            <div key={day} style={{
+            <div key={day} 
+              onDragOver={(e) => handleDragOver(e, day)}
+              onDragEnter={(e) => handleDragEnter(e, day)}
+              onDragLeave={(e) => handleDragLeave(e, day)}
+              onDrop={(e) => handleDrop(e, day)}
+              style={{
               minHeight: 110, 
-              background: isToday ? "rgba(var(--theme-primary-rgb), 0.15)" : evs.length>0 ? "#F5F0E8" : "white",
+              background: dragOverDate === day ? "rgba(59,130,246,0.1)" : isToday ? "rgba(var(--theme-primary-rgb), 0.15)" : evs.length>0 ? "#F5F0E8" : "white",
               borderRadius: 8,
               padding: 6,
-              border: isToday ? "2px solid var(--theme-primary)" : evs.length>0 ? "1px solid rgba(59,130,246,0.2)" : "1px solid rgba(44,32,22,0.06)",
-              boxShadow: isToday ? "0 4px 12px rgba(var(--theme-primary-rgb), 0.2)" : "none"
+              border: dragOverDate === day ? "2px dashed var(--theme-primary)" : isToday ? "2px solid var(--theme-primary)" : evs.length>0 ? "1px solid rgba(59,130,246,0.2)" : "1px solid rgba(44,32,22,0.06)",
+              boxShadow: isToday ? "0 4px 12px rgba(var(--theme-primary-rgb), 0.2)" : "none",
+              transition: "all 0.2s"
             }}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:3}}>
                 <div style={{display:"flex",flexDirection:"column",gap:2}}>
@@ -114,25 +155,42 @@ export function MonthView({year,month,monthContent,filtered,openEdit,openAdd,sho
               </div>
 
               <div style={{display:"flex",flexDirection:"column",gap:2, maxHeight: "150px", overflowY: "auto", paddingRight: "2px", scrollbarWidth: "thin"}}>
-                {items.map((item:any)=>{
-                  const ps = item.archived ? { color: "#7A7976", light: "#EBEAE6" } : gps(pillars, String(item.pillar).split(',')[0].trim());
-                  const ctName = String(item.contentType || "").split(',')[0].trim();
-                  const ctChar = ctName ? ctName.charAt(0).toUpperCase() : (item.platform ? (String(item.platform).split(',')[0].trim().charAt(0).toUpperCase() || "T") : "T");
-                  const ctBg = item.archived 
-                    ? "#9E9D9A" 
-                    : (ctName 
-                        ? gpc(contentTypes || [], ctName) 
-                        : gpc(platforms, String(item.platform || "").split(',')[0].trim()));
-                  return (
-                    <button key={item.id} className="hover-scale" onClick={()=>openEdit(item)} style={{background:ps.light,flexShrink:0,border:"none",borderLeft:`3px solid ${ps.color}`,borderRadius:"4px 8px 8px 4px",padding:"4px 6px",textAlign:"left",cursor:"pointer",width:"100%",marginBottom:2}}>
-                      <div style={{display:"flex",alignItems:"flex-start",gap:3}}>
-                        <span className="pill-tag" style={{background:ctBg,color:"#FAF7F2",fontSize:8,padding:"1px 4px",marginTop:1}}>{ctChar}</span>
-                        {item.isAds&&<span style={{fontSize:8,marginTop:1}}>💰</span>}
-                        <span style={{fontSize:10,color:ps.color,fontWeight:700,lineHeight:1.3,display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden"}}>{item.title||"(tanpa judul)"}{item.archived ? " 📦" : ""}</span>
-                      </div>
-                    </button>
-                  );
-                })}
+                <AnimatePresence>
+                  {items.map((item:any)=>{
+                    const ps = item.archived ? { color: "#7A7976", light: "#EBEAE6" } : gps(pillars, String(item.pillar).split(',')[0].trim());
+                    const ctName = String(item.contentType || "").split(',')[0].trim();
+                    const ctChar = ctName ? ctName.charAt(0).toUpperCase() : (item.platform ? (String(item.platform).split(',')[0].trim().charAt(0).toUpperCase() || "T") : "T");
+                    const ctBg = item.archived 
+                      ? "#9E9D9A" 
+                      : (ctName 
+                          ? gpc(contentTypes || [], ctName) 
+                          : gpc(platforms, String(item.platform || "").split(',')[0].trim()));
+                    return (
+                      <motion.button 
+                        layout
+                        layoutId={item.id}
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        key={item.id} 
+                        draggable 
+                        onDragStart={(e: any) => handleDragStart(e, item.id)} 
+                        onDragEnd={() => setDragOverDate(null)}
+                        onClick={()=>openEdit(item)} 
+                        style={{background:ps.light,flexShrink:0,border:"none",borderLeft:`3px solid ${ps.color}`,borderRadius:"4px 8px 8px 4px",padding:"4px 6px",textAlign:"left",cursor:"grab",width:"100%",marginBottom:2}}
+                      >
+                        <div style={{display:"flex",alignItems:"flex-start",gap:3}}>
+                          <span className="pill-tag" style={{background:ctBg,color:"#FAF7F2",fontSize:8,padding:"1px 4px",marginTop:1}}>{ctChar}</span>
+                          {item.isAds&&<span style={{fontSize:8,marginTop:1}}>💰</span>}
+                          <span style={{fontSize:10,color:ps.color,fontWeight:700,lineHeight:1.3,display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden"}}>{item.title||"(tanpa judul)"}{item.archived ? " 📦" : ""}</span>
+                        </div>
+                      </motion.button>
+                    );
+                  })}
+                </AnimatePresence>
                 {items.length===0&&allItems.length>0&&<div style={{fontSize:8,color:"rgba(44,32,22,0.3)",fontStyle:"italic"}}>Disembunyikan filter</div>}
               </div>
             </div>

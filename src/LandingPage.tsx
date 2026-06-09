@@ -18,6 +18,57 @@ export function LandingPage() {
   const navigate = useNavigate();
   const [scrollY, setScrollY] = useState(0);
   const [calendarViewIdx, setCalendarViewIdx] = useState(0);
+  const [dragOverDate, setDragOverDate] = useState<number | null>(null);
+
+  const [calendarItems, setCalendarItems] = useState([
+    { id: 'item-1', date: 1, label: 'Welcome June! ☀️', initial: 'IG', color: 'bg-blue-100 text-blue-700' },
+    { id: 'item-2', date: 2, label: 'Promo Gajian', initial: 'TK', color: 'bg-orange-100 text-[#c25a0e]' },
+    { id: 'item-3', date: 4, label: 'Review Produk A', initial: 'YT', color: 'bg-red-100 text-red-700' },
+    { id: 'item-4', date: 4, label: 'Behind The Scene', initial: 'IG', color: 'bg-[#d8edd9] text-[#2c6530]' },
+    { id: 'item-5', date: 6, label: 'Live TikTok 6.6', initial: 'TK', color: 'bg-[#e2e8f0] text-slate-700' },
+    { id: 'item-6', date: 6, label: 'Highlight Produk', initial: 'IG', color: 'bg-blue-100 text-blue-700' },
+    { id: 'item-7', date: 7, label: 'Q&A Session', initial: 'FB', color: 'bg-orange-100 text-[#c25a0e]' },
+    { id: 'item-8', date: 9, label: 'Teaser Project X', initial: 'IG', color: 'bg-[#d8edd9] text-[#2c6530]' },
+    { id: 'item-9', date: 12, label: 'Podcast Eps 4', initial: 'SP', color: 'bg-[#e2e8f0] text-slate-700' },
+    { id: 'item-10', date: 15, label: 'Katalog Update', initial: 'WEB', color: 'bg-slate-200 text-slate-700' },
+    { id: 'item-11', date: 16, label: 'Greeting Card', initial: 'ALL', color: 'bg-[#d8edd9] text-[#2c6530]' },
+    { id: 'item-12', date: 18, label: 'Tips & Tricks #12', initial: 'IG', color: 'bg-blue-100 text-blue-700' },
+    { id: 'item-13', date: 22, label: 'User Testimonial', initial: 'TK', color: 'bg-orange-100 text-[#c25a0e]' },
+    { id: 'item-14', date: 25, label: 'Payday Announcement', initial: 'ALL', color: 'bg-[#e2e8f0] text-slate-700' },
+    { id: 'item-15', date: 28, label: 'Vlog Setup Meja', initial: 'YT', color: 'bg-red-100 text-red-700' },
+    { id: 'item-16', date: 30, label: 'Monthly Wrap Up', initial: 'IG', color: 'bg-blue-100 text-blue-700' },
+  ]);
+
+  const handleDragStart = (e: React.DragEvent, id: string) => {
+    e.dataTransfer.setData('text/plain', id);
+    if (e.dataTransfer.setDragImage) {
+      // Optional: setting drag image if needed, for now let default handle
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent, dateTarget: number) => {
+    e.preventDefault();
+    if (dragOverDate !== dateTarget) {
+      setDragOverDate(dateTarget);
+    }
+  };
+
+  const handleDragEnter = (e: React.DragEvent, dateTarget: number) => {
+    e.preventDefault();
+  };
+
+  const handleDragLeave = (e: React.DragEvent, dateTarget: number) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (e: React.DragEvent, targetDate: number) => {
+    e.preventDefault();
+    setDragOverDate(null);
+    const id = e.dataTransfer.getData('text/plain');
+    if (id) {
+      setCalendarItems(prev => prev.map(item => item.id === id ? { ...item, date: targetDate } : item));
+    }
+  };
 
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY);
@@ -26,10 +77,11 @@ export function LandingPage() {
   }, []);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCalendarViewIdx(v => (v + 1) % 4);
-    }, 4000);
-    return () => clearInterval(interval);
+    // Disable auto-rotation so drag & drop works uninterrupted
+    // const interval = setInterval(() => {
+    //   setCalendarViewIdx(v => (v + 1) % 4);
+    // }, 4000);
+    // return () => clearInterval(interval);
   }, []);
 
   return (
@@ -679,29 +731,29 @@ export function LandingPage() {
                              
                              // Mock items mimicking the full month screenshot but with random new content
                              let holiday = null;
-                             let count = 0;
-                             let items: any[] = [];
                              // Example Data Generation
                              let eventBanner = null;
                              let eventBanner2 = null;
 
-                             if (date === 1) { holiday = "Hari Lahir Pancasila"; items = [{l: 'Welcome June! ☀️', f: 'IG', c: 'bg-blue-100 text-blue-700'}]; count = 1;}
-                             if (date === 2) { eventBanner = "Flash Sale"; items = [{l: 'Promo Gajian', f: 'TK', c: 'bg-orange-100 text-[#c25a0e]'}]; count = 1;}
-                             if (date === 4) { items = [{l: 'Review Produk A', f: 'YT', c: 'bg-red-100 text-red-700'}, {l: 'Behind The Scene', f: 'IG', c: 'bg-[#d8edd9] text-[#2c6530]'}]; count = 2;}
-                             if (date === 6) { eventBanner = "6.6 BIG SALE"; items = [{l: 'Live TikTok 6.6', f: 'TK', c: 'bg-[#e2e8f0] text-slate-700'}, {l: 'Highlight Produk', f: 'IG', c: 'bg-blue-100 text-blue-700'}]; count = 2;}
-                             if (date === 7) { items = [{l: 'Q&A Session', f: 'FB', c: 'bg-orange-100 text-[#c25a0e]'}]; count = 1;}
-                             if (date === 9) { eventBanner = "Campaign Baru"; items = [{l: 'Teaser Project X', f: 'IG', c: 'bg-[#d8edd9] text-[#2c6530]'}]; count = 1;}
-                             if (date === 12) { items = [{l: 'Podcast Eps 4', f: 'SP', c: 'bg-[#e2e8f0] text-slate-700'}]; count = 1;}
-                             if (date === 15) { eventBanner = "Mid Month"; items = [{l: 'Katalog Update', f: 'WEB', c: 'bg-slate-200 text-slate-700'}]; count = 1;}
-                             if (date === 16) { holiday = "Tahun Baru Islam"; items = [{l: 'Greeting Card', f: 'ALL', c: 'bg-[#d8edd9] text-[#2c6530]'}]; count = 1;}
-                             if (date === 18) { items = [{l: 'Tips & Tricks #12', f: 'IG', c: 'bg-blue-100 text-blue-700'}]; count = 1;}
-                             if (date === 22) { items = [{l: 'User Testimonial', f: 'TK', c: 'bg-orange-100 text-[#c25a0e]'}]; count = 1;}
-                             if (date === 25) { eventBanner = "Payday Promo"; items = [{l: 'Payday Announcement', f: 'ALL', c: 'bg-[#e2e8f0] text-slate-700'}]; count = 1;}
-                             if (date === 28) { items = [{l: 'Vlog Setup Meja', f: 'YT', c: 'bg-red-100 text-red-700'}]; count = 1;}
-                             if (date === 30) { items = [{l: 'Monthly Wrap Up', f: 'IG', c: 'bg-blue-100 text-blue-700'}]; count = 1;}
+                             if (date === 1) { holiday = "Hari Lahir Pancasila"; }
+                             if (date === 2) { eventBanner = "Flash Sale"; }
+                             if (date === 6) { eventBanner = "6.6 BIG SALE"; }
+                             if (date === 9) { eventBanner = "Campaign Baru"; }
+                             if (date === 15) { eventBanner = "Mid Month"; }
+                             if (date === 16) { holiday = "Tahun Baru Islam"; }
+                             if (date === 25) { eventBanner = "Payday Promo"; }
+
+                             const itemsForDate = calendarItems.filter(item => item.date === date);
+                             const count = itemsForDate.length;
     
                              return (
-                               <div key={idx} className={`rounded-xl border ${empty ? 'bg-transparent border-transparent' : date === 7 ? 'bg-blue-50/50 border-blue-400 border-2' : 'bg-white border-slate-200'} p-2.5 flex flex-col gap-1.5 shadow-sm hover:shadow-md transition-shadow min-h-[140px]`}>
+                               <div key={idx} 
+                                 onDragOver={(e) => handleDragOver(e, date)}
+                                 onDragEnter={(e) => handleDragEnter(e, date)}
+                                 onDragLeave={(e) => handleDragLeave(e, date)}
+                                 onDrop={(e) => handleDrop(e, date)}
+                                 className={`rounded-xl border ${empty ? 'bg-transparent border-transparent pointer-events-none' : dragOverDate === date ? 'bg-blue-50 border-blue-400 border-2 border-dashed' : date === 7 ? 'bg-blue-50/50 border-blue-400 border-2 text-inherit' : 'bg-white border-slate-200'} p-2.5 flex flex-col gap-1.5 shadow-sm hover:shadow-md transition-all duration-200 min-h-[140px] relative`}
+                               >
                                  {!empty && (
                                    <>
                                      <div className="flex justify-between items-start mb-1">
@@ -719,12 +771,26 @@ export function LandingPage() {
                                         {eventBanner2 && <div className="bg-[#fad4b4]/60 text-[#c25a0e] text-[8px] font-extrabold px-1.5 py-0.5 rounded-sm uppercase tracking-wide inline-block self-start leading-tight mt-0.5">{eventBanner2}</div>}
                                      </div>
                                      <div className="flex flex-col gap-1.5 flex-1">
-                                       {items.map((item, j) => (
-                                         <div key={j} className={`px-2 py-1.5 rounded-lg text-[9px] font-bold flex items-center gap-1.5 ${item.c}`}>
-                                           <div className="w-4 h-4 rounded-full bg-[#11233A] text-white flex items-center justify-center shrink-0 shadow-sm text-[8px] transform scale-90">{item.f}</div>
-                                           <span className="truncate flex-1 tracking-tight">{item.l}</span>
-                                         </div>
-                                       ))}
+                                       <AnimatePresence>
+                                         {itemsForDate.map((item, j) => (
+                                           <motion.div 
+                                             layout
+                                             layoutId={item.id}
+                                             initial={{ opacity: 0, scale: 0.8 }}
+                                             animate={{ opacity: 1, scale: 1 }}
+                                             exit={{ opacity: 0, scale: 0.8 }}
+                                             transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                                             key={item.id} 
+                                             draggable
+                                             onDragStart={(e: any) => handleDragStart(e, item.id)}
+                                             onDragEnd={() => setDragOverDate(null)}
+                                             className={`cursor-grab active:cursor-grabbing px-2 py-1.5 rounded-lg text-[9px] font-bold flex items-center gap-1.5 hover:opacity-80 ${item.color}`}
+                                           >
+                                             <div className="w-4 h-4 rounded-full bg-[#11233A] text-white flex items-center justify-center shrink-0 shadow-sm text-[8px] transform scale-90">{item.initial}</div>
+                                             <span className="truncate flex-1 tracking-tight">{item.label}</span>
+                                           </motion.div>
+                                         ))}
+                                       </AnimatePresence>
                                      </div>
                                    </>
                                  )}
