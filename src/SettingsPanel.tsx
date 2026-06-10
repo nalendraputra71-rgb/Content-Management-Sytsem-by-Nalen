@@ -67,6 +67,7 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
   const [localHolidays, setLocalHolidays] = useState(initialSettings.holidays || {});
   const [localHolidayApis, setLocalHolidayApis] = useState(initialSettings.holidayApis || []);
   const [localCustomEvents, setLocalCustomEvents] = useState(initialSettings.customEvents || []);
+  const [localShowHolidays, setLocalShowHolidays] = useState(initialSettings.showHolidays ?? true);
 
   const [newVal, setNewVal] = useState("");
   const [newColor, setNewColor] = useState("#3B82F6");
@@ -102,7 +103,8 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
                   JSON.stringify(localStatuses) !== JSON.stringify(initialSettings.statuses || []) ||
                   JSON.stringify(localHolidays) !== JSON.stringify(initialSettings.holidays || {}) ||
                   JSON.stringify(localHolidayApis) !== JSON.stringify(initialSettings.holidayApis || []) ||
-                  JSON.stringify(localCustomEvents) !== JSON.stringify(initialSettings.customEvents || []);
+                  JSON.stringify(localCustomEvents) !== JSON.stringify(initialSettings.customEvents || []) ||
+                  localShowHolidays !== (initialSettings.showHolidays ?? true);
 
   useEffect(() => {
     onDirty?.(isDirty);
@@ -168,7 +170,8 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
         statuses: localStatuses,
         holidays: localHolidays,
         holidayApis: localHolidayApis,
-        customEvents: localCustomEvents
+        customEvents: localCustomEvents,
+        showHolidays: localShowHolidays
       });
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
@@ -544,6 +547,24 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
                 <div>
                   <h3 style={{ fontSize: 18, margin: 0, color: "#2C2016" }}>Hari Besar & Event Tahunan</h3>
                   <p style={{ fontSize: 12, color: "rgba(44,32,22,0.5)", margin: "4px 0 0" }}>Kelola hari libur otomatis (via API) atau tambahkan hari besar kustom Anda sendiri.</p>
+                </div>
+              </div>
+
+              {/* Pengaturan Tampilan */}
+              <div style={{ background: "white", padding: 20, borderRadius: 16, border: "1px solid rgba(44,32,22,0.06)", display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
+                <div>
+                  <h4 style={{ fontSize: 14, fontWeight: 700, margin: "0 0 4px", color: "#2C2016" }}>Tampilkan di Kalender</h4>
+                  <p style={{ fontSize: 12, color: "rgba(44,32,22,0.5)", margin: 0 }}>Pilih apakah label hari besar dan event kustom ditampilkan di semua tampilan kalender.</p>
+                </div>
+                <div style={{
+                  width: 48, height: 28, background: localShowHolidays ? "var(--theme-primary)" : "rgba(44,32,22,0.1)",
+                  borderRadius: 14, position: "relative", cursor: "pointer", transition: "all 0.3s"
+                }} onClick={() => setLocalShowHolidays(!localShowHolidays)}>
+                  <div style={{
+                    width: 20, height: 20, background: "white", borderRadius: "50%",
+                    position: "absolute", top: 4, left: localShowHolidays ? 24 : 4, transition: "all 0.3s",
+                    boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
+                  }} />
                 </div>
               </div>
 

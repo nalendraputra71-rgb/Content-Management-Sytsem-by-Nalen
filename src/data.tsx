@@ -37,8 +37,8 @@ export const htmlToPlainText = (html: any) => {
   return text.trim();
 };
 
-export function CustomDropdown({ value, options = [], onChange, dark = false, style = {}, prefix = "", alignRight = false, onUpdateOptions, multiple = false }: { value: any, options?: any[], onChange: (val: any) => void, dark?: boolean, style?: any, prefix?: string, alignRight?: boolean, onUpdateOptions?: (newOptions: any[]) => void, multiple?: boolean }) {
-  const [open, setOpen] = useState(false);
+export function CustomDropdown({ value, options = [], onChange, dark = false, style = {}, prefix = "", alignRight = false, onUpdateOptions, multiple = false, initiallyOpen = false, onClose }: { value: any, options?: any[], onChange: (val: any) => void, dark?: boolean, style?: any, prefix?: string, alignRight?: boolean, onUpdateOptions?: (newOptions: any[]) => void, multiple?: boolean, initiallyOpen?: boolean, onClose?: () => void }) {
+  const [open, setOpen] = useState(initiallyOpen);
   const [editMode, setEditMode] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const [localOptions, setLocalOptions] = useState<any[]>(options);
@@ -65,11 +65,14 @@ export function CustomDropdown({ value, options = [], onChange, dark = false, st
         if (editMode) {
           handleSaveEdit();
         }
+        if (onClose) {
+          onClose();
+        }
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [editMode, localOptions, onUpdateOptions]);
+  }, [editMode, localOptions, onUpdateOptions, onClose]);
 
   const valuesArray = multiple ? (Array.isArray(value) ? value : (value ? String(value).split(',').map(s=>s.trim()).filter(Boolean) : [])) : [value];
   const activeOptions = valuesArray.map(v => options.find(o => (typeof o === 'string' ? o : o.id || o.name || o) === v)).filter(Boolean);
@@ -278,6 +281,7 @@ export function CustomDropdown({ value, options = [], onChange, dark = false, st
                         } else {
                            onChange(val); 
                            setOpen(false); 
+                           if (onClose) onClose();
                         }
                       }}
                       style={{ 
@@ -302,6 +306,33 @@ export function CustomDropdown({ value, options = [], onChange, dark = false, st
                     </div>
                   );
                 })}
+                {multiple && (
+                  <div style={{ display: "flex", justifyContent: "flex-end", padding: "6px 12px", borderTop: "1px solid rgba(44,32,22,0.06)", marginTop: 4 }}>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setOpen(false);
+                        if (onClose) onClose();
+                      }}
+                      style={{
+                        padding: "6px 14px",
+                        background: "#2563EB",
+                        color: "white",
+                        border: "none",
+                        borderRadius: 6,
+                        fontSize: 11,
+                        fontWeight: 750,
+                        cursor: "pointer",
+                        boxShadow: "0 2px 4px rgba(37,99,235,0.2)",
+                        transition: "all 0.15s"
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = "#1D4ED8"}
+                      onMouseLeave={(e) => e.currentTarget.style.background = "#2563EB"}
+                    >
+                      Selesai
+                    </button>
+                  </div>
+                )}
                 {onUpdateOptions && (
                   <div 
                     onClick={(e) => { e.stopPropagation(); setEditMode(true); }}
@@ -563,11 +594,15 @@ export const TAB = (active:any) => ({
   whiteSpace: "nowrap" as any
 });
 export const CARD = (ex:any={}) => ({
-  background: "white",
+  background: "rgba(255,255,255,0.45)",
+  backdropFilter: "blur(16px)",
+  WebkitBackdropFilter: "blur(16px)",
+  transform: "translateZ(0)",
+  willChange: "transform",
   borderRadius: 24,
   padding: "24px",
   boxShadow: "0 8px 30px rgba(44,32,22,0.06)",
-  border: "1px solid rgba(44,32,22,0.04)",
+  border: "1px solid rgba(255,255,255,0.6)",
   marginBottom: 24,
   ...ex
 });
@@ -596,7 +631,7 @@ export const PiBadge = ({name,pillars}: any) => {
     <div style={{display:"flex", flexWrap:"wrap", gap:4}}>
       {names.map((n, i) => {
         const ps = gps(pillars, n);
-        return <span key={i} style={{background:ps.light,color:ps.color,fontSize:8,padding:"1px 5px",borderRadius:6, fontWeight: 700}}>{n}</span>;
+        return <span key={i} className="pill-tag" style={{background:ps.light,color:ps.color}}>{n}</span>;
       })}
     </div>
   );

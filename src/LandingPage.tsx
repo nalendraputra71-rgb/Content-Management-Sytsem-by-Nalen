@@ -688,22 +688,21 @@ export function LandingPage() {
                  <div className="flex flex-nowrap items-end gap-3 px-4 md:px-6 py-3 border-b border-black/5 bg-[#fcfdfd] overflow-x-auto custom-scrollbar pb-3">
                     <div className="flex flex-col gap-1 min-w-[130px] shrink-0">
                       <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider ml-1">Pillar</span>
-                      <select className="border border-slate-200 rounded-full px-3 py-1.5 text-[11px] md:text-xs font-bold text-slate-700 outline-none hover:border-slate-300 transition-colors bg-white"><option>Semua Pillar</option></select>
+                      <select className="border border-slate-200 rounded-full px-3 py-1.5 text-[11px] md:text-xs font-bold text-slate-700 outline-none hover:border-slate-300 transition-colors bg-white"><option>Semua</option></select>
                     </div>
                     <div className="flex flex-col gap-1 min-w-[130px] shrink-0">
                       <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider ml-1">Platform</span>
-                      <select className="border border-slate-200 rounded-full px-3 py-1.5 text-[11px] md:text-xs font-bold text-slate-700 outline-none hover:border-slate-300 transition-colors bg-white"><option>Semua Platform</option></select>
+                      <select className="border border-slate-200 rounded-full px-3 py-1.5 text-[11px] md:text-xs font-bold text-slate-700 outline-none hover:border-slate-300 transition-colors bg-white"><option>Semua</option></select>
                     </div>
                     <div className="flex flex-col gap-1 min-w-[130px] shrink-0">
                       <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider ml-1">Tipe Konten</span>
-                      <select className="border border-slate-200 rounded-full px-3 py-1.5 text-[11px] md:text-xs font-bold text-slate-700 outline-none hover:border-slate-300 transition-colors bg-white"><option>Semua Tipe...</option></select>
+                      <select className="border border-slate-200 rounded-full px-3 py-1.5 text-[11px] md:text-xs font-bold text-slate-700 outline-none hover:border-slate-300 transition-colors bg-white"><option>Semua</option></select>
                     </div>
                     <div className="flex flex-col gap-1 min-w-[130px] shrink-0">
                       <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider ml-1">PIC</span>
-                      <select className="border border-slate-200 rounded-full px-3 py-1.5 text-[11px] md:text-xs font-bold text-slate-700 outline-none hover:border-slate-300 transition-colors bg-white"><option>Semua PIC</option></select>
+                      <select className="border border-slate-200 rounded-full px-3 py-1.5 text-[11px] md:text-xs font-bold text-slate-700 outline-none hover:border-slate-300 transition-colors bg-white"><option>Semua</option></select>
                     </div>
                     <div className="flex gap-2 shrink-0 h-[30px] md:h-[32px]">
-                      <button className="border border-slate-200 bg-white rounded-full px-4 text-[11px] md:text-xs font-bold hover:bg-slate-50 text-slate-600 transition-colors shadow-sm whitespace-nowrap h-full">Tampil Hari Besar</button>
                       <button className="border border-slate-200 bg-white rounded-full px-4 text-[11px] md:text-xs font-bold hover:bg-slate-50 text-slate-600 transition-colors shadow-sm flex items-center gap-1.5 whitespace-nowrap h-full"><span>📦</span> Arsip</button>
                     </div>
                     <div className="ml-auto flex gap-2 shrink-0 h-[30px] md:h-[32px]">

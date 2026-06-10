@@ -67,7 +67,9 @@ import {
   User,
   Zap,
   Check,
-  AlertTriangle
+  AlertTriangle,
+  PanelRight,
+  Maximize2
 } from "lucide-react";
 
 const getMetricIcon = (k: string, color?: string, size = 14) => {
@@ -108,8 +110,30 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
   const [hourError, setHourError] = useState(false);
   const [minuteError, setMinuteError] = useState(false);
   const [isReaderMode, setIsReaderMode] = useState(modal.mode !== "add");
+  const [editingFieldLeft, setEditingFieldLeft] = useState<string | null>(null);
+  const [editingFieldRight, setEditingFieldRight] = useState<string | null>(null);
+  const activeFieldRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (activeFieldRef.current && !activeFieldRef.current.contains(event.target as Node)) {
+        setEditingFieldLeft(null);
+        setEditingFieldRight(null);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   const [copiedBrief, setCopiedBrief] = useState(false);
   const [copiedCaption, setCopiedCaption] = useState(false);
+  const [layoutMode, setLayoutMode] = useState<"center" | "drawer">(() => {
+    return (localStorage.getItem("contentModalLayout") as "center" | "drawer") || "center";
+  });
+  const [activeTab, setActiveTab] = useState<"draft" | "refs" | "metrics">("draft");
+  useEffect(() => {
+    localStorage.setItem("contentModalLayout", layoutMode);
+  }, [layoutMode]);
 
   const dRef = useRef(d);
   useEffect(() => {
@@ -460,472 +484,322 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
   const canDelete = !isNew;
 
   return (
-    <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} transition={{ duration: 0.15 }} onClick={handleClose} style={{position:"fixed",inset:0,background:"rgba(30,21,9,0.7)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:300,padding:16}}>
+    <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} transition={{ duration: 0.15 }} onClick={handleClose} 
+      style={{
+        position:"fixed",inset:0,
+        background:"rgba(0,0,0,0.5)", backdropFilter:"blur(12px)", WebkitBackdropFilter:"blur(12px)",
+        display:"flex",
+        alignItems: layoutMode === "drawer" ? "stretch" : "center",
+        justifyContent: layoutMode === "drawer" ? "flex-end" : "center",
+        zIndex:300,
+        padding: layoutMode === "drawer" ? 0 : 16
+      }}>
       <motion.div 
-        initial={{scale:0.97, opacity:0, y:15}} animate={{scale:1, opacity:1, y:0}} exit={{scale:0.97, opacity:0, y:15}} transition={{ duration: 0.2, ease: "easeOut" }}
+        initial={layoutMode === "drawer" ? {x: "100%", opacity:1} : {scale:0.97, opacity:0, y:15}} 
+        animate={layoutMode === "drawer" ? {x: 0, opacity:1} : {scale:1, opacity:1, y:0}} 
+        exit={layoutMode === "drawer" ? {x: "100%", opacity:1} : {scale:0.97, opacity:0, y:15}} 
+        transition={{ duration: 0.25, ease: "easeOut" }}
         onClick={e=>e.stopPropagation()} 
-        style={{background:"#FAFAFA",borderRadius:24,maxWidth:620,width:"100%",maxHeight:"94vh",position:"relative",boxShadow:"0 24px 60px rgba(30,21,9,0.3)", display: "flex", flexDirection: "column"}}
+        style={{
+          background: "#ffffff", 
+          border: layoutMode === "drawer" ? "none" : "1px solid rgba(0,0,0,0.08)",
+          borderLeft: layoutMode === "drawer" ? "1px solid rgba(0,0,0,0.08)" : undefined,
+          borderRadius: layoutMode === "drawer" ? "24px 0 0 24px" : "24px",
+          maxWidth: "1050px",
+          width:"100%",
+          height: layoutMode === "drawer" ? "100%" : "auto",
+          maxHeight: layoutMode === "drawer" ? "100%" : "94vh",
+          position:"relative",
+          boxShadow: layoutMode === "drawer" ? "-10px 0 60px rgba(0,0,0,0.15)" : "0 24px 60px rgba(0,0,0,0.08)", 
+          display: "flex", flexDirection: "column"
+        }}
       >
-        <div ref={modalScrollRef} style={{padding: "24px 28px", overflow: "auto", flex: 1, display: "flex", flexDirection: "column", gap: "16px"}}>
-          
-          {/* Block 1: Area Identitas Atas */}
-          <div 
-            onDoubleClick={(e) => { 
-                if (isReaderMode) {
-                    setIsReaderMode(false);
-                    setFocusTarget("title");
-                } 
-            }}
-            style={{background:headerBg,color:"#FAFAFA",borderRadius:16,padding:"20px 24px",boxShadow:"inset 0 2px 4px rgba(255,255,255,0.05)", position:"relative", transition: "background 0.3s ease", cursor: isReaderMode ? "pointer" : "default"}}
-            title={isReaderMode ? "Klik ganda di area ini untuk mengedit konten" : undefined}
+        {/* Modal Controls */}
+        <div style={{position: "absolute", top: layoutMode === "drawer" ? 20 : 28, right: layoutMode === "drawer" ? 20 : 28, display: "flex", gap: "8px", zIndex: 50}}>
+          <button 
+            onClick={(e) => { e.stopPropagation(); setLayoutMode(p => p === "center" ? "drawer" : "center"); }}
+            title="Ubah Tampilan Mode (Popup / Drawer)"
+            style={{background:"rgba(0,0,0,0.05)",border:"none",borderRadius:"50%",width:32,height:32,cursor:"pointer",fontSize:14,color:"#444",display:"flex",alignItems:"center",justifyContent:"center", transition: "background 0.2s"}}
+            onMouseOver={(e: any) => e.currentTarget.style.background = "rgba(0,0,0,0.1)"}
+            onMouseOut={(e: any) => e.currentTarget.style.background = "rgba(0,0,0,0.05)"}
           >
-              <button className="hover-scale" onClick={handleClose} style={{position:"absolute",top:20,right:20,background:"rgba(255,255,255,0.1)",border:"none",borderRadius:"50%",width:32,height:32,cursor:"pointer",fontSize:18,color:"white",display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+            {layoutMode === "drawer" ? <Maximize2 size={14}/> : <PanelRight size={14}/>}
+          </button>
+          <button 
+            className="hover-scale" 
+            onClick={handleClose} 
+            style={{background:"rgba(0,0,0,0.05)",border:"none",borderRadius:"50%",width:32,height:32,cursor:"pointer",fontSize:20,fontWeight: 500, color:"#444",display:"flex",alignItems:"center",justifyContent:"center", transition: "background 0.2s"}}
+            onMouseOver={(e: any) => e.currentTarget.style.background = "rgba(0,0,0,0.1)"}
+            onMouseOut={(e: any) => e.currentTarget.style.background = "rgba(0,0,0,0.05)"}
+          >
+            ×
+          </button>
+        </div>
+        <div style={{display: "flex", flexDirection: "row", flex: 1, overflow: "hidden"}}>
+            {/* LEFT COLUMN: IDENTITAS & SETTINGS */}
+            <div style={{ 
+              width: "380px", 
+              padding: "32px 28px", 
+              flexShrink: 0, 
+              display: "flex", 
+              flexDirection: "column", 
+              gap: "16px", 
+              background: "transparent",
+              borderRight: "1px solid rgba(0,0,0,0.08)", 
+              overflowY: "auto" 
+            }}>
+          
+          
+          {/* Title Area */}
+          <div 
+            style={{ display: "flex", flexDirection: "column", gap: 24, width: "100%", position: "relative" }}
+          >
               <div style={{display:"flex",flexDirection:"column",alignItems:"flex-start",gap:8, width: "100%"}}>
-                  <div style={{display:"flex", justifyContent:"space-between", width:"100%", alignItems:"center", paddingRight: "40px"}}>
-                     <span style={{fontSize:10, fontWeight:800, textTransform:"uppercase", letterSpacing:1.5, color:"rgba(255,255,255,0.5)"}}>
-                        {isNew?<><Sparkles size={12}/> Konten Baru</>:<><Edit2 size={12}/> Detail Konten</>}
-                     </span>
-                  </div>
-                  
                   <motion.div 
-                    animate={isShaking && (!d.title || !String(d.title).trim()) ? { x: [-10, 10, -10, 10, 0], backgroundColor: ["transparent", "rgba(255, 68, 68, 0.4)", "transparent"] } : { x: 0, backgroundColor: "transparent" }} 
+                    animate={isShaking && (!d.title || !String(d.title).trim()) ? { x: [-10, 10, -10, 10, 0] } : { x: 0 }} 
                     transition={{ duration: 0.5 }}
-                    style={{width: "100%", paddingRight: "40px"}}
+                    style={{width: "100%"}}
                   >
-                     {isReaderMode ? (
-                       <div style={{fontSize:28, fontWeight:900, letterSpacing:"-0.75px", color:"white", width:"100%", padding:"4px 0 4px 0", lineHeight: 1.25, wordBreak: "break-word", whiteSpace: "pre-wrap"}}>
-                         {d.title || "(Ketik Judul Konten)"}
-                       </div>
-                     ) : (
-                       <textarea 
-                          ref={titleRef}
-                          value={d.title} 
-                          onChange={(e:any)=>set("title",e.target.value)} 
-                          rows={1}
-                          style={{background:"transparent",border:"none",fontSize:28,fontWeight:900, letterSpacing:"-0.75px",color:"white",width:"100%",outline:"none",padding:"4px 0 4px 0", resize: "none", overflow: "hidden", lineHeight: 1.25, wordBreak: "break-word", whiteSpace: "pre-wrap"}} 
-                          placeholder="Tulis Judul Konten..."/>
-                     )}
+                     <TextareaAutosize 
+                        ref={titleRef}
+                        value={d.title} 
+                        onChange={(e)=>set("title",e.target.value)} 
+                        minRows={1}
+                        style={{background:"transparent",border:"none",fontSize:40,fontWeight:900, letterSpacing:"-1.2px",color:"#111827",width:"100%",outline:"none",padding:0, resize: "none", overflow: "hidden", lineHeight: 1.1, wordBreak: "break-word", whiteSpace: "pre-wrap"}} 
+                        placeholder="Ketik Judul Konten..."/>
                   </motion.div>
+              </div>
 
-                  <div style={{
-                    display: "flex", 
-                    alignItems: "center", 
-                    gap: "10px", 
-                    flexWrap: "wrap", 
-                    color: "rgba(255,255,255,0.9)", 
-                    marginTop: "-2px",
-                    marginBottom: "2px",
-                    width: "100%"
-                  }}>
-                    {isReaderMode ? (
-                      <>
-                        <span style={{fontSize: "12px", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 5}}>
-                          <Calendar size={12} /> {(() => {
-                            const daysIndo = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
-                            const monthsIndo = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-                            if (d.day && d.month && d.year) {
-                              try {
-                                const dayName = daysIndo[new Date(d.year, d.month - 1, d.day).getDay()];
-                                return `${dayName}, ${d.day} ${monthsIndo[d.month - 1]} ${d.year}`;
-                              } catch(e) {
-                                return `${d.day} ${monthsIndo[d.month - 1]} ${d.year}`;
-                              }
-                            }
-                            return "Belum ditentukan";
-                          })()}
-                        </span>
-                        <div style={{height: "10px", width: "1px", background: "rgba(255,255,255,0.3)"}} />
-                        <span style={{fontSize: "12px", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 5}}>
-                          <Clock size={12} /> {d.uploadHour !== undefined && d.uploadHour !== null ? String(d.uploadHour).padStart(2, '0') : "00"}:{d.uploadMinute !== undefined && d.uploadMinute !== null ? String(d.uploadMinute).padStart(2, '0') : "00"} {d.timeFormat || '24H'}
-                        </span>
-                      </>
+              {/* PROPERTIES (NOTION STYLE) */}
+              <div style={{display: "flex", flexDirection: "column", gap: 14, width: "100%", marginTop: 8}}>
+                 
+                 {/* Item: PIC / Assign */}
+                 <div style={{display: "flex", minHeight: 28, alignItems: "center"}}>
+                    <div style={{width: 140, display: "flex", alignItems: "center", gap: 8, color: "#6b7280", fontSize: 13, fontWeight: 500, flexShrink: 0}}>
+                        <Users size={14}/> Assign
+                    </div>
+                    {editingFieldLeft === "pic" ? (
+                      <div ref={activeFieldRef} style={{flex: 1}}>
+                        <CustomDropdown dark={false} multiple={true} value={d.pic} options={pics} prefix="" onChange={(v)=>{set("pic", Array.isArray(v) ? v.join(", ") : v);}} initiallyOpen={true} onClose={() => setEditingFieldLeft(null)} onUpdateOptions={(opts) => onSettingUpdate && onSettingUpdate({pics: opts})} 
+                          style={{ width: "100%", padding: "4px 8px", fontSize: 13, fontWeight: 600, background: "transparent", color: "#111827", border: "1px solid rgba(44,32,22,0.15)", borderRadius: 6, boxShadow: "none" }} />
+                      </div>
                     ) : (
-                      <div style={{display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap", width: "100%"}}>
-                        {/* Compact Edit Date */}
-                        <div style={{display: "flex", alignItems: "center", gap: "6px", background: "rgba(255,255,255,0.15)", padding: "4px 8px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.1)"}}>
-                          <Calendar size={12}/>
-                          <input 
-                            type="date" 
-                            value={`${d.year || new Date().getFullYear()}-${String(d.month || new Date().getMonth()+1).padStart(2, '0')}-${String(d.day || new Date().getDate()).padStart(2, '0')}`} 
-                            onChange={(e:any) => {
-                              const parts = e.target.value.split("-");
-                              if (parts.length === 3) {
-                                set("year", parseInt(parts[0], 10));
-                                set("month", parseInt(parts[1], 10));
-                                set("day", parseInt(parts[2], 10));
-                              }
-                            }} 
-                            style={{
-                              background: "transparent",
-                              border: "none",
-                              fontSize: "11px",
-                              fontWeight: 700,
-                              color: "white",
-                              outline: "none",
-                              cursor: "pointer",
-                              padding: 0,
-                              colorScheme: "dark"
-                            }}
-                          />
-                        </div>
+                      <div 
+                        onClick={() => setEditingFieldLeft("pic")}
+                        style={{
+                          flex: 1, display: "flex", alignItems: "center", cursor: "pointer", 
+                          padding: "4px 8px", borderRadius: 6, transition: "background 0.2s",
+                          minHeight: 28
+                        }}
+                        className="hover:bg-black/5"
+                      >
+                        <span style={{fontSize: 13, fontWeight: 600, color: "#111827", display: "inline-block", maxWidth: "100%", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap"}}>
+                          {d.pic || <span style={{color: "rgba(44,32,22,0.4)", fontStyle: "italic", fontWeight: 400}}>Ketik atau pilih PIC...</span>}
+                        </span>
+                      </div>
+                    )}
+                 </div>
 
-                        <div style={{height: "14px", width: "1px", background: "rgba(255,255,255,0.25)"}} />
+                 {/* Item: Status */}
+                 <div style={{display: "flex", minHeight: 28, alignItems: "center"}}>
+                    <div style={{width: 140, display: "flex", alignItems: "center", gap: 8, color: "#6b7280", fontSize: 13, fontWeight: 500, flexShrink: 0}}>
+                        <Zap size={14}/> Status
+                    </div>
+                    {editingFieldLeft === "status" ? (
+                      <div ref={activeFieldRef} style={{flex: 1}}>
+                        <CustomDropdown dark={false} value={d.status} options={statuses} prefix="" onChange={(v)=>{set("status", v);}} initiallyOpen={true} onClose={() => setEditingFieldLeft(null)} onUpdateOptions={(opts) => onSettingUpdate && onSettingUpdate({statuses: opts})} 
+                          style={{ padding: "4px 10px", fontSize: 12, fontWeight: 600, background: getTranslucentColor(activeStatusColor, "20"), color: activeStatusColor, border: "1px solid rgba(44,32,22,0.15)", boxShadow: "none", borderRadius: 6 }} />
+                      </div>
+                    ) : (
+                      <div 
+                        onClick={() => setEditingFieldLeft("status")}
+                        style={{
+                          flex: 1, display: "flex", alignItems: "center", cursor: "pointer",
+                          padding: "4px 8px", borderRadius: 6, transition: "background 0.2s",
+                          minHeight: 28
+                        }}
+                        className="hover:bg-black/5"
+                      >
+                        <span style={{fontSize: 12, fontWeight: 700, color: activeStatusColor, background: getTranslucentColor(activeStatusColor, "20"), padding: "4px 10px", borderRadius: 6, display: "inline-block"}}>
+                          {d.status || <span style={{color: "rgba(44,32,22,0.4)", fontStyle: "italic", fontWeight: 400}}>Pilih Status...</span>}
+                        </span>
+                      </div>
+                    )}
+                 </div>
 
-                        {/* Compact Edit Time */}
-                        <div style={{display: "flex", alignItems: "center", gap: "4px", background: "rgba(255,255,255,0.15)", padding: "4px 8px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.1)"}}>
-                          <Clock size={12} style={{marginRight: 4}}/>
-                          <input 
-                            className="hide-number-arrows"
-                            type="number" 
-                            min={d.timeFormat === '24H' ? 0 : 1}
-                            max={d.timeFormat === '24H' ? 23 : 12}
-                            value={d.uploadHour !== undefined && d.uploadHour !== null ? d.uploadHour : ""} 
-                            onChange={handleHourChange} 
-                            style={{
-                              background: "transparent",
-                              border: "none",
-                              fontSize: "11px",
-                              fontWeight: 700,
-                              color: "white",
-                              width: "32px",
-                              textAlign: "center",
-                              outline: "none",
-                              padding: 0,
-                              margin: 0
-                            }} 
-                            placeholder="00"
-                          />
-                          <span style={{color:"rgba(255,255,255,0.5)", fontWeight: 700, fontSize: "11px"}}>:</span>
-                          <input 
-                            className="hide-number-arrows"
-                            type="number" 
-                            min={0} 
-                            max={59} 
-                            step={5} 
-                            value={d.uploadMinute !== undefined && d.uploadMinute !== null ? d.uploadMinute : ""} 
-                            onChange={handleMinuteChange} 
-                            style={{
-                              background: "transparent",
-                              border: "none",
-                              fontSize: "11px",
-                              fontWeight: 700,
-                              color: "white",
-                              width: "32px",
-                              textAlign: "center",
-                              outline: "none",
-                              padding: 0,
-                              margin: 0
-                            }} 
-                            placeholder="00"
-                          />
-                          <select
-                            value={d.timeFormat || '24H'}
-                            onChange={handleFormatChange}
-                            style={{
-                              background: "transparent",
-                              border: "none",
-                              color: "rgba(255,255,255,0.7)",
-                              fontSize: "9px",
-                              fontWeight: 700,
-                              outline: "none",
-                              cursor: "pointer",
-                              marginLeft: "4px"
-                            }}
-                          >
-                            <option style={{color:"black"}} value="24H">24H</option>
-                            <option style={{color:"black"}} value="AM">AM</option>
-                            <option style={{color:"black"}} value="PM">PM</option>
-                          </select>
-                        </div>
-
-                        {(hourError || minuteError) && (
-                          <span style={{ fontSize: "9px", color: "rgba(255,255,255,0.85)", background: "rgba(156,43,78,0.4)", padding: "2px 6px", borderRadius: "4px", fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}>
-                            <AlertTriangle size={10} /> Input Waktu tidak valid
-                          </span>
+                 {/* Item: Referensi */}
+                 <div style={{display: "flex", minHeight: 28, alignItems: "center"}}>
+                    <div style={{width: 140, display: "flex", alignItems: "center", gap: 8, color: "#6b7280", fontSize: 13, fontWeight: 500, flexShrink: 0}}>
+                        <Link size={14}/> Referensi
+                    </div>
+                    {editingFieldLeft === "assetLink" ? (
+                      <div ref={activeFieldRef} style={{flex: 1, display: "flex", alignItems: "center", gap: 6}}>
+                        <input type="text" value={d.assetLink || ""} onChange={(e:any)=>set("assetLink", e.target.value)} placeholder="Tautkan link referensi..." style={{background: "#FFF", border: "1px solid rgba(44,32,22,0.15)", borderRadius: 6, outline: "none", fontSize: 13, fontWeight: 500, color: "#111827", width: "100%", padding: "4px 8px"}} autoFocus />
+                      </div>
+                    ) : (
+                      <div 
+                        onClick={() => setEditingFieldLeft("assetLink")}
+                        style={{
+                          flex: 1, display: "flex", alignItems: "center", cursor: "pointer",
+                          padding: "4px 8px", borderRadius: 6, transition: "background 0.2s",
+                          minHeight: 28, gap: 6
+                        }}
+                        className="hover:bg-black/5"
+                      >
+                        {d.assetLink ? (
+                          <>
+                            <span style={{fontSize: 13, fontWeight: 600, color: "#2563eb", textDecoration: "underline", display: "inline-block", maxWidth: "100%", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap"}}>
+                              Link Referensi
+                            </span>
+                            <a href={d.assetLink} target="_blank" rel="noopener noreferrer" style={{color: "#2563eb", display: "flex", alignItems: "center"}} onClick={(e) => e.stopPropagation()}>
+                              <ExternalLink size={14} />
+                            </a>
+                          </>
+                        ) : (
+                          <span style={{color: "rgba(44,32,22,0.4)", fontStyle: "italic", fontSize: 13}}>Tautkan referensi...</span>
                         )}
                       </div>
                     )}
-                  </div>
+                 </div>
 
-                  {/* Row of dropdowns */}
-                  <div style={{
-                    display: "grid", 
-                    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-                    gap: "12px", 
-                    width: "100%", 
-                    marginTop: "6px"
-                  }}>
-                    {/* Pillar */}
-                    <div style={{display:"flex", flexDirection:"column", gap:"4px", minWidth: 0}}>
-                      <span style={{fontSize: "9px", fontWeight: 750, textTransform: "uppercase", letterSpacing: "0.5px", color: "rgba(255,255,255,0.7)", display: "flex", alignItems: "center"}}>
-                        <Flag size={10} style={{marginRight: 4}} /> Pillar
-                      </span>
-                      {isReaderMode ? (
-                        <span title={d.pillar || "Tanpa Pillar"} style={{
-                          fontSize: "11px", 
-                          fontWeight: 700, 
-                          color: "#FFF", 
-                          display: "inline-block", 
-                          maxWidth: "100%",
-                          textOverflow: "ellipsis", 
-                          overflow: "hidden", 
-                          whiteSpace: "nowrap",
-                          background: activePillarColor,
-                          padding: "6px 10px",
-                          borderRadius: "8px",
-                          height: "26px",
-                          lineHeight: "13px",
-                          border: `1px solid rgba(255,255,255,0.3)`
-                        }}>
-                          {d.pillar || "Tanpa Pillar"}
-                        </span>
-                      ) : (
-                        <CustomDropdown 
-                          dark={true}
-                          value={d.pillar} 
-                          options={pillars} 
-                          prefix="" 
-                          onChange={(v)=>set("pillar", v)} 
-                          onUpdateOptions={(opts) => onSettingUpdate && onSettingUpdate({pillars: opts})}
-                          style={{ 
-                            width: "100%", 
-                            padding: "4px 10px", 
-                            borderRadius: "8px", 
-                            fontSize: "11px", 
-                            fontWeight: 700, 
-                            background: activePillarColor, 
-                            color: "#FFF", 
-                            border: `1px solid rgba(255,255,255,0.3)`,
-                            minHeight: "26px",
-                            height: "auto",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            boxShadow: "none"
-                          }}
-                        />
-                      )}
+                 {/* Item: Content Type / Type */}
+                 <div style={{display: "flex", minHeight: 28, alignItems: "center"}}>
+                    <div style={{width: 140, display: "flex", alignItems: "center", gap: 8, color: "#6b7280", fontSize: 13, fontWeight: 500, flexShrink: 0}}>
+                        <FileText size={14}/> Type
                     </div>
+                    {editingFieldLeft === "contentType" ? (
+                      <div ref={activeFieldRef} style={{flex: 1}}>
+                        <CustomDropdown dark={false} value={d.contentType} options={contentTypes} prefix="" onChange={(v)=>{set("contentType", v);}} initiallyOpen={true} onClose={() => setEditingFieldLeft(null)} onUpdateOptions={(opts) => onSettingUpdate && onSettingUpdate({contentTypes: opts})} 
+                          style={{ padding: "4px 10px", fontSize: 12, fontWeight: 600, background: getTranslucentColor(activeContentTypeColor, "20"), color: activeContentTypeColor, border: "1px solid rgba(44,32,22,0.15)", boxShadow: "none", borderRadius: 6 }} />
+                      </div>
+                    ) : (
+                      <div 
+                        onClick={() => setEditingFieldLeft("contentType")}
+                        style={{
+                          flex: 1, display: "flex", alignItems: "center", cursor: "pointer",
+                          padding: "4px 8px", borderRadius: 6, transition: "background 0.2s",
+                          minHeight: 28
+                        }}
+                        className="hover:bg-black/5"
+                      >
+                        <span style={{fontSize: 12, fontWeight: 700, color: activeContentTypeColor, background: getTranslucentColor(activeContentTypeColor, "20"), padding: "4px 10px", borderRadius: 6, display: "inline-block"}}>
+                          {d.contentType || <span style={{color: "rgba(44,32,22,0.4)", fontStyle: "italic", fontWeight: 400}}>Pilih tipe...</span>}
+                        </span>
+                      </div>
+                    )}
+                 </div>
 
-                    {/* Platform */}
-                    <div style={{display:"flex", flexDirection:"column", gap:"4px", minWidth: 0}}>
-                      <span style={{fontSize: "9px", fontWeight: 750, textTransform: "uppercase", letterSpacing: "0.5px", color: "rgba(255,255,255,0.7)", display: "flex", alignItems: "center"}}>
-                        <Smartphone size={10} style={{marginRight: 4}} /> Platform
-                      </span>
-                      {isReaderMode ? (
-                        <span title={d.platform || "Tanpa Platform"} style={{
-                          fontSize: "11px", 
-                          fontWeight: 700, 
-                          color: "#FFF", 
-                          display: "inline-block", 
-                          maxWidth: "100%",
-                          textOverflow: "ellipsis", 
-                          overflow: "hidden", 
-                          whiteSpace: "nowrap",
-                          background: activePlatformColor,
-                          padding: "6px 10px",
-                          borderRadius: "8px",
-                          height: "26px",
-                          lineHeight: "13px",
-                          border: `1px solid rgba(255,255,255,0.3)`
-                        }}>
-                          {d.platform || "Tanpa Platform"}
-                        </span>
-                      ) : (
-                        <CustomDropdown 
-                          dark={true}
-                          value={d.platform} 
-                          options={platforms} 
-                          prefix="" 
-                          onChange={(v)=>set("platform", v)} 
-                          onUpdateOptions={(opts) => onSettingUpdate && onSettingUpdate({platforms: opts})}
-                          style={{ 
-                            width: "100%", 
-                            padding: "4px 10px", 
-                            borderRadius: "8px", 
-                            fontSize: "11px", 
-                            fontWeight: 700, 
-                            background: activePlatformColor, 
-                            color: "#FFF", 
-                            border: `1px solid rgba(255,255,255,0.3)`,
-                            minHeight: "26px",
-                            height: "auto",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            boxShadow: "none"
-                          }}
-                        />
-                      )}
+                 {/* Item: Platform (Media) */}
+                 <div style={{display: "flex", minHeight: 28, alignItems: "center"}}>
+                    <div style={{width: 140, display: "flex", alignItems: "center", gap: 8, color: "#6b7280", fontSize: 13, fontWeight: 500, flexShrink: 0}}>
+                        <Paperclip size={14}/> Media
                     </div>
-                  </div>
+                    {editingFieldLeft === "platform" ? (
+                      <div ref={activeFieldRef} style={{flex: 1}}>
+                        <CustomDropdown dark={false} value={d.platform} options={platforms} prefix="" onChange={(v)=>{set("platform", v);}} initiallyOpen={true} onClose={() => setEditingFieldLeft(null)} onUpdateOptions={(opts) => onSettingUpdate && onSettingUpdate({platforms: opts})} 
+                          style={{ padding: "4px 8px", fontSize: 12, fontWeight: 600, background: "transparent", color: "#4b5563", border: "1px solid rgba(44,32,22,0.15)", borderRadius: 6, boxShadow: "none" }} />
+                      </div>
+                    ) : (
+                      <div 
+                        onClick={() => setEditingFieldLeft("platform")}
+                        style={{
+                          flex: 1, display: "flex", alignItems: "center", cursor: "pointer",
+                          padding: "4px 8px", borderRadius: 6, transition: "background 0.2s",
+                          minHeight: 28
+                        }}
+                        className="hover:bg-black/5"
+                      >
+                        <span style={{fontSize: 12, fontWeight: 600, color: "#4b5563", display: "inline-block"}}>
+                          {d.platform || <span style={{color: "rgba(44,32,22,0.4)", fontStyle: "italic", fontWeight: 400}}>Pilih media...</span>}
+                        </span>
+                      </div>
+                    )}
+                 </div>
 
-                  <div style={{
-                    display: "grid", 
-                    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-                    gap: "12px", 
-                    width: "100%", 
-                    marginTop: "12px"
-                  }}>
-                    {/* Content Type */}
-                    <div style={{display:"flex", flexDirection:"column", gap:"4px", minWidth: 0}}>
-                      <span style={{fontSize: "9px", fontWeight: 750, textTransform: "uppercase", letterSpacing: "0.5px", color: "rgba(255,255,255,0.7)", display: "flex", alignItems: "center"}}>
-                        <FileText size={10} style={{marginRight: 4}} /> Tipe Konten
-                      </span>
-                      {isReaderMode ? (
-                        <span title={d.contentType || "Tanpa Tipe"} style={{
-                          fontSize: "11px", 
-                          fontWeight: 700, 
-                          color: "#FFF", 
-                          display: "inline-block", 
-                          maxWidth: "100%",
-                          textOverflow: "ellipsis", 
-                          overflow: "hidden", 
-                          whiteSpace: "nowrap",
-                          background: activeContentTypeColor,
-                          padding: "6px 10px",
-                          borderRadius: "8px",
-                          height: "26px",
-                          lineHeight: "13px",
-                          border: `1px solid rgba(255,255,255,0.3)`
-                        }}>
-                          {d.contentType || "Tanpa Tipe"}
-                        </span>
-                      ) : (
-                        <CustomDropdown 
-                          dark={true}
-                          value={d.contentType} 
-                          options={contentTypes} 
-                          prefix="" 
-                          onChange={(v)=>set("contentType", v)} 
-                          onUpdateOptions={(opts) => onSettingUpdate && onSettingUpdate({contentTypes: opts})}
-                          style={{ 
-                            width: "100%", 
-                            padding: "4px 10px", 
-                            borderRadius: "8px", 
-                            fontSize: "11px", 
-                            fontWeight: 700, 
-                            background: activeContentTypeColor, 
-                            color: "#FFF", 
-                            border: `1px solid rgba(255,255,255,0.3)`,
-                            minHeight: "26px",
-                            height: "auto",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            boxShadow: "none"
-                          }}
-                        />
-                      )}
+                 {/* Item: Jadwal Produksi */}
+                 <div style={{display: "flex", minHeight: 28, alignItems: "center"}}>
+                    <div style={{width: 140, display: "flex", alignItems: "center", gap: 8, color: "#6b7280", fontSize: 13, fontWeight: 500, flexShrink: 0}}>
+                        <Calendar size={14}/> Jadwal Produksi
                     </div>
+                    <div style={{flex: 1, display: "flex", alignItems: "center", padding: "4px 8px"}}>
+                        <span style={{fontSize: 13, fontWeight: 500, color: "#9ca3af"}}>Empty</span>
+                    </div>
+                 </div>
 
-                    {/* PIC */}
-                    <div style={{display:"flex", flexDirection:"column", gap:"4px", minWidth: 0}}>
-                      <span style={{fontSize: "9px", fontWeight: 750, textTransform: "uppercase", letterSpacing: "0.5px", color: "rgba(255,255,255,0.7)", display: "flex", alignItems: "center"}}>
-                        <User size={10} style={{marginRight: 4}} /> PIC
-                      </span>
-                      {isReaderMode ? (
-                        <span title={d.pic || "Tanpa PIC"} style={{
-                          fontSize: "11px", 
-                          fontWeight: 700, 
-                          color: "#FFF", 
-                          display: "inline-block", 
-                          maxWidth: "100%",
-                          textOverflow: "ellipsis", 
-                          overflow: "hidden", 
-                          whiteSpace: "nowrap",
-                          background: activePicColor,
-                          padding: "6px 10px",
-                          borderRadius: "8px",
-                          height: "26px",
-                          lineHeight: "13px",
-                          border: `1px solid rgba(255,255,255,0.3)`
-                        }}>
-                          {d.pic || "Tanpa PIC"}
-                        </span>
-                      ) : (
-                        <CustomDropdown 
-                          dark={true}
-                          multiple={true}
-                          value={d.pic} 
-                          options={pics} 
-                          prefix="" 
-                          onChange={(v)=>set("pic", Array.isArray(v) ? v.join(", ") : v)} 
-                          onUpdateOptions={(opts) => onSettingUpdate && onSettingUpdate({pics: opts})}
-                          style={{ 
-                            width: "100%", 
-                            padding: "4px 10px", 
-                            borderRadius: "8px", 
-                            fontSize: "11px", 
-                            fontWeight: 700, 
-                            background: activePicColor, 
-                            color: "#FFF", 
-                            border: `1px solid rgba(255,255,255,0.3)`,
-                            minHeight: "26px",
-                            height: "auto",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            boxShadow: "none"
-                          }}
-                        />
-                      )}
+                 {/* Item: Jadwal Upload */}
+                 <div style={{display: "flex", minHeight: 28, alignItems: "center"}}>
+                    <div style={{width: 140, display: "flex", alignItems: "center", gap: 8, color: "#6b7280", fontSize: 13, fontWeight: 500, flexShrink: 0}}>
+                        <Calendar size={14}/> Jadwal Upload
                     </div>
+                    {editingFieldLeft === "uploadDate" ? (
+                      <div ref={activeFieldRef} style={{flex: 1, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap"}}>
+                        <div style={{display: "flex", alignItems: "center", gap: 4, background: "#FFF", border: "1px solid rgba(44,32,22,0.15)", borderRadius: 6, padding: "4px 8px"}}>
+                          <input type="date" value={`${d.year || new Date().getFullYear()}-${String(d.month || new Date().getMonth()+1).padStart(2, '0')}-${String(d.day || new Date().getDate()).padStart(2, '0')}`} 
+                            onChange={(e:any) => {
+                              const parts = e.target.value.split("-");
+                              if (parts.length === 3) {
+                                set("year", parseInt(parts[0], 10)); set("month", parseInt(parts[1], 10)); set("day", parseInt(parts[2], 10));
+                              }
+                            }} 
+                            style={{ background: "transparent", border: "none", fontSize: 13, fontWeight: 500, color: "#111827", outline: "none", cursor: "pointer", padding: "2px 0" }}
+                          />
+                          <input type="number" min={d.timeFormat === '24H' ? 0 : 1} max={d.timeFormat === '24H' ? 23 : 12} value={d.uploadHour !== undefined && d.uploadHour !== null ? d.uploadHour : ""} onChange={handleHourChange} 
+                            style={{ background: "rgba(0,0,0,0.04)", border: "none", fontSize: 13, fontWeight: 500, color: "#111827", width: 28, textAlign: "center", outline: "none", padding: "2px 0", borderRadius: 4 }} placeholder="00" />
+                          <span style={{color:"#111827", fontWeight: 700, fontSize: 13}}>:</span>
+                          <input type="number" min={0} max={59} step={5} value={d.uploadMinute !== undefined && d.uploadMinute !== null ? d.uploadMinute : ""} onChange={handleMinuteChange} 
+                            style={{ background: "rgba(0,0,0,0.04)", border: "none", fontSize: 13, fontWeight: 500, color: "#111827", width: 28, textAlign: "center", outline: "none", padding: "2px 0", borderRadius: 4 }} placeholder="00" />
+                        </div>
+                      </div>
+                    ) : (
+                      <div 
+                        onClick={() => setEditingFieldLeft("uploadDate")}
+                        style={{
+                          flex: 1, display: "flex", alignItems: "center", cursor: "pointer",
+                          padding: "4px 8px", borderRadius: 6, transition: "background 0.2s",
+                          minHeight: 28
+                        }}
+                        className="hover:bg-black/5"
+                      >
+                        <span style={{fontSize: 13, fontWeight: 500, color: (d.day && d.month && d.year) ? "#4b5563" : "rgba(44,32,22,0.4)"}}>
+                          {d.day && d.month && d.year ? `${String(d.day).padStart(2,'0')}/${String(d.month).padStart(2,'0')}/${d.year} (${String(d.uploadHour !== undefined && d.uploadHour !== null ? d.uploadHour : 0).padStart(2,'0')}:${String(d.uploadMinute !== undefined && d.uploadMinute !== null ? d.uploadMinute : 0).padStart(2,'0')})` : <span style={{fontStyle: "italic"}}>Atur tanggal upload...</span>}
+                        </span>
+                      </div>
+                    )}
+                 </div>
 
-                    {/* Status */}
-                    <div style={{display:"flex", flexDirection:"column", gap:"4px", minWidth: 0}}>
-                      <span style={{fontSize: "9px", fontWeight: 750, textTransform: "uppercase", letterSpacing: "0.5px", color: "rgba(255,255,255,0.7)", display: "flex", alignItems: "center"}}>
-                        <Zap size={10} style={{marginRight: 4}} /> Status
-                      </span>
-                      {isReaderMode ? (
-                        <span title={d.status || "Draft"} style={{
-                          fontSize: "11px", 
-                          fontWeight: 800, 
-                          color: "#FFF", 
-                          display: "inline-block", 
-                          maxWidth: "100%",
-                          textOverflow: "ellipsis", 
-                          overflow: "hidden", 
-                          whiteSpace: "nowrap",
-                          background: activeStatusColor,
-                          padding: "6px 10px",
-                          borderRadius: "8px",
-                          height: "26px",
-                          lineHeight: "13px",
-                          border: `1px solid rgba(255,255,255,0.3)`
-                        }}>
-                          {d.status || "Draft"}
-                        </span>
-                      ) : (
-                        <CustomDropdown 
-                          dark={true}
-                          value={d.status} 
-                          options={statuses} 
-                          prefix="" 
-                          alignRight={true}
-                          onChange={(v)=>set("status",v)} 
-                          onUpdateOptions={(opts) => onSettingUpdate && onSettingUpdate({statuses: opts})}
-                          style={{ 
-                            width: "100%", 
-                            padding: "4px 10px", 
-                            borderRadius: "8px", 
-                            fontSize: "11px", 
-                            fontWeight: 800, 
-                            background: activeStatusColor, 
-                            color: "#FFF", 
-                            border: `1px solid rgba(255,255,255,0.3)`,
-                            minHeight: "26px",
-                            height: "auto",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            boxShadow: "none"
-                          }}
-                        />
-                      )}
+                 {/* Item: Pillar / Section */}
+                 <div style={{display: "flex", minHeight: 28, alignItems: "center"}}>
+                    <div style={{width: 140, display: "flex", alignItems: "center", gap: 8, color: "#6b7280", fontSize: 13, fontWeight: 500, flexShrink: 0}}>
+                        <Flag size={14}/> Section
                     </div>
-                  </div>
+                    {editingFieldLeft === "pillar" ? (
+                      <div ref={activeFieldRef} style={{flex: 1}}>
+                        <CustomDropdown dark={false} value={d.pillar} options={pillars} prefix="" onChange={(v)=>{set("pillar", v);}} initiallyOpen={true} onClose={() => setEditingFieldLeft(null)} onUpdateOptions={(opts) => onSettingUpdate && onSettingUpdate({pillars: opts})} 
+                          style={{ padding: "4px 8px", fontSize: 12, fontWeight: 600, background: "rgba(0,0,0,0.06)", color: "#4b5563", border: "1px solid rgba(44, 32, 22, 0.15)", borderRadius: 6, boxShadow: "none" }} />
+                      </div>
+                    ) : (
+                      <div 
+                        onClick={() => setEditingFieldLeft("pillar")}
+                        style={{
+                          flex: 1, display: "flex", alignItems: "center", cursor: "pointer",
+                          padding: "4px 8px", borderRadius: 6, transition: "background 0.2s",
+                          minHeight: 28
+                        }}
+                        className="hover:bg-black/5"
+                      >
+                        <span style={{fontSize: 12, fontWeight: 600, color: "#4b5563", background: "rgba(0,0,0,0.06)", padding: "4px 10px", borderRadius: 6, display: "inline-block"}}>
+                          {d.pillar || <span style={{color: "rgba(44,32,22,0.4)", fontStyle: "italic", fontWeight: 400}}>Pilih section...</span>}
+                        </span>
+                      </div>
+                    )}
+                 </div>
+
               </div>
           </div>
-
-          {/* AI Analysis Result Section if exists */}
+          
+{/* AI Analysis Result Section if exists */}
           {aiResult && (
-            <div style={{background:"#E3F2FD", border:"1px solid #BBDEFB", borderRadius:12, padding:16, boxShadow:"0 4px 12px rgba(30,136,229,0.08)"}}>
+            <div style={{background:"rgba(227, 242, 253, 0.4)", backdropFilter:"blur(12px)", WebkitBackdropFilter:"blur(12px)", border:"1px solid rgba(187, 222, 251, 0.6)", borderRadius:12, padding:16, boxShadow:"0 4px 12px rgba(30,136,229,0.08)", marginTop: aiResult ? 0 : 0}}>
               <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10}}>
                 <span style={{fontSize:12, fontWeight:700, color:"#1E88E5", display:"flex", alignItems:"center", gap:6}}>
                     <GeminiIcon size={14} />
@@ -936,44 +810,88 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
               <div style={{fontSize:12, lineHeight:1.6, color:"#2C3E50", whiteSpace:"pre-wrap"}}><Markdown>{aiResult}</Markdown></div>
             </div>
           )}
+          
+            </div>
+            {/* RIGHT COLUMN: MAIN CONTENT */}
+            <div ref={modalScrollRef} style={{ 
+              flex: 1, 
+              padding: "32px 32px 32px 32px", 
+              display: "flex", 
+              flexDirection: "column", 
+              gap: "16px", 
+              background: "transparent", 
+              overflowY: "auto",
+              position: "relative"
+            }}>
 
           {/* Removed single mode banner transition flow to place mode switch in the footer */}
 
-          <AnimatePresence mode="popLayout" initial={false}>
-            {!isReaderMode ? (
-              <motion.div 
-                key="edit-mode"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.15, ease: "linear" }}
-                style={{ display: "flex", flexDirection: "column", gap: "16px", width: "100%" }}
+          {/* APPLE-LIKE SEGMENTED CONTROL */}
+          <div style={{ 
+            display: "flex", background: "rgba(118,118,128,0.12)", padding: "2px", 
+            borderRadius: "10px", width: "100%", marginTop: "10px", marginBottom: "8px" 
+          }}>
+            {[
+              { id: "draft", label: "Brief & Konten" },
+              { id: "refs", label: "Aset & Referensi" },
+              { id: "metrics", label: "Metrik & Ads" }
+            ].map(({ id, label }) => (
+              <button 
+                key={id}
+                onClick={(e) => { e.preventDefault(); setActiveTab(id as any); }}
+                style={{
+                  flex: 1,
+                  padding: "6px 0",
+                  borderRadius: "8px",
+                  border: "none",
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  background: activeTab === id ? "#FFFFFF" : "transparent",
+                  color: activeTab === id ? "#000000" : "rgba(0,0,0,0.6)",
+                  boxShadow: activeTab === id ? "0 3px 8px rgba(0,0,0,0.12), 0 3px 1px rgba(0,0,0,0.04)" : "none",
+                  transition: "background 0.2s, box-shadow 0.2s, color 0.2s"
+                }}
               >
-                {/* Removed Block 3: Pengaturan Jadwal & Waktu (now inline under title) */}
+                {label}
+              </button>
+            ))}
+          </div>
 
-              {/* Block 5: Objective, Brief & Caption */}
-              <div style={{
-                background: "#FFFFFF",
-                border: "1px solid rgba(44,32,22,0.08)",
-                borderRadius: 16,
-                padding: "16px 20px",
-                boxShadow: "0 4px 20px rgba(44,32,22,0.02)",
-                display: "flex",
-                flexDirection: "column",
-                gap: "16px"
-              }}>
-                <div style={GRP}>
-                  <label style={{ fontSize: 12, fontWeight: 600, color: "rgba(44,32,22,0.6)", display: "flex", alignItems: "center", gap: 6, margin: 0 }}>
-                    <Target size={14} /> Objective Konten
-                  </label>
-                  <RichTextEditor inputRef={objectiveRef} value={d.objective} onChange={(val)=>set("objective",val)} minRows={3} placeholder="Tujuan atau target output dari konten ini..."/>
-                </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "16px", width: "100%" }}>
+            
+            {/* TAB DRAFT (Objective, Brief, Caption) */}
+            {activeTab === "draft" && (
+              <div style={{ display: "flex", flexDirection: "column", gap: "16px", width: "100%" }}>
+                {/* Objective Block */}
+                {editingFieldRight === "objective" ? (
+                  <div ref={activeFieldRef} style={{ background: "#ffffff", border: "1px solid rgba(44, 32, 22, 0.08)", borderRadius: 16, padding: "16px 20px", boxShadow: "0 8px 32px rgba(0, 0, 0, 0.04)" }}>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: "rgba(44,32,22,0.6)", display: "flex", alignItems: "center", gap: 6, margin: 0, marginBottom: 8 }}>
+                      <Target size={14} /> Objective
+                    </label>
+                    <RichTextEditor inputRef={objectiveRef} value={d.objective} onChange={(val)=>set("objective",val)} minRows={2} placeholder="Tujuan atau target output dari konten ini..."/>
+                  </div>
+                ) : (
+                  <div 
+                    onClick={() => setEditingFieldRight("objective")}
+                    style={{ background: "#ffffff", border: "1px solid rgba(44, 32, 22, 0.08)", borderRadius: 16, padding: "16px 20px", boxShadow: "0 8px 32px rgba(0, 0, 0, 0.04)", cursor: "pointer" }}
+                    title="Klik untuk mengedit Objective"
+                  >
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(44,32,22,0.4)", textTransform: "uppercase", marginBottom: 6, letterSpacing: "0.5px", display: "flex", alignItems: "center", gap: 6 }}>
+                      <Target size={14} /> Objective
+                    </div>
+                    <div style={{ fontSize: 13, color: "#2C2016", lineHeight: 1.5, background: "rgba(44,32,22,0.02)", padding: "12px 16px", borderRadius: 10 }}>
+                      {d.objective ? <div className="tiptap-prose" dangerouslySetInnerHTML={{ __html: d.objective }} /> : <span style={{ color: "rgba(44,32,22,0.4)", fontStyle: "italic" }}>Tidak ada spesifikasi objective khusus. Klik di sini untuk mengedit.</span>}
+                    </div>
+                  </div>
+                )}
 
-                {/* Brief Section with AI Button */}
-                <div style={GRP}>
-                    <div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}>
+                {/* Brief Block */}
+                {editingFieldRight === "brief" ? (
+                  <div ref={activeFieldRef} style={{ background: "#ffffff", border: "1px solid rgba(44, 32, 22, 0.08)", borderRadius: 16, padding: "16px 20px", boxShadow: "0 8px 32px rgba(0, 0, 0, 0.04)", display: "flex", flexDirection: "column" }}>
+                    <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom: 8}}>
                         <label style={{ fontSize: 12, fontWeight: 600, color: "rgba(44,32,22,0.6)", display: "flex", alignItems: "center", gap: 6, margin: 0 }}>
-                          <FileText size={14} /> Brief Konten
+                          <FileText size={14} /> Brief
                         </label>
                         <button onClick={analyzeContent} disabled={aiLoading} 
                           style={{...B(false), fontSize:10, padding:"4px 10px", borderRadius: 8, background:"#f3f4f6", color:"#1f2937", border:"1px solid #d1d5db", display:"flex", alignItems:"center", gap:4}}>
@@ -981,14 +899,38 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                           {aiLoading ? <LoadingDots /> : "Analyze with Gemini"}
                         </button>
                     </div>
-                    <RichTextEditor inputRef={briefRef} value={d.briefCopywriting} onChange={(val)=>set("briefCopywriting",val)} minRows={4} placeholder="Arah konten, tone of voice, call to action, poin kata kunci utama..."/>
-                </div>
+                    <div style={{display: "flex", flexDirection: "column", minHeight: 120}}>
+                      <RichTextEditor style={{width: "100%"}} inputRef={briefRef} value={d.briefCopywriting} onChange={(val)=>set("briefCopywriting",val)} minRows={6} placeholder="Arah konten, tone of voice, call to action, poin kata kunci utama..."/>
+                    </div>
+                  </div>
+                ) : (
+                  <div 
+                    onClick={() => setEditingFieldRight("brief")}
+                    style={{ background: "#ffffff", border: "1px solid rgba(44, 32, 22, 0.08)", borderRadius: 16, padding: "16px 20px", boxShadow: "0 8px 32px rgba(0, 0, 0, 0.04)", cursor: "pointer", display: "flex", flexDirection: "column" }}
+                    title="Klik untuk mengedit Brief"
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(44,32,22,0.4)", textTransform: "uppercase", display: "flex", alignItems: "center", gap: 6, letterSpacing: "0.5px" }}>
+                        <FileText size={14} /> Brief
+                      </span>
+                      {d.briefCopywriting && (
+                        <button onClick={(e) => { e.stopPropagation(); if (copiedBrief) return; navigator.clipboard.writeText(htmlToPlainText(d.briefCopywriting)); setCopiedBrief(true); setTimeout(() => setCopiedBrief(false), 2000); }} style={{ background: copiedBrief ? "rgba(46,125,50,0.1)" : "rgba(59,130,246,0.08)", border: "none", color: copiedBrief ? "#2E7D32" : "#3B82F6", padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 750, cursor: copiedBrief ? "default" : "pointer", display: "flex", alignItems: "center", transition: "all 0.3s ease" }}>
+                          {copiedBrief ? <>Berhasil disalin</> : <><Copy size={12} style={{marginRight: 4}} /> Salin Brief</>}
+                        </button>
+                      )}
+                    </div>
+                    <div style={{ fontSize: 13, color: "#2C2016", lineHeight: 1.5, background: "#FCFAF7", padding: "12px 16px", borderRadius: 10, border: "1px solid rgba(44, 32, 22, 0.03)" }}>
+                      {d.briefCopywriting ? <div className="tiptap-prose" dangerouslySetInnerHTML={{ __html: d.briefCopywriting }} /> : <span style={{ color: "rgba(44,32,22,0.4)", fontStyle: "italic" }}>Belum ada brief konten. Klik di sini untuk mengedit.</span>}
+                    </div>
+                  </div>
+                )}
 
-                {/* Caption Section with AI Button */}
-                <div style={GRP}>
-                    <div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}>
+                {/* Caption Block */}
+                {editingFieldRight === "caption" ? (
+                  <div ref={activeFieldRef} style={{ background: "#ffffff", border: "1px solid rgba(44, 32, 22, 0.08)", borderRadius: 16, padding: "16px 20px", boxShadow: "0 8px 32px rgba(0, 0, 0, 0.04)", display: "flex", flexDirection: "column" }}>
+                    <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom: 8}}>
                         <label style={{ fontSize: 12, fontWeight: 600, color: "rgba(44,32,22,0.6)", display: "flex", alignItems: "center", gap: 6, margin: 0 }}>
-                          <PenTool size={14} /> Salinan Caption
+                          <PenTool size={14} /> Caption
                         </label>
                         <button onClick={generateCaption} disabled={captionLoading} 
                           style={{...B(false), fontSize:10, padding:"4px 10px", borderRadius: 8, background:"#f3f4f6", color:"#1f2937", border:"1px solid #d1d5db", display:"flex", alignItems:"center", gap:4}}>
@@ -996,99 +938,201 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                           {captionLoading ? <LoadingDots /> : "Generate Caption"}
                         </button>
                     </div>
-                    <RichTextEditor inputRef={captionRef} value={d.caption} onChange={(val)=>set("caption",val)} minRows={3} placeholder="Salinan caption social media yang sudah siap diposting..."/>
-                </div>
+                    <div style={{display: "flex", flexDirection: "column", minHeight: 150}}>
+                      <RichTextEditor style={{width: "100%"}} inputRef={captionRef} value={d.caption} onChange={(val)=>set("caption",val)} minRows={8} placeholder="Salinan caption social media yang sudah siap diposting..."/>
+                    </div>
+                  </div>
+                ) : (
+                  <div 
+                    onClick={() => setEditingFieldRight("caption")}
+                    style={{ background: "#ffffff", border: "1px solid rgba(44, 32, 22, 0.08)", borderRadius: 16, padding: "16px 20px", boxShadow: "0 8px 32px rgba(0, 0, 0, 0.04)", cursor: "pointer", display: "flex", flexDirection: "column" }}
+                    title="Klik untuk mengedit Caption"
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(44,32,22,0.4)", textTransform: "uppercase", display: "flex", alignItems: "center", gap: 6, letterSpacing: "0.5px" }}>
+                        <PenTool size={14} /> Caption
+                      </span>
+                      {d.caption && (
+                        <button onClick={(e) => { e.stopPropagation(); if (copiedCaption) return; navigator.clipboard.writeText(htmlToPlainText(d.caption)); setCopiedCaption(true); setTimeout(() => setCopiedCaption(false), 2000); }} style={{ background: copiedCaption ? "rgba(46,125,50,0.1)" : "rgba(59,130,246,0.08)", border: "none", color: copiedCaption ? "#2E7D32" : "#3B82F6", padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 750, cursor: copiedCaption ? "default" : "pointer", display: "flex", alignItems: "center", transition: "all 0.3s ease" }}>
+                          {copiedCaption ? <>Berhasil disalin</> : <><Copy size={12} style={{marginRight: 4}} /> Salin Caption</>}
+                        </button>
+                      )}
+                    </div>
+                    <div style={{ fontSize: 13, color: "#2C2016", lineHeight: 1.5, background: "#FAFDFB", padding: "12px 16px", borderRadius: 10, border: "1px solid rgba(44, 32, 22, 0.03)" }}>
+                      {d.caption ? <div className="tiptap-prose" dangerouslySetInnerHTML={{ __html: d.caption }} /> : <span style={{ color: "rgba(44,32,22,0.4)", fontStyle: "italic" }}>Belum ada salinan caption. Klik di sini untuk mengedit.</span>}
+                    </div>
+                  </div>
+                )}
               </div>
+            )}
 
-              {/* Block 6: Asset Link & Social Media Link */}
-              <div style={{
-                background: "#FFFFFF",
-                border: "1px solid rgba(44,32,22,0.08)",
-                borderRadius: 16,
-                padding: "16px 20px",
-                boxShadow: "0 4px 20px rgba(44,32,22,0.02)",
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: 16
-              }}>
-                <div style={GRP}>
-                  <label style={{ fontSize: 12, fontWeight: 600, color: "rgba(44,32,22,0.6)", display: "flex", alignItems: "center", gap: 6, margin: 0 }}>
-                    <Link size={14} /> Link Aset Final (G-Drive / Dropbox)
-                  </label>
-                  <input value={d.linkAsset||""} onChange={(e:any)=>set("linkAsset",e.target.value)} style={{...I(), border: "1px solid rgba(44,32,22,0.12)", borderRadius: 10 }} placeholder="https://drive.google.com/..."/>
-                </div>
-                <div style={GRP}>
-                  <label style={{ fontSize: 12, fontWeight: 600, color: "rgba(44,32,22,0.6)", display: "flex", alignItems: "center", gap: 6, margin: 0 }}>
-                    <Link size={14} /> Link Upload / Postingan Sosmed
-                  </label>
-                  <input value={d.linkSosmed||""} onChange={(e:any)=>set("linkSosmed",e.target.value)} style={{...I(), border: "1px solid rgba(44,32,22,0.12)", borderRadius: 10 }} placeholder="https://instagram.com/p/..."/>
-                </div>
-              </div>
+            {/* TAB REFS (Cloud Links & Resources) */}
+            {activeTab === "refs" && (
+              editingFieldRight === "refs" ? (
+                <div ref={activeFieldRef} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                  {/* Block 6: Asset Link & Social Media Link */}
+                  <div style={{
+                    background: "#ffffff", border: "1px solid rgba(44, 32, 22, 0.08)",
+                    borderRadius: 16,
+                    padding: "16px 20px",
+                    boxShadow: "0 8px 32px rgba(0, 0, 0, 0.04)",
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: 16
+                  }}>
+                    <div style={GRP}>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: "rgba(44,32,22,0.6)", display: "flex", alignItems: "center", gap: 6, margin: 0 }}>
+                        <Link size={14} /> Link Aset Final (G-Drive / Dropbox)
+                      </label>
+                      <input value={d.linkAsset||""} onChange={(e:any)=>set("linkAsset",e.target.value)} style={{...I(), border: "1px solid rgba(44,32,22,0.12)", borderRadius: 10 }} placeholder="https://drive.google.com/..."/>
+                    </div>
+                    <div style={GRP}>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: "rgba(44,32,22,0.6)", display: "flex", alignItems: "center", gap: 6, margin: 0 }}>
+                        <Link size={14} /> Link Upload / Postingan Sosmed
+                      </label>
+                      <input value={d.linkSosmed||""} onChange={(e:any)=>set("linkSosmed",e.target.value)} style={{...I(), border: "1px solid rgba(44,32,22,0.12)", borderRadius: 10 }} placeholder="https://instagram.com/p/..."/>
+                    </div>
+                  </div>
 
-              {/* Reference Section */}
-              <div style={{background:"rgba(44,32,22,0.03)",border:"1px solid rgba(44,32,22,0.08)",borderRadius:16,padding:"16px 20px",marginBottom:0}}>
-                <div style={{...L,marginBottom:8}}><Paperclip size={14} /> Referensi Konten</div>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
-                  <div style={GRP}><label style={{...L,marginBottom:2}}>Catatan Referensi</label><TextareaAutosize value={d.referenceText} onChange={(e:any)=>set("referenceText",e.target.value)} style={I({resize:"vertical"})} minRows={3} placeholder="Referensi, mood, arahan visual..."/></div>
-                  <div style={GRP}>
-                    <label style={{...L,marginBottom:2}}>Link Referensi <button onClick={()=>set("referenceLinks",[...(dRef.current.referenceLinks||[]),""])} style={{background:"none",border:"none",color:"#3B82F6",cursor:"pointer",fontSize:10}}>(+ Tambah)</button></label>
-                    {(d.referenceLinks||[]).map((lnk:string,i:number)=>(
-                      <div key={i} style={{display:"flex",gap:4,marginBottom:4}}>
-                        <input value={lnk} onChange={(e:any)=>set("referenceLinks", dRef.current.referenceLinks.map((l:any,idx:number)=>idx===i?e.target.value:l))} style={I()} placeholder="https://..."/>
-                        <button onClick={()=>set("referenceLinks", dRef.current.referenceLinks.filter((_:any,idx:number)=>idx!==i))} style={{background:"none",border:"none",color:"#9C2B4E",cursor:"pointer"}}>✕</button>
+                  {/* Reference Section */}
+                  <div style={{background:"rgba(44,32,22,0.03)",border:"1px solid rgba(44,32,22,0.08)",borderRadius:16,padding:"16px 20px",marginBottom:0}}>
+                    <div style={{...L,marginBottom:8}}><Paperclip size={14} /> Referensi Konten</div>
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
+                      <div style={GRP}><label style={{...L,marginBottom:2}}>Catatan Referensi</label><TextareaAutosize value={d.referenceText} onChange={(e:any)=>set("referenceText",e.target.value)} style={I({resize:"vertical"})} minRows={3} placeholder="Referensi, mood, arahan visual..."/></div>
+                      <div style={GRP}>
+                        <label style={{...L,marginBottom:2}}>Link Referensi <button onClick={(e)=>{ e.stopPropagation(); set("referenceLinks",[...(dRef.current.referenceLinks||[]),""]); }} style={{background:"none",border:"none",color:"#3B82F6",cursor:"pointer",fontSize:10}}>(+ Tambah)</button></label>
+                        {(d.referenceLinks||[]).map((lnk:string,i:number)=>(
+                          <div key={i} style={{display:"flex",gap:4,marginBottom:4}}>
+                            <input value={lnk} onChange={(e:any)=>set("referenceLinks", dRef.current.referenceLinks.map((l:any,idx:number)=>idx===i?e.target.value:l))} style={I()} placeholder="https://..."/>
+                            <button onClick={(e)=>{ e.stopPropagation(); set("referenceLinks", dRef.current.referenceLinks.filter((_:any,idx:number)=>idx!==i)); }} style={{background:"none",border:"none",color:"#9C2B4E",cursor:"pointer"}}>✕</button>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    </div>
+                    <div style={GRP}>
+                      <label style={{...L,marginBottom:2}}>Upload Gambar Referensi</label>
+                      <input type="file" accept="image/*" onChange={handleRefImg} style={{fontSize:11,color:"rgba(44,32,22,0.5)"}}/>
+                      {d.referenceImage&&<img src={d.referenceImage} alt="ref" style={{maxWidth:200,maxHeight:100,borderRadius:6,marginTop:6,border:"1px solid rgba(44,32,22,0.1)",objectFit:"contain"}}/>}
+                    </div>
                   </div>
                 </div>
-                <div style={GRP}>
-                  <label style={{...L,marginBottom:2}}>Upload Gambar Referensi</label>
-                  <input type="file" accept="image/*" onChange={handleRefImg} style={{fontSize:11,color:"rgba(44,32,22,0.5)"}}/>
-                  {d.referenceImage&&<img src={d.referenceImage} alt="ref" style={{maxWidth:200,maxHeight:100,borderRadius:6,marginTop:6,border:"1px solid rgba(44,32,22,0.1)",objectFit:"contain"}}/>}
+              ) : (
+                <div onClick={() => setEditingFieldRight("refs")} style={{ display: "flex", flexDirection: "column", gap: 16, cursor: "pointer" }} title="Klik di mana saja untuk mengedit Referensi">
+                  <div style={{
+                    background: "#ffffff", border: "1px solid rgba(44, 32, 22, 0.08)",
+                    borderRadius: 16,
+                    padding: "16px 20px",
+                    boxShadow: "0 8px 32px rgba(0, 0, 0, 0.04)"
+                  }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(44,32,22,0.4)", textTransform: "uppercase", marginBottom: 8, letterSpacing: "0.5px" }}>
+                      <FolderOpen size={14} /> Tautan & Folder Sumber Daya
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                      {d.linkAsset ? (
+                        <a href={d.linkAsset} target="_blank" rel="noreferrer" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 10, background: "rgba(59,130,246,0.04)", border: "1px solid rgba(59,130,246,0.15)", borderRadius: 12, padding: "12px 16px", transition: "background 0.2s", minWidth: 0 }}>
+                          <span style={{ fontSize: 18, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}><FolderOpen size={18} /></span>
+                          <div style={{ flex: 1, minWidth: 0, overflow: "hidden" }}>
+                            <div style={{ fontSize: 12, fontWeight: 700, color: "#3B82F6" }}>Buka Aset Desain</div>
+                            <div style={{ fontSize: 10, color: "rgba(44,32,22,0.5)", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap" }}>{d.linkAsset}</div>
+                          </div>
+                        </a>
+                      ) : (
+                        <div style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(44,32,22,0.02)", border: "1px dashed rgba(44,32,22,0.08)", borderRadius: 12, padding: "12px 16px", color: "rgba(44,32,22,0.4)", fontSize: 11 }}>
+                          <FolderOpen size={14} style={{ flexShrink: 0 }} /> Link aset belum ditautkan.
+                        </div>
+                      )}
+
+                      {d.linkSosmed ? (
+                        <a href={d.linkSosmed} target="_blank" rel="noreferrer" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 10, background: "rgba(59,130,246,0.04)", border: "1px solid rgba(59,130,246,0.15)", borderRadius: 12, padding: "12px 16px", transition: "background 0.2s", minWidth: 0 }}>
+                          <span style={{ fontSize: 18, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}><ExternalLink size={18} /></span>
+                          <div style={{ flex: 1, minWidth: 0, overflow: "hidden" }}>
+                            <div style={{ fontSize: 12, fontWeight: 700, color: "#2563EB" }}>Lihat Sosmed</div>
+                            <div style={{ fontSize: 10, color: "rgba(59,130,246,0.6)", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap" }}>{d.linkSosmed}</div>
+                          </div>
+                        </a>
+                      ) : (
+                        <div style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(44,32,22,0.02)", border: "1px dashed rgba(44,32,22,0.08)", borderRadius: 12, padding: "12px 16px", color: "rgba(44,32,22,0.4)", fontSize: 11 }}>
+                          <ExternalLink size={14} style={{ flexShrink: 0 }} /> Belum live di sosmed.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {(d.referenceText || (d.referenceLinks && d.referenceLinks.filter((l:string)=>l.trim() !== "").length > 0) || d.referenceImage) ? (
+                    <div style={{
+                      background: "#ffffff", border: "1px solid rgba(44, 32, 22, 0.08)",
+                      borderRadius: 16,
+                      padding: "16px 20px",
+                      boxShadow: "0 8px 32px rgba(0, 0, 0, 0.04)"
+                    }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(44,32,22,0.4)", textTransform: "uppercase", marginBottom: 8, letterSpacing: "0.5px", display: "flex", alignItems: "center", gap: 6 }}>
+                        <Paperclip size={14} /> Bahan Referensi Visual & Catatan
+                      </div>
+                      {d.referenceText && (
+                        <div style={{ fontSize: 13, color: "#2C2016", lineHeight: 1.5, marginBottom: 8, padding: "12px 16px", background: "rgba(44,32,22,0.02)", borderRadius: 10 }}>
+                          {d.referenceText}
+                        </div>
+                      )}
+                      {d.referenceLinks && d.referenceLinks.filter((l:string)=>l.trim() !== "").length > 0 && (
+                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: d.referenceImage ? 8 : 0 }}>
+                          {d.referenceLinks.filter((l:string)=>l.trim() !== "").map((lnk:string, idx:number) => (
+                            <a key={idx} href={lnk} target="_blank" rel="noreferrer" style={{ textDecoration: "none", fontSize: 11, color: "#3B82F6", background: "rgba(59,130,246,0.06)", padding: "4px 8px", borderRadius: 8, fontWeight: 600 }}>
+                              <Link size={12} style={{marginRight: 4}}/> Link Referensi {idx + 1}
+                            </a>
+                          ))}
+                        </div>
+                      )}
+                      {d.referenceImage && (
+                        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                          <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(44,32,22,0.5)" }}>Moodboard Inspirasi:</span>
+                          <img src={d.referenceImage} alt="moodboard" style={{ maxWidth: "100%", maxHeight: 200, borderRadius: 10, border: "1px solid rgba(255, 255, 255, 0.7)", objectFit: "contain" }} />
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(44,32,22,0.02)", border: "1px dashed rgba(44,32,22,0.08)", borderRadius: 12, padding: "12px 16px", color: "rgba(44,32,22,0.4)", fontSize: 11 }}>
+                      <Paperclip size={14} style={{ flexShrink: 0 }} /> Belum ada data referensi. Klik untuk menambahkan...
+                    </div>
+                  )}
                 </div>
-              </div>
+              )
+            )}
 
-              {/* Custom Fields */}
-              <div style={{
-                background: "#FFFFFF",
-                border: "1px solid rgba(44,32,22,0.08)",
-                borderRadius: 16,
-                padding: "16px 20px",
-                boxShadow: "0 4px 20px rgba(44,32,22,0.02)"
-              }}>
-                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
-                   <label style={{...L, margin: 0}}><Plus size={14} /> Bidang Kustom (Custom Fields)</label>
-                   <button onClick={()=>set("customFields",[...(dRef.current.customFields||[]),{name:"Label Baru",value:""}])} style={{...B(false),fontSize:10,padding:"4px 10px", borderRadius: 8}}>+ Tambah Field</button>
-                 </div>
-                 {(d.customFields||[]).length === 0 ? (
-                   <div style={{ fontSize: 11, color: "rgba(44,32,22,0.4)", textAlign: "center", padding: "10px 0" }}>Belum ada custom fields kustom.</div>
-                 ) : (
-                   (d.customFields||[]).map((cf:any,i:number)=>(
-                     <div key={i} style={{display:"flex",gap:8,marginBottom:8, alignItems: "center"}}>
-                        <input value={cf.name} onChange={(e:any)=>set("customFields",dRef.current.customFields.map((f:any,idx:number)=>idx===i?{...f,name:e.target.value}:f))} style={{...I(),width:130, height: "38px"}} placeholder="Nama Field..."/>
-                        <TextareaAutosize value={cf.value} onChange={(e:any)=>set("customFields",dRef.current.customFields.map((f:any,idx:number)=>idx===i?{...f,value:e.target.value}:f))} style={I({resize:"vertical", padding: "8px 12px"})} minRows={1} placeholder="Isi field..."/>
-                        <button onClick={()=>set("customFields", dRef.current.customFields.filter((_:any,idx:number)=>idx!==i))} style={{background:"none",border:"none",color:"#9C2B4E",cursor:"pointer", padding: "4px 8px"}}>✕</button>
+            {/* TAB METRICS (Stats, Bento, ads) */}
+            {activeTab === "metrics" && (
+              editingFieldRight === "metrics" ? (
+                <div ref={activeFieldRef} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                  {/* Custom Fields Edit */}
+                  <div style={{
+                    background: "#ffffff", border: "1px solid rgba(44, 32, 22, 0.08)",
+                    borderRadius: 16,
+                    padding: "16px 20px",
+                    boxShadow: "0 8px 32px rgba(0, 0, 0, 0.04)"
+                  }}>
+                     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
+                       <label style={{...L, margin: 0}}><Plus size={14} /> Bidang Kustom (Custom Fields)</label>
+                       <button onClick={(e)=>{ e.stopPropagation(); set("customFields",[...(dRef.current.customFields||[]),{name:"Label Baru",value:""}]); }} style={{...B(false),fontSize:10,padding:"4px 10px", borderRadius: 8}}>+ Tambah Field</button>
                      </div>
-                   ))
-                 )}
-              </div>
+                     {(d.customFields||[]).length === 0 ? (
+                       <div style={{ fontSize: 11, color: "rgba(44,32,22,0.4)", textAlign: "center", padding: "10px 0" }}>Belum ada custom fields.</div>
+                     ) : (
+                       (d.customFields||[]).map((cf:any,i:number)=>(
+                         <div key={i} style={{display:"flex",gap:8,marginBottom:8, alignItems: "center"}}>
+                            <input value={cf.name} onChange={(e:any)=>set("customFields",dRef.current.customFields.map((f:any,idx:number)=>idx===i?{...f,name:e.target.value}:f))} style={{...I(),width:130, height: "38px"}} placeholder="Nama Field..."/>
+                            <TextareaAutosize value={cf.value} onChange={(e:any)=>set("customFields",dRef.current.customFields.map((f:any,idx:number)=>idx===i?{...f,value:e.target.value}:f))} style={I({resize:"vertical", padding: "8px 12px"})} minRows={1} placeholder="Isi field..."/>
+                            <button onClick={(e)=>{ e.stopPropagation(); set("customFields", dRef.current.customFields.filter((_:any,idx:number)=>idx!==i)); }} style={{background:"none",border:"none",color:"#9C2B4E",cursor:"pointer", padding: "4px 8px"}}>✕</button>
+                         </div>
+                       ))
+                     )}
+                  </div>
 
-              {/* Metrics Section */}
-              <div style={{
-                display: "flex",
-                flexDirection: "column",
-                marginBottom: "18px"
-              }}>
-                {/* Metrics */}
-                <div style={{
-                  background: "rgba(44,32,22,0.03)",
-                  border: "1px solid rgba(44,32,22,0.08)",
-                  borderRadius: 16,
-                  padding: "16px 20px",
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "space-between"
-                }}>
-                  <div>
+                  {/* Metrics Section */}
+                  <div style={{
+                    background: "rgba(44,32,22,0.03)",
+                    border: "1px solid rgba(255, 255, 255, 0.7)",
+                    borderRadius: 16,
+                    padding: "16px 20px"
+                  }}>
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
                       <div style={{...L, display: "flex", alignItems: "center", gap: 6, margin: 0}}>
                         <span><BarChart2 size={12} /> Jangkauan Organik</span>
@@ -1113,417 +1157,175 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                         </div>
                       ))}
                     </div>
+                    
+                    <div style={{marginTop: 12, display: "flex", alignItems: "center", gap: 10, justifySelf: "flex-end"}}>
+                      <div style={{fontSize: 11, fontWeight: 700, color: "rgba(44,32,22,0.6)", textTransform: "uppercase", letterSpacing: 0.5}}>Ads/Boost:</div>
+                      <button onClick={(e)=>{ e.stopPropagation(); set("isAds",!d.isAds); }} style={{width:32,height:18,borderRadius:9,border:"none",cursor:"pointer",background:d.isAds?"#9C2B4E":"rgba(44,32,22,0.15)",transition:"background .2s",position:"relative",flexShrink:0}}>
+                        <div style={{width:14,height:14,borderRadius:"50%",background:"white",position:"absolute",top:2,left:d.isAds?16:2,transition:"left .2s"}}/>
+                      </button>
+                    </div>
                   </div>
-                  <div style={{marginTop:12, padding:"8px 10px", background:"rgba(59,130,246,0.06)", borderRadius:8, display:"flex", flexDirection: "column", gap:2}}>
-                    <span style={{fontSize:11, color:"rgba(44,32,22,0.6)", display: "flex", justifyContent: "space-between"}}>
-                      <span>Total Engagement:</span>
-                      <strong style={{color:"#3B82F6"}}>{fmt(eng(d.metrics))}</strong>
-                    </span>
-                    <span style={{fontSize:11, color:"rgba(44,32,22,0.6)", display: "flex", justifyContent: "space-between"}}>
-                      <span>ER Rate:</span>
-                      <strong style={{color:"#3B82F6"}}>{(d.metrics?.reach||0)>0?((eng(d.metrics)/(d.metrics.reach))*100).toFixed(2):0}%</strong>
-                    </span>
-                  </div>
-                  
-                  <div style={{marginTop: 12, display: "flex", alignItems: "center", gap: 10, alignSelf:"flex-end"}}>
-                    <div style={{fontSize: 11, fontWeight: 700, color: "rgba(44,32,22,0.6)", textTransform: "uppercase", letterSpacing: 0.5}}>Ads/Boost:</div>
-                    <button onClick={()=>set("isAds",!d.isAds)} style={{width:32,height:18,borderRadius:9,border:"none",cursor:"pointer",background:d.isAds?"#9C2B4E":"rgba(44,32,22,0.15)",transition:"background .2s",position:"relative",flexShrink:0}}>
-                      <div style={{width:14,height:14,borderRadius:"50%",background:"white",position:"absolute",top:2,left:d.isAds?16:2,transition:"left .2s"}}/>
-                    </button>
-                  </div>
-                </div>
 
-                {/* Ads Metrics */}
-                <AnimatePresence>
+                  {/* Ads Metrics */}
                   {d.isAds && (
-                    <motion.div 
-                      initial={{ height: 0, opacity: 0, overflow: "hidden", marginTop: 0 }}
-                      animate={{ height: "auto", opacity: 1, overflow: "visible", marginTop: 16 }}
-                      exit={{ height: 0, opacity: 0, overflow: "hidden", marginTop: 0 }}
-                      transition={{ duration: 0.3, ease: "easeInOut" }}
-                    >
-                      <div style={{
-                        background: "rgba(156,43,78,0.03)",
-                        border: "1px solid rgba(156,43,78,0.1)",
-                        borderRadius: 16,
-                        padding: "16px 20px",
-                        display: "flex",
-                        flexDirection: "column",
-                        justifyContent: "space-between"
-                      }}>
-                        <div>
-                          <div style={{...L, marginBottom:12, color:"#9C2B4E", display: "flex", alignItems: "center", gap: 6}}>
-                            <span><DollarSign size={14} style={{marginRight: 4}} /> Hasil Kampanye Berbayar</span>
-                          </div>
-                          <div style={{display:"grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8}}>
-                            {[...MK,"clicks","conversions"].map((k:string)=>(
-                              <div key={k} style={GRP}>
-                                <label style={{...L, marginBottom: 4, color: k==="clicks"||k==="conversions"?"#9C2B4E":MC[k]||"#9C2B4E", display: "flex", alignItems: "center", gap: 4, textTransform: "capitalize", fontSize: "11px"}}>
-                                  {getMetricIcon(k, k==="clicks"||k==="conversions"?"#9C2B4E":MC[k]||"#9C2B4E", 12)}
-                                  {k}
-                                </label>
-                                <input 
-                                  type="number" 
-                                  min={0} 
-                                  placeholder="0" 
-                                  value={d.adsMetrics?.[k] === 0 ? "" : (d.adsMetrics?.[k] !== undefined && d.adsMetrics?.[k] !== null ? d.adsMetrics[k] : "")} 
-                                  onChange={(e:any)=>setM(k,e.target.value,true)} 
-                                  style={I({textAlign:"right", fontSize: "12px", padding: "6px 8px"})}
-                                />
-                              </div>
-                            ))}
-                          </div>
+                    <div style={{
+                      background: "rgba(156,43,78,0.03)",
+                      border: "1px solid rgba(156,43,78,0.1)",
+                      borderRadius: 16,
+                      padding: "16px 20px"
+                    }}>
+                      <div>
+                        <div style={{...L, marginBottom:12, color:"#9C2B4E", display: "flex", alignItems: "center", gap: 6}}>
+                          <span><DollarSign size={14} style={{marginRight: 4}} /> Hasil Kampanye Berbayar</span>
                         </div>
-                        <div style={{marginTop:12, padding:"8px 10px", background:"rgba(156,43,78,0.06)", borderRadius:8, display:"flex", flexDirection: "column", gap:2}}>
-                          <span style={{fontSize:11, color:"#9C2B4E", display: "flex", justifyContent: "space-between"}}>
-                            <span>Total Engagement Ads:</span>
-                            <strong>{fmt(eng(d.adsMetrics||{}))}</strong>
-                          </span>
-                          <span style={{fontSize:11, color:"#9C2B4E", display: "flex", justifyContent: "space-between"}}>
-                            <span>Ad Click / Conv:</span>
-                            <strong>{fmt(d.adsMetrics?.clicks||0)} / {fmt(d.adsMetrics?.conversions||0)}</strong>
-                          </span>
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-              </motion.div>
-            ) : (
-              <motion.div 
-                key="reader-mode"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.15, ease: "linear" }}
-                style={{ display: "flex", flexDirection: "column", gap: "16px", width: "100%" }}
-              >
-                {/* BEAUTIFUL READING PRESENTATION (READER MODE) */}
-              
-              {/* Item 2: Objective */}
-              <div 
-                onDoubleClick={(e) => { 
-                    e.stopPropagation();
-                    setIsReaderMode(false);
-                    setFocusTarget("objective");
-                }}
-                style={{
-                background: "#FFFFFF",
-                border: "1px solid rgba(44,32,22,0.08)",
-                borderRadius: 16,
-                padding: "16px 20px",
-                boxShadow: "0 4px 20px rgba(44,32,22,0.02)",
-                cursor: "text"
-              }}
-              title="Klik ganda untuk mengedit Objective"
-              >
-                <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(44,32,22,0.4)", textTransform: "uppercase", marginBottom: 6, letterSpacing: "0.5px", display: "flex", alignItems: "center", gap: 6 }}>
-                  <Target size={14} /> Objective Konten
-                </div>
-                <div style={{ fontSize: 13, color: "#2C2016", lineHeight: 1.5, background: "rgba(44,32,22,0.02)", padding: "12px 16px", borderRadius: 10 }}>
-                  {d.objective ? <div className="tiptap-prose" dangerouslySetInnerHTML={{ __html: d.objective }} /> : <span style={{ color: "rgba(44,32,22,0.4)", fontStyle: "italic" }}>Tidak ada spesifikasi objective khusus.</span>}
-                </div>
-              </div>
-
-              {/* Item 3: Brief Markdown Section */}
-              <div 
-                onDoubleClick={(e) => { 
-                    e.stopPropagation();
-                    setIsReaderMode(false);
-                    setFocusTarget("brief");
-                }}
-                style={{
-                background: "#FFFFFF",
-                border: "1px solid rgba(44,32,22,0.08)",
-                borderRadius: 16,
-                padding: "16px 20px",
-                boxShadow: "0 4px 20px rgba(44,32,22,0.02)",
-                cursor: "text"
-              }}
-              title="Klik ganda untuk mengedit Brief"
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(44,32,22,0.4)", textTransform: "uppercase", display: "flex", alignItems: "center", gap: 6, letterSpacing: "0.5px" }}>
-                    <FileText size={14} /> Arahan Kreatif & Brief Konten
-                  </span>
-                  {d.briefCopywriting && (
-                    <button 
-                      onClick={() => {
-                        if (copiedBrief) return;
-                        navigator.clipboard.writeText(htmlToPlainText(d.briefCopywriting));
-                        setCopiedBrief(true);
-                        setTimeout(() => setCopiedBrief(false), 2000);
-                      }} 
-                      style={{ background: copiedBrief ? "rgba(46,125,50,0.1)" : "rgba(59,130,246,0.08)", border: "none", color: copiedBrief ? "#2E7D32" : "#3B82F6", padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 750, cursor: copiedBrief ? "default" : "pointer", display: "flex", alignItems: "center", transition: "all 0.3s ease" }}
-                    >
-                      {copiedBrief ? (
-                        <>
-                          <CheckIcon /> Berhasil disalin
-                        </>
-                      ) : <><Copy size={12} style={{marginRight: 4}} /> Salin Brief</>}
-                    </button>
-                  )}
-                </div>
-                <div style={{ fontSize: 13, color: "#2C2016", lineHeight: 1.5, background: "#FCFAF7", padding: "12px 16px", borderRadius: 10, border: "1px solid rgba(44,32,22,0.03)" }}>
-                  {d.briefCopywriting ? (
-                    <div className="tiptap-prose" dangerouslySetInnerHTML={{ __html: d.briefCopywriting }} />
-                  ) : (
-                    <span style={{ color: "rgba(44,32,22,0.4)", fontStyle: "italic" }}>Belum ada brief konten yang ditambahkan. Silakan beralih ke Mode Input & Edit untuk menambahkan brief.</span>
-                  )}
-                </div>
-              </div>
-
-              {/* Item 4: Final Caption Previews */}
-              <div 
-                onDoubleClick={(e) => { 
-                    e.stopPropagation();
-                    setIsReaderMode(false);
-                    setFocusTarget("caption");
-                }}
-                style={{
-                background: "#FFFFFF",
-                border: "1px solid rgba(44,32,22,0.08)",
-                borderRadius: 16,
-                padding: "16px 20px",
-                boxShadow: "0 4px 20px rgba(44,32,22,0.02)",
-                cursor: "text"
-              }}
-              title="Klik ganda untuk mengedit Caption"
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(44,32,22,0.4)", textTransform: "uppercase", display: "flex", alignItems: "center", gap: 6, letterSpacing: "0.5px" }}>
-                    <PenTool size={14} /> Salinan Caption Posting
-                  </span>
-                  {d.caption && (
-                    <button 
-                      onClick={() => {
-                        if (copiedCaption) return;
-                        navigator.clipboard.writeText(htmlToPlainText(d.caption));
-                        setCopiedCaption(true);
-                        setTimeout(() => setCopiedCaption(false), 2000);
-                      }} 
-                      style={{ background: copiedCaption ? "rgba(46,125,50,0.1)" : "rgba(59,130,246,0.08)", border: "none", color: copiedCaption ? "#2E7D32" : "#3B82F6", padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 750, cursor: copiedCaption ? "default" : "pointer", display: "flex", alignItems: "center", transition: "all 0.3s ease" }}
-                    >
-                      {copiedCaption ? (
-                        <>
-                          <CheckIcon /> Berhasil disalin
-                        </>
-                      ) : <><Copy size={12} style={{marginRight: 4}} /> Salin Caption</>}
-                    </button>
-                  )}
-                </div>
-                <div style={{ fontSize: 13, color: "#2C2016", lineHeight: 1.5, background: "#FAFDFB", padding: "12px 16px", borderRadius: 10, border: "1px solid rgba(44,32,22,0.03)" }}>
-                  {d.caption ? (
-                    <div className="tiptap-prose" dangerouslySetInnerHTML={{ __html: d.caption }} />
-                  ) : (
-                    <span style={{ color: "rgba(44,32,22,0.4)", fontStyle: "italic" }}>Belum ada salinan caption. Silakan beralih ke Mode Input & Edit atau gunakan fitur "Generate Caption" bertenaga Gemini AI.</span>
-                  )}
-                </div>
-              </div>
-
-              {/* Item 5: Main Cloud Links */}
-              <div style={{
-                background: "#FFFFFF",
-                border: "1px solid rgba(44,32,22,0.08)",
-                borderRadius: 16,
-                padding: "16px 20px",
-                boxShadow: "0 4px 20px rgba(44,32,22,0.02)"
-              }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(44,32,22,0.4)", textTransform: "uppercase", marginBottom: 8, letterSpacing: "0.5px" }}>
-                  <FolderOpen size={14} /> Tautan & Folder Sumber Daya
-                </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                  {d.linkAsset ? (
-                    <a href={d.linkAsset} target="_blank" rel="noreferrer" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 10, background: "rgba(59,130,246,0.04)", border: "1px solid rgba(59,130,246,0.15)", borderRadius: 12, padding: "12px 16px", transition: "background 0.2s", minWidth: 0 }} className="hover-scale">
-                      <span style={{ fontSize: 18, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}><FolderOpen size={18} /></span>
-                      <div style={{ flex: 1, minWidth: 0, overflow: "hidden" }}>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: "#3B82F6" }}>Buka Aset Desain</div>
-                        <div style={{ fontSize: 10, color: "rgba(44,32,22,0.5)", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap" }}>{d.linkAsset}</div>
-                      </div>
-                    </a>
-                  ) : (
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(44,32,22,0.02)", border: "1px dashed rgba(44,32,22,0.08)", borderRadius: 12, padding: "12px 16px", color: "rgba(44,32,22,0.4)", fontSize: 11 }}>
-                      <FolderOpen size={14} style={{ flexShrink: 0 }} /> Link aset belum ditautkan.
-                    </div>
-                  )}
-
-                  {d.linkSosmed ? (
-                    <a href={d.linkSosmed} target="_blank" rel="noreferrer" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 10, background: "rgba(59,130,246,0.04)", border: "1px solid rgba(59,130,246,0.15)", borderRadius: 12, padding: "12px 16px", transition: "background 0.2s", minWidth: 0 }} className="hover-scale">
-                      <span style={{ fontSize: 18, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}><ExternalLink size={18} /></span>
-                      <div style={{ flex: 1, minWidth: 0, overflow: "hidden" }}>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: "#2563EB" }}>Lihat Sosmed</div>
-                        <div style={{ fontSize: 10, color: "rgba(59,130,246,0.6)", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap" }}>{d.linkSosmed}</div>
-                      </div>
-                    </a>
-                  ) : (
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(44,32,22,0.02)", border: "1px dashed rgba(44,32,22,0.08)", borderRadius: 12, padding: "12px 16px", color: "rgba(44,32,22,0.4)", fontSize: 11 }}>
-                      <ExternalLink size={14} style={{ flexShrink: 0 }} /> Belum live di sosmed.
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Item 6: Moodboard / Ref Section */}
-              {(d.referenceText || (d.referenceLinks && d.referenceLinks.filter((l:string)=>l.trim() !== "").length > 0) || d.referenceImage) && (
-                <div style={{
-                  background: "#FFFFFF",
-                  border: "1px solid rgba(44,32,22,0.08)",
-                  borderRadius: 16,
-                  padding: "16px 20px",
-                  boxShadow: "0 4px 20px rgba(44,32,22,0.02)"
-                }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(44,32,22,0.4)", textTransform: "uppercase", marginBottom: 8, letterSpacing: "0.5px", display: "flex", alignItems: "center", gap: 6 }}>
-                    <Paperclip size={14} /> Bahan Referensi Visual & Catatan
-                  </div>
-                  {d.referenceText && (
-                    <div style={{ fontSize: 13, color: "#2C2016", lineHeight: 1.5, marginBottom: 8, padding: "12px 16px", background: "rgba(44,32,22,0.02)", borderRadius: 10 }}>
-                      {d.referenceText}
-                    </div>
-                  )}
-                  {d.referenceLinks && d.referenceLinks.filter((l:string)=>l.trim() !== "").length > 0 && (
-                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: d.referenceImage ? 8 : 0 }}>
-                      {d.referenceLinks.filter((l:string)=>l.trim() !== "").map((lnk:string, idx:number) => (
-                        <a key={idx} href={lnk} target="_blank" rel="noreferrer" style={{ textDecoration: "none", fontSize: 11, color: "#3B82F6", background: "rgba(59,130,246,0.06)", padding: "4px 8px", borderRadius: 8, fontWeight: 600 }}>
-                          <Link size={12} style={{marginRight: 4}}/> Link Referensi {idx + 1}
-                        </a>
-                      ))}
-                    </div>
-                  )}
-                  {d.referenceImage && (
-                    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                      <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(44,32,22,0.5)" }}>Moodboard Inspirasi:</span>
-                      <img src={d.referenceImage} alt="moodboard" style={{ maxWidth: "100%", maxHeight: 200, borderRadius: 10, border: "1px solid rgba(44,32,22,0.08)", objectFit: "contain" }} />
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Item 7: Custom Fields Section */}
-              {d.customFields && d.customFields.filter((cf:any) => cf.name?.trim() || cf.value?.trim()).length > 0 && (
-                <div style={{
-                  background: "#FFFFFF",
-                  border: "1px solid rgba(44,32,22,0.08)",
-                  borderRadius: 16,
-                  padding: "16px 20px",
-                  boxShadow: "0 4px 20px rgba(44,32,22,0.02)"
-                }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(44,32,22,0.4)", textTransform: "uppercase", marginBottom: 8, letterSpacing: "0.5px", display: "flex", alignItems: "center", gap: 6 }}>
-                    <Plus size={14} /> Bidang Kustom (Custom Fields)
-                  </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                    {d.customFields.filter((cf:any) => cf.name?.trim() || cf.value?.trim()).map((cf:any, idx:number) => (
-                      <div key={idx} style={{ background: "rgba(44,32,22,0.02)", padding: "12px 16px", borderRadius: 10 }}>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(44,32,22,0.5)", textTransform: "uppercase", marginBottom: 4 }}>{cf.name || `Field ${idx+1}`}</div>
-                        <div style={{ fontSize: 13, color: "#2C2016", whiteSpace: "pre-wrap" }}>{cf.value || "-"}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Item 8: High Impact Stats (Bento Widget) */}
-              <div style={{
-                background: "#FFFFFF",
-                border: "1px solid rgba(44,32,22,0.08)",
-                borderRadius: 16,
-                padding: "16px 20px",
-                boxShadow: "0 4px 20px rgba(44,32,22,0.02)"
-              }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                  <span style={{ fontSize: 11, fontWeight: 800, color: "rgba(44,32,22,0.4)", textTransform: "uppercase", letterSpacing: "0.5px", display: "flex", alignItems: "center", gap: 6 }}><BarChart2 size={12} /> Laporan Statistik Performa</span>
-                  {d.metricsUpdatedAt && <span style={{ fontSize: 10, color: "rgba(44,32,22,0.4)" }}>Terakhir diupdate: {d.metricsUpdatedAt}</span>}
-                </div>
-                
-                <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                  {/* Organik Card Inside Reader */}
-                  <div style={{ background: "rgba(59,130,246,0.03)", border: "1px solid rgba(59,130,246,0.08)", borderRadius: 12, padding: 14, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-                    <div>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: "#3B82F6", marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}><Leaf size={14} style={{marginRight: 4}} /> Jangkauan Organik</div>
-                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(148px, 1fr))", gap: 8, marginBottom: 10 }}>
-                        {MK.map((k:string) => (
-                          <div key={k} style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(44,32,22,0.02)", padding: "6px 10px", borderRadius: 8 }}>
-                            {getMetricIcon(k, MC[k]||"#3B82F6", 14)}
-                            <div>
-                              <div style={{ fontSize: 9, color: "rgba(44,32,22,0.5)", textTransform: "capitalize", lineHeight: 1.1 }}>{k}</div>
-                              <div style={{ fontSize: 12, fontWeight: 805, color: "#2C2016" }}>{fmt(d.metrics[k] || 0)}</div>
+                        <div style={{display:"grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8}}>
+                          {[...MK,"clicks","conversions"].map((k:string)=>(
+                            <div key={k} style={GRP}>
+                              <label style={{...L, marginBottom: 4, color: k==="clicks"||k==="conversions"?"#9C2B4E":MC[k]||"#9C2B4E", display: "flex", alignItems: "center", gap: 4, textTransform: "capitalize", fontSize: "11px"}}>
+                                {getMetricIcon(k, k==="clicks"||k==="conversions"?"#9C2B4E":MC[k]||"#9C2B4E", 12)}
+                                {k}
+                              </label>
+                              <input 
+                                type="number" 
+                                min={0} 
+                                placeholder="0" 
+                                value={d.adsMetrics?.[k] === 0 ? "" : (d.adsMetrics?.[k] !== undefined && d.adsMetrics?.[k] !== null ? d.adsMetrics[k] : "")} 
+                                onChange={(e:any)=>setM(k,e.target.value,true)} 
+                                style={I({textAlign:"right", fontSize: "12px", padding: "6px 8px"})}
+                              />
                             </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div onClick={() => setEditingFieldRight("metrics")} style={{ display: "flex", flexDirection: "column", gap: 16, cursor: "pointer" }} title="Klik di mana saja untuk mengedit Statistik Metrik">
+                  {/* Item 7: Custom Fields Section */}
+                  {d.customFields && d.customFields.filter((cf:any) => cf.name?.trim() || cf.value?.trim()).length > 0 && (
+                    <div style={{
+                      background: "#ffffff", border: "1px solid rgba(44, 32, 22, 0.08)",
+                      borderRadius: 16,
+                      padding: "16px 20px",
+                      boxShadow: "0 8px 32px rgba(0, 0, 0, 0.04)"
+                    }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(44,32,22,0.4)", textTransform: "uppercase", marginBottom: 8, letterSpacing: "0.5px", display: "flex", alignItems: "center", gap: 6 }}>
+                        <Plus size={14} /> Bidang Kustom (Custom Fields)
+                      </div>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                        {d.customFields.filter((cf:any) => cf.name?.trim() || cf.value?.trim()).map((cf:any, idx:number) => (
+                          <div key={idx} style={{ background: "rgba(44,32,22,0.02)", padding: "12px 16px", borderRadius: 10 }}>
+                            <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(44,32,22,0.5)", textTransform: "uppercase", marginBottom: 4 }}>{cf.name || `Field ${idx+1}`}</div>
+                            <div style={{ fontSize: 13, color: "#2C2016", whiteSpace: "pre-wrap" }}>{cf.value || "-"}</div>
                           </div>
                         ))}
                       </div>
                     </div>
-                    <div style={{ borderTop: "1px dashed rgba(59,130,246,0.15)", paddingTop: 8, display: "flex", flexDirection: "column", gap: 2 }}>
-                      <div style={{ fontSize: 11, color: "rgba(44,32,22,0.7)", display: "flex", justifyContent: "space-between" }}>
-                        <span>Total Interaksi:</span>
-                        <strong style={{ color: "#3B82F6" }}>{fmt(eng(d.metrics))}</strong>
-                      </div>
-                      <div style={{ fontSize: 11, color: "rgba(44,32,22,0.7)", display: "flex", justifyContent: "space-between" }}>
-                        <span>Engagement Rate:</span>
-                        <strong style={{ color: "#3B82F6" }}>{(d.metrics?.reach || 0) > 0 ? ((eng(d.metrics) / d.metrics.reach) * 100).toFixed(2) : 0}%</strong>
-                      </div>
+                  )}
+
+                  {/* Item 8: High Impact Stats (Bento Widget) */}
+                  <div style={{
+                    background: "#ffffff", border: "1px solid rgba(44, 32, 22, 0.08)",
+                    borderRadius: 16,
+                    padding: "16px 20px",
+                    boxShadow: "0 8px 32px rgba(0, 0, 0, 0.04)"
+                  }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                      <span style={{ fontSize: 11, fontWeight: 800, color: "rgba(44,32,22,0.4)", textTransform: "uppercase", letterSpacing: "0.5px", display: "flex", alignItems: "center", gap: 6 }}><BarChart2 size={12} /> Laporan Statistik Performa</span>
+                      {d.metricsUpdatedAt && <span style={{ fontSize: 10, color: "rgba(44,32,22,0.4)" }}>Terakhir diupdate: {d.metricsUpdatedAt}</span>}
                     </div>
-                  </div>
- 
-                  {/* Ads Card Inside Reader */}
-                  <div style={{ background: d.isAds ? "rgba(156,43,78,0.03)" : "rgba(44,32,22,0.01)", border: d.isAds ? "1px solid rgba(156,43,78,0.08)" : "1px dashed rgba(44,32,22,0.08)", borderRadius: 12, padding: 14, display: "flex", flexDirection: "column", justifyContent: d.isAds ? "space-between" : "center" }}>
-                    {d.isAds ? (
-                      <>
+                    
+                    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                      <div style={{ background: "rgba(59,130,246,0.03)", border: "1px solid rgba(59,130,246,0.08)", borderRadius: 12, padding: 14, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
                         <div>
-                          <div style={{ fontSize: 12, fontWeight: 700, color: "#9C2B4E", marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}><DollarSign size={14} style={{marginRight: 4}} /> Hasil Kampanye Berbayar</div>
-                          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(148px, 1fr))", gap: 6, marginBottom: 8 }}>
-                            {[...MK, "clicks", "conversions"].map((k:string) => (
-                              <div key={k} style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(156,43,78,0.02)", padding: "5px 8px", borderRadius: 8 }}>
-                                {getMetricIcon(k, k==="clicks"||k==="conversions"?"#9C2B4E":MC[k]||"#9C2B4E", 13)}
+                          <div style={{ fontSize: 12, fontWeight: 700, color: "#3B82F6", marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}><Leaf size={14} style={{marginRight: 4}} /> Jangkauan Organik</div>
+                          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(148px, 1fr))", gap: 8, marginBottom: 10 }}>
+                            {MK.map((k:string) => (
+                              <div key={k} style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(44,32,22,0.02)", padding: "6px 10px", borderRadius: 8 }}>
+                                {getMetricIcon(k, MC[k]||"#3B82F6", 14)}
                                 <div>
-                                  <div style={{ fontSize: 8, color: "rgba(44,32,22,0.5)", textTransform: "capitalize", lineHeight: 1.1 }}>{k}</div>
-                                  <div style={{ fontSize: 11, fontWeight: 805, color: "#2C2016" }}>{fmt((d.adsMetrics || {})[k] || 0)}</div>
+                                  <div style={{ fontSize: 9, color: "rgba(44,32,22,0.5)", textTransform: "capitalize", lineHeight: 1.1 }}>{k}</div>
+                                  <div style={{ fontSize: 12, fontWeight: 805, color: "#2C2016" }}>{fmt(d.metrics[k] || 0)}</div>
                                 </div>
                               </div>
                             ))}
                           </div>
                         </div>
-                        <div style={{ borderTop: "1px dashed rgba(156,43,78,0.15)", paddingTop: 8, display: "flex", flexDirection: "column", gap: 2 }}>
+                        <div style={{ borderTop: "1px dashed rgba(59,130,246,0.15)", paddingTop: 8, display: "flex", flexDirection: "column", gap: 2 }}>
                           <div style={{ fontSize: 11, color: "rgba(44,32,22,0.7)", display: "flex", justifyContent: "space-between" }}>
-                            <span>Clicks / Conversions:</span>
-                            <strong style={{ color: "#9C2B4E" }}>{fmt(d.adsMetrics?.clicks || 0)} / {fmt(d.adsMetrics?.conversions || 0)}</strong>
+                            <span>Total Interaksi:</span>
+                            <strong style={{ color: "#3B82F6" }}>{fmt(eng(d.metrics))}</strong>
                           </div>
                           <div style={{ fontSize: 11, color: "rgba(44,32,22,0.7)", display: "flex", justifyContent: "space-between" }}>
-                            <span>Total Engagement Ads:</span>
-                            <strong style={{ color: "#9C2B4E" }}>{fmt(eng(d.adsMetrics || {}))}</strong>
+                            <span>Engagement Rate:</span>
+                            <strong style={{ color: "#3B82F6" }}>{(d.metrics?.reach || 0) > 0 ? ((eng(d.metrics) / d.metrics.reach) * 100).toFixed(2) : 0}%</strong>
                           </div>
                         </div>
-                      </>
-                    ) : (
-                      <div style={{ textAlign: "center", padding: "10px 0" }}>
-                        <div style={{ fontSize: 18, marginBottom: 2, display: "flex", justifyContent: "center", color: "rgba(44,32,22,0.4)" }}><Leaf size={20} /></div>
-                        <div style={{ fontSize: 12, fontWeight: 750, color: "rgba(44,32,22,0.4)" }}>Bukan Konten Berbayar</div>
-                        <div style={{ fontSize: 10, color: "rgba(44,32,22,0.3)", marginTop: 2 }}>Metrik ads tidak aktif untuk posting organik.</div>
                       </div>
-                    )}
+     
+                      <div style={{ background: d.isAds ? "rgba(156,43,78,0.03)" : "rgba(44,32,22,0.01)", border: d.isAds ? "1px solid rgba(156,43,78,0.08)" : "1px dashed rgba(44,32,22,0.08)", borderRadius: 12, padding: 14, display: "flex", flexDirection: "column", justifyContent: d.isAds ? "space-between" : "center" }}>
+                        {d.isAds ? (
+                          <>
+                            <div>
+                              <div style={{ fontSize: 12, fontWeight: 700, color: "#9C2B4E", marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}><DollarSign size={14} style={{marginRight: 4}} /> Hasil Kampanye Berbayar</div>
+                              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(148px, 1fr))", gap: 6, marginBottom: 8 }}>
+                                {[...MK, "clicks", "conversions"].map((k:string) => (
+                                  <div key={k} style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(156,43,78,0.02)", padding: "5px 8px", borderRadius: 8 }}>
+                                    {getMetricIcon(k, k==="clicks"||k==="conversions"?"#9C2B4E":MC[k]||"#9C2B4E", 13)}
+                                    <div>
+                                      <div style={{ fontSize: 8, color: "rgba(44,32,22,0.5)", textTransform: "capitalize", lineHeight: 1.1 }}>{k}</div>
+                                      <div style={{ fontSize: 11, fontWeight: 805, color: "#2C2016" }}>{fmt((d.adsMetrics || {})[k] || 0)}</div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                            <div style={{ borderTop: "1px dashed rgba(156,43,78,0.15)", paddingTop: 8, display: "flex", flexDirection: "column", gap: 2 }}>
+                              <div style={{ fontSize: 11, color: "rgba(44,32,22,0.7)", display: "flex", justifyContent: "space-between" }}>
+                                <span>Clicks / Conversions:</span>
+                                <strong style={{ color: "#9C2B4E" }}>{fmt(d.adsMetrics?.clicks || 0)} / {fmt(d.adsMetrics?.conversions || 0)}</strong>
+                              </div>
+                              <div style={{ fontSize: 11, color: "rgba(44,32,22,0.7)", display: "flex", justifyContent: "space-between" }}>
+                                <span>Total Engagement Ads:</span>
+                                <strong style={{ color: "#9C2B4E" }}>{fmt(eng(d.adsMetrics || {}))}</strong>
+                              </div>
+                            </div>
+                          </>
+                        ) : (
+                          <div style={{ textAlign: "center", padding: "10px 0" }}>
+                            <div style={{ fontSize: 18, marginBottom: 2, display: "flex", justifyContent: "center", color: "rgba(44,32,22,0.4)" }}><Leaf size={20} /></div>
+                            <div style={{ fontSize: 12, fontWeight: 750, color: "rgba(44,32,22,0.4)" }}>Bukan Konten Berbayar</div>
+                            <div style={{ fontSize: 10, color: "rgba(44,32,22,0.3)", marginTop: 2 }}>Metrik ads tidak aktif untuk posting organik.</div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-              </motion.div>
+              )
             )}
-          </AnimatePresence>
+
+          </div>
 
         </div>
+        </div>
 
-        <div style={{display:"flex", gap:10, justifyContent:"space-between", alignItems:"center", padding: "16px 28px", borderTop: "1px solid rgba(44,32,22,0.08)", background: "white", borderRadius: "0 0 24px 24px", zIndex: 10, flexShrink: 0}}>
+        <div style={{display:"flex", gap:10, justifyContent:"space-between", alignItems:"center", padding: "10px 20px", borderTop: "1px solid rgba(44,32,22,0.08)", background: "white", borderRadius: "0 0 24px 24px", zIndex: 10, flexShrink: 0}}>
           <div style={{display:"flex", gap:8}}>
             {onDuplicate && (
-              <button onClick={()=>onDuplicate(d)} className="hover-scale" style={{...B(false), background:"rgba(44,32,22,0.05)", border:"1.5px solid rgba(44,32,22,0.1)", color:"#2C2016", padding:"7px 14px", fontSize:12, fontWeight:700}}><Copy size={14} style={{marginRight: 4}} /> Duplikasi</button>
+              <button onClick={()=>onDuplicate(d)} className="hover-scale" style={{...B(false), background:"rgba(44,32,22,0.05)", border:"1.5px solid rgba(44,32,22,0.1)", color:"#2C2016", padding:"5px 10px", fontSize:11, fontWeight:700}}><Copy size={12} style={{marginRight: 4}} /> Duplikasi</button>
             )}
             {d.archived ? (
-              <button onClick={()=>onRestore(d.id)} className="hover-scale" style={{...B(false), background:"#E8F5E9", border:"1.5px solid #2E7D32", color:"#2E7D32", padding:"7px 14px", fontSize:12, fontWeight:700}}><RefreshCcw size={14} style={{marginRight: 4}} /> Tampilkan Lagi</button>
+              <button onClick={()=>onRestore(d.id)} className="hover-scale" style={{...B(false), background:"#E8F5E9", border:"1.5px solid #2E7D32", color:"#2E7D32", padding:"5px 10px", fontSize:11, fontWeight:700}}><RefreshCcw size={12} style={{marginRight: 4}} /> Tampilkan Lagi</button>
             ) : (
-              canArchive && <button onClick={()=>onArchive(d.id)} className="hover-scale" style={{...B(false), background:"#FAFAFA", border:"1.5px solid rgba(44,32,22,0.1)", color:"#666", padding:"7px 14px", fontSize:12, fontWeight:700}}><Archive size={14} style={{marginRight: 4}} /> Arsipkan</button>
+              canArchive && <button onClick={()=>onArchive(d.id)} className="hover-scale" style={{...B(false), background:"rgba(255, 255, 255, 0.85)", backdropFilter:"blur(32px)", WebkitBackdropFilter:"blur(32px)", border:"1px solid rgba(0,0,0,0.1)", color:"#666", padding:"5px 10px", fontSize:11, fontWeight:700}}><Archive size={12} style={{marginRight: 4}} /> Arsipkan</button>
             )}
-            {canDelete && <button onClick={()=>onDelete(d.id)} className="hover-scale" style={{...B(false), background:"#FDF5F8", border:"1.5px solid #9C2B4E", color:"#9C2B4E", padding:"7px 14px", fontSize:12, fontWeight:700}}><Trash size={14} style={{marginRight: 4}} /> Hapus</button>}
+            {canDelete && <button onClick={()=>onDelete(d.id)} className="hover-scale" style={{...B(false), background:"#FDF5F8", border:"1.5px solid #9C2B4E", color:"#9C2B4E", padding:"5px 10px", fontSize:11, fontWeight:700}}><Trash size={12} style={{marginRight: 4}} /> Hapus</button>}
           </div>
-          <div style={{display:"flex", gap:12, alignItems:"center"}}>
+          <div style={{display:"flex", gap:10, alignItems:"center"}}>
             {isSaving && (
-              <span style={{ fontSize: 11, color: "#3B82F6", fontWeight: 700, display: "flex", alignItems: "center" }} className="animate-pulse">
+              <span style={{ fontSize: 10, color: "#3B82F6", fontWeight: 700, display: "flex", alignItems: "center" }} className="animate-pulse">
                 Menyimpan...
               </span>
             )}
@@ -1532,22 +1334,22 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
               className="hover-scale"
               title={isReaderMode ? "Edit Detail Konten" : "Selesai & Lihat Detail Konten"}
               style={{
-                width: 44,
-                height: 44,
+                width: 32,
+                height: 32,
                 borderRadius: "50%",
                 border: "none",
                 background: isReaderMode ? "#3B82F6" : "#2E7D32",
                 color: "white",
-                fontSize: 18,
+                fontSize: 14,
                 cursor: "pointer",
-                boxShadow: "0 4px 14px rgba(44,32,22,0.18)",
+                boxShadow: "0 2px 8px rgba(44,32,22,0.15)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 transition: "all 0.2s"
               }}
             >
-              {isReaderMode ? <Edit2 size={16}/> : <BookOpen size={16}/>}
+              {isReaderMode ? <Edit2 size={13}/> : <BookOpen size={13}/>}
             </button>
           </div>
         </div>
@@ -1556,7 +1358,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
       <AnimatePresence>
         {false && (
           <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.5)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:400,borderRadius:24}} onClick={e=>e.stopPropagation()}>
-             <motion.div initial={{scale:0.95}} animate={{scale:1}} exit={{scale:0.95}} style={{background:"#FAFAFA",padding:32,borderRadius:24,maxWidth:360,width:"100%",boxShadow:"0 12px 30px rgba(0,0,0,0.2)",textAlign:"center"}}>
+             <motion.div initial={{scale:0.95}} animate={{scale:1}} exit={{scale:0.95}} style={{background:"rgba(255, 255, 255, 0.85)", backdropFilter:"blur(32px)", WebkitBackdropFilter:"blur(32px)", border:"1px solid rgba(255,255,255,0.5)",padding:32,borderRadius:24,maxWidth:360,width:"100%",boxShadow:"0 12px 30px rgba(0,0,0,0.2)",textAlign:"center"}}>
                 <h3 style={{margin:"0 0 16px",fontSize:20,color:"#2C2016", fontWeight:800}}>Keluar dari Draft?</h3>
                 <p style={{margin:"0 0 24px",fontSize:14,color:"rgba(44,32,22,0.6)",lineHeight:1.5}}>
                    {modal.mode === "add" ? "Anda sedang membuat draft baru. Yakin ingin keluar? Jika dihapus, draft ini akan hilang sepenuhnya." : "Anda sedang mengedit konten. Yakin ingin keluar?"}

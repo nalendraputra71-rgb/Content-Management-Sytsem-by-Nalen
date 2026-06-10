@@ -100,12 +100,22 @@ export function MonthView({year,month,monthContent,filtered,openEdit,openAdd,sho
   };
 
   return (
-    <div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:3,marginBottom:3}}>
-        {DAYS_S.map(d=><div key={d} style={{textAlign:"center",fontSize:9,fontWeight:600,letterSpacing:1.5,textTransform:"uppercase",color:"rgba(44,32,22,0.3)",padding:"5px 0"}}>{d}</div>)}
+    <div style={{
+      background: "rgba(255, 255, 255, 0.45)",
+      backdropFilter: "blur(16px)",
+      WebkitBackdropFilter: "blur(16px)",
+      transform: "translateZ(0)",
+      willChange: "transform",
+      borderRadius: "24px",
+      padding: "24px",
+      border: "1px solid rgba(255, 255, 255, 0.6)",
+      boxShadow: "0 8px 32px rgba(0, 0, 0, 0.04)"
+    }}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:8,marginBottom:12}}>
+        {DAYS_S.map(d=><div key={d} style={{textAlign:"center",fontSize:12,fontWeight:600,textTransform:"uppercase",color:"rgba(0,0,0,0.5)",letterSpacing:1}}>{d}</div>)}
       </div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:3}}>
-        {Array.from({length:sd}).map((_,i)=><div key={`e${i}`} style={{minHeight:100,background:"rgba(44,32,22,0.02)",borderRadius:8}}/>)}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:8}}>
+        {Array.from({length:sd}).map((_,i)=><div key={`e${i}`} style={{minHeight:100,background:"transparent"}}/>)}
         {Array.from({length:dim}).map((_,i)=>{
           const day=i+1, items=getF(day), allItems=getA(day), evs=showHolidays?getEv(day):[];
           const isSpec = evs.some(e => e.name.includes("Launch") || e.name.includes("Flash") || e.name.includes("Sale") || e.name.includes("Promo") || e.name.includes("Payday"));
@@ -118,21 +128,21 @@ export function MonthView({year,month,monthContent,filtered,openEdit,openAdd,sho
               onDragLeave={(e) => handleDragLeave(e, day)}
               onDrop={(e) => handleDrop(e, day)}
               style={{
-              minHeight: 110, 
-              background: dragOverDate === day ? "rgba(59,130,246,0.1)" : isToday ? "rgba(var(--theme-primary-rgb), 0.15)" : evs.length>0 ? "#F5F0E8" : "white",
-              borderRadius: 8,
-              padding: 6,
-              border: dragOverDate === day ? "2px dashed var(--theme-primary)" : isToday ? "2px solid var(--theme-primary)" : evs.length>0 ? "1px solid rgba(59,130,246,0.2)" : "1px solid rgba(44,32,22,0.06)",
-              boxShadow: isToday ? "0 4px 12px rgba(var(--theme-primary-rgb), 0.2)" : "none",
+              minHeight: 120, 
+              background: dragOverDate === day ? "rgba(255,255,255,0.9)" : isToday ? "rgba(255,255,255,0.8)" : "rgba(255,255,255,0.5)",
+              borderRadius: 16,
+              padding: 10,
+              border: dragOverDate === day ? "1px dashed rgba(0,122,255,0.5)" : isToday ? "1px solid rgba(0,122,255,0.3)" : "1px solid rgba(255,255,255,0.7)",
+              boxShadow: dragOverDate === day ? "inset 0 0 0 1px rgba(0,122,255,0.2)" : isToday ? "0 4px 16px rgba(0,122,255,0.1)" : "0 2px 10px rgba(0,0,0,0.02)",
               transition: "all 0.2s"
             }}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:3}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
                 <div style={{display:"flex",flexDirection:"column",gap:2}}>
-                  <span style={{fontSize:18,fontWeight:900,lineHeight:1,color:isToday?"var(--theme-primary)":"#2C2016"}}>{day}</span>
+                  <span style={{fontSize:14,fontWeight:600,lineHeight:1,color:isToday?"#2383e2":"#37352F", paddingLeft: 4, paddingTop: 4}}>{day}</span>
                 </div>
-                <div style={{display:"flex",gap:3,alignItems:"center"}}>
-                  {allItems.length>0&&<span style={{background:"#2C2016",color:"#FAF7F2",borderRadius:12,padding:"2px 6px",fontSize:9,fontWeight:700}}>{allItems.length}</span>}
-                  <button onClick={()=>openAdd(day)} style={{background:"rgba(255,255,255,0.4)",border:"none",borderRadius:"50%",width:20,height:20,cursor:"pointer",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",color:"var(--theme-primary)",padding:0,transition:"all 0.2s"}} className="hover-scale">+</button>
+                <div style={{display:"flex",gap:4,alignItems:"center"}}>
+                  {allItems.length>0&&<span style={{color:"#787774",fontSize:11,fontWeight:500}}>{allItems.length} item</span>}
+                  <button onClick={()=>openAdd(day)} style={{background:"transparent",border:"none",borderRadius:"4px",width:20,height:20,cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",color:"#787774",padding:0,transition:"all 0.2s"}} className="hover:bg-gray-200">+</button>
                 </div>
               </div>
               
@@ -180,12 +190,16 @@ export function MonthView({year,month,monthContent,filtered,openEdit,openAdd,sho
                         onDragStart={(e: any) => handleDragStart(e, item.id)} 
                         onDragEnd={() => setDragOverDate(null)}
                         onClick={()=>openEdit(item)} 
-                        style={{background:ps.light,flexShrink:0,border:"none",borderLeft:`3px solid ${ps.color}`,borderRadius:"4px 8px 8px 4px",padding:"4px 6px",textAlign:"left",cursor:"grab",width:"100%",marginBottom:2}}
+                        style={{
+                          background: "rgba(255,255,255,0.7)",
+                          flexShrink:0,border:"1px solid rgba(255,255,255,0.9)",borderRadius:"10px",padding:"6px 8px",textAlign:"left",cursor:"grab",width:"100%",marginBottom:6,
+                          boxShadow: "0 2px 8px rgba(0,0,0,0.03)"
+                        }}
                       >
-                        <div style={{display:"flex",alignItems:"flex-start",gap:3}}>
-                          <span className="pill-tag" style={{background:ctBg,color:"#FAF7F2",fontSize:8,padding:"1px 4px",marginTop:1}}>{ctChar}</span>
-                          {item.isAds&&<span style={{fontSize:8,marginTop:1}}>💰</span>}
-                          <span style={{fontSize:10,color:ps.color,fontWeight:700,lineHeight:1.3,display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden"}}>{item.title||"(tanpa judul)"}{item.archived ? " 📦" : ""}</span>
+                        <div style={{display:"flex",alignItems:"flex-start",gap:4}}>
+                          <span style={{background:ctBg,color:"white",fontSize:10,fontWeight:600,padding:"0px 4px",borderRadius:3}}>{ctChar}</span>
+                          {item.isAds&&<span style={{fontSize:10}}>💰</span>}
+                          <span style={{fontSize:11,color:ps.color,fontWeight:500,lineHeight:1.3,display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden"}}>{item.title||"Untitled"}{item.archived ? " 📦" : ""}</span>
                         </div>
                       </motion.button>
                     );
@@ -213,14 +227,14 @@ export function WeekView({year,month,content,filtered,openEdit,openAdd,pillars,p
   return (
     <div>
       <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:16}}>
-        <button onClick={()=>setWOff(w=>w-1)} style={{...B(false),padding:"5px 12px"}}>← Minggu Lalu</button>
-        <div style={{fontSize:16,fontWeight:700,color:"#2C2016"}}>
+        <button onClick={()=>setWOff(w=>w-1)} style={{...B(false),padding:"4px 8px", background:"transparent", border:"none", boxShadow:"none", color:"#787774"}}>← Previous</button>
+        <div style={{fontSize:16,fontWeight:600,color:"#37352F"}}>
           {fmtD(days[0].y,days[0].mo,days[0].d)} — {fmtD(days[6].y,days[6].mo,days[6].d)}
         </div>
-        <button onClick={()=>setWOff(w=>w+1)} style={{...B(false),padding:"5px 12px"}}>Minggu Depan →</button>
-        <button onClick={()=>setWOff(0)} style={{...B(false),padding:"5px 10px",fontSize:11}}>↺ Reset</button>
+        <button onClick={()=>setWOff(w=>w+1)} style={{...B(false),padding:"4px 8px", background:"transparent", border:"none", boxShadow:"none", color:"#787774"}}>Next →</button>
+        <button onClick={()=>setWOff(0)} style={{...B(false),padding:"4px 8px",fontSize:12, background:"transparent", border:"none", boxShadow:"none", color:"#787774"}}>Today</button>
       </div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:8}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:12}}>
         {days.map(day=>{
           const items=getItems(day);
           const staticEv=showHolidays?holidays[`${day.y}-${day.mo}-${day.d}`]:null;
@@ -228,14 +242,13 @@ export function WeekView({year,month,content,filtered,openEdit,openAdd,pillars,p
           const ev = staticEv ? (dynamicEv ? `${staticEv} | ${dynamicEv}` : staticEv) : dynamicEv;
           const isToday=new Date().toDateString()===day.date.toDateString();
           return (
-            <div key={day.d+"-"+day.mo} style={{background:isToday?"#FDF5E8":"white",borderRadius:10,padding:10,border:isToday?"2px solid var(--theme-primary)":"1px solid rgba(44,32,22,0.08)",minHeight:180}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
-                <div>
-                  <div style={{fontSize:9,fontWeight:700,textTransform:"uppercase",color:"rgba(44,32,22,0.4)"}}>{DAYS_S[day.dow]}</div>
-                  <div style={{fontSize:24,fontWeight:800,lineHeight:1,color:isToday?"var(--theme-primary)":"#2C2016"}}>{day.d}</div>
-                  <div style={{fontSize:9,fontWeight:600,color:"rgba(44,32,22,0.3)"}}>{MS[day.mo-1]} {day.y}</div>
+            <div key={day.d+"-"+day.mo} style={{background:"transparent",borderRadius:0,padding:0,border:"none",minHeight:180}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8, borderBottom: "1px solid rgba(55,53,47,0.08)", paddingBottom: 8}}>
+                <div style={{display:"flex", alignItems:"baseline", gap: 6}}>
+                  <div style={{fontSize:12,fontWeight:600,color:isToday?"#2383e2":"#787774"}}>{DAYS_S[day.dow]}</div>
+                  <div style={{fontSize:18,fontWeight:500,lineHeight:1,color:isToday?"#2383e2":"#37352F"}}>{day.d}</div>
                 </div>
-                <button onClick={()=>openAdd(day.d)} className="hover-scale" style={{background:"rgba(255,255,255,0.2)",border:"none",borderRadius:"50%",width:20,height:20,cursor:"pointer",color:isToday?"var(--theme-primary)":"var(--theme-primary)",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",padding:0,transition:"all 0.2s"}}>+</button>
+                <button onClick={()=>openAdd(day.d)} style={{background:"transparent",border:"none",borderRadius:"4px",width:20,height:20,cursor:"pointer",color:"#787774",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",padding:0,transition:"all 0.2s"}} className="hover:bg-gray-200">+</button>
               </div>
               {ev&&<div style={{fontSize:8,color:"#A67C1C",fontWeight:700,background:"#FBF5E3",borderRadius:4,padding:"2px 5px",marginBottom:5}}>{ev}</div>}
               <div style={{display:"flex",flexDirection:"column",gap:3}}>
@@ -243,13 +256,13 @@ export function WeekView({year,month,content,filtered,openEdit,openAdd,pillars,p
                   const firstPillar = String(item.pillar).split(',')[0].trim();
                   const ps = item.archived ? { color: "#7A7976", light: "#EBEAE6" } : gps(pillars, firstPillar);
                   return (
-                    <button key={item.id} className="hover-scale card-hover" onClick={()=>openEdit(item)} style={{background:ps.light,border:"none",borderLeft:`3px solid ${ps.color}`,borderRadius:"6px 12px 12px 6px",padding:"6px 8px",textAlign:"left",cursor:"pointer",width:"100%",marginBottom:4}}>
-                      <div style={{fontSize:10,color:ps.color,fontWeight:700,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{item.title}{item.archived ? " 📦" : ""}</div>
-                      <div style={{fontSize:8,color:"rgba(44,32,22,0.5)",marginTop:2,fontWeight:600}}>{fmtT(item.uploadHour,item.uploadMinute,item.timeFormat)} · {String(item.platform).split(',')[0].trim()} {String(item.platform).includes(',')?'+':''} {item.isAds?"💰":""}</div>
+                    <button key={item.id} onClick={()=>openEdit(item)} style={{background:ps.light,border:"none",borderRadius:"4px",padding:"6px 8px",textAlign:"left",cursor:"pointer",width:"100%",marginBottom:4, transition: "background 0.2s"}}>
+                      <div style={{fontSize:11,color:ps.color,fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{item.title || "Untitled"}{item.archived ? " 📦" : ""}</div>
+                      <div style={{fontSize:10,color:"rgba(55,53,47,0.6)",marginTop:2,fontWeight:400}}>{fmtT(item.uploadHour,item.uploadMinute,item.timeFormat)} · {String(item.platform).split(',')[0].trim()} {String(item.platform).includes(',')?'+':''} {item.isAds?"💰":""}</div>
                     </button>
                   );
                 })}
-                {items.length===0&&<div style={{fontSize:9,color:"rgba(44,32,22,0.2)",fontStyle:"italic",textAlign:"center",marginTop:8}}>Kosong</div>}
+                {items.length===0&&<div style={{fontSize:11,color:"#787774",fontStyle:"italic",textAlign:"left",marginTop:4}}>No items</div>}
               </div>
             </div>
           );
@@ -272,40 +285,60 @@ export function BoardView({year,month,content,filtered,openEdit,openAdd,statuses
   };
 
   return (
-    <div style={{display:"flex",gap:12,overflowX:"auto",paddingBottom:12,minHeight:400}}>
+    <div style={{display:"flex",gap:24,overflowX:"auto",paddingBottom:24,minHeight:400}}>
       {Array.isArray(statuses) && statuses.map((st:any)=>{
         const stName = typeof st === 'string' ? st : (st?.name || st?.id || String(st));
         const cols=items.filter((c:any)=>c.status===stName).sort((a:any,b:any) => getMin(a) - getMin(b));
         const ss = (typeof st !== 'string' && st?.color) ? {bg: st.color+"20", color: st.color} : gss(stName);
         return (
-          <div key={stName} style={{minWidth:220,flex:"0 0 220px",background:"#F5F0E8",borderRadius:12,padding:10}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-              <div style={{display:"flex",alignItems:"center",gap:6}}>
-                <div style={{width:10,height:10,borderRadius:"50%",background:ss?.color||"#ccc"}}/>
-                <span style={{fontSize:11,fontWeight:700,color:"#2C2016"}}>{stName}</span>
+          <div key={stName} style={{
+            minWidth:280,
+            flex:"0 0 280px",
+            background: "rgba(255,255,255,0.45)",
+            backdropFilter: "blur(16px)",
+            WebkitBackdropFilter: "blur(16px)",
+            transform: "translateZ(0)",
+            willChange: "transform",
+            borderRadius: "24px",
+            padding: "20px",
+            border: "1px solid rgba(255,255,255,0.6)",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.04)"
+          }}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+              <div style={{display:"flex",alignItems:"center",gap:8}}>
+                <span style={{background:ss?.bg||"rgba(255,255,255,0.8)",border:"1px solid rgba(255,255,255,0.6)",color:ss?.color||"#333",fontSize:12,fontWeight:600,padding:"4px 10px",borderRadius:8}}>{stName}</span>
+                <span style={{color:"rgba(0,0,0,0.5)",fontSize:13,fontWeight:600}}>{cols.length}</span>
               </div>
-              <span style={{background:ss?.bg||"#eee",color:ss?.color||"#333",fontSize:9,fontWeight:700,padding:"1px 6px",borderRadius:8}}>{cols.length}</span>
             </div>
-            <div style={{display:"flex",flexDirection:"column",gap:6}}>
+            <div style={{display:"flex",flexDirection:"column",gap:12}}>
               {cols.map((item:any)=>{
-                const ps = item.archived ? { color: "#7A7976", light: "#EBEAE6" } : (gps(pillars,item.pillar) || {color:"#ccc", light:"#eee"});
+                const ps = item.archived ? { color: "#787774", light: "rgba(255,255,255,0.5)" } : (gps(pillars,item.pillar) || {color:"#787774", light:"rgba(255,255,255,0.5)"});
                 return (
-                  <div key={item.id} onClick={()=>openEdit(item)} style={{background:"white",borderRadius:8,padding:"10px 12px",cursor:"pointer",boxShadow:"0 1px 3px rgba(44,32,22,0.07)",borderLeft:`3px solid ${ps.color}`, opacity: item.archived ? 0.75 : 1}}>
-                    <div style={{fontSize:11,fontWeight:600,color:"#2C2016",lineHeight:1.3,marginBottom:5}}><High txt={item.title||"(tanpa judul)"}/>{item.archived ? " 📦" : ""}</div>
-                    <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:4}}>
+                  <div key={item.id} onClick={()=>openEdit(item)} style={{
+                    background:"rgba(255,255,255,0.7)",
+                    borderRadius:16,
+                    padding:"16px",
+                    cursor:"pointer",
+                    boxShadow:"0 2px 12px rgba(0,0,0,0.03)",
+                    border:"1px solid rgba(255,255,255,0.9)",
+                    opacity: item.archived ? 0.75 : 1, display:"flex", flexDirection:"column", gap: 8,
+                    transition: "all 0.2s"
+                  }} className="hover:scale-[1.02] hover:shadow-lg">
+                    <div style={{fontSize:13,fontWeight:500,color:"#37352F",lineHeight:1.4}}><High txt={item.title||"Untitled"}/>{item.archived ? " 📦" : ""}</div>
+                    <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
                       <PBadge name={item.platform} platforms={platforms}/>
                       <PiBadge name={item.pillar} pillars={pillars}/>
                       {item.isAds&&<span style={{fontSize:8,color:"#9C2B4E",fontWeight:700}}>💰 Ads</span>}
                     </div>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                      <span style={{fontSize:9,color:"rgba(44,32,22,0.4)"}}>PIC: {item.pic || "-"}</span>
-                      <span style={{fontSize:9,color:"rgba(44,32,22,0.35)"}}>{item.day}/{String(item.month).padStart(2,"0")}</span>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center", paddingTop:4, borderTop:"1px solid rgba(55,53,47,0.06)"}}>
+                      <span style={{fontSize:11,color:"#787774"}}>PIC: {item.pic || "-"}</span>
+                      <span style={{fontSize:11,color:"#787774"}}>{item.day}/{String(item.month).padStart(2,"0")}</span>
                     </div>
-                    {eng(item.metrics)>0&&<div style={{fontSize:9,color:"var(--theme-primary)",fontWeight:600,marginTop:3}}>⚡ {fmt(eng(item.metrics))} eng</div>}
+                    {eng(item.metrics)>0&&<div style={{fontSize:11,color:"#37352F",fontWeight:500}}>⚡ {fmt(eng(item.metrics))} eng</div>}
                   </div>
                 );
               })}
-              <button onClick={()=>openAdd(1)} style={{background:"rgba(44,32,22,0.04)",border:"1.5px dashed rgba(44,32,22,0.15)",borderRadius:8,padding:"8px",cursor:"pointer",color:"rgba(44,32,22,0.4)",fontSize:11,width:"100%",textAlign:"center"}}>+ Tambah</button>
+              <button onClick={()=>openAdd(1)} style={{background:"transparent",border:"none",padding:"6px 8px",cursor:"pointer",color:"#787774",fontSize:13,width:"100%",textAlign:"left", display: "flex", gap: 6}}><span style={{fontSize:16, fontWeight:200}}>+</span> New</button>
             </div>
           </div>
         );
@@ -324,32 +357,49 @@ export function TimelineView({year,month,content,filtered,openEdit,openAdd,pilla
   },[year,month]);
   return (
     <div>
-      <div style={{fontSize:16,fontWeight:700,marginBottom:12,color:"#2C2016"}}>Timeline — {MONTHS[month-1]} {year}</div>
-      <div ref={scrollRef} style={{overflowX:"auto",paddingBottom:12}}>
-        <div style={{display:"flex",gap:6,minWidth:dim*120+"px"}}>
+      <div style={{fontSize:20,fontWeight:600,marginBottom:20,color:"rgba(0,0,0,0.8)"}}>Timeline — {MONTHS[month-1]} {year}</div>
+      <div ref={scrollRef} style={{
+        overflowX:"auto",
+        paddingBottom:20,
+        background: "rgba(255,255,255,0.45)",
+        backdropFilter: "blur(16px)",
+        WebkitBackdropFilter: "blur(16px)",
+        transform: "translateZ(0)",
+        willChange: "transform",
+        borderRadius: "24px",
+        padding: "24px",
+        border: "1px solid rgba(255,255,255,0.6)",
+        boxShadow: "0 8px 32px rgba(0,0,0,0.04)"
+      }}>
+        <div style={{display:"flex",gap:24,minWidth:dim*200+"px"}}>
           {Array.from({length:dim},(_,i)=>{
             const day=i+1,items=getItems(day),ev=getEv(day);
             const dow=new Date(year,month-1,day).getDay();
             const isWe=dow===0||dow===6;
             return (
-              <div key={day} style={{flex:"0 0 120px",background:isWe?"#F5F0E8":ev?"#FDF5E8":"white",borderRadius:10,padding:8,border:ev?"1.5px solid rgba(59,130,246,0.3)":"1px solid rgba(44,32,22,0.07)",minHeight:220}}>
-                <div style={{borderBottom:"1.5px solid rgba(44,32,22,0.08)",paddingBottom:6,marginBottom:6}}>
-                  <div style={{fontSize:9,textTransform:"uppercase",fontWeight:700,color:"rgba(44,32,22,0.4)"}}>{DAYS_S[dow]}</div>
-                  <div style={{fontSize:24,fontWeight:800,lineHeight:1,color:isWe?"rgba(44,32,22,0.3)":"#2C2016"}}>{day}</div>
-                  {ev&&<div style={{fontSize:8,color:"#A67C1C",fontWeight:700,lineHeight:1.2,marginTop:4}}>{ev}</div>}
+              <div key={day} style={{flex:"0 0 200px",background:"transparent",borderRadius:0,padding:0,borderRight:"1px solid rgba(0,0,0,0.1)",minHeight:220, paddingRight: 24}}>
+                <div style={{borderBottom:"1px solid rgba(0,0,0,0.1)",paddingBottom:12,marginBottom:16, display:"flex", alignItems:"baseline", gap: 8}}>
+                  <div style={{fontSize:13,fontWeight:600,color:"rgba(0,0,0,0.4)"}}>{DAYS_S[dow]}</div>
+                  <div style={{fontSize:20,fontWeight:600,lineHeight:1,color:isWe?"rgba(0,0,0,0.4)":"rgba(0,0,0,0.8)"}}>{day}</div>
+                  {ev&&<div style={{fontSize:11,color:"#D9730D",fontWeight:600,lineHeight:1.2, marginLeft: "auto"}}>{ev}</div>}
                 </div>
-                <div style={{display:"flex",flexDirection:"column",gap:4}}>
+                <div style={{display:"flex",flexDirection:"column",gap:10}}>
                   {items.map((item:any)=>{
                     const firstPillar = String(item.pillar).split(',')[0].trim();
-                    const ps = item.archived ? { color: "#7A7976", light: "#EBEAE6" } : gps(pillars, firstPillar);
+                    const ps = item.archived ? { color: "#787774", light: "rgba(255,255,255,0.5)" } : gps(pillars, firstPillar);
                     return (
-                      <button key={item.id} className="hover-scale card-hover" onClick={()=>openEdit(item)} style={{background:ps.light,border:"none",borderLeft:`3px solid ${ps.color}`,borderRadius:"4px 8px 8px 4px",padding:"4px 6px",textAlign:"left",cursor:"pointer",width:"100%"}}>
-                        <div style={{fontSize:9,color:ps.color,fontWeight:700,overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",wordWrap:"break-word"}}>{item.title||"(tanpa judul)"}{item.archived ? " 📦" : ""}</div>
-                        <div style={{fontSize:8,color:"rgba(44,32,22,0.5)",marginTop:2,fontWeight:600}}>{fmtT(item.uploadHour,item.uploadMinute,item.timeFormat)} {item.isAds?"💰":""}</div>
+                      <button key={item.id} onClick={()=>openEdit(item)} style={{
+                        background:"rgba(255,255,255,0.7)",
+                        border:"1px solid rgba(255,255,255,0.9)",
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.03)",
+                        borderRadius:"12px",padding:"10px 12px",textAlign:"left",cursor:"pointer",width:"100%", transition: "all 0.2s"
+                      }} className="hover:bg-white/80 hover:shadow-md">
+                        <div style={{fontSize:11,color:ps.color,fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",wordWrap:"break-word"}}>{item.title||"Untitled"}{item.archived ? " 📦" : ""}</div>
+                        <div style={{fontSize:10,color:"rgba(55,53,47,0.6)",marginTop:4,fontWeight:400}}>{fmtT(item.uploadHour,item.uploadMinute,item.timeFormat)} {item.isAds?"💰":""}</div>
                       </button>
                     );
                   })}
-                  <button onClick={()=>openAdd(day)} className="hover-scale btn-hover" style={{background:"transparent",border:"1px dashed rgba(44,32,22,0.15)",borderRadius:8,padding:"6px",cursor:"pointer",color:"rgba(44,32,22,0.4)",fontSize:11,width:"100%", fontWeight:600}}>+</button>
+                  <button onClick={()=>openAdd(day)} style={{background:"transparent",border:"none",padding:"4px",cursor:"pointer",color:"#787774",fontSize:13,width:"100%", display: "flex", gap: 4, fontWeight:400}}><span style={{fontSize:16, fontWeight:200, lineHeight: 1}}>+</span> New</button>
                 </div>
               </div>
             );
@@ -414,9 +464,9 @@ export function TableView({filtered,openEdit,archiveItem,unarchiveItem,deleteIte
     });
   },[items,sort]);
   const setS = (col:any) => setSort(s=>s.col===col?{col,dir:s.dir==="asc"?"desc":"asc"}:{col,dir:"asc"});
-  const th = (col:any) => ({textAlign:"left" as any,fontSize:10,fontWeight:600,letterSpacing:1,textTransform:"uppercase" as any,color:"rgba(44,32,22,0.4)",padding:"10px 10px",borderBottom:"2px solid rgba(44,32,22,0.08)",whiteSpace:"nowrap" as any,cursor:"pointer",userSelect:"none" as any});
-  const td: React.CSSProperties = {padding:"8px 10px",fontSize:12,borderBottom:"1px solid rgba(44,32,22,0.05)",verticalAlign:"top", whiteSpace: "normal", wordBreak: "break-word"};
-  const arrow = (col:any) => sort.col===col?(sort.dir==="asc"?"↑":"↓"):"";
+  const th = (col:any) => ({textAlign:"left" as any,fontSize:13,fontWeight:600,color:"rgba(0,0,0,0.6)",padding:"12px 16px",borderBottom:"1px solid rgba(0,0,0,0.1)",borderRight:"1px solid rgba(0,0,0,0.05)",whiteSpace:"nowrap" as any,cursor:"pointer",userSelect:"none" as any});
+  const td: React.CSSProperties = {padding:"12px 16px",fontSize:13,color:"rgba(0,0,0,0.8)",borderBottom:"1px solid rgba(0,0,0,0.05)",borderRight:"1px solid rgba(0,0,0,0.05)",verticalAlign:"top", whiteSpace: "normal", wordBreak: "break-word"};
+  const arrow = (col:any) => sort.col===col?(sort.dir==="asc"?"▴":"▾"):"";
 
   const toggleBulk = (id:string) => setBulkIds((p:any)=>p.includes(id)?p.filter((x:any)=>x!==id):[...p,id]);
   const toggleAll = () => setBulkIds(bulkIds.length===sorted.length?[]:sorted.map((c:any)=>c.id));
@@ -428,7 +478,17 @@ export function TableView({filtered,openEdit,archiveItem,unarchiveItem,deleteIte
   };
 
   return (
-    <div style={{background:"white",borderRadius:12,overflow:"auto",boxShadow:"0 1px 4px rgba(44,32,22,0.08)"}}>
+    <div style={{
+      background: "rgba(255,255,255,0.45)",
+      backdropFilter: "blur(16px)",
+      WebkitBackdropFilter: "blur(16px)",
+      transform: "translateZ(0)",
+      willChange: "transform",
+      borderRadius: "24px",
+      overflow: "hidden",
+      boxShadow: "0 8px 32px rgba(0,0,0,0.04)",
+      border: "1px solid rgba(255,255,255,0.6)"
+    }}>
       {bulkIds.length>0 && (
         <div style={{padding:"8px 16px",background:"rgba(59,130,246,0.05)",borderBottom:"1px solid rgba(59,130,246,0.1)",display:"flex",gap:12,alignItems:"center"}}>
           <span style={{fontSize:13,fontWeight:600,color:"#3B82F6"}}>{bulkIds.length} terpilih</span>
@@ -441,11 +501,11 @@ export function TableView({filtered,openEdit,archiveItem,unarchiveItem,deleteIte
         </div>
       )}
       {sorted.length===0
-        ? <div style={{padding:48,textAlign:"center",color:"rgba(44,32,22,0.3)",fontSize:14}}>Tidak ada konten.</div>
-        : <table style={{minWidth:"100%", width: "max-content", borderCollapse:"collapse", tableLayout: "fixed"}}>
+        ? <div style={{padding:48,textAlign:"center",color:"#787774",fontSize:14}}>No contents</div>
+        : <div style={{overflowX: "auto"}}><table style={{minWidth:"100%", width: "max-content", borderCollapse:"collapse", tableLayout: "fixed", borderSpacing: 0}}>
             <thead>
-              <tr>
-                <th style={{padding:"10px",borderBottom:"2px solid rgba(44,32,22,0.08)",width:40}}><input type="checkbox" checked={bulkIds.length===sorted.length&&sorted.length>0} onChange={toggleAll}/></th>
+              <tr style={{background:"rgba(255,255,255,0.4)"}}>
+                <th style={{padding:"12px 16px",borderBottom:"1px solid rgba(0,0,0,0.1)",borderRight:"1px solid rgba(0,0,0,0.05)",width:40}}><input type="checkbox" checked={bulkIds.length===sorted.length&&sorted.length>0} onChange={toggleAll}/></th>
                 {[["Tgl","day"],["Platform","platform"],["Pillar","pillar"],["Tipe Konten","contentType"],["Judul Konten","title"],["Brief Konten","briefCopywriting"],["PIC","pic"],["Status","status"],["Views","views"],["Reach","reach"],["Engagement","engagement"],["Aksi",""]].map(([h,col])=>(
                   <th key={h} style={{...th(col), position: "relative", width: colWidths[h] || 100}} onClick={()=>col&&setS(col)}>
                     {h}{col&&<span style={{marginLeft:3,opacity:0.5}}>{arrow(col)}</span>}
@@ -456,47 +516,48 @@ export function TableView({filtered,openEdit,archiveItem,unarchiveItem,deleteIte
             </thead>
             <tbody>
               {sorted.map(item=>{
-                const e=eng(item.metrics)+eng(item.adsMetrics),ps = item.archived ? { color: "#7A7976", light: "#EBEAE6" } : gps(pillars,item.pillar),ss=gss(item.status);
+                const e=eng(item.metrics)+eng(item.adsMetrics),ps = item.archived ? { color: "#787774", light: "#F1F1EF" } : gps(pillars,item.pillar),ss=gss(item.status);
                 const v=(item.metrics?.views||0)+(item.adsMetrics?.views||0);
                 const r=(item.metrics?.reach||0)+(item.adsMetrics?.reach||0);
                 return (
-                  <tr key={item.id} style={{background:item.archived?"rgba(114,54,128,0.04)":bulkIds.includes(item.id)?"rgba(59,130,246,0.03)":"white",opacity:item.archived?0.7:1}} onMouseEnter={x=>x.currentTarget.style.background="#FAFAF8"} onMouseLeave={x=>x.currentTarget.style.background=item.archived?"rgba(114,54,128,0.04)":bulkIds.includes(item.id)?"rgba(59,130,246,0.03)":"white"}>
+                  <tr key={item.id} style={{background:item.archived?"rgba(0,0,0,0.02)":bulkIds.includes(item.id)?"rgba(0,122,255,0.08)":"transparent",opacity:item.archived?0.7:1}} onMouseEnter={x=>x.currentTarget.style.background="rgba(255,255,255,0.8)"} onMouseLeave={x=>x.currentTarget.style.background=item.archived?"rgba(0,0,0,0.02)":bulkIds.includes(item.id)?"rgba(0,122,255,0.08)":"transparent"}>
                     <td style={td}><input type="checkbox" checked={bulkIds.includes(item.id)} onChange={()=>toggleBulk(item.id)}/></td>
                     <td style={td}>
-                      <span style={{fontWeight:800,fontSize:16,color:"#2C2016"}}>{item.day}</span>
-                      <div style={{fontSize:10,color:"rgba(44,32,22,0.4)",fontWeight:600}}>{fmtT(item.uploadHour,item.uploadMinute,item.timeFormat)}</div>
+                      <span style={{fontWeight:500,fontSize:14}}>{item.day}</span>
+                      <div style={{fontSize:11,color:"#787774",fontWeight:400}}>{fmtT(item.uploadHour,item.uploadMinute,item.timeFormat)}</div>
                     </td>
                     <td style={td}><PBadge name={item.platform} platforms={platforms}/></td>
                     <td style={td}><PiBadge name={item.pillar} pillars={pillars}/></td>
+                    <td style={td}><span style={{background:"#F1F1EF",color:"#37352F", padding:"2px 6px", borderRadius:4, fontSize:12, fontWeight:500}}>{item.contentType||"-"}</span></td>
                     <td style={{...td, verticalAlign:"top"}}>
-                      <div style={{fontWeight:600,lineHeight:1.4, wordBreak:"break-word"}}><High txt={item.title}/></div>
-                      <div style={{display:"flex",gap:4,marginTop:6, flexWrap: "wrap"}}>
+                      <div style={{fontWeight:500,lineHeight:1.4, wordBreak:"break-word"}}><High txt={item.title||"Untitled"}/></div>
+                      <div style={{display:"flex",gap:6,marginTop:6, flexWrap: "wrap"}}>
                         {item.isAds&&<span style={{fontSize:8,color:"#9C2B4E",fontWeight:700}}>💰 Ads</span>}
                         {item.archived&&<span style={{fontSize:8,color:"#723680",fontWeight:700}}>📦 Arsip</span>}
                         {item.linkAsset&&<a href={item.linkAsset} target="_blank" rel="noopener noreferrer" style={{fontSize:9,color:"#2B4C7E"}}>🔗 Aset</a>}
                       </div>
                     </td>
                     <td style={{...td, verticalAlign:"top"}}>
-                      <div style={{fontSize:12,color:"rgba(44,32,22,0.6)",lineHeight:1.5, wordBreak:"break-word", whiteSpace: "pre-wrap"}}>{htmlToPlainText(item.briefCopywriting)||"-"}</div>
+                      <div style={{fontSize:13,color:"rgba(55,53,47,0.8)",lineHeight:1.5, wordBreak:"break-word", whiteSpace: "pre-wrap"}}>{htmlToPlainText(item.briefCopywriting)||"-"}</div>
                     </td>
-                    <td style={td}><span className="pill-tag" style={{background:"rgba(44,32,22,0.06)",color:"#2C2016"}}>{item.pic}</span></td>
+                    <td style={td}><span style={{background:"#F1F1EF",color:"#37352F", padding:"2px 6px", borderRadius:4, fontSize:12, fontWeight:500}}>{item.pic||"-"}</span></td>
                     <td style={td}><SBadge status={item.status}/></td>
-                    <td style={{...td,textAlign:"right",fontVariantNumeric:"tabular-nums"}}>{fmt(v)}</td>
-                    <td style={{...td,textAlign:"right",fontVariantNumeric:"tabular-nums"}}>{fmt(r)}</td>
-                    <td style={{...td,textAlign:"right",fontVariantNumeric:"tabular-nums",fontWeight:600,color:"#3B82F6"}}>{fmt(e)}</td>
+                    <td style={{...td,textAlign:"left"}}>{fmt(v)}</td>
+                    <td style={{...td,textAlign:"left"}}>{fmt(r)}</td>
+                    <td style={{...td,textAlign:"left",fontWeight:500}}>{fmt(e)}</td>
                     <td style={td}>
-                      <div style={{display:"flex",gap:3,flexWrap:"wrap"}}>
-                        <button onClick={()=>openEdit(item)} style={{background:"#F5F0E8",border:"none",borderRadius:6,padding:"3px 8px",fontSize:10,cursor:"pointer",color:"#2C2016",fontWeight:500}}>Edit</button>
-                        {item.status==="Published"&&!item.archived&&<button onClick={()=>archiveItem(item.id)} style={{background:"#F1E8F5",border:"none",borderRadius:6,padding:"3px 8px",fontSize:10,cursor:"pointer",color:"#723680",fontWeight:500}}>📦 Arsip</button>}
-                        {item.archived&&<button onClick={()=>unarchiveItem(item.id)} style={{background:"#E8F5E9",border:"none",borderRadius:6,padding:"3px 8px",fontSize:10,cursor:"pointer",color:"#2E7D32",fontWeight:500}}>🔄 Pulihkan</button>}
-                        {!item.archived&&<button onClick={()=>deleteItem(item.id)} style={{background:"#FDF5F8",border:"none",borderRadius:6,padding:"3px 8px",fontSize:10,cursor:"pointer",color:"#9C2B4E",fontWeight:500}}>🗑️ Hapus</button>}
+                      <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+                        <button onClick={()=>openEdit(item)} style={{background:"#F1F1EF",border:"none",borderRadius:4,padding:"4px 8px",fontSize:11,cursor:"pointer",color:"#37352F",fontWeight:500}}>Edit</button>
+                        {item.status==="Published"&&!item.archived&&<button onClick={()=>archiveItem(item.id)} style={{background:"#F1F1EF",border:"none",borderRadius:4,padding:"4px 8px",fontSize:11,cursor:"pointer",color:"#37352F",fontWeight:500}}>Arsip</button>}
+                        {item.archived&&<button onClick={()=>unarchiveItem(item.id)} style={{background:"#F1F1EF",border:"none",borderRadius:4,padding:"4px 8px",fontSize:11,cursor:"pointer",color:"#37352F",fontWeight:500}}>Pulihkan</button>}
+                        {!item.archived&&<button onClick={()=>deleteItem(item.id)} style={{background:"#FFEEA3",border:"1px solid #FFE066",borderRadius:4,padding:"4px 8px",fontSize:11,cursor:"pointer",color:"#D9730D",fontWeight:500}}>Hapus</button>}
                       </div>
                     </td>
                   </tr>
                 );
               })}
             </tbody>
-          </table>
+          </table></div>
       }
     </div>
   );

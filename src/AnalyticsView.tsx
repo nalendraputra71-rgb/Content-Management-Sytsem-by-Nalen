@@ -4,6 +4,19 @@ import Markdown from "react-markdown";
 import { motion, AnimatePresence } from "motion/react";
 import { ChevronDown, ChevronLeft, ChevronRight, TrendingUp, Sparkles, PieChart, Users, BarChart2, Activity, Calendar, Zap, AlertCircle, ArrowUpRight, ArrowDownRight, Clock, Target, Star } from "lucide-react";
 
+const CustomLegend = ({ payload }: any) => {
+  return (
+    <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "12px 20px", paddingTop: 20 }}>
+      {payload.map((entry: any, index: number) => (
+        <li key={`item-${index}`} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ width: 12, height: 12, borderRadius: "50%", backgroundColor: entry.color, flexShrink: 0 }} />
+          <span style={{ fontSize: 13, fontWeight: 600, color: "#374151" }}>{entry.value}</span>
+        </li>
+      ))}
+    </ul>
+  );
+};
+
 const GeminiIcon = ({ size = 18 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M12 1.5L14.45 9.55L22.5 12L14.45 14.45L12 22.5L9.55 14.45L1.5 12L9.55 9.55L12 1.5Z" fill="url(#gemini_gradient)" />
@@ -73,16 +86,16 @@ function CustomDropdown({ value, options = [], onChange, style }: { value: strin
       <button 
         onClick={() => setOpen(!open)} 
         className="hover-scale"
-        style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "6px 12px", borderRadius: 8, border: "1px solid rgba(44,32,22,0.1)", background: "white", fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#2C2016" }}
+        style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "6px 12px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.7)", background: "rgba(255,255,255,0.5)", backdropFilter: "blur(4px)", fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#2C2016" }}
       >
         <span>{displayLabel}</span>
-        <ChevronDown size={14} color="rgba(44,32,22,0.4)" style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'all 0.2s' }} />
+        <ChevronDown size={14} color="rgba(44,32,22,0.5)" style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'all 0.2s' }} />
       </button>
       <AnimatePresence>
         {open && (
           <motion.div 
             initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }} transition={{ duration: 0.15 }}
-            style={{ position: "absolute", top: "100%", right: 0, marginTop: 4, background: "white", border: "1px solid rgba(44,32,22,0.1)", borderRadius: 8, padding: 4, zIndex: 100, boxShadow: "0 10px 30px rgba(0,0,0,0.15)", minWidth: 120, overflowY: "auto", maxHeight: 200 }}
+            style={{ position: "absolute", top: "100%", right: 0, marginTop: 4, background: "rgba(255,255,255,0.85)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.8)", borderRadius: 12, padding: 6, zIndex: 100, boxShadow: "0 10px 40px rgba(0,0,0,0.1)", minWidth: 120, overflowY: "auto", maxHeight: 200 }}
           >
             {options.map((o, i) => {
               const val = typeof o === 'string' ? o : o.id;
@@ -91,8 +104,8 @@ function CustomDropdown({ value, options = [], onChange, style }: { value: strin
                 <div 
                   key={i} 
                   onClick={() => { onChange(val); setOpen(false); }}
-                  style={{ padding: "8px 12px", borderRadius: 6, fontSize: 12, fontWeight: isSelected?800:600, cursor: "pointer", background: isSelected ? "#FDF0EB" : "transparent", color: isSelected ? "#3B82F6" : "#2C2016", transition: "all 0.1s", whiteSpace: "nowrap" }}
-                  onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = "#FAFAFA"; }}
+                  style={{ padding: "8px 12px", borderRadius: 8, fontSize: 12, fontWeight: isSelected?800:600, cursor: "pointer", background: isSelected ? "rgba(59,130,246,0.1)" : "transparent", color: isSelected ? "#3B82F6" : "#2C2016", transition: "all 0.1s", whiteSpace: "nowrap" }}
+                  onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = "rgba(255,255,255,0.6)"; }}
                   onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = "transparent"; }}
                 >
                   {typeof o === 'string' ? o : o.label}
@@ -124,7 +137,7 @@ function PlatformFilterPopover({ platformFilter, setPlatformFilter, platforms }:
 
   return (
     <div ref={ref} className="relative">
-      <button onClick={() => setOpen(!open)} className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-black/10 shadow-sm cursor-pointer hover:bg-gray-50 transition-colors">
+      <button onClick={() => setOpen(!open)} className="flex items-center gap-2 bg-white border hover:bg-white/70 px-3 py-1.5 rounded-lg border border-black/10 shadow-sm cursor-pointer hover:bg-gray-50 transition-colors">
         <PieChart size={16} className="text-gray-500" />
         <span className="text-sm font-semibold text-gray-800">{activeLabel}</span>
         <ChevronDown size={14} className="text-gray-500 ml-1" />
@@ -134,7 +147,7 @@ function PlatformFilterPopover({ platformFilter, setPlatformFilter, platforms }:
         {open && (
           <motion.div 
             initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }} transition={{ duration: 0.15 }}
-            className="absolute top-full left-0 mt-2 bg-white rounded-xl shadow-2xl border border-black/10 z-[9999] overflow-hidden flex flex-col w-max min-w-[160px] text-left max-h-[350px] overflow-y-auto"
+            className="absolute top-full left-0 mt-2 bg-white rounded-2xl shadow-xl border border-black/10 z-[9999] overflow-hidden flex flex-col w-max min-w-[160px] text-left max-h-[350px] overflow-y-auto"
           >
              <label className="flex items-center gap-2.5 px-3 py-2 hover:bg-gray-50 cursor-pointer">
                <div className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center bg-white ${platformFilter === "all" ? 'border-blue-500' : 'border-gray-300'}`}>
@@ -312,7 +325,7 @@ function DateFilterPopover({ dateFilt, setDateFilt, customS, setCustomS, customE
     const monthName = baseDate.toLocaleString('default', { month: 'long', year: 'numeric' });
 
     return (
-      <div className="flex-1 w-52 bg-white">
+      <div className="flex-1 w-52 bg-transparent">
          <div className="font-semibold text-gray-800 text-sm mb-3 text-center">{monthName}</div>
          <div className="grid grid-cols-7 gap-1 text-center text-xs text-gray-500 mb-2 font-medium">
            {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d=><div key={d}>{d}</div>)}
@@ -340,16 +353,16 @@ function DateFilterPopover({ dateFilt, setDateFilt, customS, setCustomS, customE
 
   return (
     <div ref={ref} className="relative">
-      <button onClick={() => { setTempFilt(dateFilt); setTempS(customS); setTempE(customE); setOpen(!open); }} className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-black/10 shadow-sm cursor-pointer hover:bg-gray-50 transition-colors">
+      <button onClick={() => { setTempFilt(dateFilt); setTempS(customS); setTempE(customE); setOpen(!open); }} className="flex items-center gap-2 bg-white border hover:bg-white/70 px-3 py-1.5 rounded-lg border border-black/10 shadow-sm cursor-pointer hover:bg-gray-50 transition-colors">
         <Calendar size={16} className="text-gray-500" />
         <span className="text-sm font-semibold text-gray-800">{activeLabel}</span>
         <ChevronDown size={14} className="text-gray-500 ml-1" />
       </button>
 
       {open && (
-        <div className="absolute top-full left-0 mt-2 bg-white rounded-xl shadow-2xl border border-black/10 z-[9999] overflow-hidden flex flex-col md:flex-row w-max text-left">
+        <div className="absolute top-full left-0 mt-2 bg-white rounded-2xl shadow-xl border border-black/10 z-[9999] overflow-hidden flex flex-col md:flex-row w-max text-left">
           {/* Left Sidebar */}
-          <div className="w-40 bg-gray-50 border-r border-gray-200 p-2 flex flex-col gap-1 overflow-y-auto max-h-[350px]">
+          <div className="w-40 bg-gray-50 border-r border-black/5 p-2 flex flex-col gap-1 overflow-y-auto max-h-[350px]">
              {OPTIONS.map(o => (
                <label key={o.id} className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md hover:bg-gray-100 cursor-pointer">
                  <div className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center bg-white ${tempFilt === o.id ? 'border-blue-500' : 'border-gray-300'}`}>
@@ -362,7 +375,7 @@ function DateFilterPopover({ dateFilt, setDateFilt, customS, setCustomS, customE
           </div>
 
           {/* Right Area */}
-          <div className="flex flex-col p-4 max-w-lg bg-white">
+          <div className="flex flex-col p-4 max-w-lg bg-transparent">
              {/* Calendars */}
              <div className="flex gap-4 relative justify-center">
                <button onClick={() => setNavDate(new Date(navDate.getFullYear(), navDate.getMonth()-1, 1))} className="absolute -left-1 top-0 p-1 hover:bg-gray-100 rounded-full"><ChevronLeft size={16}/></button>
@@ -396,7 +409,7 @@ function DateFilterPopover({ dateFilt, setDateFilt, customS, setCustomS, customE
   )
 }
 
-export function AnalyticsView({content,pillars,platforms,pics,statuses,openEdit,isRestricted}: any) {
+export function AnalyticsView({content,pillars,platforms,contentTypes,pics,statuses,openEdit,isRestricted}: any) {
   const [dateFilt,setDateFilt] = useState("28d"); 
   const [customS,setCustomS] = useState("");
   const [customE,setCustomE] = useState("");
@@ -412,6 +425,15 @@ export function AnalyticsView({content,pillars,platforms,pics,statuses,openEdit,
   
   const [aiInsight, setAiInsight] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const topAnchorRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!topAnchorRef.current) return;
+    const observer = new IntersectionObserver(([ent]) => setIsScrolled(!ent.isIntersecting), { threshold: 1 });
+    observer.observe(topAnchorRef.current);
+    return () => observer.disconnect();
+  }, []);
   const [showAiInsight, setShowAiInsight] = useState(true);
 
   useEffect(() => {
@@ -679,6 +701,49 @@ export function AnalyticsView({content,pillars,platforms,pics,statuses,openEdit,
       color: p.color
     })).sort((a:any, b:any) => b.value - a.value);
   }, [base, platforms, platformMetric]);
+  // Pillar Data
+  const [pillarMetric, setPillarMetric] = useState("engagement");
+  const pillarData = useMemo(() => {
+    const pmap: any = {};
+    base.forEach((c:any)=>{
+      const p = c.pillar || "Tanpa Pilar";
+      if(!pmap[p]) pmap[p] = {name:p, engagement:0, views:0, reach:0, total: 0};
+      pmap[p].engagement += getEng(c);
+      pmap[p].views += getV(c);
+      pmap[p].reach += getR(c);
+      pmap[p].total += 1;
+    });
+    return pillars.map((p:any) => ({
+      name: p.name || p.id || p,
+      value: pmap[p.name || p.id || p] ? pmap[p.name || p.id || p][pillarMetric] : 0,
+      color: p.color || "#3B82F6",
+      total: pmap[p.name || p.id || p] ? pmap[p.name || p.id || p].total : 0
+    })).sort((a:any, b:any) => b.value - a.value);
+  }, [base, pillars, pillarMetric]);
+
+  // Content Type Data
+  const [typeMetric, setTypeMetric] = useState("engagement");
+  const typeData = useMemo(() => {
+    const pmap: any = {};
+    base.forEach((c:any)=>{
+      const t = c.contentType || "Tanpa Tipe";
+      if(!pmap[t]) pmap[t] = {name:t, engagement:0, views:0, reach:0, total: 0};
+      pmap[t].engagement += getEng(c);
+      pmap[t].views += getV(c);
+      pmap[t].reach += getR(c);
+      pmap[t].total += 1;
+    });
+    return (contentTypes || []).map((t:any) => {
+      const tName = t.name || t.id || t;
+      return {
+        name: tName,
+        value: pmap[tName] ? pmap[tName][typeMetric] : 0,
+        total: pmap[tName] ? pmap[tName].total : 0,
+        color: t.color
+      };
+    }).sort((a:any, b:any) => b.value - a.value);
+  }, [base, contentTypes, typeMetric]);
+
   const picData = useMemo(() => {
     const pmap: any = {};
     base.forEach((c:any)=>{
@@ -690,8 +755,11 @@ export function AnalyticsView({content,pillars,platforms,pics,statuses,openEdit,
         else pmap[p].org += 1;
       });
     });
-    return Object.values(pmap).sort((a:any,b:any)=>b.total-a.total);
-  }, [base]);
+    return Object.values(pmap).map((p:any) => {
+      const userPic = (pics || []).find((x:any)=> (x.name || x.id || x) === p.name);
+      return { ...p, color: userPic?.color };
+    }).sort((a:any,b:any)=>b.total-a.total);
+  }, [base, pics]);
 
   const fetchAiInsight = async () => {
     setAiLoading(true);
@@ -804,12 +872,15 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
     </div>
   );
 
-  const MCard = ({label,val,sub,color="var(--theme-primary)", pctStr, icon: Icon, bg="white"}: any) => (
-    <motion.div whileHover={{ y: -2 }} style={{...CARD({ flex:1, minWidth:0, display:"flex", flexDirection:"column", justifyContent:"space-between", height:"100%", padding:"16px", background: bg, border: "1px solid rgba(0,0,0,0.06)", borderRadius: 16, boxShadow: "0 2px 10px rgba(0,0,0,0.02)", overflow: "hidden", wordBreak: "break-word" })}}>
+  const MCard = ({label,val,sub,color="var(--theme-primary)", pctStr, icon: Icon, bg="glass"}: any) => {
+    const isGlass = bg === "glass";
+    const bgVal = isGlass ? "rgba(255,255,255,0.45)" : bg;
+    return (
+    <motion.div whileHover={{ y: -2 }} style={{...CARD({ flex:1, minWidth:0, display:"flex", flexDirection:"column", justifyContent:"space-between", height:"100%", padding:"16px", background: bgVal, backdropFilter: isGlass ? "blur(16px)" : "none", WebkitBackdropFilter: isGlass ? "blur(16px)" : "none", transform: "translateZ(0)", willChange: "transform", border: "1px solid rgba(255,255,255,0.6)", borderRadius: 24, boxShadow: "0 8px 32px rgba(0,0,0,0.04)", overflow: "hidden", wordBreak: "break-word" })}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12,gap:8, flexWrap: "wrap"}}>
         <div style={{display:"flex", alignItems:"center", gap: 6, minWidth: 0}}>
           {Icon && <div style={{background:`rgba(0,0,0,0.04)`, padding: 6, borderRadius: 8, flexShrink: 0}}><Icon size={14} color={color} /></div>}
-          <div style={{fontSize:11,fontWeight:700,letterSpacing:0.5,textTransform:"uppercase",color: bg==="white"?"rgba(0,0,0,0.5)":"rgba(255,255,255,0.7)",lineHeight:1.4}}>{label}</div>
+          <div style={{fontSize:11,fontWeight:700,letterSpacing:0.5,textTransform:"uppercase",color: !isGlass?"rgba(255,255,255,0.7)":"rgba(0,0,0,0.5)",lineHeight:1.4}}>{label}</div>
         </div>
         {pctStr && (
           <div style={{display: "flex", flexDirection: "column", alignItems: "flex-end", flexShrink: 0}}>
@@ -817,29 +888,36 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
               {pctStr.startsWith('+') ? <ArrowUpRight size={10}/> : pctStr.startsWith('-') ? <ArrowDownRight size={10}/> : null}
               {pctStr}
             </div>
-            {getPeriodText() && <div style={{fontSize: 9, color: bg==="white"?"rgba(0,0,0,0.4)":"rgba(255,255,255,0.4)", marginTop: 4, fontWeight: 600, whiteSpace:"nowrap"}}>{getPeriodText()}</div>}
+            {getPeriodText() && <div style={{fontSize: 9, color: !isGlass?"rgba(255,255,255,0.4)":"rgba(0,0,0,0.4)", marginTop: 4, fontWeight: 600, whiteSpace:"nowrap"}}>{getPeriodText()}</div>}
           </div>
         )}
       </div>
       <div style={{minWidth: 0}}>
-        <div style={{fontSize:24,fontWeight:800,color:bg==="white"?"#111827":"#fff",lineHeight:1.1, letterSpacing: "-0.5px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis"}} title={String(val)}>{val}</div>
-        {sub&&<div style={{fontSize:11,color:bg==="white"?"rgba(0,0,0,0.5)":"rgba(255,255,255,0.6)",marginTop:6,fontWeight:500, lineHeight: 1.4}}>{sub}</div>}
+        <div style={{fontSize:24,fontWeight:800,color:!isGlass?"#fff":"#111827",lineHeight:1.1, letterSpacing: "-0.5px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis"}} title={String(val)}>{val}</div>
+        {sub&&<div style={{fontSize:11,color:!isGlass?"rgba(255,255,255,0.6)":"rgba(0,0,0,0.5)",marginTop:6,fontWeight:500, lineHeight: 1.4}}>{sub}</div>}
       </div>
     </motion.div>
-  );
+  )};
 
   return (
-    <div style={{padding:"0 24px 24px",display:"flex",flexDirection:"column",gap:20,maxWidth:1600, margin:"0 auto", background: "#FDFDFD", minHeight: "100vh"}}>
+    <div style={{padding:"0 24px 24px",display:"flex",flexDirection:"column",gap:20,width:"100%", background: "transparent", minHeight: "100vh", position: "relative"}}>
+      <div ref={topAnchorRef} style={{position: "absolute", top: 0, left: 0, height: 1, width: "100%"}} />
       
       {/* Header */}
-      <div style={{paddingTop: 24, paddingBottom: 8}}>
-         <h1 style={{fontSize: 24, fontWeight: 800, margin: 0, color: "#111827", letterSpacing: "-0.5px", display:"flex", alignItems:"center", gap: 8}}>Analytics <Sparkles size={20} color="var(--theme-primary)" /></h1>
-         <p style={{fontSize: 14, color: "rgba(0,0,0,0.5)", margin: "4px 0 0"} }>Pantau dan optimalkan performa konten secara menyeluruh.</p>
+      <div style={{paddingTop: 24, paddingBottom: 8, display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 16}}>
+         <div>
+           <h1 style={{fontSize: 24, fontWeight: 800, margin: 0, color: "#111827", letterSpacing: "-0.5px", display:"flex", alignItems:"center", gap: 8}}>Analytics <Sparkles size={20} color="var(--theme-primary)" /></h1>
+           <p style={{fontSize: 14, color: "rgba(0,0,0,0.5)", margin: "4px 0 0"} }>Pantau dan optimalkan performa konten secara menyeluruh.</p>
+         </div>
+         <button onClick={() => window.print()} className="hover-scale btn-hover" style={{...B(false), padding: "8px 16px", borderRadius: 16, height: 40, fontSize: 13, background: "rgba(255,255,255,0.6)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", color: "#111827", border: "1px solid rgba(255,255,255,0.8)", boxShadow: "0 2px 8px rgba(0,0,0,0.05)", display: "flex", alignItems: "center", gap: 8}}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+            Cetak Laporan PDF
+         </button>
       </div>
 
       {/* Filters (Sticky) */}
-      <div className="sticky top-0 z-50 bg-[#FDFDFD] pb-4 pt-2 border-b border-black/5 flex items-center justify-start gap-4 flex-wrap w-full">
-        <div className="flex gap-3 items-center pb-1">
+      <div className="sticky top-0 z-50 flex items-center justify-start gap-4 flex-wrap mb-2" style={{ transform: "translateZ(0)", willChange: "transform", transition: "all 0.3s ease", ...(isScrolled ? { background: "rgba(255,255,255,0.65)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", borderBottom: "1px solid rgba(255,255,255,0.6)", boxShadow: "0 4px 24px rgba(0,0,0,0.02)", marginLeft: -24, marginRight: -24, padding: "16px 24px", width: "calc(100% + 48px)", borderRadius: "0 0 24px 24px" } : { background: "rgba(255,255,255,0.45)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", border: "1px solid rgba(255,255,255,0.6)", boxShadow: "0 8px 32px rgba(0,0,0,0.04)", padding: "16px", borderRadius: 24, width: "100%" }) }}>
+        <div className="flex gap-3 items-center">
           <PlatformFilterPopover 
             platformFilter={platformFilter} 
             setPlatformFilter={setPlatformFilter} 
@@ -848,9 +926,9 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
 
           <div className="w-px h-6 bg-black/10 shrink-0"/>
 
-          <div className="flex gap-1 bg-white p-1 rounded-xl border border-black/5 shadow-sm">
+          <div className="flex gap-1 bg-white p-1 rounded-xl border border-white/60 shadow-sm">
             {[["all","Semua Data"],["organic","Organic"],["ads","Ads Only"]].map(([k,l])=>(
-              <button key={k} onClick={()=>setAdsFilter(k)} className={`text-sm font-semibold px-3 py-1.5 rounded-lg border-none cursor-pointer transition-colors ${adsFilter===k ? "bg-gray-100 text-gray-900" : "bg-transparent text-gray-500 hover:bg-gray-50"}`}>{l}</button>
+              <button key={k} onClick={()=>setAdsFilter(k)} className={`text-sm font-semibold px-3 py-1.5 rounded-lg border-none cursor-pointer transition-colors ${adsFilter===k ? "bg-white text-gray-900 shadow-sm" : "bg-transparent text-gray-500 hover:bg-white/40"}`}>{l}</button>
             ))}
           </div>
 
@@ -880,7 +958,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
       <div style={{position:"relative"}}>
         {isRestricted && (
           <div style={{position:"absolute",inset:0,zIndex:10,backdropFilter:"blur(12px)",display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(255, 255, 255, 0.4)",borderRadius:20}}>
-            <div style={{background:"white",padding:"24px 32px",borderRadius:20,boxShadow:"0 20px 60px rgba(0,0,0,0.08)",textAlign:"center",maxWidth:400, border: "1px solid rgba(0,0,0,0.08)"}}>
+            <div style={{background:"rgba(255,255,255,0.65)",backdropFilter:"blur(24px)",WebkitBackdropFilter:"blur(24px)",transform:"translateZ(0)",willChange:"transform",padding:"24px 32px",borderRadius:24,boxShadow:"0 20px 60px rgba(0,0,0,0.08)",textAlign:"center",maxWidth:400,border:"1px solid rgba(255,255,255,0.7)"}}>
               <AlertCircle size={40} color="var(--theme-primary)" style={{margin: "0 auto 12px"}} />
               <h3 style={{fontSize:18,fontWeight:800,marginBottom:8,color:"#111827", letterSpacing: "-0.5px"}}>Akses Analitik Premium</h3>
               <p style={{fontSize:13,color:"rgba(0,0,0,0.6)",marginBottom:20, lineHeight:1.6}}>Upgrade ke paket Pro untuk membuka analisis prediktif, AI Insights mendalam, heatmap performa, dan integrasi multi-platform tak terbatas.</p>
@@ -935,9 +1013,9 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
           </div>
 
           {/* Distribution Row */}
-          <div style={{display:"grid",gap:24,gridTemplateColumns:"repeat(auto-fit,minmax(320px,1fr))"}}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Performance by Platform */}
-            <div style={{...CARD({background: "white", padding: "20px", borderRadius: 16, border: "1px solid rgba(0,0,0,0.06)", boxShadow: "0 4px 20px rgba(0,0,0,0.02)", display: "flex", flexDirection: "column"})}}>
+            <div style={{background: "rgba(255,255,255,0.45)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", transform: "translateZ(0)", willChange: "transform", padding: "20px", borderRadius: 24, border: "1px solid rgba(255,255,255,0.6)", boxShadow: "0 8px 32px rgba(0,0,0,0.04)", display: "flex", flexDirection: "column"}}>
               <div style={{display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20, gap: 12, flexWrap: "wrap"}}>
                 <div style={{display:"flex", alignItems:"center", gap: 8}}>
                   <div style={{background:"#FEF3C7", padding: 6, borderRadius: 8}}><PieChart size={16} color="#D97706" /></div>
@@ -960,22 +1038,22 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                   />
                 </div>
               </div>
-              <ResponsiveContainer width="100%" height={260} style={{marginTop: "auto"}}>
+              <ResponsiveContainer width="100%" height={320} style={{marginTop: "auto"}}>
                 {platformChartType === "doughnut" ? (
                   <RPieChart>
                     <Tooltip cursor={{fill:"rgba(0,0,0,0.03)"}} contentStyle={{borderRadius:12,fontSize:12,border:"1px solid rgba(0,0,0,0.08)",boxShadow:"0 10px 30px rgba(0,0,0,0.08)"}} itemStyle={{color:"#111827",fontWeight:700}} formatter={(v:any)=>[fmt(v)]}/>
-                    <Legend iconType="circle" wrapperStyle={{fontSize: 12, fontWeight: 600}}/>
+                    <Legend content={<CustomLegend />} />
                     <Pie
                       data={platformData}
                       dataKey="value"
                       nameKey="name"
                       cx="50%"
                       cy="50%"
-                      innerRadius={45}
-                      outerRadius={95}
+                      innerRadius={60}
+                      outerRadius={105}
                       paddingAngle={5}
                     >
-                      {platformData.map((entry:any, index:number) => <Cell key={`cell-${index}`} fill={entry.color || "#3B82F6"} />)}
+                      {platformData.map((entry:any, index:number) => <Cell key={`cell-${index}`} fill={entry.color || ["#F59E0B", "#10B981", "#3B82F6", "#8B5CF6"][index % 4]} />)}
                     </Pie>
                   </RPieChart>
                 ) : (
@@ -985,7 +1063,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                     <YAxis tick={{fontSize:11,fill:"rgba(0,0,0,0.5)"}} tickLine={false} axisLine={false} tickFormatter={fmt} width={45}/>
                     <Tooltip cursor={{fill:"rgba(0,0,0,0.03)"}} contentStyle={{borderRadius:12,fontSize:12,border:"1px solid rgba(0,0,0,0.08)",boxShadow:"0 10px 30px rgba(0,0,0,0.08)"}} itemStyle={{color:"#111827",fontWeight:700}} labelStyle={{color:"rgba(0,0,0,0.5)",marginBottom:4}} formatter={(v:any)=>[fmt(v)]}/>
                     <Bar dataKey="value" radius={[6,6,0,0]} barSize={40}>
-                      {platformData.map((entry:any, index:number) => <Cell key={`cell-${index}`} fill={entry.color || "#3B82F6"} />)}
+                      {platformData.map((entry:any, index:number) => <Cell key={`cell-${index}`} fill={entry.color || ["#F59E0B", "#10B981", "#3B82F6", "#8B5CF6"][index % 4]} />)}
                     </Bar>
                   </BarChart>
                 )}
@@ -993,7 +1071,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
             </div>
             
             {/* PIC Workload */}
-            <div style={{...CARD({background: "white", padding: "20px", borderRadius: 16, border: "1px solid rgba(0,0,0,0.06)", boxShadow: "0 4px 20px rgba(0,0,0,0.02)", display: "flex", flexDirection: "column"})}}>
+            <div style={{background: "rgba(255,255,255,0.45)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", transform: "translateZ(0)", willChange: "transform", padding: "20px", borderRadius: 24, border: "1px solid rgba(255,255,255,0.6)", boxShadow: "0 8px 32px rgba(0,0,0,0.04)", display: "flex", flexDirection: "column"}}>
               <div style={{display:"flex", alignItems:"center", gap: 10, marginBottom: 20, justifyContent: "space-between", flexWrap: "wrap"}}>
                 <div style={{display:"flex", alignItems:"center", gap: 8}}>
                   <div style={{background:"#E0E7FF", padding: 6, borderRadius: 8}}><Users size={16} color="#4F46E5" /></div>
@@ -1004,22 +1082,22 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                   <button onClick={()=>setPicChartType("bar")} style={{background:picChartType==="bar"?"white":"transparent",border:"none",borderRadius:6,padding:"4px 8px",fontSize:11,fontWeight:700,color:picChartType==="bar"?"#111827":"rgba(0,0,0,0.5)",cursor:"pointer",boxShadow:picChartType==="bar"?"0 2px 4px rgba(0,0,0,0.05)":"none"}}>Bar</button>
                 </div>
               </div>
-              <ResponsiveContainer width="100%" height={260} style={{marginTop: "auto"}}>
+              <ResponsiveContainer width="100%" height={320} style={{marginTop: "auto"}}>
                 {picChartType === "doughnut" ? (
                   <RPieChart>
                     <Tooltip cursor={{fill:"rgba(0,0,0,0.03)"}} contentStyle={{borderRadius:12,fontSize:12,border:"1px solid rgba(0,0,0,0.08)",boxShadow:"0 10px 30px rgba(0,0,0,0.08)"}} itemStyle={{color:"#111827",fontWeight:700}} formatter={(v:any)=>[fmt(v)]}/>
-                    <Legend iconType="circle" wrapperStyle={{fontSize: 12, fontWeight: 600}}/>
+                    <Legend content={<CustomLegend />} />
                     <Pie
                       data={picData}
                       dataKey="total"
                       nameKey="name"
                       cx="50%"
                       cy="50%"
-                      innerRadius={45}
-                      outerRadius={95}
+                      innerRadius={60}
+                      outerRadius={105}
                       paddingAngle={5}
                     >
-                      {picData.map((entry:any, index:number) => <Cell key={`cell-${index}`} fill={["#8B5CF6", "#3B82F6", "#10B981", "#F59E0B", "#EC4899", "#6366F1"][index % 6]} />)}
+                      {picData.map((entry:any, index:number) => <Cell key={`cell-${index}`} fill={entry.color || ["#8B5CF6", "#3B82F6", "#10B981", "#F59E0B", "#EC4899", "#6366F1"][index % 6]} />)}
                     </Pie>
                   </RPieChart>
                 ) : (
@@ -1029,16 +1107,92 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                     <YAxis tick={{fontSize:11,fill:"rgba(0,0,0,0.5)"}} tickLine={false} axisLine={false} tickFormatter={fmt} width={45}/>
                     <Tooltip cursor={{fill:"rgba(0,0,0,0.03)"}} contentStyle={{borderRadius:12,fontSize:12,border:"1px solid rgba(0,0,0,0.08)",boxShadow:"0 10px 30px rgba(0,0,0,0.08)"}} itemStyle={{color:"#111827",fontWeight:700}} labelStyle={{color:"rgba(0,0,0,0.5)",marginBottom:4}} formatter={(v:any)=>[fmt(v)]}/>
                     <Bar dataKey="total" radius={[6,6,0,0]} barSize={40}>
-                      {picData.map((entry:any, index:number) => <Cell key={`cell-${index}`} fill={["#8B5CF6", "#3B82F6", "#10B981", "#F59E0B", "#EC4899", "#6366F1"][index % 6]} />)}
+                      {picData.map((entry:any, index:number) => <Cell key={`cell-${index}`} fill={entry.color || ["#8B5CF6", "#3B82F6", "#10B981", "#F59E0B", "#EC4899", "#6366F1"][index % 6]} />)}
                     </Bar>
                   </BarChart>
                 )}
               </ResponsiveContainer>
             </div>
+
+            {/* Performance by Pillar */}
+            <div style={{background: "rgba(255,255,255,0.45)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", transform: "translateZ(0)", willChange: "transform", padding: "20px", borderRadius: 24, border: "1px solid rgba(255,255,255,0.6)", boxShadow: "0 8px 32px rgba(0,0,0,0.04)", display: "flex", flexDirection: "column"}}>
+              <div style={{display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20, gap: 12, flexWrap: "wrap"}}>
+                <div style={{display:"flex", alignItems:"center", gap: 8}}>
+                  <div style={{background:"#DCFCE7", padding: 6, borderRadius: 8}}><PieChart size={16} color="#16A34A" /></div>
+                  <h4 style={{fontSize:15,fontWeight:800,margin:0, color:"#111827", letterSpacing: "-0.5px"}}>Distribusi Pilar Konten</h4>
+                </div>
+                <div style={{display:"flex", gap: 8, alignItems:"center", flexWrap: "wrap"}}>
+                  <CustomDropdown 
+                    value={pillarMetric} 
+                    onChange={setPillarMetric} 
+                    options={[
+                      {id:"engagement", label:"Engagement"},
+                      {id:"views", label:"Views"},
+                      {id:"reach", label:"Reach"},
+                      {id:"total", label:"Total Item"}
+                    ]} 
+                    style={{ width: 120 }} 
+                  />
+                </div>
+              </div>
+              <ResponsiveContainer width="100%" height={320} style={{marginTop: "auto"}}>
+                  <RPieChart>
+                    <Tooltip cursor={{fill:"rgba(0,0,0,0.03)"}} contentStyle={{borderRadius:12,fontSize:12,border:"1px solid rgba(0,0,0,0.08)",boxShadow:"0 10px 30px rgba(0,0,0,0.08)"}} itemStyle={{color:"#111827",fontWeight:700}} formatter={(v:any)=>[fmt(v)]}/>
+                    <Legend content={<CustomLegend />} />
+                    <Pie
+                      data={pillarData}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={105}
+                      paddingAngle={5}
+                    >
+                      {pillarData.map((entry:any, index:number) => <Cell key={`cell-${index}`} fill={entry.color || ["#10B981", "#3B82F6", "#F59E0B", "#8B5CF6", "#EC4899", "#6366F1"][index % 6]} />)}
+                    </Pie>
+                  </RPieChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Performance by Content Type */}
+            <div style={{background: "rgba(255,255,255,0.45)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", transform: "translateZ(0)", willChange: "transform", padding: "20px", borderRadius: 24, border: "1px solid rgba(255,255,255,0.6)", boxShadow: "0 8px 32px rgba(0,0,0,0.04)", display: "flex", flexDirection: "column"}}>
+              <div style={{display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20, gap: 12, flexWrap: "wrap"}}>
+                <div style={{display:"flex", alignItems:"center", gap: 8}}>
+                  <div style={{background:"#FCE7F3", padding: 6, borderRadius: 8}}><PieChart size={16} color="#DB2777" /></div>
+                  <h4 style={{fontSize:15,fontWeight:800,margin:0, color:"#111827", letterSpacing: "-0.5px"}}>Tipe Konten</h4>
+                </div>
+                <div style={{display:"flex", gap: 8, alignItems:"center", flexWrap: "wrap"}}>
+                  <CustomDropdown 
+                    value={typeMetric} 
+                    onChange={setTypeMetric} 
+                    options={[
+                      {id:"engagement", label:"Engagement"},
+                      {id:"views", label:"Views"},
+                      {id:"reach", label:"Reach"},
+                      {id:"total", label:"Total Item"}
+                    ]} 
+                    style={{ width: 120 }} 
+                  />
+                </div>
+              </div>
+              <ResponsiveContainer width="100%" height={320} style={{marginTop: "auto"}}>
+                  <BarChart data={typeData} margin={{top:10,right:0,left:0,bottom:0}}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.04)"/>
+                    <XAxis dataKey="name" tick={{fontSize:11,fill:"rgba(0,0,0,0.5)"}} tickLine={false} axisLine={false} dy={10}/>
+                    <YAxis tick={{fontSize:11,fill:"rgba(0,0,0,0.5)"}} tickLine={false} axisLine={false} tickFormatter={fmt} width={45}/>
+                    <Tooltip cursor={{fill:"rgba(0,0,0,0.03)"}} contentStyle={{borderRadius:12,fontSize:12,border:"1px solid rgba(0,0,0,0.08)",boxShadow:"0 10px 30px rgba(0,0,0,0.08)"}} itemStyle={{color:"#111827",fontWeight:700}} labelStyle={{color:"rgba(0,0,0,0.5)",marginBottom:4}} formatter={(v:any)=>[fmt(v)]}/>
+                    <Bar dataKey="value" radius={[6,6,0,0]} barSize={40}>
+                      {typeData.map((entry:any, index:number) => <Cell key={`cell-${index}`} fill={entry.color || ["#DB2777", "#EC4899", "#F472B6", "#FBCFE8"][index % 4]} />)}
+                    </Bar>
+                  </BarChart>
+              </ResponsiveContainer>
+            </div>
+
           </div>
 
           {/* Trends Charts List */}
-          <div style={{...CARD({background: "white", padding: "20px", borderRadius: 16, border: "1px solid rgba(0,0,0,0.06)", boxShadow: "0 4px 20px rgba(0,0,0,0.02)", display: "flex", flexDirection: "column"})}}>
+          <div style={{background: "rgba(255,255,255,0.45)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", transform: "translateZ(0)", willChange: "transform", padding: "20px", borderRadius: 24, border: "1px solid rgba(255,255,255,0.6)", boxShadow: "0 8px 32px rgba(0,0,0,0.04)", display: "flex", flexDirection: "column"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20,flexWrap:"wrap",gap:12}}>
               <div style={{display:"flex", alignItems:"center", gap: 8}}>
                 <div style={{background:"#F3F4F6", padding: 6, borderRadius: 8}}><TrendingUp size={16} color="#111827" /></div>
@@ -1046,13 +1200,13 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
               </div>
             </div>
             <div style={{display:"grid", gap:20, gridTemplateColumns:"repeat(auto-fit, minmax(360px, 1fr))"}}>
-              {["reach","likes","comments","shares","saves","clicks"].map(k=>(
+              {["views","reach","likes","comments","shares","saves","clicks"].map(k=>(
                 <div key={k} style={{background: "#F9FAFB", padding: "20px", borderRadius: "16px", border: "1px solid rgba(0,0,0,0.04)"}}>
                   <div style={{fontSize: 14, fontWeight: 800, textTransform: "capitalize", color: "#111827", marginBottom: 16, display: "flex", alignItems: "center", gap: 8}}>
                      <div style={{width: 10, height: 10, borderRadius: "50%", background: MC[k] || "#3B82F6"}} />
                      {k}
                   </div>
-                  <ResponsiveContainer width="100%" height={260}>
+                  <ResponsiveContainer width="100%" height={320}>
                     {adsFilter==="all" ? (
                        <BarChart data={lineData} margin={{top:0,right:10,left:0,bottom:0}}>
                          <XAxis dataKey="name" tick={{fontSize:11,fill:"rgba(0,0,0,0.4)"}} axisLine={false} tickLine={false} dy={10}/>
@@ -1076,7 +1230,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
           </div>
           
           {/* Heatmap (Full Width) */}
-          <div style={{...CARD({background: "white", padding: "20px", borderRadius: 16, border: "1px solid rgba(0,0,0,0.06)", boxShadow: "0 4px 20px rgba(0,0,0,0.02)", width: "100%", overflow: "hidden"})}}>
+          <div style={{background: "rgba(255,255,255,0.45)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", transform: "translateZ(0)", willChange: "transform", padding: "20px", borderRadius: 24, border: "1px solid rgba(255,255,255,0.6)", boxShadow: "0 8px 32px rgba(0,0,0,0.04)", width: "100%", overflow: "hidden"}}>
             <div style={{width: "100%"}}>
               <div style={{display:"flex", alignItems:"center", gap: 10, marginBottom: 20, justifyContent: "space-between", flexWrap: "wrap"}}>
                 <div style={{display:"flex", alignItems:"center", gap: 8}}>
@@ -1112,7 +1266,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
             </div>
           </div>
 
-          <div style={{display:"flex",gap:16,alignItems:"center",background:"white",padding:"16px 20px",borderRadius:16,border:"1px solid rgba(0,0,0,0.06)",boxShadow:"0 2px 10px rgba(0,0,0,0.02)",flexWrap:"wrap", marginTop: 8}}>
+          <div style={{display:"flex",gap:16,alignItems:"center",background: "rgba(255,255,255,0.45)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", transform: "translateZ(0)", willChange: "transform", padding:"16px 20px", borderRadius:24, border: "1px solid rgba(255,255,255,0.6)", boxShadow: "0 8px 32px rgba(0,0,0,0.04)",flexWrap:"wrap", marginTop: 8}}>
             <div style={{display:"flex",gap:12,alignItems:"center"}}>
               <div style={{fontSize:13,fontWeight:700,color:"rgba(0,0,0,0.5)", textTransform: "uppercase", letterSpacing: 0.5}}>Urutkan:</div>
               <div style={{display:"flex", gap: 4, background:"#F3F4F6", padding:4, borderRadius:8}}>

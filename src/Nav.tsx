@@ -2545,12 +2545,16 @@ export function NavBar({
   return (
     <div
       style={{
-        background: "white",
-        borderBottom: "1px solid rgba(0,0,0,0.05)",
+        background: "rgba(255, 255, 255, 0.45)",
+        backdropFilter: "blur(16px)",
+        WebkitBackdropFilter: "blur(16px)",
+        transform: "translateZ(0)",
+        willChange: "transform",
+        borderBottom: "1px solid rgba(255, 255, 255, 0.6)",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        padding: "10px 20px",
+        padding: "10px 24px",
         position: "sticky",
         top: 0,
         zIndex: 50,
@@ -2564,26 +2568,44 @@ export function NavBar({
           flexWrap: "wrap",
         }}
       >
-        <div style={{ display: "flex", background: "#F5F5F5", padding: 4, borderRadius: 10 }}>
+        <div style={{ display: "flex", background: "#F5F5F5", padding: 4, borderRadius: 10, position: "relative" }}>
           {CONTENT_TABS.map(t => (
             <button
               className="hover-scale"
               key={t.id}
               onClick={() => setContentTab(t.id)}
               style={{
+                position: "relative",
                 padding: "6px 12px",
                 borderRadius: 6,
                 border: "none",
-                background: contentTab === t.id ? "white" : "transparent",
+                background: "transparent",
                 color: contentTab === t.id ? "var(--theme-primary)" : "#666",
                 fontWeight: 700,
                 fontSize: 12,
-                boxShadow: contentTab === t.id ? "0 2px 8px rgba(0,0,0,0.05)" : "none",
                 cursor: "pointer",
-                transition: "all 0.2s ease"
+                transition: "color 0.2s ease"
               }}
             >
-              {t.label}
+              {contentTab === t.id && (
+                <motion.div
+                  layoutId="activeContentTabHighlight"
+                  initial={false}
+                  transition={{ type: "spring", stiffness: 500, damping: 35 }}
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: "white",
+                    borderRadius: 6,
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+                    zIndex: 0
+                  }}
+                />
+              )}
+              <span style={{ position: "relative", zIndex: 1 }}>{t.label}</span>
             </button>
           ))}
         </div>
@@ -2823,7 +2845,7 @@ function MultiSelectFilter({ values, options, onChange, label, style, onUpdateOp
     }
   };
 
-  const displayLabel = values.includes("All") ? `Semua ${label}` : values.length > 0 ? values.map((v:any) => {
+  const displayLabel = values.includes("All") ? "Semua" : values.length > 0 ? values.map((v:any) => {
     const o = options.find((opt:any) => (opt.id||opt.name||opt) === v);
     return o ? (o.name||o.id||o) : v;
   }).join(", ") : `Tidak ada ${label}`;
@@ -3045,13 +3067,20 @@ export function FilterBar({
   return (
     <div
       style={{
-        background: "#FAFAFA",
-        borderBottom: "1px solid rgba(44,32,22,0.05)",
+        position: "relative",
+        zIndex: 20,
+        margin: "16px 24px 0",
+        background: "rgba(255,255,255,0.6)",
+        backdropFilter: "blur(24px)",
+        WebkitBackdropFilter: "blur(24px)",
+        border: "1px solid rgba(255,255,255,0.8)",
+        borderRadius: 20,
         padding: "12px 20px",
         display: "flex",
         gap: 16,
         alignItems: "flex-end",
         flexWrap: "wrap",
+        boxShadow: "0 8px 32px rgba(0,0,0,0.04)"
       }}
     >
       <div
@@ -3091,7 +3120,7 @@ export function FilterBar({
             <MultiSelectFilter
               label={l as string}
               values={filters[key as string] || ["All"]}
-              options={[{ id: "All", name: `Semua ${l}` }, ...(opt as any[])]}
+              options={[{ id: "All", name: "Semua" }, ...(opt as any[])]}
               onChange={(v:any) => set(key, v)}
               onUpdateOptions={(opts:any) => {
                 const settingKey = key === "pillar" ? "pillars" : key === "platform" ? "platforms" : "pics";
@@ -3109,23 +3138,6 @@ export function FilterBar({
           marginBottom: 1,
         }}
       >
-        <button
-          className="hover-scale"
-          onClick={() => setShowHolidays((v: any) => !v)}
-          style={{
-            ...B(false, "#2C2016"),
-            background: showHolidays ? "rgba(44,32,22,0.05)" : "transparent",
-            border: showHolidays
-              ? "1px solid rgba(44,32,22,0.2)"
-              : "1px solid rgba(44,32,22,0.1)",
-            fontSize: 11,
-            padding: "0 12px",
-            height: 32,
-            borderRadius: 16,
-          }}
-        >
-          {showHolidays ? "Tampil" : "Sembunyi"} Hari Besar
-        </button>
         <button
           className="hover-scale"
           onClick={() => setShowArchived((v: any) => !v)}
@@ -3163,7 +3175,7 @@ export function FilterBar({
           marginBottom: 1,
         }}
       >
-        <Download size={14} style={{ opacity: 0.6 }} /> Export Excel
+        <Download size={14} style={{ opacity: 0.6 }} /> Export
       </button>
       <button
         className="hover-scale btn-hover"
@@ -3182,7 +3194,7 @@ export function FilterBar({
           marginBottom: 1,
         }}
       >
-        <Plus size={14} style={{ opacity: 0.6 }} /> Import CSV
+        <Plus size={14} style={{ opacity: 0.6 }} /> Import
       </button>
     </div>
   );

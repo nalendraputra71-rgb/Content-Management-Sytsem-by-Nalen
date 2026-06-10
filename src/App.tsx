@@ -821,6 +821,8 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
   const [exportModal, setExportModal] = useState(false);
   const [exStart, setExStart] = useState("");
   const [exEnd, setExEnd] = useState("");
+  const [exPlatform, setExPlatform] = useState("All");
+  const [exOption, setExOption] = useState("all"); // "all", "range"
 
   const isRestricted = useMemo(() => {
     if (!profile?.activeUntil) return false;
@@ -957,6 +959,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
   useEffect(() => {
     if (!workspace?.id || !user?.uid) return;
     setContentLoading(true);
+    setContent([]); // Fix stale cross-workspace content migration
     const wsRef = doc(db, "workspaces", workspace.id);
     const unsubWs = onSnapshot(wsRef, (snap) => {
        const data = snap.data();
@@ -978,6 +981,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
             if (data.settings.pics) setPics(data.settings.pics);
             if (data.settings.statuses) setStatuses(data.settings.statuses);
             if (data.settings.holidays) setHolidays(data.settings.holidays);
+            if (data.settings.showHolidays !== undefined) setShowHolidays(data.settings.showHolidays);
             if (data.settings.holidayApis !== undefined) {
               setHolidayApis(data.settings.holidayApis);
             } else {
@@ -1042,6 +1046,19 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
 
         const runMigration = async () => {
           try {
+            // Check if user has write permissions (owner or editor)
+            const memRef = doc(db, "workspaces", workspace.id, "members", user?.uid || "");
+            const memSnap = await getDoc(memRef);
+            if (!memSnap.exists()) {
+              console.log("User is not a member, skipping migration.");
+              return;
+            }
+            const role = memSnap.data()?.role;
+            if (role !== "owner" && role !== "editor" && role !== "admin") {
+              console.log("User does not have permission to run migration (role: " + role + "). Skipping.");
+              return;
+            }
+
             let currentPlatforms = workspace.settings?.platforms || [];
             let currentContentTypes = workspace.settings?.contentTypes || [];
 
@@ -1093,16 +1110,18 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
             let updateCount = 0;
 
             content.forEach((item: any) => {
-              if (item.platform) {
+              if (item.platform && item.id && String(item.id).length > 5) { // Ensure it's a real document ID
                 const platLower = item.platform.trim().toLowerCase();
                 if (targetPlatforms.includes(platLower)) {
                   const oldPlatform = item.platform;
-                  const ref = doc(db, "workspaces", workspace.id, "content", item.id);
-                  batch.update(ref, {
+                  const ref = doc(db, "workspaces", workspace.id, "content", String(item.id));
+                  batch.set(ref, {
                     platform: "Instagram",
                     contentType: oldPlatform,
-                    updatedAt: new Date().toISOString()
-                  });
+                    updatedAt: new Date().toISOString(),
+                    workspaceId: workspace.id,
+                    userId: user?.uid || ""
+                  }, { merge: true });
                   updateCount++;
                 }
               }
@@ -1196,7 +1215,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
     if (isRestricted) return alert("Akses Terbatas: Fitur ini dikunci pada masa uji coba yang telah habis.");
     if (isUnverified) return alert("Akses Terbatas: Silakan lengkapi nama panggilan dan verifikasi email Anda terlebih dahulu.");
     try {
-      await updateDoc(doc(db, "workspaces", workspace.id, "content", itemId), { day: newDate });
+      await setDoc(doc(db, "workspaces", workspace.id, "content", itemId), { day: newDate }, { merge: true });
     } catch (e: any) {
       console.error(e);
       alert("Gagal memindahkan konten: " + e.message);
@@ -1404,7 +1423,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
           await updateWsSettings({ title: newTitle });
         }}
       />
-      <div style={{flex:1, minWidth:0, display:"flex", flexDirection:"column", height:"100vh", overflow:"auto", position:"relative"}}>
+      <div style={{flex:1, minWidth:0, display:"flex", flexDirection:"column", height:"100vh", overflow:"auto", position:"relative", background: ["dashboard", "content_planner", "analytics"].includes(tab) ? "radial-gradient(circle at 0% 0%, #E3F2FD 0%, transparent 50%), radial-gradient(circle at 100% 100%, #FFF3E0 0%, transparent 50%), radial-gradient(circle at 100% 0%, #F3E5F5 0%, transparent 50%), #FAFAFA" : "transparent"}}>
         {(!["dashboard", "settings", "admin", "soc_hub"].includes(tab) && !tab.startsWith("social")) && (
           <Header 
             profile={profile}
@@ -1456,10 +1475,10 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
             {tab==="content_planner"&&contentTab==="timeline"&&<TimelineView year={year} month={month} content={content} filtered={filtered} openEdit={openEdit} openAdd={openAdd} pillars={pillars} platforms={platforms} showHolidays={showHolidays} holidays={combinedHolidays} isRestricted={isRestricted} showArchived={showArchived} />}
             {tab==="content_planner"&&contentTab==="table"&&<TableView filtered={filtered} openEdit={openEdit} archiveItem={archiveItem} unarchiveItem={unarchiveItem} deleteItem={deleteItem} pillars={pillars} platforms={platforms} showArchived={showArchived} search={search} bulkIds={bulkIds} setBulkIds={setBulkIds} onBulk={handleBulkActions} isRestricted={isRestricted}/>}
             {tab.startsWith("social")&&<SocialStudioView tab={tab} />}
-            {tab==="analytics"&&<AnalyticsView content={content} pillars={pillars} platforms={platforms} pics={pics} statuses={statuses} openEdit={openEdit} isRestricted={isRestricted}/>}
+            {tab==="analytics"&&<AnalyticsView content={content} pillars={pillars} platforms={platforms} contentTypes={contentTypes} pics={pics} statuses={statuses} openEdit={openEdit} isRestricted={isRestricted}/>}
             {tab==="soc_hub"&&<SocHubView user={user} profile={profile} />}
             {tab==="settings"&&<SettingsPanel 
-              initialSettings={{pillars, platforms, contentTypes, pics, statuses, holidays, holidayApis, customEvents: workspace?.settings?.customEvents || []}} 
+              initialSettings={{pillars, platforms, contentTypes, pics, statuses, holidays, holidayApis, customEvents: workspace?.settings?.customEvents || [], showHolidays: workspace?.settings?.showHolidays ?? true}} 
               onSave={async (d:any) => {
                 await updateWsSettings(d);
                 setIsSettingsDirty(false);
@@ -1496,12 +1515,87 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
         {showEventModal && <QuickAddEventModal key="quckAddEvent" workspace={workspace} onClose={() => setShowEventModal(false)} onSaveSettings={updateWsSettings} />}
       </AnimatePresence>
       <AnimatePresence>
-        {exportModal && <motion.div key="export" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.8)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center"}}>
-          <motion.div initial={{scale:0.95, opacity:0, y:20}} animate={{scale:1, opacity:1, y:0}} exit={{scale:0.95, opacity:0, y:20}} transition={{ type: "spring", damping: 25, stiffness: 300 }} style={CARD({width:400, padding:32, borderRadius:24, boxShadow:"0 20px 40px rgba(0,0,0,0.2)"})}>
-             <h3 style={{fontSize:20, fontWeight:700, marginBottom:16}}>Ekspor Data (XLSX)</h3>
-             <p style={{fontSize:14, color:"rgba(44,32,22,0.6)", marginBottom:24, lineHeight:1.5}}>Unduh seluruh data konten dalam format Excel (XLSX) untuk workspace <strong style={{color:"var(--theme-primary)"}}>{workspace?.name}</strong>.</p>
-             <button className="btn-hover hover-scale" onClick={() => {
-                const exportData = content.map((c: any) => ({
+        {exportModal && <motion.div key="export" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} transition={{ duration: 0.15 }} style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.8)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center", padding:16}}>
+          <motion.div initial={{scale:0.95, opacity:0, y:20}} animate={{scale:1, opacity:1, y:0}} exit={{scale:0.95, opacity:0, y:20}} transition={{ type: "spring", damping: 25, stiffness: 300 }} style={CARD({width:"100%", maxWidth:440, padding:32, borderRadius:24, boxShadow:"0 20px 40px rgba(0,0,0,0.2)", position:"relative"})}>
+             <button className="hover-scale" onClick={()=>setExportModal(false)} style={{position:"absolute",top:20,right:20,background:"rgba(44,32,22,0.05)",border:"none",borderRadius:"50%",width:32,height:32,cursor:"pointer",fontSize:18,color:"#2C2016",display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
+             <h3 style={{fontSize:20, fontWeight:700, margin:"0 0 8px", color:"#2C2016"}}>Ekspor Data (XLSX)</h3>
+             <p style={{fontSize:14, color:"rgba(44,32,22,0.6)", marginBottom:24, lineHeight:1.5}}>Unduh data konten workspace <strong style={{color:"var(--theme-primary)"}}>{workspace?.name}</strong> dalam format Excel.</p>
+             
+             <div style={{display:"flex", flexDirection:"column", gap:16, marginBottom: 28, textAlign: "left"}}>
+                <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:12}}>
+                  <label style={{
+                    display:"flex", alignItems:"center", gap:10, fontSize:14, cursor:"pointer",
+                    padding: 14, borderRadius: 12, border: exOption === "all" ? "2px solid var(--theme-primary)" : "1px solid rgba(44,32,22,0.1)",
+                    background: exOption === "all" ? "rgba(var(--theme-primary-rgb), 0.05)" : "white",
+                    fontWeight: exOption === "all" ? 700 : 500, color: "#2C2016", transition: "all 0.2s"
+                  }}>
+                    <input type="radio" name="exOpt" checked={exOption === "all"} onChange={()=>setExOption("all")} style={{display:"none"}} />
+                    <div style={{width:18, height:18, borderRadius:"50%", border: exOption === "all" ? "5px solid var(--theme-primary)" : "2px solid rgba(44,32,22,0.2)"}}></div>
+                    Semua Data
+                  </label>
+                  <label style={{
+                    display:"flex", alignItems:"center", gap:10, fontSize:14, cursor:"pointer",
+                    padding: 14, borderRadius: 12, border: exOption === "filter" ? "2px solid var(--theme-primary)" : "1px solid rgba(44,32,22,0.1)",
+                    background: exOption === "filter" ? "rgba(var(--theme-primary-rgb), 0.05)" : "white",
+                    fontWeight: exOption === "filter" ? 700 : 500, color: "#2C2016", transition: "all 0.2s"
+                  }}>
+                    <input type="radio" name="exOpt" checked={exOption === "filter"} onChange={()=>setExOption("filter")} style={{display:"none"}} />
+                    <div style={{width:18, height:18, borderRadius:"50%", border: exOption === "filter" ? "5px solid var(--theme-primary)" : "2px solid rgba(44,32,22,0.2)"}}></div>
+                    Filter Spesifik
+                  </label>
+                </div>
+
+                <AnimatePresence>
+                  {exOption === "filter" && (
+                     <motion.div initial={{opacity:0, height:0}} animate={{opacity:1, height:"auto"}} exit={{opacity:0, height:0}} style={{overflow:"hidden"}}>
+                       <div style={{display:"flex", flexDirection:"column", gap:16, marginTop: 4, padding: 16, background: "rgba(44,32,22,0.02)", border: "1px solid rgba(44,32,22,0.06)", borderRadius: 16}}>
+                         <div style={{display:"flex", gap:12}}>
+                           <div style={{flex:1}}>
+                             <label style={{display:"block", fontSize:12, fontWeight:700, marginBottom:6, color:"rgba(44,32,22,0.7)"}}>Dari Tanggal</label>
+                             <input type="date" value={exStart} onChange={(e)=>setExStart(e.target.value)} style={{width:"100%", padding:"10px 14px", borderRadius:10, border:"1px solid rgba(44,32,22,0.1)", fontSize:13, outline:"none", fontFamily:"inherit", color:"#2C2016"}} />
+                           </div>
+                           <div style={{flex:1}}>
+                             <label style={{display:"block", fontSize:12, fontWeight:700, marginBottom:6, color:"rgba(44,32,22,0.7)"}}>Sampai Tanggal</label>
+                             <input type="date" value={exEnd} onChange={(e)=>setExEnd(e.target.value)} style={{width:"100%", padding:"10px 14px", borderRadius:10, border:"1px solid rgba(44,32,22,0.1)", fontSize:13, outline:"none", fontFamily:"inherit", color:"#2C2016"}} />
+                           </div>
+                         </div>
+                         <div>
+                           <label style={{display:"block", fontSize:12, fontWeight:700, marginBottom:6, color:"rgba(44,32,22,0.7)"}}>Platform Tertentu</label>
+                           <select value={exPlatform} onChange={(e)=>setExPlatform(e.target.value)} style={{width:"100%", padding:"10px 14px", borderRadius:10, border:"1px solid rgba(44,32,22,0.1)", fontSize:13, outline:"none", fontFamily:"inherit", color:"#2C2016", backgroundColor:"white"}}>
+                             <option value="All">Semua Platform</option>
+                             {platforms.map((p:any) => <option key={p.id||p} value={p.name||p.id||p}>{p.name||p.id||p}</option>)}
+                           </select>
+                         </div>
+                       </div>
+                     </motion.div>
+                  )}
+                </AnimatePresence>
+             </div>
+
+             <div style={{display:"flex",gap:12}}>
+                 <button className="hover-scale" onClick={()=>setExportModal(false)} style={{...B(false), flex:1, height:48, fontSize:14, borderRadius:24}}>Batal</button>
+                 <button className="btn-hover hover-scale" onClick={() => {
+                let toExport = content;
+                if (exOption === "filter") {
+                   if (exStart && exEnd) {
+                      const sd = new Date(exStart);
+                      const ed = new Date(exEnd);
+                      toExport = toExport.filter((c:any) => {
+                         const cd = new Date(c.year, c.month - 1, c.day);
+                         return cd >= sd && cd <= ed;
+                      });
+                   }
+                   if (exPlatform !== "All") {
+                      toExport = toExport.filter((c:any) => String(c.platform).includes(exPlatform));
+                   }
+                }
+
+                if (toExport.length === 0) {
+                   alert("Tidak ada data yang sesuai dengan filter tersebut.");
+                   return;
+                }
+
+                const exportData = toExport.map((c: any) => ({
                     "ID System (Jangan Diubah)": c.id || "",
                     "Judul Konten": c.title || "",
                     "Tanggal (1-31)": c.day || 1,
@@ -1533,8 +1627,8 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
                 XLSX.utils.book_append_sheet(wb, ws, "Content");
                 XLSX.writeFile(wb, `Export_${workspace?.name}.xlsx`);
                 setExportModal(false);
-             }} style={{...B(true, "var(--theme-primary)"), width:"100%", height:48, marginBottom:12, fontSize:14, borderRadius:24}}>Unduh File Excel</button>
-             <button className="hover-scale" onClick={()=>setExportModal(false)} style={{...B(false), width:"100%", height:48, fontSize:14, borderRadius:24}}>Batal</button>
+             }} style={{...B(true, "var(--theme-primary)"), flex:2, height:48, fontSize:14, borderRadius:24, display:"flex", alignItems:"center", justifyContent:"center", gap:8}}>Unduh File Excel</button>
+             </div>
           </motion.div>
         </motion.div>}
       </AnimatePresence>

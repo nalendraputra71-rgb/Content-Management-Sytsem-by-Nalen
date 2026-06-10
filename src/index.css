@@ -124,11 +124,12 @@ select option {
 
 /* Pill tags */
 .pill-tag {
-  border-radius: 9999px;
-  padding: 4px 10px;
+  border-radius: 4px;
+  padding: 2px 6px;
   font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
+  font-weight: 500;
+  text-transform: none;
+
   letter-spacing: 0.5px;
 }
 
