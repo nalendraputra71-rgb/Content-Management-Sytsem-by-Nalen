@@ -105,22 +105,28 @@ export function TermsOfService() {
               <h2 className="text-2xl font-bold text-[#0B2A4A] mt-8 mb-4">4. Kebijakan Penggunaan Kecerdasan Buatan (AI Copilot)</h2>
               <p>Fitur AI Copilot yang disediakan dalam Layanan ini dibangun di atas model bahasa besar (Large Language Model) pihak ketiga. Hasil keluaran (output) teks, ide, atau grafik bersifat sarana penunjang kreativitas. Anda sebagai pengguna memiliki hak milik penuh atas materi masukan (input) Anda, namun Anda bertanggung jawab penuh untuk meninjau secara mandiri keakuratan, kepatuhan hukum, hak cipta sekunder, dan etika operasional dari setiap keluaran sebelum mempublikasikannya ke ruang publik atau media sosial Anda.</p>
 
-              <h2 className="text-2xl font-bold text-[#0B2A4A] mt-8 mb-4">5. Ketentuan Pembayaran, Langganan, & Kebijakan Pengembalian Dana (Refund)</h2>
-              <p>Hubify Social menawarkan sistem penggunaan gratis (Trial) dan paket berbayar berulang (auto-recurring subscription) bulanan maupun tahunan. Pembayaran akan dipotong secara otomatis pada setiap awal siklus tagihan sesuai skema yang Anda pilih. Pembatalan langganan dapat dilakukan kapan saja melalui menu pengaturan akun di dashboard Anda sebelum tanggal jatuh tempo berikutnya. Hubify Social menerapkan kebijakan <strong>tanpa pengembalian dana (non-refundable)</strong> secara prorata atau penuh untuk sisa masa aktif yang tidak digunakan setelah pembayaran berhasil diproses.</p>
+              <h2 className="text-2xl font-bold text-[#0B2A4A] mt-8 mb-4">5. Hak Akses & Ketentuan Pihak Ketiga</h2>
+              <p>Dengan menggunakan fitur integrasi media sosial di Hubify Social, Anda menyatakan setuju untuk terikat dan mematuhi Ketentuan Layanan masing-masing platform termasuk layanan pihak ketiga yang digunakan, seperti Ketentuan Layanan Meta (Facebook & Instagram) dan TikTok.</p>
 
-              <h2 className="text-2xl font-bold text-[#0B2A4A] mt-8 mb-4">6. Hak Kekayaan Intelektual</h2>
+              <h2 className="text-2xl font-bold text-[#0B2A4A] mt-8 mb-4">6. Lisensi Konten Pengguna (UGC License)</h2>
+              <p>Anda tetap memegang sepenuhnya hak cipta atas seluruh konten (teks, gambar, video) yang Anda unggah ke Hubify Social. Namun, dengan mengunggahnya, Anda memberikan lisensi non-eksklusif, bebas royalti, dan terbatas kepada Hubify Social secara murni untuk menyimpan, mengoptimasi (misalnya kompresi file), dan mentransmisikan konten tersebut ke platform tujuan demi kelancaran operasional Layanan kami.</p>
+
+              <h2 className="text-2xl font-bold text-[#0B2A4A] mt-8 mb-4">7. Ketentuan Pembayaran, Langganan, & Kebijakan Pengembalian Dana (Refund)</h2>
+              <p>Hubify Social menawarkan akses gratis <strong>(7 Hari Free Trial) tanpa mengharuskan Anda memasukkan informasi kartu kredit</strong>, serta paket berbayar berulang bulanan maupun tahunan. Pembayaran akan dipotong secara otomatis pada setiap awal siklus tagihan sesuai skema yang Anda pilih. Pembatalan langganan dapat dilakukan kapan saja melalui menu pengaturan akun di dashboard Anda sebelum tanggal jatuh tempo berikutnya. Hubify Social menerapkan kebijakan <strong>tanpa pengembalian dana (non-refundable)</strong> secara prorata atau penuh untuk sisa masa aktif yang tidak digunakan setelah pembayaran berhasil diproses.</p>
+
+              <h2 className="text-2xl font-bold text-[#0B2A4A] mt-8 mb-4">8. Hak Kekayaan Intelektual</h2>
               <p>Seluruh kekayaan intelektual berupa merek dagang, desain antarmuka pengguna, aset visual, logo, grafis, kode sumber (source code), dan dokumentasi teknis Hubify Social adalah hak milik eksklusif milik Hubify Social. Pengguna dilarang merekayasa balik (reverse engineer), mendistribusikan ulang, menyalin, atau menduplikasi elemen branding kami tanpa izin tertulis formal dari manajemen Hubify Social.</p>
 
-              <h2 className="text-2xl font-bold text-[#0B2A4A] mt-8 mb-4">7. Batasan Tanggung Jawab & Penafian (Disclaimer)</h2>
+              <h2 className="text-2xl font-bold text-[#0B2A4A] mt-8 mb-4">9. Batasan Tanggung Jawab & Penafian (Disclaimer)</h2>
               <p className="uppercase text-xs font-bold text-slate-800 bg-slate-100 p-4 border-l-4 border-slate-400 rounded-r-lg my-4">
                 LAYANAN DIMAKSUD DISEDIAKAN DALAM KONDISI &quot;SEBAGAIMANA ADANYA&quot; (AS IS) DAN &quot;SEBAGAIMANA TERSEDIA&quot; (AS AVAILABLE). HUBIFY SOCIAL MENOLAK SEMUA JAMINAN BAIK TERSURAT MAUPUN TERSIRAT, TERMASUK PULA JAMINAN KELAYAKAN DAGANG ATAU KETEPATAN TUJUAN KHUSUS. DALAM KEADAAN APA PUN, HUBIFY SOCIAL TIDAK BERTANGGUNG JAWAB ATAS SEGALA KERUGIAN TIDAK LANGSUNG, INSIDENTAL, KHUSUS, ATAU KONSEKUENSIAL, TERMASUK NAMUN TIDAK TERBATAS PADA HILANGNYA LABA, DATA, ATAU CITRA BAIK, YANG TIMBUL DARI ATAU SEHUBUNGAN DENGAN PENGGUNAAN ATAU KETIDAKMAMPUAN MENGGUNAKAN LAYANAN.
               </p>
 
-              <h2 className="text-2xl font-bold text-[#0B2A4A] mt-8 mb-4">8. Penghentian Layanan (Termination)</h2>
+              <h2 className="text-2xl font-bold text-[#0B2A4A] mt-8 mb-4">10. Penghentian Layanan (Termination)</h2>
               <p>Kami berhak sepenuhnya untuk menangguhkan, memblokir, atau menghentikan akun Anda sewaktu-waktu secara sepihak tanpa pemberitahuan tertulis sebelumnya, apabila Anda terbukti secara sah melakukan pelanggaran hukum, penyebaran materi spam, tindakan manipulasi sistem, scraping ilegal, atau melanggar salah satu poin di dalam Ketentuan Layanan ini.</p>
 
-              <h2 className="text-2xl font-bold text-[#0B2A4A] mt-8 mb-4">9. Kontak & Informasi Pendukung</h2>
-              <p>Apabila Anda memiliki pertanyaan, keluhan, atau memerlukan klarifikasi terkait ketentuan operasional platform kami, silakan menghubungi tim bantuan hukum kami di email resmi: <a href="mailto:support@hubifysocial.com" className="text-[#1D4D7A] font-semibold hover:underline">support@hubifysocial.com</a>.</p>
+              <h2 className="text-2xl font-bold text-[#0B2A4A] mt-8 mb-4">11. Hukum Berlaku, Penyelesaian Sengketa, & Kontak</h2>
+              <p>Ketentuan Layanan ini tunduk dan ditafsirkan berdasarkan hukum Republik Indonesia. Segala sengketa yang timbul akan diselesaikan secara eksklusif di pengadilan negeri domisili PT Harapan Untuk Bangsa. Apabila Anda memiliki pertanyaan, keluhan, atau memerlukan klarifikasi terkait ketentuan operasional platform kami, silakan menghubungi tim bantuan hukum kami di email resmi: <a href="mailto:support@hubifysocial.com" className="text-[#1D4D7A] font-semibold hover:underline">support@hubifysocial.com</a>. Platform Hubify Social dioperasikan secara resmi oleh <strong>PT Harapan Untuk Bangsa</strong>.</p>
             </div>
           </>
         ) : (
@@ -141,22 +147,28 @@ export function TermsOfService() {
               <h2 className="text-2xl font-bold text-[#0B2A4A] mt-8 mb-4">4. Artificial Intelligence Usage Policy (AI Copilot)</h2>
               <p>The AI Copilot services configured on this platform utilize external, third-party Large Language Models. All textual outputs, ideas, and generated graphics represent supplementary creative aids. Users maintain proprietary intellectual property rights over input assets; however, you bear absolute and sole responsibility to audit output accuracy, copyright claims, and legal adherence before publishing contents to external social media workspaces.</p>
 
-              <h2 className="text-2xl font-bold text-[#0B2A4A] mt-8 mb-4">5. Billing, Subscription, & Refund Provisions</h2>
-              <p>Hubify Social operates on a free tier model as well as auto-recurring subscription plans (billed monthly or annually). Payments are automatically processed in advance at the start of each billing cycle in accordance with your selected tier. Subscriptions may be terminated at any time through the setting panels inside your account dashboard prior to the subsequent billing anniversary. Hubify Social observes a strict <strong>non-refundable policy</strong> for both prorated and complete active terms once charges are successfully executed.</p>
+              <h2 className="text-2xl font-bold text-[#0B2A4A] mt-8 mb-4">5. Third-Party Integration and Terms</h2>
+              <p>By utilizing social media integration features within Hubify Social, you explicitly agree to be bound by and comply with the respective Terms of Service of those platforms, including the specific Terms of Service maintained by Meta (Facebook & Instagram) and TikTok.</p>
 
-              <h2 className="text-2xl font-bold text-[#0B2A4A] mt-8 mb-4">6. Intellectual Property Rights</h2>
+              <h2 className="text-2xl font-bold text-[#0B2A4A] mt-8 mb-4">6. User Generated Content (UGC) License</h2>
+              <p>You retain full copyright ownership of all materials (text, images, video) you upload to Hubify Social. However, by submitting content, you grant Hubify Social a non-exclusive, royalty-free, limited license strictly to store, optimize (e.g., file compression), and transmit said content to target platforms to ensure the operational functionality of our Service.</p>
+
+              <h2 className="text-2xl font-bold text-[#0B2A4A] mt-8 mb-4">7. Billing, Subscription, & Refund Provisions</h2>
+              <p>Hubify Social operates on a <strong>7-Day Free Trial model without requiring upfront credit card details</strong>, as well as auto-recurring subscription plans (billed monthly or annually). Payments are automatically processed in advance at the start of each billing cycle in accordance with your selected tier. Subscriptions may be terminated at any time through the setting panels inside your account dashboard prior to the subsequent billing anniversary. Hubify Social observes a strict <strong>non-refundable policy</strong> for both prorated and complete active terms once charges are successfully executed.</p>
+
+              <h2 className="text-2xl font-bold text-[#0B2A4A] mt-8 mb-4">8. Intellectual Property Rights</h2>
               <p>All intellectual property rights including registered trademarks, user interface structures, visual compositions, system logos, graphics, source codes, and technical documentation are the exclusive property of Hubify Social. Users are prohibited from reverse-engineering, redistributing, copying, or duplicating any branding identifiers without formal prior written authorization from the Hubify Social corporate board.</p>
 
-              <h2 className="text-2xl font-bold text-[#0B2A4A] mt-8 mb-4">7. Disclaimer of Warranties & Limitation of Liability</h2>
+              <h2 className="text-2xl font-bold text-[#0B2A4A] mt-8 mb-4">9. Disclaimer of Warranties & Limitation of Liability</h2>
               <p className="uppercase text-xs font-bold text-slate-800 bg-slate-100 p-4 border-l-4 border-slate-400 rounded-r-lg my-4 font-mono">
                 THE SERVICE IS PROVIDED ON AN &quot;AS IS&quot; AND &quot;AS AVAILABLE&quot; BASIS. HUBIFY SOCIAL DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING IMPLIED WARRANTIES OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR OBJECTIVE. IN NO EVENT SHALL HUBIFY SOCIAL BE SUBJECT TO LIABILITY FOR ANY INDIRECT, INCIDENTAL, SPECIAL, OR CONSEQUENTIAL DAMAGES INCLUDING BUT NOT LIMITED TO LOSS OF REVENUES, DATA ASSETS, OR COOPERATIVE BRAND INTEGRITY ARISING DIRECTLY OR INDIRECTLY FROM SERVICE INABILITY.
               </p>
 
-              <h2 className="text-2xl font-bold text-[#0B2A4A] mt-8 mb-4">8. Termination of Service</h2>
+              <h2 className="text-2xl font-bold text-[#0B2A4A] mt-8 mb-4">10. Termination of Service</h2>
               <p>We reserve absolute, unilateral authority to block, suspend, or permanently terminate your user registration without prior written warning if we detect illicit activity, spamming behaviors, unauthorized scripting, abnormal data harvesting, or any structural violation of these Terms of Service.</p>
 
-              <h2 className="text-2xl font-bold text-[#0B2A4A] mt-8 mb-4">9. Contact & Support Information</h2>
-              <p>For any clarifying questions, legal reviews, or operations support, please consult our compliance office directly via our official email address: <a href="mailto:support@hubifysocial.com" className="text-[#1D4D7A] font-semibold hover:underline">support@hubifysocial.com</a>.</p>
+              <h2 className="text-2xl font-bold text-[#0B2A4A] mt-8 mb-4">11. Governing Law, Dispute Resolution & Support</h2>
+              <p>These Terms of Service shall be governed by and construed in accordance with the laws of the Republic of Indonesia. Any disputes arising out of these Terms will be resolved exclusively in the district court of PT Harapan Untuk Bangsa's domicile. For any clarifying questions, legal reviews, or operations support, please consult our compliance office directly via our official email address: <a href="mailto:support@hubifysocial.com" className="text-[#1D4D7A] font-semibold hover:underline">support@hubifysocial.com</a>. The Hubify Social platform is officially operated by <strong>PT Harapan Untuk Bangsa</strong>.</p>
             </div>
           </>
         )}
@@ -190,7 +202,7 @@ export function PrivacyPolicy() {
               <p>Hubify Social mengumpulkan data secara sadar untuk mengoperasikan platform secara memadai. Hal ini mencakup:</p>
               <ul className="list-disc pl-5 space-y-2">
                 <li><strong>Informasi Identifikasi Pribadi:</strong> Nama lengkap, alamat email, kata sandi terenkripsi, data profiling organisasi, dan alamat pembayaran tagihan yang diisi secara suka rela saat registrasi atau pemutakhiran profile pengguna.</li>
-                <li><strong>Data Akses Pihak Ketiga:</strong> Token akses OAuth yang diperoleh dari integrasi eksternal (Google, Meta, dsb) untuk menjalankan operasional penjadwalan konten serta pembacaan metrik analitik dasar media sosial Anda.</li>
+                <li><strong>Data Akses Pihak Ketiga:</strong> Token akses OAuth yang diperoleh dari integrasi eksternal (Google, Meta, TikTok) untuk menjalankan operasional penjadwalan konten, pembacaan metrik analitik dasar, serta pembacaan isi pesan langsung (Direct Messages/DM) dan komentar untuk fitur Inbox terpadu.</li>
                 <li><strong>Metadata Penggunaan:</strong> Alamat Protokol Internet (IP), karakteristik perangkat peramban, resolusi layar, tipe sistem operasi, dan log aktivitas operasional di dalam platform Hubify Social secara aman menggunakan kuki (cookies) fungsional.</li>
               </ul>
 
@@ -204,7 +216,7 @@ export function PrivacyPolicy() {
               </ul>
               
               <h2 className="text-2xl font-bold text-[#0B2A4A] mt-8 mb-4">3. Integrasi Media Sosial dan OAuth Pihak Ketiga</h2>
-              <p>Dalam menjalankan modul analitik dan kustom penjadwalan, Hubify Social menghubungkan API resmi pihak ketiga (Facebook Graph API, Instagram Graph API, Twitter/X API). Akses kami bersifat terbatas khusus pada lingkup/metrik penayangan dasar (views/likes/comments) dan pengunggahan konten berdasarkan izin ketat Anda. Semua token OAuth ini disimpan secara terenkripsi kuat menggunakan standar enkripsi industri. Anda dapat memutus hubungan integrasi ini kapan saja untuk membatalkan token secara instan.</p>
+              <p>Dalam menjalankan modul analitik, penjadwalan, dan kotak masuk terpadu (Inbox), Hubify Social menghubungkan API resmi pihak ketiga (Facebook Graph API, Instagram Graph API, TikTok API, Twitter/X API). Akses kami mencakup metrik penayangan dasar (views/likes), pengunggahan konten, serta pengelolaan pesan masuk (Direct Messages) dan komentar secara real-time berdasarkan izin presisi Anda. Data pesan dan komentar tersebut kami proses di server kami hanya sebatas untuk ditampilkan kepada Anda dan memungkinkan Anda membalasnya melalui antarmuka kami. Semua token OAuth disimpan secara terenkripsi kuat menggunakan standar enkripsi industri. Anda dapat memutus hubungan integrasi ini kapan saja untuk membatalkan token secara instan dan menghentikan pengumpulan data.</p>
 
               <h2 className="text-2xl font-bold text-[#0B2A4A] mt-8 mb-4">4. Kebijakan Kepatuhan Data Pengguna Google (Google User Data Policy)</h2>
               <p>Hubify Social sangat menjunjung tinggi integritas privasi data yang kami kumpulkan dari integrasi Google APIs. Berikut adalah rincian kepatuhan pengolahan data kami:</p>
@@ -227,14 +239,14 @@ export function PrivacyPolicy() {
               <ul className="list-disc pl-5 space-y-2">
                 <li>Mengakses, mengoreksi, atau mengubah metadata profil dan organisasi Anda secara langsung melalui panel dashboard akun.</li>
                 <li>Memutus token integrasi media sosial dan mencabut akses otorisasi eksternal kapan saja.</li>
-                <li>Menuntut penghapusan akun serta seluruh data terkait secara permanen dari server kami. Jika Anda ingin melakukan penghapusan data secara permanen, Anda dapat mengirimkan permintaan tertulis secara formal melalui email ke tim perlindungan data kami di <a href="mailto:support@hubifysocial.com" className="text-[#1D4D7A] font-semibold hover:underline">support@hubifysocial.com</a>. Permintaan Anda akan segera kami verifikasi dan proses dalam waktu selambat-lambatnya 72 jam kerja setelah diterima.</li>
+                <li>Menuntut penghapusan akun serta seluruh data terkait secara permanen dari server kami. Pengguna juga dapat melakukan penghapusan otomatis secara langsung mandiri melalui tombol 'Hapus Akun' di menu Pengaturan Aplikasi yang akan menghapus data Anda secara otomatis dari sistem Firebase kami. Jika Anda ingin melakukan penghapusan data dengan bantuan dari kami, Anda dapat mengirimkan permintaan tertulis secara formal melalui email ke tim perlindungan data kami di <a href="mailto:support@hubifysocial.com" className="text-[#1D4D7A] font-semibold hover:underline">support@hubifysocial.com</a>. Permintaan Anda akan segera kami verifikasi dan proses dalam waktu selambat-lambatnya 72 jam kerja setelah diterima.</li>
               </ul>
 
               <h2 className="text-2xl font-bold text-[#0B2A4A] mt-8 mb-4">8. Perubahan Kebijakan Privasi</h2>
-              <p>Kami dapat memperbarui Kebijakan Privasi ini secara berkala mengikuti dinamika regulasi hukum dan pembaruan struktur API platform. Kami akan memberitahukan perubahan signifikan melalui layar pembaruan dashboard atau via surel resmi ke alamat email terdaftar Anda sebelum perubahan tersebut berlaku efektif.</p>
+              <p>Kebijakan privasi ini disusun dan tunduk pada hukum Republik Indonesia, termasuk Undang-Undang Perlindungan Data Pribadi (UU PDP). Kami dapat memperbarui Kebijakan Privasi ini secara berkala mengikuti dinamika regulasi hukum dan pembaruan struktur API platform. Kami akan memberitahukan perubahan signifikan melalui layar pembaruan dashboard atau via surel resmi ke alamat email terdaftar Anda sebelum perubahan tersebut berlaku efektif.</p>
 
               <h2 className="text-2xl font-bold text-[#0B2A4A] mt-8 mb-4">9. Hubungi Kami</h2>
-              <p>Apabila Anda memiliki pertanyaan, keluhan terkait enkripsi data, atau hak-hak privasi Anda dalam platform kami, silakan berkomunikasi secara langsung lewat email resmi: <a href="mailto:support@hubifysocial.com" className="text-[#1D4D7A] font-semibold hover:underline">support@hubifysocial.com</a>.</p>
+              <p>Apabila Anda memiliki pertanyaan, keluhan terkait enkripsi data, atau hak-hak privasi Anda dalam platform kami, silakan berkomunikasi secara langsung lewat email resmi: <a href="mailto:support@hubifysocial.com" className="text-[#1D4D7A] font-semibold hover:underline">support@hubifysocial.com</a>. Platform Hubify Social dioperasikan secara resmi oleh <strong>PT Harapan Untuk Bangsa</strong>.</p>
             </div>
           </>
         ) : (
@@ -247,7 +259,7 @@ export function PrivacyPolicy() {
               <p>Hubify Social consciously gathers specific metadata to operate our platform. This collection includes:</p>
               <ul className="list-disc pl-5 space-y-2">
                 <li><strong>Personally Identifiable Information:</strong> Full name, email address, strongly encrypted passwords, workspace organization details, and invoice billing information entered voluntarily during account creation or profile update.</li>
-                <li><strong>Third-Party Integration Data:</strong> OAuth access tokens fetched via external authorizations (Google, Meta, etc.) necessary for executing scheduling workflows and collecting standard public profile analytics metrics.</li>
+                <li><strong>Third-Party Integration Data:</strong> OAuth access tokens fetched via external authorizations (Google, Meta, TikTok, etc.) necessary for executing scheduling workflows, collecting public analytics metrics, and retrieving Direct Messages (DMs) and comments for the unified Inbox features.</li>
                 <li><strong>Technical Diagnostics Metadata:</strong> Internet Protocol (IP) addresses, native browser characteristics, screen configurations, active operating system types, and detailed usage log actions gathered securely via functional cookies.</li>
               </ul>
 
@@ -261,7 +273,7 @@ export function PrivacyPolicy() {
               </ul>
               
               <h2 className="text-2xl font-bold text-[#0B2A4A] mt-8 mb-4">3. Third-Party Social Connections and OAuth</h2>
-              <p>To enable analytics display engines and secure post publishing, Hubify Social integrates official third-party social APIs (Facebook Graph API, Instagram Graph API, Twitter/X API). Access is strictly limited to authorized scopes centered around basic engagement stats (&quot;views/likes/comments&quot;) and scheduling content. OAuth tokens are fully encrypted utilizing industry-grade symmetric algorithms. You may terminate these integrations manually within the platform to revoke underlying tokens immediately.</p>
+              <p>To enable analytics display engines, secure post publishing, and centralized unified Inbox functions, Hubify Social integrates official third-party social APIs (Facebook Graph API, Instagram Graph API, TikTok API, Twitter/X API). Access encompasses basic engagement metrics, content scheduling, and the real-time retrieval and management of incoming Direct Messages (DMs) and comments. DM and comment data are processed by our servers solely to display them within your dashboard and facilitate your direct replies. OAuth tokens are fully encrypted utilizing industry-grade symmetric algorithms. You may terminate these integrations manually within the platform to instantly revoke underlying tokens and halt all data processing.</p>
 
               <h2 className="text-2xl font-bold text-[#0B2A4A] mt-8 mb-4">4. Google User Data Policy Compliance Statement</h2>
               <p>Hubify Social maintains maximum standards regarding the privacy of information retrieved through Google API scopes. Below are the precise processing criteria:</p>
@@ -284,14 +296,14 @@ export function PrivacyPolicy() {
               <ul className="list-disc pl-5 space-y-2">
                 <li>Accessing, correcting, or updating your user profile attributes and organization metadata through active dashboard menus.</li>
                 <li>Severing your OAuth social channel linkages to invalidate authorization tokens instantly.</li>
-                <li>Requesting permanent account dissolution along with corresponding stored historical metrics. If you wish to permanently delete your data records from our servers, you can submit a formal written request to our data protection officer at <a href="mailto:support@hubifysocial.com" className="text-[#1D4D7A] font-semibold hover:underline">support@hubifysocial.com</a>. Your request will be verified and permanently processed within 72 business hours upon receipt.</li>
+                <li>Requesting permanent account dissolution along with corresponding stored historical metrics. Users can autonomously trigger instantaneous account deletion via the 'Delete Account' utility accessible within the Application Settings, which will systematically purge your data from our Firebase architecture. Alternatively, to request permanent deletion via our support staff, you can submit a formal written request to our data protection officer at <a href="mailto:support@hubifysocial.com" className="text-[#1D4D7A] font-semibold hover:underline">support@hubifysocial.com</a>. Your request will be verified and permanently processed within 72 business hours upon receipt.</li>
               </ul>
 
               <h2 className="text-2xl font-bold text-[#0B2A4A] mt-8 mb-4">8. Privacy Policy Revisions</h2>
-              <p>We reserves the right to modify this Privacy Policy at any time in response to evolving legislative environments and API shifts. Material updates will be communicated clearly through workspace dashboard notifications or via formal email messages sent to registered accounts before taking effect.</p>
+              <p>This privacy policy is constructed in accordance with and subjected to the laws of the Republic of Indonesia, encompassing the Personal Data Protection Law (UU PDP). We reserves the right to modify this Privacy Policy at any time in response to evolving legislative environments and API shifts. Material updates will be communicated clearly through workspace dashboard notifications or via formal email messages sent to registered accounts before taking effect.</p>
 
               <h2 className="text-2xl font-bold text-[#0B2A4A] mt-8 mb-4">9. Contact and Correspondence</h2>
-              <p>For questions related to data encryption, general data rights, or identity protections, please contact our support department at: <a href="mailto:support@hubifysocial.com" className="text-[#1D4D7A] font-semibold hover:underline">support@hubifysocial.com</a>.</p>
+              <p>For questions related to data encryption, general data rights, or identity protections, please contact our support department at: <a href="mailto:support@hubifysocial.com" className="text-[#1D4D7A] font-semibold hover:underline">support@hubifysocial.com</a>. The Hubify Social platform is officially operated by <strong>PT Harapan Untuk Bangsa</strong>.</p>
             </div>
           </>
         )}

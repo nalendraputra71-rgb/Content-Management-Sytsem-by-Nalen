@@ -2545,19 +2545,22 @@ export function NavBar({
   return (
     <div
       style={{
-        background: "rgba(255, 255, 255, 0.45)",
-        backdropFilter: "blur(16px)",
-        WebkitBackdropFilter: "blur(16px)",
+        position: "sticky",
+        top: 16,
+        zIndex: 50,
+        margin: "16px 24px 0",
+        background: "rgba(255,255,255,0.6)",
+        backdropFilter: "blur(24px)",
+        WebkitBackdropFilter: "blur(24px)",
         transform: "translateZ(0)",
         willChange: "transform",
-        borderBottom: "1px solid rgba(255, 255, 255, 0.6)",
+        border: "1px solid rgba(255,255,255,0.8)",
+        borderRadius: 20,
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        padding: "10px 24px",
-        position: "sticky",
-        top: 0,
-        zIndex: 50,
+        padding: "12px 20px",
+        boxShadow: "0 8px 32px rgba(0,0,0,0.04)"
       }}
     >
       <div

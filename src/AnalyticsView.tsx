@@ -916,7 +916,20 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
       </div>
 
       {/* Filters (Sticky) */}
-      <div className="sticky top-0 z-50 flex items-center justify-start gap-4 flex-wrap mb-2" style={{ transform: "translateZ(0)", willChange: "transform", transition: "all 0.3s ease", ...(isScrolled ? { background: "rgba(255,255,255,0.65)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", borderBottom: "1px solid rgba(255,255,255,0.6)", boxShadow: "0 4px 24px rgba(0,0,0,0.02)", marginLeft: -24, marginRight: -24, padding: "16px 24px", width: "calc(100% + 48px)", borderRadius: "0 0 24px 24px" } : { background: "rgba(255,255,255,0.45)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", border: "1px solid rgba(255,255,255,0.6)", boxShadow: "0 8px 32px rgba(0,0,0,0.04)", padding: "16px", borderRadius: 24, width: "100%" }) }}>
+      <div className="flex items-center justify-start gap-4 flex-wrap mb-2" style={{
+        position: "sticky",
+        top: 16,
+        zIndex: 50,
+        background: "rgba(255,255,255,0.6)",
+        backdropFilter: "blur(24px)",
+        WebkitBackdropFilter: "blur(24px)",
+        transform: "translateZ(0)",
+        willChange: "transform",
+        border: "1px solid rgba(255,255,255,0.8)",
+        borderRadius: 20,
+        padding: "12px 20px",
+        boxShadow: "0 8px 32px rgba(0,0,0,0.04)"
+      }}>
         <div className="flex gap-3 items-center">
           <PlatformFilterPopover 
             platformFilter={platformFilter} 
