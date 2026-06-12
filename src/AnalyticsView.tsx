@@ -86,7 +86,7 @@ function CustomDropdown({ value, options = [], onChange, style }: { value: strin
       <button 
         onClick={() => setOpen(!open)} 
         className="hover-scale"
-        style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "6px 12px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.7)", background: "rgba(255,255,255,0.5)", backdropFilter: "blur(4px)", fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#2C2016" }}
+        style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "6px 12px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.7)", background: "rgba(255,255,255,0.5)", backdropFilter: "none", fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#2C2016" }}
       >
         <span>{displayLabel}</span>
         <ChevronDown size={14} color="rgba(44,32,22,0.5)" style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'all 0.2s' }} />
@@ -95,7 +95,7 @@ function CustomDropdown({ value, options = [], onChange, style }: { value: strin
         {open && (
           <motion.div 
             initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }} transition={{ duration: 0.15 }}
-            style={{ position: "absolute", top: "100%", right: 0, marginTop: 4, background: "rgba(255,255,255,0.85)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.8)", borderRadius: 12, padding: 6, zIndex: 100, boxShadow: "0 10px 40px rgba(0,0,0,0.1)", minWidth: 120, overflowY: "auto", maxHeight: 200 }}
+            style={{ position: "absolute", top: "100%", right: 0, marginTop: 4, background: "rgba(255,255,255,0.85)", backdropFilter: "none", WebkitBackdropFilter: "none", border: "1px solid rgba(255,255,255,0.8)", borderRadius: 12, padding: 6, zIndex: 100, boxShadow: "0 10px 40px rgba(0,0,0,0.1)", minWidth: 120, overflowY: "auto", maxHeight: 200 }}
           >
             {options.map((o, i) => {
               const val = typeof o === 'string' ? o : o.id;
@@ -909,7 +909,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
            <h1 style={{fontSize: 24, fontWeight: 800, margin: 0, color: "#111827", letterSpacing: "-0.5px", display:"flex", alignItems:"center", gap: 8}}>Analytics <Sparkles size={20} color="var(--theme-primary)" /></h1>
            <p style={{fontSize: 14, color: "rgba(0,0,0,0.5)", margin: "4px 0 0"} }>Pantau dan optimalkan performa konten secara menyeluruh.</p>
          </div>
-         <button onClick={() => window.print()} className="hover-scale btn-hover" style={{...B(false), padding: "8px 16px", borderRadius: 16, height: 40, fontSize: 13, background: "rgba(255,255,255,0.6)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", color: "#111827", border: "1px solid rgba(255,255,255,0.8)", boxShadow: "0 2px 8px rgba(0,0,0,0.05)", display: "flex", alignItems: "center", gap: 8}}>
+         <button onClick={() => window.print()} className="hover-scale btn-hover" style={{...B(false), padding: "8px 16px", borderRadius: 16, height: 40, fontSize: 13, background: "rgba(255,255,255,0.6)", backdropFilter: "none", WebkitBackdropFilter: "none", color: "#111827", border: "1px solid rgba(255,255,255,0.8)", boxShadow: "0 2px 8px rgba(0,0,0,0.05)", display: "flex", alignItems: "center", gap: 8}}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
             Cetak Laporan PDF
          </button>
@@ -920,9 +920,9 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
         position: "sticky",
         top: 16,
         zIndex: 50,
-        background: "rgba(255,255,255,0.6)",
-        backdropFilter: "blur(24px)",
-        WebkitBackdropFilter: "blur(24px)",
+        background: "rgba(255,255,255,0.95)",
+        backdropFilter: "none",
+        WebkitBackdropFilter: "none",
         transform: "translateZ(0)",
         willChange: "transform",
         border: "1px solid rgba(255,255,255,0.8)",
@@ -970,8 +970,8 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
       {/* Restricted Overlay & Main Dashboard Content */}
       <div style={{position:"relative"}}>
         {isRestricted && (
-          <div style={{position:"absolute",inset:0,zIndex:10,backdropFilter:"blur(12px)",display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(255, 255, 255, 0.4)",borderRadius:20}}>
-            <div style={{background:"rgba(255,255,255,0.65)",backdropFilter:"blur(24px)",WebkitBackdropFilter:"blur(24px)",transform:"translateZ(0)",willChange:"transform",padding:"24px 32px",borderRadius:24,boxShadow:"0 20px 60px rgba(0,0,0,0.08)",textAlign:"center",maxWidth:400,border:"1px solid rgba(255,255,255,0.7)"}}>
+          <div style={{position:"absolute",inset:0,zIndex:10,backdropFilter: "none",display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(255, 255, 255, 0.4)",borderRadius:20}}>
+            <div style={{background:"rgba(255,255,255,0.65)",backdropFilter: "none",WebkitBackdropFilter: "none",transform:"translateZ(0)",willChange:"transform",padding:"24px 32px",borderRadius:24,boxShadow:"0 20px 60px rgba(0,0,0,0.08)",textAlign:"center",maxWidth:400,border:"1px solid rgba(255,255,255,0.7)"}}>
               <AlertCircle size={40} color="var(--theme-primary)" style={{margin: "0 auto 12px"}} />
               <h3 style={{fontSize:18,fontWeight:800,marginBottom:8,color:"#111827", letterSpacing: "-0.5px"}}>Akses Analitik Premium</h3>
               <p style={{fontSize:13,color:"rgba(0,0,0,0.6)",marginBottom:20, lineHeight:1.6}}>Upgrade ke paket Pro untuk membuka analisis prediktif, AI Insights mendalam, heatmap performa, dan integrasi multi-platform tak terbatas.</p>
@@ -1028,7 +1028,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
           {/* Distribution Row */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Performance by Platform */}
-            <div style={{background: "rgba(255,255,255,0.45)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", transform: "translateZ(0)", willChange: "transform", padding: "20px", borderRadius: 24, border: "1px solid rgba(255,255,255,0.6)", boxShadow: "0 8px 32px rgba(0,0,0,0.04)", display: "flex", flexDirection: "column"}}>
+            <div style={{background: "rgba(255,255,255,0.45)", backdropFilter: "none", WebkitBackdropFilter: "none", transform: "translateZ(0)", willChange: "transform", padding: "20px", borderRadius: 24, border: "1px solid rgba(255,255,255,0.6)", boxShadow: "0 8px 32px rgba(0,0,0,0.04)", display: "flex", flexDirection: "column"}}>
               <div style={{display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20, gap: 12, flexWrap: "wrap"}}>
                 <div style={{display:"flex", alignItems:"center", gap: 8}}>
                   <div style={{background:"#FEF3C7", padding: 6, borderRadius: 8}}><PieChart size={16} color="#D97706" /></div>
@@ -1084,7 +1084,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
             </div>
             
             {/* PIC Workload */}
-            <div style={{background: "rgba(255,255,255,0.45)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", transform: "translateZ(0)", willChange: "transform", padding: "20px", borderRadius: 24, border: "1px solid rgba(255,255,255,0.6)", boxShadow: "0 8px 32px rgba(0,0,0,0.04)", display: "flex", flexDirection: "column"}}>
+            <div style={{background: "rgba(255,255,255,0.45)", backdropFilter: "none", WebkitBackdropFilter: "none", transform: "translateZ(0)", willChange: "transform", padding: "20px", borderRadius: 24, border: "1px solid rgba(255,255,255,0.6)", boxShadow: "0 8px 32px rgba(0,0,0,0.04)", display: "flex", flexDirection: "column"}}>
               <div style={{display:"flex", alignItems:"center", gap: 10, marginBottom: 20, justifyContent: "space-between", flexWrap: "wrap"}}>
                 <div style={{display:"flex", alignItems:"center", gap: 8}}>
                   <div style={{background:"#E0E7FF", padding: 6, borderRadius: 8}}><Users size={16} color="#4F46E5" /></div>
@@ -1128,7 +1128,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
             </div>
 
             {/* Performance by Pillar */}
-            <div style={{background: "rgba(255,255,255,0.45)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", transform: "translateZ(0)", willChange: "transform", padding: "20px", borderRadius: 24, border: "1px solid rgba(255,255,255,0.6)", boxShadow: "0 8px 32px rgba(0,0,0,0.04)", display: "flex", flexDirection: "column"}}>
+            <div style={{background: "rgba(255,255,255,0.45)", backdropFilter: "none", WebkitBackdropFilter: "none", transform: "translateZ(0)", willChange: "transform", padding: "20px", borderRadius: 24, border: "1px solid rgba(255,255,255,0.6)", boxShadow: "0 8px 32px rgba(0,0,0,0.04)", display: "flex", flexDirection: "column"}}>
               <div style={{display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20, gap: 12, flexWrap: "wrap"}}>
                 <div style={{display:"flex", alignItems:"center", gap: 8}}>
                   <div style={{background:"#DCFCE7", padding: 6, borderRadius: 8}}><PieChart size={16} color="#16A34A" /></div>
@@ -1169,7 +1169,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
             </div>
 
             {/* Performance by Content Type */}
-            <div style={{background: "rgba(255,255,255,0.45)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", transform: "translateZ(0)", willChange: "transform", padding: "20px", borderRadius: 24, border: "1px solid rgba(255,255,255,0.6)", boxShadow: "0 8px 32px rgba(0,0,0,0.04)", display: "flex", flexDirection: "column"}}>
+            <div style={{background: "rgba(255,255,255,0.45)", backdropFilter: "none", WebkitBackdropFilter: "none", transform: "translateZ(0)", willChange: "transform", padding: "20px", borderRadius: 24, border: "1px solid rgba(255,255,255,0.6)", boxShadow: "0 8px 32px rgba(0,0,0,0.04)", display: "flex", flexDirection: "column"}}>
               <div style={{display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20, gap: 12, flexWrap: "wrap"}}>
                 <div style={{display:"flex", alignItems:"center", gap: 8}}>
                   <div style={{background:"#FCE7F3", padding: 6, borderRadius: 8}}><PieChart size={16} color="#DB2777" /></div>
@@ -1205,7 +1205,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
           </div>
 
           {/* Trends Charts List */}
-          <div style={{background: "rgba(255,255,255,0.45)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", transform: "translateZ(0)", willChange: "transform", padding: "20px", borderRadius: 24, border: "1px solid rgba(255,255,255,0.6)", boxShadow: "0 8px 32px rgba(0,0,0,0.04)", display: "flex", flexDirection: "column"}}>
+          <div style={{background: "rgba(255,255,255,0.45)", backdropFilter: "none", WebkitBackdropFilter: "none", transform: "translateZ(0)", willChange: "transform", padding: "20px", borderRadius: 24, border: "1px solid rgba(255,255,255,0.6)", boxShadow: "0 8px 32px rgba(0,0,0,0.04)", display: "flex", flexDirection: "column"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20,flexWrap:"wrap",gap:12}}>
               <div style={{display:"flex", alignItems:"center", gap: 8}}>
                 <div style={{background:"#F3F4F6", padding: 6, borderRadius: 8}}><TrendingUp size={16} color="#111827" /></div>
@@ -1243,7 +1243,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
           </div>
           
           {/* Heatmap (Full Width) */}
-          <div style={{background: "rgba(255,255,255,0.45)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", transform: "translateZ(0)", willChange: "transform", padding: "20px", borderRadius: 24, border: "1px solid rgba(255,255,255,0.6)", boxShadow: "0 8px 32px rgba(0,0,0,0.04)", width: "100%", overflow: "hidden"}}>
+          <div style={{background: "rgba(255,255,255,0.45)", backdropFilter: "none", WebkitBackdropFilter: "none", transform: "translateZ(0)", willChange: "transform", padding: "20px", borderRadius: 24, border: "1px solid rgba(255,255,255,0.6)", boxShadow: "0 8px 32px rgba(0,0,0,0.04)", width: "100%", overflow: "hidden"}}>
             <div style={{width: "100%"}}>
               <div style={{display:"flex", alignItems:"center", gap: 10, marginBottom: 20, justifyContent: "space-between", flexWrap: "wrap"}}>
                 <div style={{display:"flex", alignItems:"center", gap: 8}}>
@@ -1279,7 +1279,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
             </div>
           </div>
 
-          <div style={{display:"flex",gap:16,alignItems:"center",background: "rgba(255,255,255,0.45)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", transform: "translateZ(0)", willChange: "transform", padding:"16px 20px", borderRadius:24, border: "1px solid rgba(255,255,255,0.6)", boxShadow: "0 8px 32px rgba(0,0,0,0.04)",flexWrap:"wrap", marginTop: 8}}>
+          <div style={{display:"flex",gap:16,alignItems:"center",background: "rgba(255,255,255,0.45)", backdropFilter: "none", WebkitBackdropFilter: "none", transform: "translateZ(0)", willChange: "transform", padding:"16px 20px", borderRadius:24, border: "1px solid rgba(255,255,255,0.6)", boxShadow: "0 8px 32px rgba(0,0,0,0.04)",flexWrap:"wrap", marginTop: 8}}>
             <div style={{display:"flex",gap:12,alignItems:"center"}}>
               <div style={{fontSize:13,fontWeight:700,color:"rgba(0,0,0,0.5)", textTransform: "uppercase", letterSpacing: 0.5}}>Urutkan:</div>
               <div style={{display:"flex", gap: 4, background:"#F3F4F6", padding:4, borderRadius:8}}>

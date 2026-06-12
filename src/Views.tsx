@@ -102,8 +102,8 @@ export function MonthView({year,month,monthContent,filtered,openEdit,openAdd,sho
   return (
     <div style={{
       background: "rgba(255, 255, 255, 0.45)",
-      backdropFilter: "blur(16px)",
-      WebkitBackdropFilter: "blur(16px)",
+      backdropFilter: "none",
+      WebkitBackdropFilter: "none",
       transform: "translateZ(0)",
       willChange: "transform",
       borderRadius: "24px",
@@ -111,10 +111,10 @@ export function MonthView({year,month,monthContent,filtered,openEdit,openAdd,sho
       border: "1px solid rgba(255, 255, 255, 0.6)",
       boxShadow: "0 8px 32px rgba(0, 0, 0, 0.04)"
     }}>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:8,marginBottom:12}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(7,minmax(0,1fr))",gap:8,marginBottom:12}}>
         {DAYS_S.map(d=><div key={d} style={{textAlign:"center",fontSize:12,fontWeight:600,textTransform:"uppercase",color:"rgba(0,0,0,0.5)",letterSpacing:1}}>{d}</div>)}
       </div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:8}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(7,minmax(0,1fr))",gap:8}}>
         {Array.from({length:sd}).map((_,i)=><div key={`e${i}`} style={{minHeight:100,background:"transparent"}}/>)}
         {Array.from({length:dim}).map((_,i)=>{
           const day=i+1, items=getF(day), allItems=getA(day), evs=showHolidays?getEv(day):[];
@@ -295,8 +295,8 @@ export function BoardView({year,month,content,filtered,openEdit,openAdd,statuses
             minWidth:280,
             flex:"0 0 280px",
             background: "rgba(255,255,255,0.45)",
-            backdropFilter: "blur(16px)",
-            WebkitBackdropFilter: "blur(16px)",
+            backdropFilter: "none",
+            WebkitBackdropFilter: "none",
             transform: "translateZ(0)",
             willChange: "transform",
             borderRadius: "24px",
@@ -362,8 +362,8 @@ export function TimelineView({year,month,content,filtered,openEdit,openAdd,pilla
         overflowX:"auto",
         paddingBottom:20,
         background: "rgba(255,255,255,0.45)",
-        backdropFilter: "blur(16px)",
-        WebkitBackdropFilter: "blur(16px)",
+        backdropFilter: "none",
+        WebkitBackdropFilter: "none",
         transform: "translateZ(0)",
         willChange: "transform",
         borderRadius: "24px",
@@ -480,8 +480,8 @@ export function TableView({filtered,openEdit,archiveItem,unarchiveItem,deleteIte
   return (
     <div style={{
       background: "rgba(255,255,255,0.45)",
-      backdropFilter: "blur(16px)",
-      WebkitBackdropFilter: "blur(16px)",
+      backdropFilter: "none",
+      WebkitBackdropFilter: "none",
       transform: "translateZ(0)",
       willChange: "transform",
       borderRadius: "24px",

@@ -440,7 +440,7 @@ function OnboardingOverlay({ user, profile, onUpdate }: any) {
   };
 
   return (
-    <div style={{position:"fixed", inset:0, background:"rgba(255,255,255,0.9)", backdropFilter:"blur(15px)", zIndex:9999, display:"flex", alignItems:"center", justifyContent:"center", padding:24}}>
+    <div style={{position:"fixed", inset:0, background:"rgba(255,255,255,0.9)", backdropFilter: "none", zIndex:9999, display:"flex", alignItems:"center", justifyContent:"center", padding:24}}>
        <motion.div initial={{opacity:0, scale:0.92, y:20}} animate={{opacity:1, scale:1, y:0}} style={{maxWidth:440, width:"100%", background:"white", padding:"48px 40px", borderRadius:40, boxShadow:"0 30px 60px rgba(44,32,22,0.15)", textAlign:"center", border:"1px solid rgba(44,32,22,0.05)"}}>
           <div style={{fontSize:48, marginBottom:24}}>✨</div>
           <h2 style={{fontSize:28, fontWeight:900, marginBottom:12, color:"#2C2016", letterSpacing:"-0.5px"}}>Selamat Datang! 👋</h2>
@@ -531,7 +531,7 @@ function QuickAddEventModal({ workspace, onClose, onSaveSettings }: any) {
 
   return (
     <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)" }} />
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.4)", backdropFilter: "none" }} />
       <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0, transition: { duration: 0.15 } }} style={{ position: "relative", zIndex: 1, background: "#FAFAF8", width: "90%", maxWidth: 440, borderRadius: 24, boxShadow: "0 24px 64px rgba(44,32,22,0.3)", overflow: "hidden", display: "flex", flexDirection: "column", maxHeight: "90vh" }}>
         <div style={{ padding: "20px 24px", borderBottom: "1px solid rgba(0,0,0,0.05)", background: "white", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#2C2016", display: "flex", alignItems: "center", gap: 8 }}><Calendar size={20} /> Tambah Event Kustom</h3>
@@ -1423,7 +1423,10 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
           await updateWsSettings({ title: newTitle });
         }}
       />
-      <div style={{flex:1, minWidth:0, display:"flex", flexDirection:"column", height:"100vh", overflow:"auto", position:"relative", background: ["dashboard", "content_planner", "analytics"].includes(tab) ? "radial-gradient(circle at 0% 0%, #E3F2FD 0%, transparent 50%), radial-gradient(circle at 100% 100%, #FFF3E0 0%, transparent 50%), radial-gradient(circle at 100% 0%, #F3E5F5 0%, transparent 50%), #FAFAFA" : "transparent"}}>
+      {["dashboard", "content_planner", "analytics"].includes(tab) && (
+        <div style={{ position: "fixed", inset: 0, zIndex: -1, pointerEvents: "none", background: "radial-gradient(circle at 0% 0%, #E3F2FD 0%, transparent 50%), radial-gradient(circle at 100% 100%, #FFF3E0 0%, transparent 50%), radial-gradient(circle at 100% 0%, #F3E5F5 0%, transparent 50%), #FAFAFA" }} />
+      )}
+      <div style={{flex:1, minWidth:0, display:"flex", flexDirection:"column", height:"100vh", overflow:"auto", position:"relative", background: "transparent"}}>
         {(!["dashboard", "settings", "admin", "soc_hub"].includes(tab) && !tab.startsWith("social")) && (
           <Header 
             profile={profile}
@@ -1474,7 +1477,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
             {tab==="content_planner"&&contentTab==="board"&&<BoardView year={year} month={month} content={content} filtered={filtered} openEdit={openEdit} openAdd={openAdd} statuses={statuses} pillars={pillars} platforms={platforms} search={search} isRestricted={isRestricted} showArchived={showArchived} />}
             {tab==="content_planner"&&contentTab==="timeline"&&<TimelineView year={year} month={month} content={content} filtered={filtered} openEdit={openEdit} openAdd={openAdd} pillars={pillars} platforms={platforms} showHolidays={showHolidays} holidays={combinedHolidays} isRestricted={isRestricted} showArchived={showArchived} />}
             {tab==="content_planner"&&contentTab==="table"&&<TableView filtered={filtered} openEdit={openEdit} archiveItem={archiveItem} unarchiveItem={unarchiveItem} deleteItem={deleteItem} pillars={pillars} platforms={platforms} showArchived={showArchived} search={search} bulkIds={bulkIds} setBulkIds={setBulkIds} onBulk={handleBulkActions} isRestricted={isRestricted}/>}
-            {tab.startsWith("social")&&<SocialStudioView tab={tab} />}
+            {tab.startsWith("social")&&<SocialStudioView tab={tab} workspaceId={workspace?.id} />}
             {tab==="analytics"&&<AnalyticsView content={content} pillars={pillars} platforms={platforms} contentTypes={contentTypes} pics={pics} statuses={statuses} openEdit={openEdit} isRestricted={isRestricted}/>}
             {tab==="soc_hub"&&<SocHubView user={user} profile={profile} />}
             {tab==="settings"&&<SettingsPanel 

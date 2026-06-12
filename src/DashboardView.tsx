@@ -274,7 +274,7 @@ export function DashboardView({ user, profile, activeWorkspace, content, theme, 
                
                <AnimatePresence>
                  {clockMenu && (
-                   <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} style={{ position: "absolute", top: "100%", right: 0, marginTop: 12, background: "rgba(255,255,255,0.85)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", padding: 16, borderRadius: 16, boxShadow: "0 10px 40px rgba(0,0,0,0.15)", border: "1px solid rgba(255,255,255,0.7)", minWidth: 200, zIndex: 100 }}>
+                   <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} style={{ position: "absolute", top: "100%", right: 0, marginTop: 12, background: "rgba(255,255,255,0.85)", backdropFilter: "none", WebkitBackdropFilter: "none", padding: 16, borderRadius: 16, boxShadow: "0 10px 40px rgba(0,0,0,0.15)", border: "1px solid rgba(255,255,255,0.7)", minWidth: 200, zIndex: 100 }}>
                      <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(0,0,0,0.4)", textTransform: "uppercase", marginBottom: 12 }}>Tampilan Jam</div>
                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                        <button onClick={() => { updateConfig("clock", { ...clockSettings, type: "digital" }); setClockMenu(false); }} style={{ ...B(clockSettings.type === "digital", theme.primary), padding: "8px 12px", fontSize: 13 }}>Jam Digital</button>
@@ -597,7 +597,7 @@ function MetricsRow({ content, config, updateConfig, theme }: any) {
 
       {showGoals && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ background: "rgba(255,255,255,0.65)", backdropFilter:"blur(24px)", WebkitBackdropFilter:"blur(24px)", transform:"translateZ(0)", willChange:"transform", padding: 32, borderRadius: 24, border: "1px solid rgba(255,255,255,0.7)", width: 800, maxHeight: "90vh", overflowY: "auto" }}>
+          <div style={{ background: "rgba(255,255,255,0.65)", backdropFilter: "none", WebkitBackdropFilter: "none", transform:"translateZ(0)", willChange:"transform", padding: 32, borderRadius: 24, border: "1px solid rgba(255,255,255,0.7)", width: 800, maxHeight: "90vh", overflowY: "auto" }}>
              <h3 style={{ fontSize: 20, fontWeight: 800, marginBottom: 24 }}>Kustomisasi Goal Bulanan</h3>
              
              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -1233,8 +1233,8 @@ function StickyNotesModal({ notes, updateConfig, onClose, theme }: any) {
   };
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.6)", zIndex: 99999, display: "flex", alignItems: "center", justifyContent: "center", padding: 24, backdropFilter: "blur(5px)" }}>
-       <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} style={{ background: "rgba(255,255,255,0.65)", backdropFilter:"blur(24px)", WebkitBackdropFilter:"blur(24px)", transform:"translateZ(0)", willChange:"transform", border: "1px solid rgba(255,255,255,0.7)", width: "100%", maxWidth: 1000, height: "80vh", borderRadius: 32, padding: 32, display: "flex", flexDirection: "column", boxShadow: "0 30px 60px rgba(0,0,0,0.15)" }}>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.6)", zIndex: 99999, display: "flex", alignItems: "center", justifyContent: "center", padding: 24, backdropFilter: "none" }}>
+       <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} style={{ background: "rgba(255,255,255,0.65)", backdropFilter: "none", WebkitBackdropFilter: "none", transform:"translateZ(0)", willChange:"transform", border: "1px solid rgba(255,255,255,0.7)", width: "100%", maxWidth: 1000, height: "80vh", borderRadius: 32, padding: 32, display: "flex", flexDirection: "column", boxShadow: "0 30px 60px rgba(0,0,0,0.15)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
             <div>
               <h2 style={{ fontSize: 28, fontWeight: 900, marginBottom: 4 }}>Sticky Notes</h2>

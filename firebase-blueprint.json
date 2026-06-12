@@ -79,6 +79,42 @@
         "clockType": { "type": "string" },
         "updatedAt": { "type": "string", "format": "date-time" }
       }
+    },
+    "ConnectedAccount": {
+      "title": "Connected Social Media Account",
+      "description": "OAuth token and metadata for connected platforms (Meta, TikTok)",
+      "type": "object",
+      "properties": {
+        "workspaceId": { "type": "string" },
+        "platform": { "type": "string", "enum": ["meta", "instagram", "tiktok"] },
+        "accountName": { "type": "string" },
+        "accountId": { "type": "string" },
+        "accessToken": { "type": "string", "description": "Encrypted access token" },
+        "refreshToken": { "type": "string", "description": "Encrypted refresh token" },
+        "tokenExpiresAt": { "type": "string", "format": "date-time" },
+        "addedByUserId": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "expired", "revoked"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["workspaceId", "platform", "accountId"]
+    },
+    "SocialMessage": {
+      "title": "Unified Social Inbox Message",
+      "description": "Direct messages or comments synced from Meta/TikTok API",
+      "type": "object",
+      "properties": {
+        "workspaceId": { "type": "string" },
+        "platform": { "type": "string" },
+        "type": { "type": "string", "enum": ["direct_message", "comment"] },
+        "senderId": { "type": "string" },
+        "senderName": { "type": "string" },
+        "content": { "type": "string" },
+        "externalMessageId": { "type": "string" },
+        "isRead": { "type": "boolean" },
+        "repliedAt": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["workspaceId", "platform", "type", "content"]
     }
   },
   "firestore": {
@@ -105,6 +141,14 @@
     "/workspaces/{workspaceId}/dashboard/config": {
       "schema": "DashboardConfig",
       "description": "State persistence for dashboard widgets"
+    },
+    "/workspaces/{workspaceId}/connectedAccounts/{accountId}": {
+      "schema": "ConnectedAccount",
+      "description": "Encrypted OAuth tokens linking specific platforms"
+    },
+    "/workspaces/{workspaceId}/inbox/{messageId}": {
+      "schema": "SocialMessage",
+      "description": "Synced DMs and comments for the unified inbox"
     }
   }
 }

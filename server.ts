@@ -20,7 +20,7 @@ async function startServer() {
 
   // API Route untuk Gemini Proxy
   app.post("/api/gemini", async (req, res) => {
-    const { prompt, model = "gemini-2.5-flash" } = req.body;
+    const { prompt, model = "gemini-2.5-flash", system } = req.body;
     
     // Gunakan VITE_GEMINI_API_KEY atau GEMINI_API_KEY dari env
     const apiKey = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
@@ -32,9 +32,13 @@ async function startServer() {
     try {
       // Inisialisasi GoogleGenAI dengan format objek sesuai SDK @google/genai
       const ai = new GoogleGenAI({ apiKey });
+      const config: any = {};
+      if (system) config.systemInstruction = system;
+
       const response = await ai.models.generateContent({
         model: model,
-        contents: prompt
+        contents: prompt,
+        config: Object.keys(config).length > 0 ? config : undefined
       });
       
       res.json({ text: response.text });

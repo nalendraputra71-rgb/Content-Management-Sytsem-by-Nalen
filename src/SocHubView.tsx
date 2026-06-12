@@ -132,6 +132,7 @@ function PostItem({ post, currentUser, onReply, onLike, onRepost, onShare, onPro
 }
 
 export function SocHubView({ user, profile }: any) {
+  const [selectedInboxMsg, setSelectedInboxMsg] = useState<any>(null);
   const [posts, setPosts] = useState<any[]>([]);
   const [content, setContent] = useState("");
   const [view, setView] = useState<"feed"|"dms"|"post"|"activity"|"profile">("feed");
@@ -240,6 +241,7 @@ export function SocHubView({ user, profile }: any) {
     return () => unsub();
   }, [view, selectedPost]);
 
+  
   useEffect(() => {
     if (!user) return;
     const q = query(collection(db, "soc_chats"), where("participants", "array-contains", user.uid), orderBy("updatedAt", "desc"));
@@ -842,7 +844,7 @@ export function SocHubView({ user, profile }: any) {
                    <div style={{ flex: 1, overflowY: "auto" }}>
                      {chats.length === 0 && (
                        <div className="p-6 text-center text-gray-400 text-sm">
-                         Belum ada pesan. Kunjungi profil pengguna untuk mulai mengirim pesan.
+                         Belum ada chat.
                        </div>
                      )}
                      {chats.map(chat => {
@@ -850,9 +852,9 @@ export function SocHubView({ user, profile }: any) {
                        const otherData = chat.participantData?.[otherId] || { name: "User", avatar: "" };
                        return (
                          <div key={chat.id} onClick={() => setChatUser({uid: otherId, ...otherData})} style={{ padding: "16px 24px", borderBottom: "1px solid rgba(0,0,0,0.04)", cursor: "pointer", background: chatUser?.uid === otherId ? "white" : "transparent", display: "flex", gap: 12, alignItems: "center" }} className="hover:bg-white transition-colors">
-                            <img src={otherData.avatar || getAvatar(null, otherId)} style={{ width: 48, height: 48, borderRadius: "50%", objectFit: "cover" }} />
+                            <img src={otherData.avatar || getAvatar(null, otherId)} style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover" }} />
                             <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ fontWeight: 700, fontSize: 15, color: "#111827", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{otherData.name}</div>
+                              <div style={{ fontWeight: 700, fontSize: 14, color: "#111827", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{otherData.name}</div>
                               <div style={{ fontSize: 13, color: "#6B7280", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{chat.lastMessage || "Mulai chat..."}</div>
                             </div>
                          </div>
@@ -860,6 +862,7 @@ export function SocHubView({ user, profile }: any) {
                      })}
                    </div>
                 </div>
+                
                 {/* Chat Window */}
                 <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
                   {chatUser ? (
@@ -885,18 +888,14 @@ export function SocHubView({ user, profile }: any) {
                       </div>
                       <div style={{ padding: 24, borderTop: "1px solid rgba(0,0,0,0.06)" }}>
                         <div style={{ display: "flex", gap: 12, alignItems: "center", background: "#F9FAFB", padding: "8px 16px", borderRadius: 24, border: "1px solid rgba(0,0,0,0.04)" }}>
-                          <input type="text" value={msgContent} onChange={e => setMsgContent(e.target.value)} onKeyDown={e => e.key === "Enter" && sendDM()} placeholder="Write your message..." style={{ flex: 1, background: "transparent", border: "none", outline: "none", fontSize: 15 }} />
-                          <button onClick={sendDM} disabled={!msgContent.trim()} style={{ background: msgContent.trim() ? "var(--theme-primary)" : "transparent", color: msgContent.trim() ? "white" : "#9CA3AF", border: "none", width: 36, height: 36, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", cursor: msgContent.trim() ? "pointer" : "default" }}>
-                            <Send size={18} />
-                          </button>
+                           <input type="text" placeholder="Tulis pesan..." value={msgContent} onChange={e => setMsgContent(e.target.value)} onKeyDown={e => e.key === "Enter" && sendDM()} style={{ flex: 1, background: "transparent", border: "none", outline: "none", fontSize: 15, padding: "8px 0" }} />
+                           <button onClick={sendDM} style={{ background: "var(--theme-primary)", color: "white", border: "none", width: 36, height: 36, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><Send size={16} /></button>
                         </div>
                       </div>
                     </>
                   ) : (
-                    <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "#9CA3AF" }}>
-                       <MessageCircle size={48} style={{ opacity: 0.2, marginBottom: 16 }} />
-                       <div style={{ fontWeight: 700, fontSize: 16, color: "#4B5563" }}>Your Messages</div>
-                       <div style={{ fontSize: 14 }}>Select a conversation to start chatting</div>
+                    <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "#9CA3AF" }}>
+                       Pilih obrolan untuk mulai mengirim pesan.
                     </div>
                   )}
                 </div>

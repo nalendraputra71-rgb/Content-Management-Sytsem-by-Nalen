@@ -1,7 +1,8 @@
+import { getFirestore, collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, doc, setDoc } from 'firebase/firestore';
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { 
-  CopyPlus, Clock, MessageCircle, BarChart3, Bell, CheckSquare, Facebook, Instagram, Twitter, Linkedin, Youtube, Link2, TrendingUp, Calendar as CalendarIcon, Image as ImageIcon, Send, Edit3, Sparkles, ChevronDown, Shield, User, Search, Activity, PieChart, Users, X, PlayCircle, Globe, Layout, AlignLeft, MapPin, Download, ChevronRight, ChevronLeft, Calendar as CalIcon, Settings
+  CopyPlus, MessageSquare, Clock, MessageCircle, BarChart3, Bell, CheckSquare, Facebook, Instagram, Twitter, Linkedin, Youtube, Link2, TrendingUp, Calendar as CalendarIcon, Image as ImageIcon, Send, Edit3, Sparkles, ChevronDown, Shield, User, Search, Activity, PieChart, Users, X, PlayCircle, Globe, Layout, AlignLeft, MapPin, Download, ChevronRight, ChevronLeft, Calendar as CalIcon, Settings
 } from "lucide-react";
 import Markdown from "react-markdown";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, PieChart as RePieChart, Pie, Cell } from 'recharts';
@@ -79,10 +80,36 @@ const PLATFORMS = [
   { id: "tiktok", name: "TikTok", icon: <div style={{fontWeight:800, fontSize:12, display:"flex", alignItems:"center", height:"100%"}}>TT</div>, color: "#000000" }
 ];
 
-export function SocialStudioView({ tab }: { tab: string }) {
-  const [showSoonPopup, setShowSoonPopup] = useState(true);
+export function SocialStudioView({ tab, workspaceId }: { tab: string, workspaceId?: string }) {
+
+  const db = getFirestore();
+  const [inboxMessages, setInboxMessages] = useState<any[]>([]);
+  const [selectedInboxMsg, setSelectedInboxMsg] = useState<any>(null);
+  const [msgContent, setMsgContent] = useState("");
+  const [inboxFilter, setInboxFilter] = useState("all");
+
+  useEffect(() => {
+    if (!workspaceId) return;
+    const q = query(collection(db, "workspaces", workspaceId, "inbox"), orderBy("createdAt", "desc"));
+    const unsub = onSnapshot(q, (snap) => {
+        setInboxMessages(snap.docs.map(d => ({id: d.id, ...d.data()})));
+    });
+    return unsub;
+  }, [workspaceId]);
+
+
   const [connectedPlatforms, setConnectedPlatforms] = useState<string[]>([]);
   const [showMultiAccountPopup, setShowMultiAccountPopup] = useState(false);
+  
+  useEffect(() => {
+    if (!workspaceId) return;
+    const q = query(collection(db, "workspaces", workspaceId, "connectedAccounts"));
+    const unsub = onSnapshot(q, (snap) => {
+      setConnectedPlatforms(snap.docs.map(d => d.id));
+    });
+    return unsub;
+  }, [workspaceId]);
+
   const [aiReport, setAiReport] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
 
@@ -97,25 +124,99 @@ export function SocialStudioView({ tab }: { tab: string }) {
   const [selectedContent, setSelectedContent] = useState<any>(null);
 
   useEffect(() => {
-    setShowSoonPopup(true);
+    // Popup restriction removed to allow all tabs
   }, [tab]);
 
   const [contentSort, setContentSort] = useState("terbaru");
 
+  const [calendarPosts, setCalendarPosts] = useState([
+    { day: 5, type: 'ig', title: 'Promo Baju', time: '12:00' },
+    { day: 12, type: 'tt', title: 'Viral Tips', time: '19:00' },
+    { day: 15, type: 'fb', title: 'Event Kemerdekaan', time: '14:30' },
+  ]);
+
+  const [compInput, setCompInput] = useState("");
+  const [compLoading, setCompLoading] = useState(false);
+  const [competitors, setCompetitors] = useState<any[]>([{
+    username: "@brandsebelah",
+    er: "4.2%",
+    postsPerMonth: 14,
+    topContent: [
+        { title: "Review Produk Viral", views: "150K", likes: "12K" },
+        { title: "Promo Tengah Malam", views: "85K", likes: "5K" },
+        { title: "Q&A Audience", views: "60K", likes: "3K" }
+    ]
+  }]);
+
+  const addCompetitor = async () => {
+    if (!compInput.trim()) return;
+    setCompLoading(true);
+    
+    // Simulate AI parsing / API Fetch
+    setTimeout(() => {
+        setCompetitors(prev => [...prev, {
+            username: compInput.startsWith("@") ? compInput : `@${compInput}`,
+            er: (Math.random() * 5 + 1).toFixed(1) + "%",
+            postsPerMonth: Math.floor(Math.random() * 20 + 5),
+            topContent: [
+                { title: "Tutorial Hack", views: Math.floor(Math.random() * 500) + "K", likes: Math.floor(Math.random() * 50) + "K" },
+                { title: "Behind The Scenes", views: Math.floor(Math.random() * 300) + "K", likes: Math.floor(Math.random() * 30) + "K" },
+                { title: "Meme Relatable", views: Math.floor(Math.random() * 100) + "K", likes: Math.floor(Math.random() * 10) + "K" }
+            ]
+        }]);
+        setCompInput("");
+        setCompLoading(false);
+    }, 1500);
+  };
+
   const toggleConnection = (id: string) => {
     if (connectedPlatforms.includes(id)) {
-      setShowMultiAccountPopup(true);
+        setShowMultiAccountPopup(true);
     } else {
-      setConnectedPlatforms(prev => [...prev, id]);
+      if (!workspaceId) {
+        alert("Workspace ID not found");
+        return;
+      }
+      const fakeToken = `${id.toUpperCase()}_MOCK_TOKEN_` + Date.now();
+      const docRef = doc(db, "workspaces", workspaceId, "connectedAccounts", id);
+      setDoc(docRef, {
+        workspaceId,
+        platform: id,
+        accountId: `${id}_mock_id`,
+        accountName: `${id.charAt(0).toUpperCase() + id.slice(1)} Business Account`,
+        accessToken: fakeToken,
+        status: "active",
+        createdAt: serverTimestamp()
+      }).then(() => {
+        // Success
+      }).catch((e: any) => {
+        console.error("Error setting account", e);
+        alert("Failed to connect account: " + e.message);
+      });
     }
   };
 
-  const generateReport = () => {
+  const generateReport = async () => {
     setAiLoading(true);
-    setTimeout(() => {
-      setAiReport(`### 🤖 Ringkasan AI Analytics\n\n**Performa Keseluruhan:**\nCukup stabil di bulan ini dengan pertumbuhan *Total ER* +12%. Mayoritas penonton menyukai video Reels berdurasi di bawah 15 detik.\n\n**Rekomendasi Langkah Selanjutnya:**\n1. Kurangi durasi teks on-screen di video TikTok, fokuskan pada visual hook 3 detik awal.\n2. Jadwal post terbaik audiens Anda bergeser ke pukul 20:00 - 21:00.\n3. Buat lebih banyak konten "behind the scenes" yang kemarin sukses meraih engagement rate tertinggi (8.5%).`);
-      setAiLoading(false);
-    }, 1500);
+    try {
+      const resp = await fetch("/api/gemini", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt: "Anda adalah pakar Social Media Analytics. Berdasarkan data berikut, berikan ringkasan performa yang mudah dibaca (dalam 3 paragraf pendek) dan 3 poin 'Rekomendasi Langkah Selanjutnya'. Data: Views 1.2M (+15%), Reach 980K (+10%), ER 5.2% (+1.2%), Komentar 4.1K, Likes 88.3K, Share 10.2K.",
+          system: "Output dalam Markdown yang bersih, profesional, dan to the point."
+        })
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        setAiReport(data.text);
+      } else {
+        setAiReport("Gagal mengambil laporan dari AI.");
+      }
+    } catch {
+      setAiReport("Terjadi kesalahan jaringan rpc.");
+    }
+    setAiLoading(false);
   };
 
   const MOCK_CHART_DATA = React.useMemo(() => {
@@ -201,25 +302,18 @@ export function SocialStudioView({ tab }: { tab: string }) {
 
   const CalendarMock = () => {
     const days = Array.from({length: 31}).map((_, i) => i + 1);
-    const mockPosts = [
-      { day: 5, type: 'ig', title: 'Promo Baju', time: '12:00' },
-      { day: 12, type: 'tt', title: 'Viral Tips', time: '19:00' },
-      { day: 15, type: 'fb', title: 'Event Kemerdekaan', time: '14:30' },
-      { day: 22, type: 'ig', title: 'New Arrival', time: '18:00' },
-      { day: 28, type: 'tt', title: 'Review Product', time: '20:15' }
-    ];
 
     return (
       <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 12, width: "100%", marginTop: 24 }}>
         {['Min','Sen','Sel','Rab','Kam','Jum','Sab'].map(d=><div key={d} style={{textAlign:"center", fontWeight:800, fontSize:13, color:"rgba(44,32,22,0.5)"}}>{d}</div>)}
         {Array.from({length: 3}).map((_, i)=><div key={'empty'+i} style={{padding:"20px", background:"rgba(44,32,22,0.02)", borderRadius:12}} />)}
         {days.map(d => {
-          const posts = mockPosts.filter(p => p.day === d);
+          const posts = calendarPosts.filter((p: any) => p.day === d);
           return (
             <div key={d} style={{padding:"12px 12px 40px", background:"white", border:"1px solid rgba(44,32,22,0.1)", borderRadius:12, minHeight:100, position:"relative"}}>
               <div style={{fontWeight:800, fontSize:14}}>{d}</div>
               <div style={{marginTop:8, display:"flex", flexDirection:"column", gap:6}}>
-                {posts.map((p, i) => (
+                {posts.map((p: any, i) => (
                   <motion.div 
                     whileHover={{scale:1.02}}
                     key={i} 
@@ -281,23 +375,7 @@ export function SocialStudioView({ tab }: { tab: string }) {
 
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "100%", background: "#FAFAFA", overflow: "hidden", position:"relative" }}>
-      <AnimatePresence>
-        {showSoonPopup && (
-          <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(44,32,22,0.6)", zIndex:999, display:"flex", alignItems:"center", justifyContent:"center", padding:20, backdropFilter:"blur(5px)"}}>
-            <motion.div initial={{scale:0.9, y:20}} animate={{scale:1, y:0}} exit={{scale:0.9, y:20}} style={{background:"white", borderRadius:24, padding:40, maxWidth:500, textAlign:"center", boxShadow:"0 20px 60px rgba(0,0,0,0.15)"}}>
-              <div style={{width:80, height:80, borderRadius:40, background:"var(--theme-primary)22", color:"var(--theme-primary)", display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 24px"}}>
-                <Sparkles size={40}/>
-              </div>
-              <h2 style={{fontSize:24, fontWeight:800, color:"#2C2016", marginBottom:16}}>Fitur Segera Hadir (Coming Soon)</h2>
-              <p style={{fontSize:15, color:"rgba(44,32,22,0.6)", lineHeight:1.6, marginBottom:32, fontWeight:500}}>
-                Hi! Modul Social Studio ini masih dalam tahap mockup / purwarupa. Kami tidak sabar meluncurkannya secara penuhn untuk Anda.
-                Data dan layar yang Anda lihat sekarang hanyalah **contoh (mockup)** sebagai gambaran fungsi ke depannya. 
-              </p>
-              <button className="hover-scale" onClick={() => setShowSoonPopup(false)} style={{background:"var(--theme-primary)", color:"white", border:"none", padding:"14px 32px", borderRadius:12, fontSize:15, fontWeight:800, cursor:"pointer", width:"100%"}}>Saya Mengerti, Lihat Preview</button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+
 
       <ContentModalMock />
 
@@ -590,10 +668,22 @@ export function SocialStudioView({ tab }: { tab: string }) {
              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
                <div>
                   <h2 style={{ fontSize: 28, fontWeight: 800, color: "#2C2016", margin: 0 }}>Kalender Konten Sosial</h2>
-                  <p style={{fontSize:14, color:"rgba(44,32,22,0.5)", margin:"4px 0 0", fontWeight:600}}>Lihat semua postingan yang terpublikasi di kalender.</p>
+                  <p style={{fontSize:14, color:"rgba(44,32,22,0.5)", margin:"4px 0 0", fontWeight:600}}>Lihat semua postingan yang terpublikasi atau jadwalkan plan.</p>
                </div>
                <div style={{ display: "flex", gap: 12 }}>
-                 <CustomDropdown value={contentPlatform} options={PLATFORMS} onChange={setContentPlatform} renderOption={(o)=><div style={{display:"flex", alignItems:"center", gap:8, fontWeight:700}}>{o.icon} <span>{o.name}</span></div>} />
+                 <button 
+                   onClick={() => {
+                       alert("Fitur AI Content Planner sedang menjalankan mockup auto-assign.");
+                       setCalendarPosts([
+                           ...calendarPosts,
+                           { day: Math.floor(Math.random() * 28 + 1), type: 'tt', title: 'Ide Konten AI 1', time: '10:00' },
+                           { day: Math.floor(Math.random() * 28 + 1), type: 'ig', title: 'Ide Konten AI 2', time: '15:30' }
+                       ]);
+                   }}
+                   className="hover-scale" style={{ background: "var(--theme-primary)", color: "white", padding: "0 16px", borderRadius: 12, fontWeight: 800, border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}>
+                   <Sparkles size={16} /> Auto-Plan AI
+                 </button>
+                 <CustomDropdown value={contentPlatform} options={PLATFORMS} onChange={setContentPlatform} renderOption={(o: any)=><div style={{display:"flex", alignItems:"center", gap:8, fontWeight:700}}>{o.icon} <span>{o.name}</span></div>} />
                  <div style={{display:"flex", alignItems:"center", background:"white", border:"1px solid rgba(44,32,22,0.1)", borderRadius:12, padding:4}}>
                     <button className="hover-scale" style={{background:"transparent", border:"none", padding:6, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center"}}><ChevronLeft size={16}/></button>
                     <div style={{fontWeight:800, fontSize:13, padding:"0 12px"}}>Agustus 2026</div>
@@ -618,34 +708,51 @@ export function SocialStudioView({ tab }: { tab: string }) {
              </div>
 
              <div style={{ display: "flex", gap: 12, marginBottom: 24 }}>
-                <input placeholder="Ketik username kompetitor (contoh: @kompetitor)..." style={{ flex: 1, padding: "12px 16px", borderRadius: 12, border: "1px solid rgba(44,32,22,0.1)", fontSize: 14, fontFamily:"inherit", fontWeight:500 }} />
-                <button className="hover-scale" style={{ background: "#2C2016", color: "white", border: "none", padding: "0 24px", borderRadius: 12, fontWeight: 800, cursor: "pointer" }}>Tambah Kompetitor</button>
-             </div>
+                 <input 
+                   placeholder="Ketik username kompetitor (contoh: @kompetitor)..." 
+                   value={compInput}
+                   onChange={e => setCompInput(e.target.value)}
+                   onKeyDown={e => { if (e.key === "Enter") addCompetitor(); }}
+                   style={{ flex: 1, padding: "12px 16px", borderRadius: 12, border: "1px solid rgba(44,32,22,0.1)", fontSize: 14, fontFamily:"inherit", fontWeight:500 }} 
+                 />
+                 <button onClick={addCompetitor} disabled={compLoading} className="hover-scale" style={{ background: compLoading ? "rgba(44,32,22,0.5)" : "#2C2016", color: "white", border: "none", padding: "0 24px", borderRadius: 12, fontWeight: 800, cursor: compLoading ? "not-allowed" :"pointer" }}>
+                    {compLoading ? "Menganalisis..." : "Tambah Kompetitor"}
+                 </button>
+              </div>
 
              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-                {["@brandsebelah", "@kompetitor_id"].map((comp, idx) => (
-                  <div key={idx} className="hover-scale" style={{ background: "white", borderRadius: 20, padding: 24, border: "1px solid rgba(44,32,22,0.05)" }}>
-                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-                       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                         <div style={{ width: 40, height: 40, borderRadius: 20, background: "#FAFAFA", display: "flex", alignItems: "center", justifyContent: "center" }}><User size={20} color="rgba(44,32,22,0.3)"/></div>
-                         <h3 style={{ fontSize: 18, fontWeight: 800, margin: 0 }}>{comp}</h3>
-                       </div>
-                       <div style={{ fontSize: 12, fontWeight: 800, color: "#2D7A5E", background: "#E5F4EE", padding: "6px 10px", borderRadius: 8 }}>ER: 4.2%</div>
-                     </div>
-                     <div style={{ fontSize: 13, color: "rgba(44,32,22,0.5)", marginBottom: 16, fontWeight:600 }}>Rata-rata posting: <strong style={{color:"#2C2016"}}>14 per bulan</strong></div>
-                     <h4 style={{ fontSize: 14, fontWeight: 800, marginBottom: 12 }}>Top 3 Konten Mereka</h4>
-                     {[1,2,3].map(i => (
-                       <div key={i} style={{ display: "flex", gap: 12, marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid rgba(44,32,22,0.05)" }}>
-                         <div style={{ width: 60, height: 60, borderRadius: 8, background: "#f0f0f0" }}></div>
-                         <div>
-                           <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 4 }}>Review Produk Viral</div>
-                           <div style={{ fontSize: 11, color: "rgba(44,32,22,0.5)", fontWeight:700 }}>150K Views • 12K Likes</div>
-                         </div>
-                       </div>
-                     ))}
-                  </div>
-                ))}
-             </div>
+                 {competitors.map((comp: any, idx: number) => (
+                   <div key={idx} className="hover-scale" style={{ background: "white", borderRadius: 20, padding: 24, border: "1px solid rgba(44,32,22,0.05)" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                          <div style={{ width: 40, height: 40, borderRadius: 20, background: "#FAFAFA", display: "flex", alignItems: "center", justifyContent: "center" }}><User size={20} color="rgba(44,32,22,0.3)"/></div>
+                          <h3 style={{ fontSize: 18, fontWeight: 800, margin: 0 }}>{comp.username}</h3>
+                        </div>
+                        <div style={{ fontSize: 12, fontWeight: 800, color: "#2D7A5E", background: "#E5F4EE", padding: "6px 10px", borderRadius: 8 }}>ER: {comp.er}</div>
+                      </div>
+                      <div style={{ fontSize: 13, color: "rgba(44,32,22,0.5)", marginBottom: 16, fontWeight:600 }}>Rata-rata posting: <strong style={{color:"#2C2016"}}>{comp.postsPerMonth} per bulan</strong></div>
+                      <h4 style={{ fontSize: 14, fontWeight: 800, marginBottom: 12 }}>Top 3 Konten Mereka</h4>
+                      {comp.topContent.map((c: any, i: number) => (
+                        <div key={i} style={{ display: "flex", gap: 12, marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid rgba(44,32,22,0.05)" }}>
+                          <div style={{ width: 60, height: 60, borderRadius: 8, background: "#f0f0f0", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                              <Image size={24} color="#ccc" />
+                          </div>
+                          <div style={{ alignSelf: "center" }}>
+                            <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 4 }}>{c.title}</div>
+                            <div style={{ fontSize: 11, color: "rgba(44,32,22,0.5)", fontWeight:700 }}>{c.views} Views • {c.likes} Likes</div>
+                          </div>
+                        </div>
+                      ))}
+                   </div>
+                 ))}
+                 {competitors.length === 0 && (
+                   <div style={{gridColumn:"1 / -1", textAlign:"center", padding:40, background:"white", borderRadius:20, border:"1px dashed rgba(44,32,22,0.2)"}}>
+                     <Search size={48} style={{opacity:0.2, margin:"0 auto 16px"}} />
+                     <h3 style={{fontSize:18, fontWeight:800, marginBottom:8}}>Belum Ada Kompetitor</h3>
+                     <p style={{fontSize:14, color:"rgba(44,32,22,0.6)", fontWeight:500}}>Tambahkan link profile atau username kompetitor Anda untuk dianalisis oleh AI Hubify.</p>
+                   </div>
+                 )}
+              </div>
           </motion.div>
         )}
 
@@ -654,39 +761,114 @@ export function SocialStudioView({ tab }: { tab: string }) {
           <motion.div initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} style={{ height: "calc(100vh - 120px)", display: "flex", gap: 24 }}>
              <div style={{ flex: 1, background: "white", borderRadius: 20, border: "1px solid rgba(44,32,22,0.05)", display: "flex", flexDirection: "column", overflow:"hidden" }}>
                 <div style={{ padding: 20, borderBottom: "1px solid rgba(44,32,22,0.05)" }}>
-                   <h3 style={{fontSize:18, fontWeight:800, margin:"0 0 16px"}}>Kotak Masuk</h3>
+                   <h3 style={{fontSize:18, fontWeight:800, margin:"0 0 16px"}}>Unified Inbox</h3>
+                   <div style={{ display: "flex", gap: 8, overflowX: "auto", marginBottom: 16 }} className="no-scrollbar">
+                     <button onClick={() => setInboxFilter("all")} className={`px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${inboxFilter === "all" ? 'bg-gray-900 text-white' : 'bg-gray-200 text-gray-700'}`}>Semua</button>
+                     <button onClick={() => setInboxFilter("instagram")} className={`px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${inboxFilter === "instagram" ? 'bg-pink-600 text-white' : 'bg-gray-200 text-gray-700'}`}>Instagram</button>
+                     <button onClick={() => setInboxFilter("tiktok")} className={`px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${inboxFilter === "tiktok" ? 'bg-black text-white' : 'bg-gray-200 text-gray-700'}`}>TikTok</button>
+                   </div>
                    <input placeholder="Cari pesan atau username..." style={{ width: "100%", padding: "10px 16px", borderRadius: 20, border: "1px solid rgba(44,32,22,0.1)", fontSize: 13, fontFamily:"inherit" }} />
                 </div>
                 <div style={{ flex: 1, overflowY: "auto" }}>
-                   {[1,2,3,4,5].map(i => (
-                     <div key={i} className="hover-scale" style={{padding:"16px 20px", borderBottom:"1px solid rgba(44,32,22,0.05)", cursor:"pointer", display:"flex", gap:12, background:i===1?"#FAFAFA":"transparent"}}>
-                       <div style={{width:40, height:40, borderRadius:20, background:"#f0f0f0", flexShrink:0}}></div>
-                       <div style={{overflow:"hidden"}}>
-                         <div style={{fontWeight:800, fontSize:14, marginBottom:4, display:"flex", alignItems:"center", gap:6}}>User IG #{i} <span style={{fontSize:9, background:"#F8EAF0", color:"#E4405F", padding:"2px 6px", borderRadius:4, fontWeight:800}}>Instagram</span></div>
-                         <div style={{fontSize:12, color:"rgba(44,32,22,0.6)", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", fontWeight:i===1?800:600}}>Pesanan saya kapan dikirim ka...</div>
+                   {inboxMessages.filter(m => inboxFilter === "all" ? true : m.platform === inboxFilter || m.platform === (inboxFilter === 'instagram' ? 'meta' : '')).length === 0 && (
+                     <div className="p-6 text-center text-gray-400 text-sm">
+                       Belum ada pesan di kotak masuk ini.
+                     </div>
+                   )}
+                   {inboxMessages.filter(m => inboxFilter === "all" ? true : m.platform === inboxFilter || m.platform === (inboxFilter === 'instagram' ? 'meta' : '')).map((msg, i) => (
+                     <div key={msg.id} onClick={() => setSelectedInboxMsg(msg)} className="hover-scale" style={{padding:"16px 20px", borderBottom:"1px solid rgba(44,32,22,0.05)", cursor:"pointer", display:"flex", gap:12, background:selectedInboxMsg?.id === msg.id ?"#FAFAFA":"transparent"}}>
+                       <div className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 text-white" style={{ background: msg.platform === "meta" || msg.platform === "instagram" ? "linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)" : "black" }}>
+                          <MessageSquare size={20} />
+                       </div>
+                       <div style={{overflow:"hidden", flex:1}}>
+                         <div style={{fontWeight:800, fontSize:14, marginBottom:4, display:"flex", alignItems:"center", gap:6, whiteSpace:"nowrap", textOverflow:"ellipsis"}}>{msg.senderName || `User ${msg.senderId}`} <span style={{fontSize:9, background:msg.platform === 'meta' || msg.platform === 'instagram' ? "#F8EAF0" : "#f0f0f0", color:msg.platform === 'meta' || msg.platform === 'instagram' ? "#E4405F" : "#000", padding:"2px 6px", borderRadius:4, fontWeight:800}}>{msg.platform === 'meta' || msg.platform === 'instagram' ? 'Instagram' : 'TikTok'}</span></div>
+                         <div style={{fontSize:12, color:"rgba(44,32,22,0.6)", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", fontWeight:selectedInboxMsg?.id === msg.id ?800:600}}>{msg.content}</div>
                        </div>
                      </div>
                    ))}
                 </div>
              </div>
+             
              <div style={{ flex: 2, background: "white", borderRadius: 20, border: "1px solid rgba(44,32,22,0.05)", display: "flex", flexDirection: "column", overflow:"hidden" }}>
-                <div style={{ padding: 20, borderBottom: "1px solid rgba(44,32,22,0.05)", display:"flex", alignItems:"center", gap:12 }}>
-                   <div style={{width:48, height:48, borderRadius:24, background:"#f0f0f0"}}></div>
-                   <div>
-                     <div style={{fontWeight:800, fontSize:18}}>User IG #1</div>
-                     <div style={{fontSize:12, color:"rgba(44,32,22,0.5)", fontWeight:700}}>Direct Message • Instagram</div>
-                   </div>
-                </div>
-                <div style={{ flex: 1, padding: 24, overflowY: "auto", display:"flex", flexDirection:"column", gap:16, background:"#FAFAFA" }}>
-                   <div style={{background:"white", border:"1px solid rgba(44,32,22,0.05)", padding:16, borderRadius:"16px 16px 16px 4px", maxWidth:"70%", alignSelf:"flex-start", boxShadow:"0 2px 10px rgba(0,0,0,0.02)"}}>
-                     <div style={{fontSize:14, lineHeight:1.5, color:"#2C2016", fontWeight:600}}>Halo min, pesanan saya nomor 1234 kapan dikirim ya? Terima kasih.</div>
-                     <div style={{fontSize:10, color:"rgba(44,32,22,0.4)", fontWeight:800, marginTop:8}}>10:42 AM</div>
-                   </div>
-                </div>
-                <div style={{ padding: 20, borderTop: "1px solid rgba(44,32,22,0.05)", display:"flex", gap:12, background:"white" }}>
-                   <input placeholder="Ketik balasan..." style={{ flex: 1, padding: "14px 20px", borderRadius: 24, border: "1px solid rgba(44,32,22,0.1)", fontSize: 14, outline:"none", fontFamily:"inherit", fontWeight:600 }} />
-                   <button className="hover-scale" style={{ width:48, height:48, borderRadius:24, background: "var(--theme-primary)", color: "white", border: "none", display:"flex", alignItems:"center", justifyContent:"center", cursor: "pointer", flexShrink:0 }}><Send size={18}/></button>
-                </div>
+                {selectedInboxMsg ? (
+                  <>
+                     <div style={{ padding: 20, borderBottom: "1px solid rgba(44,32,22,0.05)", display:"flex", alignItems:"center", gap:12 }}>
+                        <div className="w-12 h-12 rounded-full flex items-center justify-center text-white" style={{ background: selectedInboxMsg.platform === 'meta' || selectedInboxMsg.platform === 'instagram' ? "linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)" : "black" }}>
+                           <MessageSquare size={24} />
+                        </div>
+                        <div>
+                          <div style={{fontWeight:800, fontSize:18}}>{selectedInboxMsg.senderName || `User ${selectedInboxMsg.senderId}`}</div>
+                          <div style={{fontSize:12, color:"rgba(44,32,22,0.5)", fontWeight:700}}>Direct Message • {selectedInboxMsg.platform === 'meta' || selectedInboxMsg.platform === 'instagram' ? 'Instagram' : 'TikTok'}</div>
+                        </div>
+                     </div>
+                     <div style={{ flex: 1, padding: 24, overflowY: "auto", display:"flex", flexDirection:"column", gap:16, background:"#FAFAFA" }}>
+                        <div style={{background:"white", border:"1px solid rgba(44,32,22,0.05)", padding:16, borderRadius:"16px 16px 16px 4px", maxWidth:"70%", alignSelf:"flex-start", boxShadow:"0 2px 10px rgba(0,0,0,0.02)"}}>
+                          <div style={{fontSize:14, lineHeight:1.5, color:"#2C2016", fontWeight:600}}>{selectedInboxMsg.content}</div>
+                          <div style={{fontSize:10, color:"rgba(44,32,22,0.4)", fontWeight:800, marginTop:8}}>
+                            {selectedInboxMsg.createdAt ? new Date(selectedInboxMsg.createdAt).toLocaleString('id-ID') : 'Baru saja'}
+                          </div>
+                        </div>
+                        {selectedInboxMsg.replies && selectedInboxMsg.replies.map((reply: any, idx: number) => (
+                          <div key={idx} style={{background:"var(--theme-primary)", color:"white", padding:16, borderRadius:"16px 16px 4px 16px", maxWidth:"70%", alignSelf:"flex-end", boxShadow:"0 2px 10px rgba(0,0,0,0.02)"}}>
+                            <div style={{fontSize:14, lineHeight:1.5, fontWeight:600}}>{reply.content}</div>
+                          </div>
+                        ))}
+                     </div>
+                     <div style={{ padding: 20, borderTop: "1px solid rgba(44,32,22,0.05)", display:"flex", flexDirection: "column", gap:12, background:"white" }}>
+                        <div style={{ display: "flex", gap: 8 }}>
+                           <button 
+                             onClick={() => setMsgContent("Terima kasih atas masukannya kak! Akan kami sampaikan ke tim terkait 🙏")}
+                             className="hover-scale" style={{ background:"#FDF0EB", color:"var(--theme-primary)", padding:"8px 12px", borderRadius:16, fontSize:12, fontWeight:700, border:"none", cursor:"pointer", display:"flex", alignItems:"center", gap:6 }}>
+                             <Sparkles size={12}/> AI: Apresiasi Singkat
+                           </button>
+                           <button 
+                             onClick={() => setMsgContent(`Hi ${selectedInboxMsg.senderName?.split(" ")[0] || "kak"}, maaf atas kendalanya. Boleh info nomor pesanannya agar bisa kami cek?`)}
+                             className="hover-scale" style={{ background:"#FDF0EB", color:"var(--theme-primary)", padding:"8px 12px", borderRadius:16, fontSize:12, fontWeight:700, border:"none", cursor:"pointer", display:"flex", alignItems:"center", gap:6 }}>
+                             <Sparkles size={12}/> AI: Tanya Order ID
+                           </button>
+                        </div>
+                        <div style={{ display:"flex", gap:12 }}>
+                           <div style={{flex:1, position:"relative"}}>
+                             <input 
+                               placeholder="Ketik balasan..." 
+                               value={msgContent} 
+                               onChange={e => setMsgContent(e.target.value)}
+                               onKeyDown={e => {
+                                   if (e.key === "Enter" && msgContent.trim()) {
+                                       const updatedMsg = {...selectedInboxMsg};
+                                       if(!updatedMsg.replies) updatedMsg.replies = [];
+                                       updatedMsg.replies.push({ content: msgContent, createdAt: new Date().toISOString() });
+                                       setSelectedInboxMsg(updatedMsg);
+                                       setMsgContent("");
+                                   }
+                               }}
+                               style={{ width: "100%", padding: "14px 20px", borderRadius: 24, border: "1px solid rgba(44,32,22,0.1)", fontSize: 14, outline:"none", fontFamily:"inherit", fontWeight:600 }} 
+                             />
+                           </div>
+                           <button 
+                              onClick={() => {
+                                  if(!msgContent.trim()) return;
+                                  const updatedMsg = {...selectedInboxMsg};
+                                  if(!updatedMsg.replies) updatedMsg.replies = [];
+                                  updatedMsg.replies.push({ content: msgContent, createdAt: new Date().toISOString() });
+                                  setSelectedInboxMsg(updatedMsg);
+                                  setMsgContent("");
+                              }} 
+                              className="hover-scale" 
+                              style={{ width:48, height:48, borderRadius:24, background: "var(--theme-primary)", color: "white", border: "none", display:"flex", alignItems:"center", justifyContent:"center", cursor: "pointer", flexShrink:0 }}
+                           >
+                              <Send size={18}/>
+                           </button>
+                        </div>
+                     </div>
+                  </>
+                ) : (
+                  <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "#9CA3AF" }}>
+                     <MessageSquare size={48} style={{ opacity: 0.2, marginBottom: 16 }} />
+                     <div style={{ fontWeight: 700, fontSize: 16, color: "#4B5563" }}>Pilih Pesan</div>
+                     <div style={{ fontSize: 14 }}>Pilih pesan inbox dari Instagram/TikTok di sebelah kiri.</div>
+                  </div>
+                )}
              </div>
           </motion.div>
         )}
