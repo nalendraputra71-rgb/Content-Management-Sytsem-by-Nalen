@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from "react";
+import { auth, callAiWithQuota } from "./firebase";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid, Cell, PieChart as RPieChart, Pie } from "recharts";
 import Markdown from "react-markdown";
 import { motion, AnimatePresence } from "motion/react";
@@ -801,23 +802,14 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
 2. Evaluasi Konten: Analisis pola dari konten yang berhasil (Winners) vs kurang berhasil (Losers), apa yang membedakannya (misalnya topik, pilar, atau platform).
 3. Next Step Pengembangan Konten: Berikan 3-5 saran konkrit dan actionable untuk pembuatan konten berikutnya berdasarkan data di atas.`;
 
-      const req = await fetch("/api/gemini", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt, model: "gemini-2.5-flash" })
-      });
-      
-      if (!req.ok) {
-        const err = await req.json();
-        throw new Error(err.error || "Gagal menghubungi server AI");
-      }
-      
-      const data = await req.json();
+      const data = await callAiWithQuota(auth.currentUser?.uid || 'anon', undefined, { prompt, model: "gemini-2.5-flash" });
       setAiInsight(data.text || "Tidak ada respon dari AI.");
     } catch(e:any) {
       console.error("AI Error:", e);
       const errMsg = e.message || "";
-      if (errMsg.includes("429") || errMsg.includes("RESOURCE_EXHAUSTED") || errMsg.includes("Quota exceeded")) {
+      if (errMsg.includes("habis")) {
+        setAiInsight(errMsg);
+      } else if (errMsg.includes("429") || errMsg.includes("RESOURCE_EXHAUSTED") || errMsg.includes("Quota exceeded")) {
         setAiInsight("Gagal mendapatkan Executive Summary: Terlalu banyak permintaan AI secara bersamaan (Quota Exceeded). Silakan tunggu sekitar 30 detik lalu coba lagi.");
       } else {
         setAiInsight("Gagal mendapatkan Executive Summary: " + errMsg + ".\n\nPastikan VITE_GEMINI_API_KEY sudah diset di Settings > Secrets.");
@@ -1026,9 +1018,9 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
           </div>
 
           {/* Distribution Row */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6" style={{ minWidth: 0 }}>
             {/* Performance by Platform */}
-            <div style={{background: "rgba(255,255,255,0.45)", backdropFilter: "none", WebkitBackdropFilter: "none", transform: "translateZ(0)", willChange: "transform", padding: "20px", borderRadius: 24, border: "1px solid rgba(255,255,255,0.6)", boxShadow: "0 8px 32px rgba(0,0,0,0.04)", display: "flex", flexDirection: "column"}}>
+            <div style={{minWidth: 0, background: "rgba(255,255,255,0.45)", backdropFilter: "none", WebkitBackdropFilter: "none", transform: "translateZ(0)", willChange: "transform", padding: "20px", borderRadius: 24, border: "1px solid rgba(255,255,255,0.6)", boxShadow: "0 8px 32px rgba(0,0,0,0.04)", display: "flex", flexDirection: "column"}}>
               <div style={{display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20, gap: 12, flexWrap: "wrap"}}>
                 <div style={{display:"flex", alignItems:"center", gap: 8}}>
                   <div style={{background:"#FEF3C7", padding: 6, borderRadius: 8}}><PieChart size={16} color="#D97706" /></div>
@@ -1051,7 +1043,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                   />
                 </div>
               </div>
-              <ResponsiveContainer width="100%" height={320} style={{marginTop: "auto"}}>
+              <ResponsiveContainer width="100%" height={320} style={{marginTop: "auto"}} debounce={300}>
                 {platformChartType === "doughnut" ? (
                   <RPieChart>
                     <Tooltip cursor={{fill:"rgba(0,0,0,0.03)"}} contentStyle={{borderRadius:12,fontSize:12,border:"1px solid rgba(0,0,0,0.08)",boxShadow:"0 10px 30px rgba(0,0,0,0.08)"}} itemStyle={{color:"#111827",fontWeight:700}} formatter={(v:any)=>[fmt(v)]}/>
@@ -1084,7 +1076,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
             </div>
             
             {/* PIC Workload */}
-            <div style={{background: "rgba(255,255,255,0.45)", backdropFilter: "none", WebkitBackdropFilter: "none", transform: "translateZ(0)", willChange: "transform", padding: "20px", borderRadius: 24, border: "1px solid rgba(255,255,255,0.6)", boxShadow: "0 8px 32px rgba(0,0,0,0.04)", display: "flex", flexDirection: "column"}}>
+            <div style={{minWidth: 0, background: "rgba(255,255,255,0.45)", backdropFilter: "none", WebkitBackdropFilter: "none", transform: "translateZ(0)", willChange: "transform", padding: "20px", borderRadius: 24, border: "1px solid rgba(255,255,255,0.6)", boxShadow: "0 8px 32px rgba(0,0,0,0.04)", display: "flex", flexDirection: "column"}}>
               <div style={{display:"flex", alignItems:"center", gap: 10, marginBottom: 20, justifyContent: "space-between", flexWrap: "wrap"}}>
                 <div style={{display:"flex", alignItems:"center", gap: 8}}>
                   <div style={{background:"#E0E7FF", padding: 6, borderRadius: 8}}><Users size={16} color="#4F46E5" /></div>
@@ -1095,7 +1087,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                   <button onClick={()=>setPicChartType("bar")} style={{background:picChartType==="bar"?"white":"transparent",border:"none",borderRadius:6,padding:"4px 8px",fontSize:11,fontWeight:700,color:picChartType==="bar"?"#111827":"rgba(0,0,0,0.5)",cursor:"pointer",boxShadow:picChartType==="bar"?"0 2px 4px rgba(0,0,0,0.05)":"none"}}>Bar</button>
                 </div>
               </div>
-              <ResponsiveContainer width="100%" height={320} style={{marginTop: "auto"}}>
+              <ResponsiveContainer width="100%" height={320} style={{marginTop: "auto"}} debounce={300}>
                 {picChartType === "doughnut" ? (
                   <RPieChart>
                     <Tooltip cursor={{fill:"rgba(0,0,0,0.03)"}} contentStyle={{borderRadius:12,fontSize:12,border:"1px solid rgba(0,0,0,0.08)",boxShadow:"0 10px 30px rgba(0,0,0,0.08)"}} itemStyle={{color:"#111827",fontWeight:700}} formatter={(v:any)=>[fmt(v)]}/>
@@ -1128,7 +1120,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
             </div>
 
             {/* Performance by Pillar */}
-            <div style={{background: "rgba(255,255,255,0.45)", backdropFilter: "none", WebkitBackdropFilter: "none", transform: "translateZ(0)", willChange: "transform", padding: "20px", borderRadius: 24, border: "1px solid rgba(255,255,255,0.6)", boxShadow: "0 8px 32px rgba(0,0,0,0.04)", display: "flex", flexDirection: "column"}}>
+            <div style={{minWidth: 0, background: "rgba(255,255,255,0.45)", backdropFilter: "none", WebkitBackdropFilter: "none", transform: "translateZ(0)", willChange: "transform", padding: "20px", borderRadius: 24, border: "1px solid rgba(255,255,255,0.6)", boxShadow: "0 8px 32px rgba(0,0,0,0.04)", display: "flex", flexDirection: "column"}}>
               <div style={{display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20, gap: 12, flexWrap: "wrap"}}>
                 <div style={{display:"flex", alignItems:"center", gap: 8}}>
                   <div style={{background:"#DCFCE7", padding: 6, borderRadius: 8}}><PieChart size={16} color="#16A34A" /></div>
@@ -1148,7 +1140,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                   />
                 </div>
               </div>
-              <ResponsiveContainer width="100%" height={320} style={{marginTop: "auto"}}>
+              <ResponsiveContainer width="100%" height={320} style={{marginTop: "auto"}} debounce={300}>
                   <RPieChart>
                     <Tooltip cursor={{fill:"rgba(0,0,0,0.03)"}} contentStyle={{borderRadius:12,fontSize:12,border:"1px solid rgba(0,0,0,0.08)",boxShadow:"0 10px 30px rgba(0,0,0,0.08)"}} itemStyle={{color:"#111827",fontWeight:700}} formatter={(v:any)=>[fmt(v)]}/>
                     <Legend content={<CustomLegend />} />
@@ -1169,7 +1161,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
             </div>
 
             {/* Performance by Content Type */}
-            <div style={{background: "rgba(255,255,255,0.45)", backdropFilter: "none", WebkitBackdropFilter: "none", transform: "translateZ(0)", willChange: "transform", padding: "20px", borderRadius: 24, border: "1px solid rgba(255,255,255,0.6)", boxShadow: "0 8px 32px rgba(0,0,0,0.04)", display: "flex", flexDirection: "column"}}>
+            <div style={{minWidth: 0, background: "rgba(255,255,255,0.45)", backdropFilter: "none", WebkitBackdropFilter: "none", transform: "translateZ(0)", willChange: "transform", padding: "20px", borderRadius: 24, border: "1px solid rgba(255,255,255,0.6)", boxShadow: "0 8px 32px rgba(0,0,0,0.04)", display: "flex", flexDirection: "column"}}>
               <div style={{display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20, gap: 12, flexWrap: "wrap"}}>
                 <div style={{display:"flex", alignItems:"center", gap: 8}}>
                   <div style={{background:"#FCE7F3", padding: 6, borderRadius: 8}}><PieChart size={16} color="#DB2777" /></div>
@@ -1189,7 +1181,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                   />
                 </div>
               </div>
-              <ResponsiveContainer width="100%" height={320} style={{marginTop: "auto"}}>
+              <ResponsiveContainer width="100%" height={320} style={{marginTop: "auto"}} debounce={300}>
                   <BarChart data={typeData} margin={{top:10,right:0,left:0,bottom:0}}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.04)"/>
                     <XAxis dataKey="name" tick={{fontSize:11,fill:"rgba(0,0,0,0.5)"}} tickLine={false} axisLine={false} dy={10}/>
@@ -1205,7 +1197,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
           </div>
 
           {/* Trends Charts List */}
-          <div style={{background: "rgba(255,255,255,0.45)", backdropFilter: "none", WebkitBackdropFilter: "none", transform: "translateZ(0)", willChange: "transform", padding: "20px", borderRadius: 24, border: "1px solid rgba(255,255,255,0.6)", boxShadow: "0 8px 32px rgba(0,0,0,0.04)", display: "flex", flexDirection: "column"}}>
+          <div style={{minWidth: 0, background: "rgba(255,255,255,0.45)", backdropFilter: "none", WebkitBackdropFilter: "none", transform: "translateZ(0)", willChange: "transform", padding: "20px", borderRadius: 24, border: "1px solid rgba(255,255,255,0.6)", boxShadow: "0 8px 32px rgba(0,0,0,0.04)", display: "flex", flexDirection: "column"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20,flexWrap:"wrap",gap:12}}>
               <div style={{display:"flex", alignItems:"center", gap: 8}}>
                 <div style={{background:"#F3F4F6", padding: 6, borderRadius: 8}}><TrendingUp size={16} color="#111827" /></div>
@@ -1219,7 +1211,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                      <div style={{width: 10, height: 10, borderRadius: "50%", background: MC[k] || "#3B82F6"}} />
                      {k}
                   </div>
-                  <ResponsiveContainer width="100%" height={320}>
+                  <ResponsiveContainer width="100%" height={320} debounce={300}>
                     {adsFilter==="all" ? (
                        <BarChart data={lineData} margin={{top:0,right:10,left:0,bottom:0}}>
                          <XAxis dataKey="name" tick={{fontSize:11,fill:"rgba(0,0,0,0.4)"}} axisLine={false} tickLine={false} dy={10}/>
@@ -1243,7 +1235,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
           </div>
           
           {/* Heatmap (Full Width) */}
-          <div style={{background: "rgba(255,255,255,0.45)", backdropFilter: "none", WebkitBackdropFilter: "none", transform: "translateZ(0)", willChange: "transform", padding: "20px", borderRadius: 24, border: "1px solid rgba(255,255,255,0.6)", boxShadow: "0 8px 32px rgba(0,0,0,0.04)", width: "100%", overflow: "hidden"}}>
+          <div style={{minWidth: 0, background: "rgba(255,255,255,0.45)", backdropFilter: "none", WebkitBackdropFilter: "none", transform: "translateZ(0)", willChange: "transform", padding: "20px", borderRadius: 24, border: "1px solid rgba(255,255,255,0.6)", boxShadow: "0 8px 32px rgba(0,0,0,0.04)", width: "100%", overflow: "hidden"}}>
             <div style={{width: "100%"}}>
               <div style={{display:"flex", alignItems:"center", gap: 10, marginBottom: 20, justifyContent: "space-between", flexWrap: "wrap"}}>
                 <div style={{display:"flex", alignItems:"center", gap: 8}}>

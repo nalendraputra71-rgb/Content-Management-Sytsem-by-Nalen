@@ -15,7 +15,7 @@ import {
   EmailAuthProvider
 } from 'firebase/auth';
 import { 
-  getFirestore, 
+  initializeFirestore, 
   doc, 
   setDoc, 
   getDoc, 
@@ -33,13 +33,14 @@ import {
   limit,
   orderBy,
   runTransaction,
-  serverTimestamp
+  serverTimestamp,
+  increment
 } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+export const db = initializeFirestore(app, { experimentalForceLongPolling: true }, firebaseConfig.firestoreDatabaseId);
 export const googleProvider = new GoogleAuthProvider();
 
 export { 
@@ -123,4 +124,73 @@ export async function testFirestoreConnection() {
       }
     }
   }
+}
+
+// Request AI processing, incrementing quota usage in Firestore
+export async function callAiWithQuota(uid: string, plan: string | undefined, payload: any): Promise<any> {
+    const userDocRef = doc(db, 'users', uid);
+    const userSnap = await getDoc(userDocRef);
+    let aiTokensUsed = 0;
+    let aiRequestsToday = 0;
+    let lastAiRequestDate = "";
+
+    if (userSnap.exists()) {
+        const data = userSnap.data();
+        aiTokensUsed = data?.aiTokensUsed || 0;
+        aiRequestsToday = data?.aiRequestsToday || 0;
+        lastAiRequestDate = data?.lastAiRequestDate || "";
+    }
+
+    const todayDate = new Date().toISOString().split('T')[0];
+    if (lastAiRequestDate !== todayDate) {
+        aiRequestsToday = 0;
+    }
+
+    const MAX_REQUESTS = (plan === 'vip' || plan === 'pro') ? 10 : 5;
+    
+    if (aiRequestsToday >= MAX_REQUESTS) {
+        throw new Error(`Limit AI harian habis (${aiRequestsToday}/${MAX_REQUESTS} request). Silakan coba lagi besok hari atau upgrade plan Anda.`);
+    }
+
+    // Dapatkan ID Token untuk verifikasi di sisi server
+    const currentUser = auth.currentUser;
+    let token = "";
+    if (currentUser) {
+        token = await currentUser.getIdToken();
+    }
+
+    const req = await fetch("/api/gemini", {
+        method: "POST",
+        headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}` 
+        },
+        body: JSON.stringify(payload)
+    });
+    
+    if (!req.ok) {
+        let errorMsg = "Gagal menghubungi server AI";
+        try {
+            const err = await req.json();
+            errorMsg = err.error || errorMsg;
+        } catch(e) {
+            errorMsg = `Server error (${req.status}): respon tidak sesuai format.`;
+        }
+        throw new Error(errorMsg);
+    }
+    
+    const data = await req.json();
+    
+    try {
+        await updateDoc(userDocRef, {
+            aiTokensUsed: increment(data.usage?.totalTokenCount || 0),
+            aiRequestsCount: increment(1),
+            aiRequestsToday: increment(1),
+            lastAiRequestDate: todayDate
+        });
+    } catch (e) {
+        console.error("Gagal update token stat user", e);
+    }
+
+    return data;
 }

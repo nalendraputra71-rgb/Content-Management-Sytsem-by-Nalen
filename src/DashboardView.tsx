@@ -69,6 +69,7 @@ export function DashboardView({ user, profile, activeWorkspace, content, theme, 
   const [weather, setWeather] = useState<any>({ temp: "--", desc: "Memuat info...", city: "Mencari lokasi..." });
   const [time, setTime] = useState(new Date());
   const [trends, setTrends] = useState<string[]>(["Cara viral hari ini", "Content strategy", "Trending audio", "Tips FYP TikTok"]);
+  const [trendGeo, setTrendGeo] = useState<string>("ID");
   const [loading, setLoading] = useState(true);
 
   // Time
@@ -81,7 +82,7 @@ export function DashboardView({ user, profile, activeWorkspace, content, theme, 
   useEffect(() => {
     const fetchTrends = async () => {
       try {
-        const res = await fetch("https://corsproxy.io/?" + encodeURIComponent("https://trends.google.com/trends/trendingsearches/daily/rss?geo=ID"));
+        const res = await fetch(`/api/trends?geo=${trendGeo}`);
         if (!res.ok) throw new Error("Failed to fetch RSS");
         const text = await res.text();
         const parser = new DOMParser();
@@ -94,7 +95,7 @@ export function DashboardView({ user, profile, activeWorkspace, content, theme, 
       }
     };
     fetchTrends();
-  }, []);
+  }, [trendGeo]);
 
   // Weather API with location
   useEffect(() => {
@@ -222,11 +223,11 @@ export function DashboardView({ user, profile, activeWorkspace, content, theme, 
   if (loading) return <div style={{padding:40, textAlign:"center", color:"rgba(0,0,0,0.3)"}}>Loading Dashboard...</div>;
 
   return (
-    <div style={{ padding: "32px", maxWidth: 1400, margin: "0 auto", minHeight: "100vh", display: "flex", flexDirection: "column", gap: 32 }}>
+    <div style={{ padding: "32px", width: "100%", margin: "0 auto", minHeight: "100vh", display: "flex", flexDirection: "column", gap: 32 }}>
       {/* Header Container */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24, flexWrap: "wrap", gap: 32 }}>
         <div style={{ display: "flex", gap: 16, alignItems: "flex-start", flex: 1, minWidth: 280 }}>
-          <GreetingSection profile={profile} theme={theme} trends={trends} />
+          <GreetingSection profile={profile} theme={theme} trends={trends} trendGeo={trendGeo} onTrendGeoChange={setTrendGeo} />
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 16, alignItems: "flex-end" }}>
            <div style={{ display: "flex", alignItems: "center", gap: 32, flexWrap: "wrap", justifyContent: "flex-end" }}>
@@ -388,7 +389,7 @@ export function DashboardView({ user, profile, activeWorkspace, content, theme, 
 
 // --- TOP LEVEL COMPONENTS ---
 
-function GreetingSection({ profile, theme, trends = ["Cara viral di TikTok hari ini", "AI untuk Content Creator", "Ide konten Instagram kreatif", "Tips jualan di e-commerce", "Trend warna pastel", "Outfit inspirasi minggu ini"] }: any) {
+function GreetingSection({ profile, theme, trends = ["Cara viral di TikTok hari ini", "AI untuk Content Creator", "Ide konten Instagram kreatif", "Tips jualan di e-commerce", "Trend warna pastel", "Outfit inspirasi minggu ini"], trendGeo, onTrendGeoChange }: any) {
   const [time, setTime] = useState(new Date());
   useEffect(() => {
     const t = setInterval(() => setTime(new Date()), 1000);
@@ -424,10 +425,16 @@ function GreetingSection({ profile, theme, trends = ["Cara viral di TikTok hari 
         </h1>
       </div>
 
-      <div style={{ display: "flex", alignItems: "center", gap: 12, background: theme.primary+"10", padding: "12px 20px", borderRadius: 100, width: "fit-content" }}>
-         <TrendingUp size={18} color={theme.primary} />
-         <span style={{ fontSize: 13, fontWeight: 800, color: theme.primary, textTransform: "uppercase", whiteSpace: "nowrap" }}>Google Trends Naik:</span>
-         <div style={{ position: "relative", height: 20, width: 200, overflow: "hidden" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, background: theme.primary+"10", padding: "10px 20px", borderRadius: 100, width: "fit-content" }}>
+         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", background: "#ffffff", width: 32, height: 32, borderRadius: "50%", boxShadow: "0 2px 8px rgba(0,0,0,0.05)", flexShrink: 0 }}>
+            <TrendingUp size={16} color={theme.primary} />
+         </div>
+         <div style={{ display: "flex", flexDirection: "column" }}>
+            <span style={{ fontSize: 13, fontWeight: 800, color: theme.primary, textTransform: "uppercase", whiteSpace: "nowrap", lineHeight: 1.1 }}>Trends Now</span>
+            <span style={{ fontSize: 9, fontWeight: 700, color: theme.primary, opacity: 0.6, whiteSpace: "nowrap" }}>Powered by Google Trends</span>
+         </div>
+         <div style={{ width: 1, height: 24, background: theme.primary+"20", marginLeft: 4, marginRight: 4 }} />
+         <div style={{ position: "relative", height: 20, width: 220, overflow: "hidden" }}>
            <AnimatePresence mode="wait">
              <motion.div 
                key={trendIndex} 
@@ -440,6 +447,33 @@ function GreetingSection({ profile, theme, trends = ["Cara viral di TikTok hari 
                "{trends[trendIndex]}"
              </motion.div>
            </AnimatePresence>
+         </div>
+         <div style={{ display: "flex", alignItems: "center", gap: 4, background: "#ffffff", padding: "4px 8px 4px 10px", borderRadius: 20, border: `1px solid ${theme.primary}20`, boxShadow: "0 2px 4px rgba(0,0,0,0.02)", cursor: "pointer", position: "relative" }}>
+           <select 
+             title="Pilih Negara"
+             value={trendGeo || "ID"} 
+             onChange={(e) => onTrendGeoChange && onTrendGeoChange(e.target.value)}
+             style={{
+               background: "transparent",
+               border: "none",
+               fontSize: 11,
+               fontWeight: 800,
+               color: theme.primary,
+               cursor: "pointer",
+               outline: "none",
+               appearance: "none",
+               position: "relative",
+               zIndex: 2,
+               paddingRight: 16
+             }}
+           >
+             <option value="ID">IDN 🇮🇩</option>
+             <option value="US">USA 🇺🇸</option>
+             <option value="SG">SGP 🇸🇬</option>
+             <option value="MY">MYS 🇲🇾</option>
+             <option value="GB">GBR 🇬🇧</option>
+           </select>
+           <ChevronDown size={12} color={theme.primary} style={{ opacity: 0.7, position: "absolute", right: 8, zIndex: 1, pointerEvents: "none" }} />
          </div>
       </div>
     </motion.div>

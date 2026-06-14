@@ -876,6 +876,11 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
       return;
     }
     setTab(newTab);
+    if (newTab === "social-hub-ai") {
+      setSidebarOpen(false);
+    } else {
+      setSidebarOpen(true);
+    }
   };
 
   useEffect(() => {
@@ -1404,7 +1409,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
   }
 
   return (
-    <div style={{display:"flex", minHeight:"100vh", background:"var(--theme-bg, #FAFAFA)"}}>
+    <div style={{display:"flex", height:"100vh", overflow:"hidden", background:"var(--theme-bg, #FAFAFA)"}}>
       <Sidebar 
         open={sidebarOpen} setOpen={setSidebarOpen} tab={tab} setTab={handleTabChange} 
         workspaces={workspaces} activeWorkspace={workspace} onWorkspaceSelect={setWorkspace} 
@@ -1426,7 +1431,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
       {["dashboard", "content_planner", "analytics"].includes(tab) && (
         <div style={{ position: "fixed", inset: 0, zIndex: -1, pointerEvents: "none", background: "radial-gradient(circle at 0% 0%, #E3F2FD 0%, transparent 50%), radial-gradient(circle at 100% 100%, #FFF3E0 0%, transparent 50%), radial-gradient(circle at 100% 0%, #F3E5F5 0%, transparent 50%), #FAFAFA" }} />
       )}
-      <div style={{flex:1, minWidth:0, display:"flex", flexDirection:"column", height:"100vh", overflow:"auto", position:"relative", background: "transparent"}}>
+      <div style={{flex:1, minWidth:0, display:"flex", flexDirection:"column", height:"100vh", overflow: tab === "social-hub-ai" ? "hidden" : "auto", position:"relative", background: "transparent"}}>
         {(!["dashboard", "settings", "admin", "soc_hub"].includes(tab) && !tab.startsWith("social")) && (
           <Header 
             profile={profile}
@@ -1463,7 +1468,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
         />
       )}
 
-      <div style={{padding:"20px 24px 56px", position: "relative"}}>
+      <div style={{padding: (tab === "social-hub-ai" || tab === "soc_hub") ? "0" : "20px 24px 56px", position: "relative", minHeight: 0, flex: (tab === "social-hub-ai" || tab === "soc_hub") ? 1 : "none", display: "flex", flexDirection: "column"}}>
         {isRestricted && (
           <div style={{background:"#F8EAF0",border:"1px solid #9C2B4E",color:"#9C2B4E",padding:"12px 24px",borderRadius:12,marginBottom:24,display:"flex",alignItems:"center",gap:12,fontWeight:600}}>
             🔒 Mode Terbatas: Masa aktif Anda telah habis. <span style={{flex:1}}></span>
@@ -1471,13 +1476,14 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
           </div>
         )}
         <AnimatePresence mode="wait">
-          <motion.div key={tab + "-" + contentTab} initial={{ opacity: 0, y: 5, scale: 0.99 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -5, scale: 0.99 }} transition={{ duration: 0.15, ease: "easeOut" }}>
+          <motion.div key={tab + "-" + contentTab} initial={{ opacity: 0, y: 5, scale: 0.99 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -5, scale: 0.99 }} transition={{ duration: 0.15, ease: "easeOut" }} style={{ flex: (tab === "social-hub-ai" || tab === "soc_hub") ? 1 : "none", minHeight: 0, display: "flex", flexDirection: "column" }}>
+
             {tab==="dashboard"&&<DashboardView user={user} profile={profile} activeWorkspace={workspace} content={filtered} theme={currentTheme} setTab={setTab} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} year={year} month={month} />}
             {tab==="content_planner"&&contentTab==="month"&&<MonthView year={year} month={month} monthContent={monthContent} filtered={filtered} openEdit={openEdit} openAdd={openAdd} showHolidays={showHolidays} holidays={combinedHolidays} customEvents={workspace?.settings?.customEvents || []} pillars={pillars} platforms={platforms} isRestricted={isRestricted} showArchived={showArchived} contentTypes={contentTypes} moveItemDate={moveItemDate} />}
             {tab==="content_planner"&&contentTab==="board"&&<BoardView year={year} month={month} content={content} filtered={filtered} openEdit={openEdit} openAdd={openAdd} statuses={statuses} pillars={pillars} platforms={platforms} search={search} isRestricted={isRestricted} showArchived={showArchived} />}
             {tab==="content_planner"&&contentTab==="timeline"&&<TimelineView year={year} month={month} content={content} filtered={filtered} openEdit={openEdit} openAdd={openAdd} pillars={pillars} platforms={platforms} showHolidays={showHolidays} holidays={combinedHolidays} isRestricted={isRestricted} showArchived={showArchived} />}
             {tab==="content_planner"&&contentTab==="table"&&<TableView filtered={filtered} openEdit={openEdit} archiveItem={archiveItem} unarchiveItem={unarchiveItem} deleteItem={deleteItem} pillars={pillars} platforms={platforms} showArchived={showArchived} search={search} bulkIds={bulkIds} setBulkIds={setBulkIds} onBulk={handleBulkActions} isRestricted={isRestricted}/>}
-            {tab.startsWith("social")&&<SocialStudioView tab={tab} workspaceId={workspace?.id} />}
+            {tab.startsWith("social")&&<SocialStudioView tab={tab} workspaceId={workspace?.id} content={content} workspace={workspace} user={user} profile={profile} onOpenModal={(data:any) => setModal({mode: "add", data: {...emptyItem(year,month,new Date().getDate(),pillars,platforms,pics,statuses,contentTypes), ...data}})}/> }
             {tab==="analytics"&&<AnalyticsView content={content} pillars={pillars} platforms={platforms} contentTypes={contentTypes} pics={pics} statuses={statuses} openEdit={openEdit} isRestricted={isRestricted}/>}
             {tab==="soc_hub"&&<SocHubView user={user} profile={profile} />}
             {tab==="settings"&&<SettingsPanel 

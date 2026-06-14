@@ -471,7 +471,7 @@ export const emptyItem = (y:any,mo:any,d:any,pillars:any,platforms:any,pics:any,
   pillar:pillars[0]?.name||pillars[0]||"",platform:platforms[0]?.name||platforms[0]||"",
   contentType:contentTypes?.[0]?.name||contentTypes?.[0]||"",
   pic:pics[0]?.name||pics[0]||"",status:statuses[0]?.name||statuses[0]||"Draft",
-  title:"",caption:"",briefCopywriting:"",objective:"",
+  title:"",caption:"",briefCopywriting:"",objective:"",hook:"",cta:"",
   referenceText:"",referenceLinks:[],referenceImage:"",
   customFields:[],
   linkAsset:"",linkSosmed:"",
@@ -490,7 +490,7 @@ export const makeSeed = () => {
   
   // Make 2025 Month 5 manually specifically based on the current context format
   baseSeed.forEach(x => {
-    fullSeed.push({id:String(gId++),year:2025,month:5,caption:"",briefCopywriting:"",objective:"",referenceText:"",referenceLink:"",referenceImage:"",linkAsset:"",linkUpload:"",archived:false,metricsUpdatedAt:null,...x});
+    fullSeed.push({id:String(gId++),year:2025,month:5,caption:"",briefCopywriting:"",objective:"",hook:"",cta:"",referenceText:"",referenceLink:"",referenceImage:"",linkAsset:"",linkUpload:"",archived:false,metricsUpdatedAt:null,...x});
   });
 
   // Generate Dummy Data for 2024
@@ -514,7 +514,7 @@ export const makeSeed = () => {
             year:2024,
             month:m,
             day: Math.floor(Math.random()*28)+1,
-            caption:"",briefCopywriting:"",objective:"",referenceText:"",referenceLink:"",referenceImage:"",linkAsset:"",linkUpload:"",archived:false,metricsUpdatedAt:null,
+            caption:"",briefCopywriting:"",objective:"",hook:"",cta:"",referenceText:"",referenceLink:"",referenceImage:"",linkAsset:"",linkUpload:"",archived:false,metricsUpdatedAt:null,
             ...rnd,
             title: rnd.title + ` (Archive 2024-${m})`,
             metrics: metrics

@@ -192,6 +192,8 @@ export function SocHubView({ user, profile }: any) {
       } else {
         setViewedProfile(null);
       }
+    }, (error) => {
+      console.warn("User fetch snippet error:", error);
     });
     return () => unsub();
   }, [viewedUserId]);
@@ -584,7 +586,7 @@ export function SocHubView({ user, profile }: any) {
   // UI layout imitating CozMeet ref image
 
   return (
-    <div className="flex-1 w-full max-w-7xl mx-auto h-screen lg:overflow-hidden overflow-y-auto flex flex-col bg-gray-50 p-4 sm:p-6 lg:p-8">
+    <div className="flex-1 w-full max-w-7xl mx-auto h-full lg:overflow-hidden overflow-y-auto flex flex-col bg-gray-50 p-4 sm:p-6 lg:p-8">
       
       {/* Top Navbar Header inside SocHub */}
       <div className="flex flex-wrap items-center justify-between mb-6 lg:mb-8 shrink-0 bg-white p-3 sm:px-6 rounded-3xl shadow-sm gap-4">

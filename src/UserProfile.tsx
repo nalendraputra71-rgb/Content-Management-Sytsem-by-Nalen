@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { auth, db, signOut, updatePassword, doc, getDoc, updateDoc, runTransaction, collection, query, where, getDocs, addDoc } from "./firebase";
-import { User, Mail, Shield, CreditCard, ChevronRight, LogOut, Key, Save, ArrowLeft, Pencil, Crown } from "lucide-react";
+import { User, Mail, Shield, CreditCard, ChevronRight, LogOut, Key, Save, ArrowLeft, Pencil, Crown, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { I, B, CARD } from "./data";
 import { motion } from "motion/react";
@@ -296,6 +296,36 @@ export function UserProfile({ userProfile, activeWorkspace, onUpdate }: { userPr
       )}
 
       <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(300px, 1fr))", gap:24}}>
+        {/* AI Limit Card */}
+        <div style={CARD({gridColumn:"span 2"})}>
+           <h3 style={{fontSize:16, fontWeight:700, display:"flex", alignItems:"center", gap:10, marginBottom:16}}><Sparkles size={18} color="var(--theme-primary)" /> Penggunaan HUB.AI</h3>
+           <div style={{background:"#FAFAF8", padding:16, borderRadius:12, border:"1px solid rgba(44,32,22,0.06)"}}>
+              <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8}}>
+                 <span style={{fontSize:13, fontWeight:600, color:"rgba(44,32,22,0.6)"}}>Permintaan Dikeluarkan (Hari Ini)</span>
+                 <span style={{fontSize:13, fontWeight:700, color:"var(--theme-text-main, #2C2016)"}}>
+                   {(() => {
+                        const maxReq = (userProfile?.plan === "pro" || userProfile?.plan === "vip") ? 10 : 5;
+                        const todayStr = new Date().toISOString().split('T')[0];
+                        const usedReq = userProfile?.lastAiRequestDate === todayStr ? (userProfile?.aiRequestsToday || 0) : 0;
+                        return `${usedReq} / ${maxReq} Request`;
+                   })()}
+                 </span>
+              </div>
+              <div style={{width:"100%", height:8, background:"rgba(44,32,22,0.08)", borderRadius:4, overflow:"hidden"}}>
+                 {(() => {
+                        const maxReq = (userProfile?.plan === "pro" || userProfile?.plan === "vip") ? 10 : 5;
+                        const todayStr = new Date().toISOString().split('T')[0];
+                        const usedReq = userProfile?.lastAiRequestDate === todayStr ? (userProfile?.aiRequestsToday || 0) : 0;
+                        const usedPercent = Math.min((usedReq / maxReq) * 100, 100);
+                        return <div style={{width: `${usedPercent}%`, height:"100%", background:"var(--theme-primary)", borderRadius:4}} />;
+                 })()}
+              </div>
+              <p style={{fontSize:11, color:"rgba(44,32,22,0.5)", marginTop:12, lineHeight:1.5}}>
+                 Setiap interaksi dengan HUB.AI (tanya jawab, buat konten, dsb) dihitung sebagai 1 permintaan. Kuota akan otomatis di-reset setiap harinya.
+              </p>
+           </div>
+        </div>
+
         {/* Profile Card */}
         <div style={CARD()}>
           <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20}}>

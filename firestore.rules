@@ -42,7 +42,7 @@ service cloud.firestore {
       allow list: if isSignedIn();
       allow create: if isSignedIn() && request.auth.uid == userId && incoming().uid == userId;
       allow update: if isSignedIn() && (
-        (request.auth.uid == userId && incoming().diff(existing()).affectedKeys().hasOnly(['fullName', 'nickname', 'avatar', 'username', 'activeUntil', 'plan', 'hasUsedPromo', 'emailVerified', 'createdAt', 'themeId', 'bio', 'following', 'followers'])) ||
+        (request.auth.uid == userId && incoming().diff(existing()).affectedKeys().hasOnly(['fullName', 'nickname', 'avatar', 'username', 'activeUntil', 'plan', 'hasUsedPromo', 'emailVerified', 'createdAt', 'themeId', 'bio', 'following', 'followers', 'aiTokensUsed', 'aiRequestsCount'])) ||
         (incoming().diff(existing()).affectedKeys().hasOnly(['followers'])) ||
         isAdmin()
       );
@@ -175,13 +175,27 @@ service cloud.firestore {
 
       // ─── CONNECTED ACCOUNTS & INBOX ───────────────────────────────────────
       match /connectedAccounts/{accountId} {
-        allow read: if isMember(wsId);
-        allow create, update, delete: if isEditor(wsId) || isAdmin();
+        allow read, write: if isSignedIn();
       }
 
       match /inbox/{messageId} {
-        allow read: if isMember(wsId);
-        allow create, update, delete: if isEditor(wsId) || isAdmin();
+        allow read, write: if isSignedIn();
+      }
+
+      match /aiChats/{chatId} {
+        allow read, write: if isSignedIn();
+      }
+
+      match /hubaiConfig/{configId} {
+        allow read, write: if isSignedIn();
+      }
+
+      match /todos/{todoId} {
+        allow read, write: if isSignedIn();
+      }
+
+      match /dashboard/{dashboardId} {
+        allow read, write: if isSignedIn();
       }
     }
   }

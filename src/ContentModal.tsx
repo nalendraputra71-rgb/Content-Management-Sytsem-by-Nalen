@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { auth, callAiWithQuota } from "./firebase";
 import { motion, AnimatePresence } from "motion/react";
 import Markdown from "react-markdown";
 import remarkBreaks from "remark-breaks";
@@ -34,6 +35,8 @@ import {
 } from "./data";
 import { 
   ChevronDown,
+  AlertCircle,
+  Megaphone,
   Eye, 
   Users, 
   Heart, 
@@ -230,17 +233,19 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(async () => {
-      const currentD = dRef.current;
-      if (!currentD.title || !String(currentD.title).trim()) return;
-      setIsSaving(true);
-      try {
-        await onSave(currentD, false);
-      } catch (e) {
-        console.error("Autosave failed", e);
-      }
-      setIsSaving(false);
-    }, 1000);
+    if (!d.isHubAiDraft || d.manuallySaved) {
+        debounceRef.current = setTimeout(async () => {
+          const currentD = dRef.current;
+          if (!currentD.title || !String(currentD.title).trim()) return;
+          setIsSaving(true);
+          try {
+            await onSave(currentD, false);
+          } catch (e) {
+            console.error("Autosave failed", e);
+          }
+          setIsSaving(false);
+        }, 1000);
+    }
     return () => { if(debounceRef.current) clearTimeout(debounceRef.current); };
   }, [d]);
 
@@ -352,7 +357,13 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
     setD(next);
   };
 
-  const handleClose = async () => {
+  const handleClose = async (e?: any) => {
+    if (e && e.stopPropagation) e.stopPropagation();
+    if (d.isHubAiDraft && !d.manuallySaved) {
+       setShowExitConfirm(true);
+       return;
+    }
+    
     if (isDirty.current) {
       if (debounceRef.current) clearTimeout(debounceRef.current);
       try {
@@ -399,29 +410,21 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
         Judul: ${d.title}
         Pillar: ${d.pillar}
         Platform: ${d.platform}
-        Caption: ${d.caption}
+        Hook: ${d.hook || "-"}
         Brief: ${d.briefCopywriting}
+        Call to Action: ${d.cta || "-"}
         Objective: ${d.objective}
         
         Berikan evaluasi singkat dan 3 poin saran perbaikan untuk meningkatkan engagement. Format dalam Bahasa Indonesia, singkat, padat, dan teknis.`;
         
-        const req = await fetch("/api/gemini", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt, model: "gemini-2.5-flash" })
-        });
-        
-        if (!req.ok) {
-          const err = await req.json();
-          throw new Error(err.error || "Gagal menghubungi server AI");
-        }
-        
-        const data = await req.json();
+        const data = await callAiWithQuota(auth.currentUser?.uid || 'anon', undefined, { prompt, model: "gemini-2.5-flash" });
         setAiResult(data.text || "Tidak ada respon dari AI.");
     } catch (e: any) {
         console.error("AI Error:", e);
         const errMsg = e.message || "";
-        if (errMsg.includes("429") || errMsg.includes("RESOURCE_EXHAUSTED") || errMsg.includes("Quota exceeded")) {
+        if (errMsg.includes("habis")) {
+          setAiResult(errMsg);
+        } else if (errMsg.includes("429") || errMsg.includes("RESOURCE_EXHAUSTED") || errMsg.includes("Quota exceeded")) {
           setAiResult("Gagal menganalisis konten: Terlalu banyak permintaan saat ini (Quota Exceeded). Silakan tunggu sekitar 30 detik lalu coba lagi, atau update akun Google AI Studio Anda ke Pay-as-you-go.");
         } else {
           setAiResult("Gagal menganalisis konten: " + errMsg + ".\n\nPastikan VITE_GEMINI_API_KEY sudah diset di Settings > Secrets.");
@@ -441,28 +444,21 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
         Judul: ${d.title}
         Pillar: ${d.pillar}
         Platform: ${d.platform}
+        Hook: ${d.hook || "-"}
         Brief: ${d.briefCopywriting}
+        Call to Action: ${d.cta || "-"}
         Objective: ${d.objective}
         
         Tuliskan HANYA hasil caption akhirnya saja. Jangan berikan pengantar/penutup eksplanasi. Sertakan hashtag yang relevan sesuai dengan platform. Outputkan dalam format tag HTML dasar seperti <p>, <strong>, <em>, <br> untuk styling format typography-nya.`;
         
-        const req = await fetch("/api/gemini", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt, model: "gemini-2.5-flash" })
-        });
-        
-        if (!req.ok) {
-          const err = await req.json();
-          throw new Error(err.error || "Gagal menghubungi server AI");
-        }
-        
-        const data = await req.json();
+        const data = await callAiWithQuota(auth.currentUser?.uid || 'anon', undefined, { prompt, model: "gemini-2.5-flash" });
         set("caption", (data.text || "").trim());
     } catch (e: any) {
         console.error("AI Error:", e);
         const errMsg = e.message || "";
-        if (errMsg.includes("429") || errMsg.includes("RESOURCE_EXHAUSTED") || errMsg.includes("Quota exceeded")) {
+        if (errMsg.includes("habis")) {
+          alert(errMsg);
+        } else if (errMsg.includes("429") || errMsg.includes("RESOURCE_EXHAUSTED") || errMsg.includes("Quota exceeded")) {
           alert("Gagal menggenerate caption: Terlalu banyak permintaan AI. Silakan tunggu sekitar 30 detik lalu coba lagi.");
         } else {
           alert("Gagal menggenerate caption: " + errMsg);
@@ -478,6 +474,11 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
     reader.readAsDataURL(file);
   };
   const modalScrollRef = useRef<HTMLDivElement>(null);
+  const [isRightScrolled, setIsRightScrolled] = useState(false);
+
+  const handleRightScroll = (e: any) => {
+    setIsRightScrolled(e.currentTarget.scrollTop > 10);
+  };
 
   const isNew = modal.mode==="add";
   const canArchive = !d.archived && !isNew;
@@ -507,15 +508,14 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
           borderRadius: layoutMode === "drawer" ? "24px 0 0 24px" : "24px",
           maxWidth: "1050px",
           width:"100%",
-          height: layoutMode === "drawer" ? "100%" : "auto",
-          maxHeight: layoutMode === "drawer" ? "100%" : "94vh",
+          height: layoutMode === "drawer" ? "100%" : "90vh",
           position:"relative",
           boxShadow: layoutMode === "drawer" ? "-10px 0 60px rgba(0,0,0,0.15)" : "0 24px 60px rgba(0,0,0,0.08)", 
           display: "flex", flexDirection: "column"
         }}
       >
         {/* Modal Controls */}
-        <div style={{position: "absolute", top: layoutMode === "drawer" ? 20 : 28, right: layoutMode === "drawer" ? 20 : 28, display: "flex", gap: "8px", zIndex: 50}}>
+        <div style={{position: "absolute", top: 32, right: 32, display: "flex", alignItems: "center", gap: "8px", zIndex: 50}}>
           <button 
             onClick={(e) => { e.stopPropagation(); setLayoutMode(p => p === "center" ? "drawer" : "center"); }}
             title="Ubah Tampilan Mode (Popup / Drawer)"
@@ -573,33 +573,6 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
               {/* PROPERTIES (NOTION STYLE) */}
               <div style={{display: "flex", flexDirection: "column", gap: 14, width: "100%", marginTop: 8}}>
                  
-                 {/* Item: PIC / Assign */}
-                 <div style={{display: "flex", minHeight: 28, alignItems: "center"}}>
-                    <div style={{width: 140, display: "flex", alignItems: "center", gap: 8, color: "#6b7280", fontSize: 13, fontWeight: 500, flexShrink: 0}}>
-                        <Users size={14}/> Assign
-                    </div>
-                    {editingFieldLeft === "pic" ? (
-                      <div ref={activeFieldRef} style={{flex: 1}}>
-                        <CustomDropdown dark={false} multiple={true} value={d.pic} options={pics} prefix="" onChange={(v)=>{set("pic", Array.isArray(v) ? v.join(", ") : v);}} initiallyOpen={true} onClose={() => setEditingFieldLeft(null)} onUpdateOptions={(opts) => onSettingUpdate && onSettingUpdate({pics: opts})} 
-                          style={{ width: "100%", padding: "4px 8px", fontSize: 13, fontWeight: 600, background: "transparent", color: "#111827", border: "1px solid rgba(44,32,22,0.15)", borderRadius: 6, boxShadow: "none" }} />
-                      </div>
-                    ) : (
-                      <div 
-                        onClick={() => setEditingFieldLeft("pic")}
-                        style={{
-                          flex: 1, display: "flex", alignItems: "center", cursor: "pointer", 
-                          padding: "4px 8px", borderRadius: 6, transition: "background 0.2s",
-                          minHeight: 28
-                        }}
-                        className="hover:bg-black/5"
-                      >
-                        <span style={{fontSize: 13, fontWeight: 600, color: "#111827", display: "inline-block", maxWidth: "100%", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap"}}>
-                          {d.pic || <span style={{color: "rgba(44,32,22,0.4)", fontStyle: "italic", fontWeight: 400}}>Ketik atau pilih PIC...</span>}
-                        </span>
-                      </div>
-                    )}
-                 </div>
-
                  {/* Item: Status */}
                  <div style={{display: "flex", minHeight: 28, alignItems: "center"}}>
                     <div style={{width: 140, display: "flex", alignItems: "center", gap: 8, color: "#6b7280", fontSize: 13, fontWeight: 500, flexShrink: 0}}>
@@ -627,90 +600,28 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                     )}
                  </div>
 
-                 {/* Item: Referensi */}
+                 {/* Item: PIC / Assign */}
                  <div style={{display: "flex", minHeight: 28, alignItems: "center"}}>
                     <div style={{width: 140, display: "flex", alignItems: "center", gap: 8, color: "#6b7280", fontSize: 13, fontWeight: 500, flexShrink: 0}}>
-                        <Link size={14}/> Referensi
+                        <Users size={14}/> Assign
                     </div>
-                    {editingFieldLeft === "assetLink" ? (
-                      <div ref={activeFieldRef} style={{flex: 1, display: "flex", alignItems: "center", gap: 6}}>
-                        <input type="text" value={d.assetLink || ""} onChange={(e:any)=>set("assetLink", e.target.value)} placeholder="Tautkan link referensi..." style={{background: "#FFF", border: "1px solid rgba(44,32,22,0.15)", borderRadius: 6, outline: "none", fontSize: 13, fontWeight: 500, color: "#111827", width: "100%", padding: "4px 8px"}} autoFocus />
-                      </div>
-                    ) : (
-                      <div 
-                        onClick={() => setEditingFieldLeft("assetLink")}
-                        style={{
-                          flex: 1, display: "flex", alignItems: "center", cursor: "pointer",
-                          padding: "4px 8px", borderRadius: 6, transition: "background 0.2s",
-                          minHeight: 28, gap: 6
-                        }}
-                        className="hover:bg-black/5"
-                      >
-                        {d.assetLink ? (
-                          <>
-                            <span style={{fontSize: 13, fontWeight: 600, color: "#2563eb", textDecoration: "underline", display: "inline-block", maxWidth: "100%", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap"}}>
-                              Link Referensi
-                            </span>
-                            <a href={d.assetLink} target="_blank" rel="noopener noreferrer" style={{color: "#2563eb", display: "flex", alignItems: "center"}} onClick={(e) => e.stopPropagation()}>
-                              <ExternalLink size={14} />
-                            </a>
-                          </>
-                        ) : (
-                          <span style={{color: "rgba(44,32,22,0.4)", fontStyle: "italic", fontSize: 13}}>Tautkan referensi...</span>
-                        )}
-                      </div>
-                    )}
-                 </div>
-
-                 {/* Item: Content Type / Type */}
-                 <div style={{display: "flex", minHeight: 28, alignItems: "center"}}>
-                    <div style={{width: 140, display: "flex", alignItems: "center", gap: 8, color: "#6b7280", fontSize: 13, fontWeight: 500, flexShrink: 0}}>
-                        <FileText size={14}/> Type
-                    </div>
-                    {editingFieldLeft === "contentType" ? (
+                    {editingFieldLeft === "pic" ? (
                       <div ref={activeFieldRef} style={{flex: 1}}>
-                        <CustomDropdown dark={false} value={d.contentType} options={contentTypes} prefix="" onChange={(v)=>{set("contentType", v);}} initiallyOpen={true} onClose={() => setEditingFieldLeft(null)} onUpdateOptions={(opts) => onSettingUpdate && onSettingUpdate({contentTypes: opts})} 
-                          style={{ padding: "4px 10px", fontSize: 12, fontWeight: 600, background: getTranslucentColor(activeContentTypeColor, "20"), color: activeContentTypeColor, border: "1px solid rgba(44,32,22,0.15)", boxShadow: "none", borderRadius: 6 }} />
+                        <CustomDropdown dark={false} multiple={true} value={d.pic} options={pics} prefix="" onChange={(v)=>{set("pic", Array.isArray(v) ? v.join(", ") : v);}} initiallyOpen={true} onClose={() => setEditingFieldLeft(null)} onUpdateOptions={(opts) => onSettingUpdate && onSettingUpdate({pics: opts})} 
+                          style={{ width: "100%", padding: "4px 8px", fontSize: 13, fontWeight: 600, background: "transparent", color: "#111827", border: "1px solid rgba(44,32,22,0.15)", borderRadius: 6, boxShadow: "none" }} />
                       </div>
                     ) : (
                       <div 
-                        onClick={() => setEditingFieldLeft("contentType")}
+                        onClick={() => setEditingFieldLeft("pic")}
                         style={{
-                          flex: 1, display: "flex", alignItems: "center", cursor: "pointer",
+                          flex: 1, display: "flex", alignItems: "center", cursor: "pointer", 
                           padding: "4px 8px", borderRadius: 6, transition: "background 0.2s",
                           minHeight: 28
                         }}
                         className="hover:bg-black/5"
                       >
-                        <span style={{fontSize: 12, fontWeight: 700, color: activeContentTypeColor, background: getTranslucentColor(activeContentTypeColor, "20"), padding: "4px 10px", borderRadius: 6, display: "inline-block"}}>
-                          {d.contentType || <span style={{color: "rgba(44,32,22,0.4)", fontStyle: "italic", fontWeight: 400}}>Pilih tipe...</span>}
-                        </span>
-                      </div>
-                    )}
-                 </div>
-
-                 {/* Item: Platform (Media) */}
-                 <div style={{display: "flex", minHeight: 28, alignItems: "center"}}>
-                    <div style={{width: 140, display: "flex", alignItems: "center", gap: 8, color: "#6b7280", fontSize: 13, fontWeight: 500, flexShrink: 0}}>
-                        <Paperclip size={14}/> Media
-                    </div>
-                    {editingFieldLeft === "platform" ? (
-                      <div ref={activeFieldRef} style={{flex: 1}}>
-                        <CustomDropdown dark={false} value={d.platform} options={platforms} prefix="" onChange={(v)=>{set("platform", v);}} initiallyOpen={true} onClose={() => setEditingFieldLeft(null)} onUpdateOptions={(opts) => onSettingUpdate && onSettingUpdate({platforms: opts})} 
-                          style={{ padding: "4px 8px", fontSize: 12, fontWeight: 600, background: "transparent", color: "#4b5563", border: "1px solid rgba(44,32,22,0.15)", borderRadius: 6, boxShadow: "none" }} />
-                      </div>
-                    ) : (
-                      <div 
-                        onClick={() => setEditingFieldLeft("platform")}
-                        style={{
-                          flex: 1, display: "flex", alignItems: "center", cursor: "pointer",
-                          padding: "4px 8px", borderRadius: 6, transition: "background 0.2s",
-                          minHeight: 28
-                        }}
-                        className="hover:bg-black/5"
-                      >
-                        <span style={{fontSize: 12, fontWeight: 600, color: "#4b5563", display: "inline-block"}}>
-                          {d.platform || <span style={{color: "rgba(44,32,22,0.4)", fontStyle: "italic", fontWeight: 400}}>Pilih media...</span>}
+                        <span style={{fontSize: 13, fontWeight: 600, color: "#111827", display: "inline-block", maxWidth: "100%", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap"}}>
+                          {d.pic || <span style={{color: "rgba(44,32,22,0.4)", fontStyle: "italic", fontWeight: 400}}>Ketik atau pilih PIC...</span>}
                         </span>
                       </div>
                     )}
@@ -767,10 +678,10 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                     )}
                  </div>
 
-                 {/* Item: Pillar / Section */}
+                 {/* Item: Pillar */}
                  <div style={{display: "flex", minHeight: 28, alignItems: "center"}}>
                     <div style={{width: 140, display: "flex", alignItems: "center", gap: 8, color: "#6b7280", fontSize: 13, fontWeight: 500, flexShrink: 0}}>
-                        <Flag size={14}/> Section
+                        <Flag size={14}/> Pillar
                     </div>
                     {editingFieldLeft === "pillar" ? (
                       <div ref={activeFieldRef} style={{flex: 1}}>
@@ -788,8 +699,97 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                         className="hover:bg-black/5"
                       >
                         <span style={{fontSize: 12, fontWeight: 600, color: "#4b5563", background: "rgba(0,0,0,0.06)", padding: "4px 10px", borderRadius: 6, display: "inline-block"}}>
-                          {d.pillar || <span style={{color: "rgba(44,32,22,0.4)", fontStyle: "italic", fontWeight: 400}}>Pilih section...</span>}
+                          {d.pillar || <span style={{color: "rgba(44,32,22,0.4)", fontStyle: "italic", fontWeight: 400}}>Pilih pillar...</span>}
                         </span>
+                      </div>
+                    )}
+                 </div>
+
+                 {/* Item: Platform */}
+                 <div style={{display: "flex", minHeight: 28, alignItems: "center"}}>
+                    <div style={{width: 140, display: "flex", alignItems: "center", gap: 8, color: "#6b7280", fontSize: 13, fontWeight: 500, flexShrink: 0}}>
+                        <Paperclip size={14}/> Platform
+                    </div>
+                    {editingFieldLeft === "platform" ? (
+                      <div ref={activeFieldRef} style={{flex: 1}}>
+                        <CustomDropdown dark={false} value={d.platform} options={platforms} prefix="" onChange={(v)=>{set("platform", v);}} initiallyOpen={true} onClose={() => setEditingFieldLeft(null)} onUpdateOptions={(opts) => onSettingUpdate && onSettingUpdate({platforms: opts})} 
+                          style={{ padding: "4px 8px", fontSize: 12, fontWeight: 600, background: "transparent", color: "#4b5563", border: "1px solid rgba(44,32,22,0.15)", borderRadius: 6, boxShadow: "none" }} />
+                      </div>
+                    ) : (
+                      <div 
+                        onClick={() => setEditingFieldLeft("platform")}
+                        style={{
+                          flex: 1, display: "flex", alignItems: "center", cursor: "pointer",
+                          padding: "4px 8px", borderRadius: 6, transition: "background 0.2s",
+                          minHeight: 28
+                        }}
+                        className="hover:bg-black/5"
+                      >
+                        <span style={{fontSize: 12, fontWeight: 600, color: "#4b5563", display: "inline-block"}}>
+                          {d.platform || <span style={{color: "rgba(44,32,22,0.4)", fontStyle: "italic", fontWeight: 400}}>Pilih platform...</span>}
+                        </span>
+                      </div>
+                    )}
+                 </div>
+
+                 {/* Item: Content Type / Type */}
+                 <div style={{display: "flex", minHeight: 28, alignItems: "center"}}>
+                    <div style={{width: 140, display: "flex", alignItems: "center", gap: 8, color: "#6b7280", fontSize: 13, fontWeight: 500, flexShrink: 0}}>
+                        <FileText size={14}/> Type
+                    </div>
+                    {editingFieldLeft === "contentType" ? (
+                      <div ref={activeFieldRef} style={{flex: 1}}>
+                        <CustomDropdown dark={false} value={d.contentType} options={contentTypes} prefix="" onChange={(v)=>{set("contentType", v);}} initiallyOpen={true} onClose={() => setEditingFieldLeft(null)} onUpdateOptions={(opts) => onSettingUpdate && onSettingUpdate({contentTypes: opts})} 
+                          style={{ padding: "4px 10px", fontSize: 12, fontWeight: 600, background: getTranslucentColor(activeContentTypeColor, "20"), color: activeContentTypeColor, border: "1px solid rgba(44,32,22,0.15)", boxShadow: "none", borderRadius: 6 }} />
+                      </div>
+                    ) : (
+                      <div 
+                        onClick={() => setEditingFieldLeft("contentType")}
+                        style={{
+                          flex: 1, display: "flex", alignItems: "center", cursor: "pointer",
+                          padding: "4px 8px", borderRadius: 6, transition: "background 0.2s",
+                          minHeight: 28
+                        }}
+                        className="hover:bg-black/5"
+                      >
+                        <span style={{fontSize: 12, fontWeight: 700, color: activeContentTypeColor, background: getTranslucentColor(activeContentTypeColor, "20"), padding: "4px 10px", borderRadius: 6, display: "inline-block"}}>
+                          {d.contentType || <span style={{color: "rgba(44,32,22,0.4)", fontStyle: "italic", fontWeight: 400}}>Pilih tipe...</span>}
+                        </span>
+                      </div>
+                    )}
+                 </div>
+
+                 {/* Item: Referensi */}
+                 <div style={{display: "flex", minHeight: 28, alignItems: "center"}}>
+                    <div style={{width: 140, display: "flex", alignItems: "center", gap: 8, color: "#6b7280", fontSize: 13, fontWeight: 500, flexShrink: 0}}>
+                        <Link size={14}/> Referensi
+                    </div>
+                    {editingFieldLeft === "assetLink" ? (
+                      <div ref={activeFieldRef} style={{flex: 1, display: "flex", alignItems: "center", gap: 6}}>
+                        <input type="text" value={d.assetLink || ""} onChange={(e:any)=>set("assetLink", e.target.value)} placeholder="Tautkan link referensi..." style={{background: "#FFF", border: "1px solid rgba(44,32,22,0.15)", borderRadius: 6, outline: "none", fontSize: 13, fontWeight: 500, color: "#111827", width: "100%", padding: "4px 8px"}} autoFocus />
+                      </div>
+                    ) : (
+                      <div 
+                        onClick={() => setEditingFieldLeft("assetLink")}
+                        style={{
+                          flex: 1, display: "flex", alignItems: "center", cursor: "pointer",
+                          padding: "4px 8px", borderRadius: 6, transition: "background 0.2s",
+                          minHeight: 28, gap: 6
+                        }}
+                        className="hover:bg-black/5"
+                      >
+                        {d.assetLink ? (
+                          <>
+                            <span style={{fontSize: 13, fontWeight: 600, color: "#2563eb", textDecoration: "underline", display: "inline-block", maxWidth: "100%", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap"}}>
+                              Link Referensi
+                            </span>
+                            <a href={d.assetLink} target="_blank" rel="noopener noreferrer" style={{color: "#2563eb", display: "flex", alignItems: "center"}} onClick={(e) => e.stopPropagation()}>
+                              <ExternalLink size={14} />
+                            </a>
+                          </>
+                        ) : (
+                          <span style={{color: "rgba(44,32,22,0.4)", fontStyle: "italic", fontSize: 13}}>Tautkan referensi...</span>
+                        )}
                       </div>
                     )}
                  </div>
@@ -813,24 +813,51 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
           
             </div>
             {/* RIGHT COLUMN: MAIN CONTENT */}
-            <div ref={modalScrollRef} style={{ 
+            <div ref={modalScrollRef} onScroll={handleRightScroll} style={{ 
               flex: 1, 
-              padding: "32px 32px 32px 32px", 
+              padding: "0 32px 32px 32px", 
               display: "flex", 
               flexDirection: "column", 
               gap: "16px", 
               background: "transparent", 
-              overflowY: "auto",
+              overflowY: "scroll",
               position: "relative"
             }}>
 
           {/* Removed single mode banner transition flow to place mode switch in the footer */}
 
-          {/* APPLE-LIKE SEGMENTED CONTROL */}
-          <div style={{ 
-            display: "flex", background: "rgba(118,118,128,0.12)", padding: "2px", 
-            borderRadius: "10px", width: "100%", marginTop: "10px", marginBottom: "8px" 
+          <div style={{
+            position: "sticky",
+            top: 0,
+            paddingTop: 32,
+            paddingBottom: 16,
+            background: "transparent",
+            zIndex: 40,
+            display: "flex",
+            alignItems: "center",
+            pointerEvents: "none"
           }}>
+            {/* APPLE-LIKE SEGMENTED CONTROL */}
+            <div style={{ 
+              display: "flex", background: "rgba(0,0,0,0.05)", padding: "2px", boxSizing: "border-box",
+              borderRadius: "10px", width: "100%", maxWidth: "450px", marginTop: 0, marginBottom: 0, height: "32px", position: "relative",
+              pointerEvents: "auto"
+            }}>
+            <motion.div
+              layout
+              transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+              style={{
+                position: "absolute",
+                top: 2,
+                bottom: 2,
+                borderRadius: "8px",
+                background: "#FFFFFF",
+                boxShadow: isRightScrolled ? "0 8px 24px rgba(0,0,0,0.12), 0 3px 8px rgba(0,0,0,0.12), 0 3px 1px rgba(0,0,0,0.04)" : "0 3px 8px rgba(0,0,0,0.12), 0 3px 1px rgba(0,0,0,0.04)",
+                width: "calc((100% - 4px) / 3)",
+                left: activeTab === "draft" ? 2 : activeTab === "refs" ? "calc(((100% - 4px) / 3) + 2px)" : "calc(((100% - 4px) / 3 * 2) + 2px)",
+                zIndex: 0
+              }}
+            />
             {[
               { id: "draft", label: "Brief & Konten" },
               { id: "refs", label: "Aset & Referensi" },
@@ -841,21 +868,28 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                 onClick={(e) => { e.preventDefault(); setActiveTab(id as any); }}
                 style={{
                   flex: 1,
-                  padding: "6px 0",
+                  padding: "0",
+                  height: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                   borderRadius: "8px",
                   border: "none",
                   fontSize: "13px",
                   fontWeight: 600,
                   cursor: "pointer",
-                  background: activeTab === id ? "#FFFFFF" : "transparent",
+                  background: "transparent",
                   color: activeTab === id ? "#000000" : "rgba(0,0,0,0.6)",
-                  boxShadow: activeTab === id ? "0 3px 8px rgba(0,0,0,0.12), 0 3px 1px rgba(0,0,0,0.04)" : "none",
-                  transition: "background 0.2s, box-shadow 0.2s, color 0.2s"
+                  boxShadow: "none",
+                  transition: "color 0.2s",
+                  position: "relative",
+                  zIndex: 1
                 }}
               >
                 {label}
               </button>
             ))}
+            </div>
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: "16px", width: "100%" }}>
@@ -882,6 +916,29 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                     </div>
                     <div style={{ fontSize: 13, color: "#2C2016", lineHeight: 1.5, background: "rgba(44,32,22,0.02)", padding: "12px 16px", borderRadius: 10 }}>
                       {d.objective ? <div className="tiptap-prose" dangerouslySetInnerHTML={{ __html: d.objective }} /> : <span style={{ color: "rgba(44,32,22,0.4)", fontStyle: "italic" }}>Tidak ada spesifikasi objective khusus. Klik di sini untuk mengedit.</span>}
+                    </div>
+                  </div>
+                )}
+
+                {/* Hook Block */}
+                {editingFieldRight === "hook" ? (
+                  <div ref={activeFieldRef} style={{ background: "#ffffff", border: "1px solid rgba(44, 32, 22, 0.08)", borderRadius: 16, padding: "16px 20px", boxShadow: "0 8px 32px rgba(0, 0, 0, 0.04)" }}>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: "rgba(44,32,22,0.6)", display: "flex", alignItems: "center", gap: 6, margin: 0, marginBottom: 8 }}>
+                      <AlertCircle size={14} /> Hook
+                    </label>
+                    <RichTextEditor value={d.hook || ""} onChange={(val)=>set("hook",val)} minRows={2} placeholder="Skenario pembuka konten yang bisa mengundang atensi dalam 3 detik pertama..."/>
+                  </div>
+                ) : (
+                  <div 
+                    onClick={() => setEditingFieldRight("hook")}
+                    style={{ background: "#ffffff", border: "1px solid rgba(44, 32, 22, 0.08)", borderRadius: 16, padding: "16px 20px", boxShadow: "0 8px 32px rgba(0, 0, 0, 0.04)", cursor: "pointer" }}
+                    title="Klik untuk mengedit Hook"
+                  >
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(44,32,22,0.4)", textTransform: "uppercase", marginBottom: 6, letterSpacing: "0.5px", display: "flex", alignItems: "center", gap: 6 }}>
+                      <AlertCircle size={14} /> Hook
+                    </div>
+                    <div style={{ fontSize: 13, color: "#2C2016", lineHeight: 1.5, background: "rgba(44,32,22,0.02)", padding: "12px 16px", borderRadius: 10 }}>
+                      {d.hook ? <div className="tiptap-prose" dangerouslySetInnerHTML={{ __html: d.hook }} /> : <span style={{ color: "rgba(44,32,22,0.4)", fontStyle: "italic" }}>Skenario / teks hook belum diisi. Klik di sini untuk mengedit.</span>}
                     </div>
                   </div>
                 )}
@@ -921,6 +978,29 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                     </div>
                     <div style={{ fontSize: 13, color: "#2C2016", lineHeight: 1.5, background: "#FCFAF7", padding: "12px 16px", borderRadius: 10, border: "1px solid rgba(44, 32, 22, 0.03)" }}>
                       {d.briefCopywriting ? <div className="tiptap-prose" dangerouslySetInnerHTML={{ __html: d.briefCopywriting }} /> : <span style={{ color: "rgba(44,32,22,0.4)", fontStyle: "italic" }}>Belum ada brief konten. Klik di sini untuk mengedit.</span>}
+                    </div>
+                  </div>
+                )}
+
+                {/* CTA Block */}
+                {editingFieldRight === "cta" ? (
+                  <div ref={activeFieldRef} style={{ background: "#ffffff", border: "1px solid rgba(44, 32, 22, 0.08)", borderRadius: 16, padding: "16px 20px", boxShadow: "0 8px 32px rgba(0, 0, 0, 0.04)" }}>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: "rgba(44,32,22,0.6)", display: "flex", alignItems: "center", gap: 6, margin: 0, marginBottom: 8 }}>
+                      <Megaphone size={14} /> Call to Action (CTA)
+                    </label>
+                    <RichTextEditor value={d.cta || ""} onChange={(val)=>set("cta",val)} minRows={2} placeholder="Ajak audiens melakukan sesuatu (Contoh: Klik link di bio, komen, dll)..."/>
+                  </div>
+                ) : (
+                  <div 
+                    onClick={() => setEditingFieldRight("cta")}
+                    style={{ background: "#ffffff", border: "1px solid rgba(44, 32, 22, 0.08)", borderRadius: 16, padding: "16px 20px", boxShadow: "0 8px 32px rgba(0, 0, 0, 0.04)", cursor: "pointer" }}
+                    title="Klik untuk mengedit Call to Action"
+                  >
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(44,32,22,0.4)", textTransform: "uppercase", marginBottom: 6, letterSpacing: "0.5px", display: "flex", alignItems: "center", gap: 6 }}>
+                      <Megaphone size={14} /> Call to Action (CTA)
+                    </div>
+                    <div style={{ fontSize: 13, color: "#2C2016", lineHeight: 1.5, background: "rgba(44,32,22,0.02)", padding: "12px 16px", borderRadius: 10 }}>
+                      {d.cta ? <div className="tiptap-prose" dangerouslySetInnerHTML={{ __html: d.cta }} /> : <span style={{ color: "rgba(44,32,22,0.4)", fontStyle: "italic" }}>Call to Action belum diisi. Klik di sini untuk mengedit.</span>}
                     </div>
                   </div>
                 )}
@@ -1312,6 +1392,14 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
         </div>
 
         <div style={{display:"flex", gap:10, justifyContent:"space-between", alignItems:"center", padding: "10px 20px", borderTop: "1px solid rgba(44,32,22,0.08)", background: "white", borderRadius: "0 0 24px 24px", zIndex: 10, flexShrink: 0}}>
+          <div style={{display:"flex", gap:10, alignItems:"center"}}>
+            <button onClick={handleClose} className="hover-scale" style={{...B(false), background:"transparent", border:"1px solid rgba(44,32,22,0.2)", color:"#2C2016", padding:"5px 12px", fontSize:11, fontWeight:700}}>Tutup</button>
+            {isSaving && (
+              <span style={{ fontSize: 10, color: "#3B82F6", fontWeight: 700, display: "flex", alignItems: "center" }} className="animate-pulse">
+                Menyimpan...
+              </span>
+            )}
+          </div>
           <div style={{display:"flex", gap:8}}>
             {onDuplicate && (
               <button onClick={()=>onDuplicate(d)} className="hover-scale" style={{...B(false), background:"rgba(44,32,22,0.05)", border:"1.5px solid rgba(44,32,22,0.1)", color:"#2C2016", padding:"5px 10px", fontSize:11, fontWeight:700}}><Copy size={12} style={{marginRight: 4}} /> Duplikasi</button>
@@ -1322,60 +1410,35 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
               canArchive && <button onClick={()=>onArchive(d.id)} className="hover-scale" style={{...B(false), background:"rgba(255, 255, 255, 0.85)", backdropFilter:"blur(32px)", WebkitBackdropFilter:"blur(32px)", border:"1px solid rgba(0,0,0,0.1)", color:"#666", padding:"5px 10px", fontSize:11, fontWeight:700}}><Archive size={12} style={{marginRight: 4}} /> Arsipkan</button>
             )}
             {canDelete && <button onClick={()=>onDelete(d.id)} className="hover-scale" style={{...B(false), background:"#FDF5F8", border:"1.5px solid #9C2B4E", color:"#9C2B4E", padding:"5px 10px", fontSize:11, fontWeight:700}}><Trash size={12} style={{marginRight: 4}} /> Hapus</button>}
-          </div>
-          <div style={{display:"flex", gap:10, alignItems:"center"}}>
-            {isSaving && (
-              <span style={{ fontSize: 10, color: "#3B82F6", fontWeight: 700, display: "flex", alignItems: "center" }} className="animate-pulse">
-                Menyimpan...
-              </span>
-            )}
-            <button
-              onClick={() => setIsReaderMode(!isReaderMode)}
-              className="hover-scale"
-              title={isReaderMode ? "Edit Detail Konten" : "Selesai & Lihat Detail Konten"}
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: "50%",
-                border: "none",
-                background: isReaderMode ? "#3B82F6" : "#2E7D32",
-                color: "white",
-                fontSize: 14,
-                cursor: "pointer",
-                boxShadow: "0 2px 8px rgba(44,32,22,0.15)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                transition: "all 0.2s"
-              }}
-            >
-              {isReaderMode ? <Edit2 size={13}/> : <BookOpen size={13}/>}
-            </button>
+            <button onClick={async () => {
+              isDirty.current = false;
+              const newD = { ...dRef.current, manuallySaved: true };
+              setD(newD);
+              dRef.current = newD;
+              await onSave(newD, true);
+              onClose();
+            }} className="hover-scale" style={{...B(false), background:"#3B82F6", border:"none", color:"white", padding:"5px 14px", fontSize:12, fontWeight:700}}>Simpan Brief Konten</button>
           </div>
         </div>
       </motion.div>
 
       <AnimatePresence>
-        {false && (
+        {showExitConfirm && (
           <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.5)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:400,borderRadius:24}} onClick={e=>e.stopPropagation()}>
              <motion.div initial={{scale:0.95}} animate={{scale:1}} exit={{scale:0.95}} style={{background:"rgba(255, 255, 255, 0.85)", backdropFilter:"blur(32px)", WebkitBackdropFilter:"blur(32px)", border:"1px solid rgba(255,255,255,0.5)",padding:32,borderRadius:24,maxWidth:360,width:"100%",boxShadow:"0 12px 30px rgba(0,0,0,0.2)",textAlign:"center"}}>
-                <h3 style={{margin:"0 0 16px",fontSize:20,color:"#2C2016", fontWeight:800}}>Keluar dari Draft?</h3>
+                <h3 style={{margin:"0 0 16px",fontSize:20,color:"#2C2016", fontWeight:800}}>Keluar Murni?</h3>
                 <p style={{margin:"0 0 24px",fontSize:14,color:"rgba(44,32,22,0.6)",lineHeight:1.5}}>
-                   {modal.mode === "add" ? "Anda sedang membuat draft baru. Yakin ingin keluar? Jika dihapus, draft ini akan hilang sepenuhnya." : "Anda sedang mengedit konten. Yakin ingin keluar?"}
+                   Konten dari HUB.AI ini belum Anda simpan. Yakin ingin menutupnya? Jika ditutup, draf ini akan hangus dan hilang sepenuhnya.
                 </p>
                 <div style={{display:"flex",gap:12}}>
                    <button onClick={async ()=>{
-                     if (modal.mode === "add" && d.title?.trim() !== "") {
-                        await onDelete(d.id, true);
-                     } else {
-                        onClose();
-                     }
-                   }} style={{flex:1,padding:"12px 16px",background:"var(--theme-bg)",border:"1.5px solid rgba(44,32,22,0.2)",color:"#2C2016",borderRadius:24,fontWeight:700,cursor:"pointer"}}>
-                      {modal.mode === "add" ? "Hapus Draft" : "Keluar"}
+                     onClose();
+                   }} style={{flex:1,padding:"12px 16px",background:"transparent",border:"1.5px solid rgba(44,32,22,0.2)",color:"#2C2016",borderRadius:24,fontWeight:700,cursor:"pointer"}}>
+                      Hapus Draft
                    </button>
                    <button onClick={()=>{
                      setShowExitConfirm(false);
-                   }} style={{flex:1,padding:"12px 16px",background:"var(--theme-primary, #3B82F6)",border:"none",color:"white",borderRadius:24,fontWeight:700,cursor:"pointer"}}>
+                   }} style={{flex:1,padding:"12px 16px",background:"#3B82F6",border:"none",color:"white",borderRadius:24,fontWeight:700,cursor:"pointer"}}>
                       Lanjutkan Edit
                    </button>
                 </div>

@@ -6,20 +6,24 @@ export function useNotifications(userProfile: any) {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [toast, setToast] = useState<any | null>(null);
   
-  const archiveNotif = (id: string) => {
-    const existing = JSON.parse(localStorage.getItem('archivedNotifs')||'[]');
+  const getDeletedIds = () => JSON.parse(localStorage.getItem(`deletedNotifs_${userProfile?.uid}`) || '[]');
+
+  const deleteNotif = (id: string) => {
+    if (!userProfile) return;
+    const existing = getDeletedIds();
     if(!existing.includes(id)){
-      localStorage.setItem('archivedNotifs', JSON.stringify([...existing, id]));
+      localStorage.setItem(`deletedNotifs_${userProfile.uid}`, JSON.stringify([...existing, id]));
     }
-    setNotifications(prev => prev.map(n => n.id === id ? {...n, isArchived: true} : n));
+    setNotifications(prev => prev.filter(n => n.id !== id));
   };
 
-  const archiveAll = () => {
-    const activeIds = notifications.filter(n => !n.isArchived).map(n => n.id);
-    const existing = JSON.parse(localStorage.getItem('archivedNotifs')||'[]');
-    const newArchived = [...new Set([...existing, ...activeIds])];
-    localStorage.setItem('archivedNotifs', JSON.stringify(newArchived));
-    setNotifications(prev => prev.map(n => ({...n, isArchived: true})));
+  const deleteAll = () => {
+    if (!userProfile) return;
+    const activeIds = notifications.map(n => n.id);
+    const existing = getDeletedIds();
+    const newDeleted = [...new Set([...existing, ...activeIds])];
+    localStorage.setItem(`deletedNotifs_${userProfile.uid}`, JSON.stringify(newDeleted));
+    setNotifications([]);
   };
 
   useEffect(() => {
@@ -31,9 +35,10 @@ export function useNotifications(userProfile: any) {
 
     const notifs: any[] = [];
 
-      const archivedIds = JSON.parse(localStorage.getItem('archivedNotifs')||'[]');
-      
-      const applyArchive = (arr: any[]) => arr.map(n => ({...n, isArchived: archivedIds.includes(n.id)}));
+      const applyFilters = (arr: any[]) => {
+          const deletedIds = getDeletedIds();
+          return arr.filter(n => !deletedIds.includes(n.id));
+      };
 
       if (userProfile?.hasUsedPromo) {
         notifs.push({
@@ -103,7 +108,7 @@ export function useNotifications(userProfile: any) {
 
         setNotifications(prev => {
            const others = prev.filter(p => !p.id.startsWith("global_"));
-           return applyArchive([...applicableGlobal, ...others]);
+           return applyFilters([...applicableGlobal, ...others]);
         });
       }, (err:any) => {
         console.warn("Global_notifications onSnapshot error:", err);
@@ -140,13 +145,14 @@ export function useNotifications(userProfile: any) {
 
             setNotifications(prev => {
                 const others = prev.filter(p => !p.id.startsWith("ticket_"));
-                return applyArchive([...ticketNotifs, ...others]);
+                return applyFilters([...ticketNotifs, ...others]);
             });
          }, (err:any) => {
            console.warn("Tickets onSnapshot error:", err);
          });
 
          // Listen to workspace invites
+         let initialInvitesLoaded = false;
          unsubInvites = onSnapshot(query(collectionGroup(db, "members"), where("userId", "==", userProfile.uid)), (snap) => {
             if (!isMounted) return;
             const inviteNotifs: any[] = [];
@@ -171,12 +177,13 @@ export function useNotifications(userProfile: any) {
             setNotifications(prev => {
                 const others = prev.filter(p => !p.id.startsWith("invite_"));
                 const newInvites = inviteNotifs.filter(n => !others.some(o => o.id === n.id));
-                const finalNotifs = applyArchive([...inviteNotifs, ...others]);
+                const finalNotifs = applyFilters([...inviteNotifs, ...others]);
                 
                 // Show toast for new invites
-                if (newInvites.length > 0) {
-                     // Check if not archived
-                     const unarchivedNew = newInvites.filter(n => !archivedIds.includes(n.id));
+                if (initialInvitesLoaded && newInvites.length > 0) {
+                     // Check if not deleted
+                     const dIds = getDeletedIds();
+                     const unarchivedNew = newInvites.filter(n => !dIds.includes(n.id));
                      if (unarchivedNew.length > 0 && typeof window !== "undefined") {
                          // wait a bit to avoid flashes
                          setTimeout(() => setToast(unarchivedNew[0]), 500); 
@@ -184,10 +191,12 @@ export function useNotifications(userProfile: any) {
                 }
                 return finalNotifs;
             });
+            initialInvitesLoaded = true;
          }, (err:any) => {
             console.warn("Invites onSnapshot error:", err);
          });
 
+         let initialPersonalLoaded = false;
          let unsubPersonal = onSnapshot(query(collection(db, "notifications"), where("userId", "==", userProfile.uid)), (snap) => {
             if (!isMounted) return;
             const personalNotifs: any[] = [];
@@ -215,16 +224,18 @@ export function useNotifications(userProfile: any) {
             setNotifications(prev => {
                 const others = prev.filter(p => !p.id.startsWith("personal_"));
                 const newPersonal = personalNotifs.filter(n => !others.some(o => o.id === n.id));
-                const finalNotifs = applyArchive([...personalNotifs, ...others]);
+                const finalNotifs = applyFilters([...personalNotifs, ...others]);
                 
-                if (newPersonal.length > 0) {
-                     const unarchivedNew = newPersonal.filter(n => !archivedIds.includes(n.id));
+                if (initialPersonalLoaded && newPersonal.length > 0) {
+                     const dIds = getDeletedIds();
+                     const unarchivedNew = newPersonal.filter(n => !dIds.includes(n.id));
                      if (unarchivedNew.length > 0 && typeof window !== "undefined") {
                          setTimeout(() => setToast(unarchivedNew[0]), 500); 
                      }
                 }
                 return finalNotifs;
             });
+            initialPersonalLoaded = true;
          }, (err:any) => {
             console.warn("Personal onSnapshot error:", err);
          });
@@ -235,7 +246,7 @@ export function useNotifications(userProfile: any) {
     });
 
     // Ensure state receives the local notifs first
-    setNotifications(prev => applyArchive([...prev.filter(p => p.id !== "pro_active" && p.id !== "welcome" && p.id !== "expired" && p.id !== "expiring_soon"), ...notifs]));
+    setNotifications(prev => applyFilters([...prev.filter(p => p.id !== "pro_active" && p.id !== "welcome" && p.id !== "expired" && p.id !== "expiring_soon"), ...notifs]));
 
     return () => { 
        isMounted = false; 
@@ -261,7 +272,12 @@ export function useNotifications(userProfile: any) {
       }
   };
 
-  return { notifications, setNotifications, toast, setToast, archiveNotif, archiveAll, handleInviteAction };
+  const markAllRead = () => {
+    setNotifications(prev => prev.map(n => ({...n, unread: false})));
+    // Realistically you might want to call Firebase to mark them read, but for simple UI this is enough
+  };
+
+  return { notifications, setNotifications, toast, setToast, deleteNotif, deleteAll, markAllRead, handleInviteAction };
 }
 
 export function NotificationToast({ toast, onClose, onClick, onInviteAction }: { toast: any, onClose: () => void, onClick: () => void, onInviteAction?: (wsId:string, mId:string, action:'accept'|'reject') => void }) {
@@ -277,15 +293,23 @@ export function NotificationToast({ toast, onClose, onClick, onInviteAction }: {
     <AnimatePresence>
       {toast && (
         <motion.div 
+          layout
           initial={{ opacity: 0, y: -50, scale: 0.95 }} 
           animate={{ opacity: 1, y: 0, scale: 1 }} 
-          exit={{ opacity: 0, y: -20, scale: 0.95 }}
+          exit={{ opacity: 0, x: 300, scale: 0.95 }}
+          drag="x"
+          dragConstraints={{ left: 0, right: 0 }}
+          dragElastic={0.2}
+          onDragEnd={(e, info) => {
+            if (info.offset.x > 100) onClose();
+          }}
+          whileDrag={{ scale: 0.98 }}
           style={{
             position: "fixed", top: 20, right: 20, zIndex: 1000, 
             background: "white", padding: 16, borderRadius: 16, 
             width: (expanded || toast.type === "invite") ? 320 : "auto", maxWidth: "calc(100vw - 40px)", boxShadow: "0 10px 40px rgba(0,0,0,0.1)",
             border: "1px solid rgba(44,32,22,0.05)", display: "flex", gap: 16, alignItems: "flex-start",
-            cursor: (expanded || toast.type === "invite") ? "default" : "pointer", overflow: "hidden"
+            cursor: (expanded || toast.type === "invite") ? "default" : "grab", overflow: "hidden"
           }}
           onClick={() => {
             if (!expanded && toast.type !== "invite") {
@@ -300,7 +324,7 @@ export function NotificationToast({ toast, onClose, onClick, onInviteAction }: {
           <div style={{flex: 1, minWidth: 0}}>
             <div style={{fontSize: 14, fontWeight: 700, color: "#2C2016", marginBottom: 4}}>{toast.title}</div>
             {(expanded || toast.type === "invite") ? (
-               <motion.div initial={{height:0, opacity:0}} animate={{height:"auto", opacity:1}} style={{fontSize:12, color:"rgba(44,32,22,0.6)", lineHeight:1.5}}>
+               <motion.div layout initial={{height:0, opacity:0}} animate={{height:"auto", opacity:1}} style={{fontSize:12, color:"rgba(44,32,22,0.6)", lineHeight:1.5}}>
                  {toast.desc}
                  {toast.type === "invite" && (
                     <div style={{display: "flex", gap: 8, marginTop: 12}}>
@@ -310,23 +334,30 @@ export function NotificationToast({ toast, onClose, onClick, onInviteAction }: {
                  )}
                </motion.div>
             ) : (
-               <div style={{fontSize: 12, color: "rgba(44,32,22,0.6)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis"}}>
+               <motion.div layout style={{fontSize: 12, color: "rgba(44,32,22,0.6)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis"}}>
                  {toast.desc}
-               </div>
+               </motion.div>
             )}
           </div>
-          <button onClick={(e) => { e.stopPropagation(); onClose(); }} style={{background: "none", border: "none", cursor: "pointer", color: "rgba(44,32,22,0.4)"}}>
+          <button onClick={(e) => { e.stopPropagation(); onClose(); }} style={{background: "none", border: "none", cursor: "pointer", color: "rgba(44,32,22,0.4)", flexShrink:0, padding: 4}} className="hover:text-black">
             <X size={16}/>
           </button>
+          {(!expanded && toast.type !== "invite") && (
+             <motion.div 
+                initial={{width: "100%"}} 
+                animate={{width: "0%"}} 
+                transition={{duration: 5, ease: "linear"}} 
+                style={{position: "absolute", bottom: 0, left: 0, height: 3, background: "var(--theme-primary)"}} 
+             />
+          )}
         </motion.div>
       )}
     </AnimatePresence>
   );
 }
 
-export function NotificationPanel({ notifications, onClose, onRead, onContactSupport, archiveNotif, archiveAll, onInviteAction }: { notifications: any[], onClose: () => void, onRead: (id: string) => void, onContactSupport: () => void, archiveNotif: (id:string)=>void, archiveAll: ()=>void, onInviteAction?: (wsId:string, mId:string, action:'accept'|'reject') => void }) {
-  const [viewArchived, setViewArchived] = useState(false);
-  const visibleNotifs = notifications.filter(n => !!n.isArchived === viewArchived);
+export function NotificationPanel({ notifications, onClose, onRead, onContactSupport, deleteNotif, deleteAll, markAllRead, onInviteAction }: { notifications: any[], onClose: () => void, onRead: (id: string) => void, onContactSupport: () => void, deleteNotif: (id:string)=>void, deleteAll: ()=>void, markAllRead?: () => void, onInviteAction?: (wsId:string, mId:string, action:'accept'|'reject') => void }) {
+  const visibleNotifs = notifications;
   
   return (
     <motion.div 
@@ -337,78 +368,91 @@ export function NotificationPanel({ notifications, onClose, onRead, onContactSup
     >
       <div style={{padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid rgba(255,255,255,0.05)"}}>
         <h3 style={{margin: 0, fontSize: 13, fontWeight: 800, color: "rgba(255,255,255,0.8)", textTransform:"uppercase", letterSpacing:1, display:"flex", alignItems:"center", gap:8}}>
-          {viewArchived ? <Archive size={16}/> : <Bell size={16}/>}
-          {viewArchived ? "Arsip" : "Notifikasi"}
+          Notifikasi
         </h3>
         <div style={{display:"flex", gap: 8, alignItems: "center"}}>
-          {!viewArchived && visibleNotifs.length > 0 && (
-            <button onClick={archiveAll} style={{background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.6)", padding:4}} className="hover-scale hover:text-[var(--theme-primary)]" title="Hapus Semua">
-              <CheckCheck size={16}/>
+          {visibleNotifs.some(n => n.unread) && (
+            <button onClick={markAllRead} style={{background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.6)", padding:4, display: "flex", alignItems: "center", gap: 4}} className="hover:text-[var(--theme-primary)] transition-colors" title="Tandai Semua Dibaca">
+              <CheckCheck size={14}/>
             </button>
           )}
-          <button onClick={() => setViewArchived(!viewArchived)} style={{background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.6)", padding:4}} className="hover-scale hover:text-white" title={viewArchived ? "Lihat Notifikasi" : "Lihat Arsip"}>
-             {viewArchived ? <Bell size={16}/> : <Archive size={16}/>}
-          </button>
+          {visibleNotifs.length > 0 && (
+            <button onClick={deleteAll} style={{background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.6)", padding:4}} className="hover-scale hover:text-[var(--theme-primary)]" title="Hapus Semua">
+              <Trash2 size={16}/>
+            </button>
+          )}
           <button onClick={onClose} style={{background: "rgba(255,255,255,0.1)", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.8)", display:"flex", alignItems:"center", justifyContent:"center", width: 24, height: 24, borderRadius: 12}} className="hover-scale" title="Kembali">
             <X size={14}/>
           </button>
         </div>
       </div>
       <div style={{flex: 1, overflowY: "auto", padding: "12px", display:"flex", flexDirection:"column", gap:8}}>
-        {visibleNotifs.length === 0 && (
-          <div style={{padding: 30, textAlign: "center", color: "rgba(255,255,255,0.4)", fontSize: 12}}>Belum ada {viewArchived ? "arsip " : ""}notifikasi.</div>
-        )}
-        {visibleNotifs.map((n) => (
-          <div 
-             key={n.id} 
-             onClick={() => onRead(n.id)}
-             style={{
-               display: "flex", gap: 12, padding: 12, borderRadius: 12, 
-               background: (!n.isArchived && n.unread) ? "rgba(255, 107, 0, 0.1)" : "transparent",
-               cursor: "pointer", transition: "all 0.2s", position: "relative"
-             }}
-             className="hover:bg-[rgba(255,255,255,0.05)] group"
-          >
-            <div style={{width: 32, height: 32, borderRadius: 16, background: "white", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0}}>
-              {n.icon}
-            </div>
-            <div style={{flex: 1, paddingRight: 16}}>
-              <div style={{fontSize: 13, fontWeight: (!n.isArchived && n.unread) ? 800 : 600, color: (!n.isArchived && n.unread) ? "white" : "rgba(255,255,255,0.7)", marginBottom: 2}}>{n.title}</div>
-              {(!n.isArchived && n.unread) ? (
-                <div style={{fontSize: 12, color: "rgba(255,255,255,0.8)", lineHeight: 1.4, marginBottom: 6}}>
-                    {n.desc}
-                    {n.type === "invite" && (
-                        <div style={{display: "flex", gap: 8, marginTop: 8}}>
-                            <button onClick={(e)=>{ e.stopPropagation(); onInviteAction?.(n.workspaceId, n.memberId, 'accept'); }} style={{flex:1, padding:"6px", background:"#3B82F6", border:"none", borderRadius:6, color:"white", fontSize:11, fontWeight:700, cursor:"pointer"}}>Terima</button>
-                            <button onClick={(e)=>{ e.stopPropagation(); onInviteAction?.(n.workspaceId, n.memberId, 'reject'); }} style={{flex:1, padding:"6px", background:"rgba(255,255,255,0.1)", border:"none", borderRadius:6, color:"white", fontSize:11, fontWeight:700, cursor:"pointer"}}>Tolak</button>
-                        </div>
-                    )}
-                </div>
-              ) : (
-                <div style={{fontSize: 11, color: "rgba(255,255,255,0.5)", lineHeight: 1.4, marginBottom: 4, ...(n.type === "invite" ? {} : {display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden"})}}>
-                    {n.desc}
-                    {n.type === "invite" && !n.isArchived && (
-                        <div style={{display: "flex", gap: 8, marginTop: 8}}>
-                            <button onClick={(e)=>{ e.stopPropagation(); onInviteAction?.(n.workspaceId, n.memberId, 'accept'); }} style={{flex:1, padding:"6px", background:"#3B82F6", border:"none", borderRadius:6, color:"white", fontSize:11, fontWeight:700, cursor:"pointer"}}>Terima</button>
-                            <button onClick={(e)=>{ e.stopPropagation(); onInviteAction?.(n.workspaceId, n.memberId, 'reject'); }} style={{flex:1, padding:"6px", background:"rgba(255,255,255,0.1)", border:"none", borderRadius:6, color:"white", fontSize:11, fontWeight:700, cursor:"pointer"}}>Tolak</button>
-                        </div>
-                    )}
-                </div>
-              )}
-              <div style={{fontSize: 10, color: "rgba(255,255,255,0.4)", fontWeight: 600}}>{n.time}</div>
-            </div>
-            {!viewArchived && (
+        <AnimatePresence mode="popLayout">
+          {visibleNotifs.length === 0 && (
+            <motion.div initial={{opacity:0, scale:0.95}} animate={{opacity:1, scale:1}} exit={{opacity:0, scale:0.95}} style={{padding: 40, textAlign: "center", color: "rgba(255,255,255,0.4)", display: "flex", flexDirection: "column", alignItems: "center", gap: 12}}>
+              <div style={{width: 48, height: 48, borderRadius: 24, background: "rgba(255,255,255,0.05)", display: "flex", alignItems: "center", justifyContent: "center"}}>
+                <Bell size={20} color="rgba(255,255,255,0.3)" />
+              </div>
+              <div style={{fontSize: 12, fontWeight: 500}}>Belum ada notifikasi.</div>
+            </motion.div>
+          )}
+          {visibleNotifs.map((n) => (
+            <motion.div
+               layout
+               initial={{opacity: 0, y: 10}}
+               animate={{opacity: 1, y: 0}}
+               exit={{opacity: 0, scale: 0.95}}
+               key={n.id} 
+               onClick={() => onRead(n.id)}
+               style={{
+                 display: "flex", gap: 12, padding: 12, borderRadius: 12, 
+                 background: n.unread ? "rgba(255, 107, 0, 0.1)" : "transparent",
+                 cursor: "pointer", transition: "all 0.2s", position: "relative"
+               }}
+               className="hover:bg-[rgba(255,255,255,0.05)] group"
+            >
+              <div style={{width: 32, height: 32, borderRadius: 16, background: "white", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, position:"relative"}}>
+                {n.icon}
+                {n.unread && (
+                   <div style={{position: "absolute", top: -2, right: -2, width: 10, height: 10, borderRadius: 5, background: "var(--theme-primary)", border: "2px solid #1E293B"}} />
+                )}
+              </div>
+              <div style={{flex: 1, paddingRight: 16}}>
+                <div style={{fontSize: 13, fontWeight: n.unread ? 800 : 600, color: n.unread ? "white" : "rgba(255,255,255,0.7)", marginBottom: 2}}>{n.title}</div>
+                {n.unread ? (
+                  <div style={{fontSize: 12, color: "rgba(255,255,255,0.8)", lineHeight: 1.4, marginBottom: 6}}>
+                      {n.desc}
+                      {n.type === "invite" && (
+                          <div style={{display: "flex", gap: 8, marginTop: 8}}>
+                              <button onClick={(e)=>{ e.stopPropagation(); onInviteAction?.(n.workspaceId, n.memberId, 'accept'); }} style={{flex:1, padding:"6px", background:"#3B82F6", border:"none", borderRadius:6, color:"white", fontSize:11, fontWeight:700, cursor:"pointer"}}>Terima</button>
+                              <button onClick={(e)=>{ e.stopPropagation(); onInviteAction?.(n.workspaceId, n.memberId, 'reject'); }} style={{flex:1, padding:"6px", background:"rgba(255,255,255,0.1)", border:"none", borderRadius:6, color:"white", fontSize:11, fontWeight:700, cursor:"pointer"}}>Tolak</button>
+                          </div>
+                      )}
+                  </div>
+                ) : (
+                  <div style={{fontSize: 11, color: "rgba(255,255,255,0.5)", lineHeight: 1.4, marginBottom: 4, ...(n.type === "invite" ? {} : {display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden"})}}>
+                      {n.desc}
+                      {n.type === "invite" && (
+                          <div style={{display: "flex", gap: 8, marginTop: 8}}>
+                              <button onClick={(e)=>{ e.stopPropagation(); onInviteAction?.(n.workspaceId, n.memberId, 'accept'); }} style={{flex:1, padding:"6px", background:"#3B82F6", border:"none", borderRadius:6, color:"white", fontSize:11, fontWeight:700, cursor:"pointer"}}>Terima</button>
+                              <button onClick={(e)=>{ e.stopPropagation(); onInviteAction?.(n.workspaceId, n.memberId, 'reject'); }} style={{flex:1, padding:"6px", background:"rgba(255,255,255,0.1)", border:"none", borderRadius:6, color:"white", fontSize:11, fontWeight:700, cursor:"pointer"}}>Tolak</button>
+                          </div>
+                      )}
+                  </div>
+                )}
+                <div style={{fontSize: 10, color: "rgba(255,255,255,0.4)", fontWeight: 600}}>{n.time}</div>
+              </div>
               <button 
-                 onClick={(e) => { e.stopPropagation(); archiveNotif(n.id); }} 
+                 onClick={(e) => { e.stopPropagation(); deleteNotif(n.id); }} 
                  style={{background:"none", border:"none", color:"rgba(255,255,255,0.4)", position:"absolute", top:12, right:8, cursor:"pointer", padding:4}}
                  className="opacity-0 group-hover:opacity-100 hover:text-[var(--theme-primary)] transition-all"
-                 title="Arsipkan Notifikasi"
+                 title="Hapus Notifikasi"
               >
                  <Trash2 size={14} />
               </button>
-            )}
-          </div>
-        ))}
+            </motion.div>
+          ))}
+        </AnimatePresence>
       </div>
       
       {/* Footer Area */}
