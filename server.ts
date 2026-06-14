@@ -6,7 +6,7 @@ import dotenv from "dotenv";
 import fs from "fs";
 import * as admin from "firebase-admin";
 import { getAuth } from "firebase-admin/auth";
-import rateLimit from "express-rate-limit";
+import { rateLimit } from "express-rate-limit";
 
 // Inisialisasi Firebase Admin untuk verifikasi Auth Token JWT (hanya perlu projectId)
 try {

@@ -2,5 +2,5 @@
   "name": "Nexus Content",
   "description": "Content Management System for Social Media Planning and Analytics.",
   "requestFramePermissions": [],
-  "majorCapabilities": []
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
