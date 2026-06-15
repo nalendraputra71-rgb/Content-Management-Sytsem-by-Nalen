@@ -30,12 +30,15 @@ const app = express();
 app.set('trust proxy', 1 /* number of proxies between user and server */);
 app.use(express.json({ limit: "15mb" })); // Mencegah payload besar yang bisa DOS server, but big enough for chat history
 
-app.post("/api/log-error", (req, res) => {
+// Define routes once
+const apiRoutes = express.Router();
+
+apiRoutes.post("/log-error", (req, res) => {
   console.error("Client error:", req.body);
   res.json({ ok: true });
 });
 
-app.get("/api/trends", async (req, res) => {
+apiRoutes.get("/trends", async (req, res) => {
   try {
     const geo = (req.query.geo as string) || "ID";
     const gRes = await fetch(`https://trends.google.com/trending/rss?geo=${geo}`);
@@ -59,7 +62,7 @@ const apiLimiter = rateLimit({
 });
 
 // API Route untuk Gemini Proxy
-app.post("/api/gemini", apiLimiter, async (req, res) => {
+apiRoutes.post("/gemini", apiLimiter, async (req, res) => {
   try {
     // ---- VERIFIKASI TOKEN ----
     const authHeader = req.headers.authorization;
@@ -150,6 +153,25 @@ app.post("/api/gemini", apiLimiter, async (req, res) => {
     console.error("Gemini Proxy Error:", error);
     return res.status(500).json({ error: error.message || "Gagal mendapatkan respon dari AI." });
   }
+});
+
+// Mount the routes to both /api and / to handle standard and Vercel routing
+app.use("/api", apiRoutes);
+app.use("/", apiRoutes);
+
+// 404 handler for API routes
+app.use((req, res, next) => {
+  if (req.url.startsWith("/api") || process.env.VERCEL) {
+    res.status(404).json({ error: `API Route not found in Express: ${req.method} ${req.originalUrl || req.url}` });
+  } else {
+    next();
+  }
+});
+
+// Generic error handler
+app.use((err: any, req: any, res: any, next: any) => {
+  console.error("Unhandled Express Error:", err);
+  res.status(500).json({ error: "Internal Server Error", details: err.message });
 });
 
 export default app;
