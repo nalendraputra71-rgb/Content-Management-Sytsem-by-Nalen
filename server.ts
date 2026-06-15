@@ -14,7 +14,7 @@ try {
     const firebaseConfig = JSON.parse(fs.readFileSync(path.join(process.cwd(), "firebase-applet-config.json"), "utf8"));
     projectId = firebaseConfig.projectId;
   }
-  if (projectId) {
+  if (projectId && admin.apps.length === 0) {
     admin.initializeApp({
       projectId: projectId
     });
@@ -31,7 +31,7 @@ app.set('trust proxy', 1 /* number of proxies between user and server */);
 app.use(express.json({ limit: "15mb" })); // Mencegah payload besar yang bisa DOS server, but big enough for chat history
 
 app.post("/api/log-error", (req, res) => {
-  fs.writeFileSync("client-error.log", JSON.stringify(req.body, null, 2) + "\n", { flag: "a" });
+  console.error("Client error:", req.body);
   res.json({ ok: true });
 });
 
