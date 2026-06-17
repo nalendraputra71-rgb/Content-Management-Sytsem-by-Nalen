@@ -3,27 +3,30 @@ import path from "path";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
 import fs from "fs";
-import * as admin from "firebase-admin";
+import admin from "firebase-admin";
 import { getAuth } from "firebase-admin/auth";
 import { rateLimit } from "express-rate-limit";
 
-// Inisialisasi Firebase Admin untuk verifikasi Auth Token JWT (hanya perlu projectId)
-try {
-  let projectId = process.env.FIREBASE_PROJECT_ID;
-  if (!projectId) {
-    const firebaseConfig = JSON.parse(fs.readFileSync(path.join(process.cwd(), "firebase-applet-config.json"), "utf8"));
-    projectId = firebaseConfig.projectId;
-  }
-  if (projectId && admin.apps.length === 0) {
-    admin.initializeApp({
-      projectId: projectId
-    });
-  }
-} catch (e) {
-  console.error("Gagal inisialisasi Firebase Admin:", e);
-}
-
 dotenv.config();
+
+function initFirebase() {
+  if (admin.getApps().length === 0) {
+    let projectId = process.env.FIREBASE_PROJECT_ID;
+    if (!projectId) {
+      const configPath = path.join(process.cwd(), "firebase-applet-config.json");
+      if (fs.existsSync(configPath)) {
+        const firebaseConfig = JSON.parse(fs.readFileSync(configPath, "utf8"));
+        projectId = firebaseConfig.projectId;
+      }
+    }
+    if (projectId) {
+      admin.initializeApp({ projectId });
+      console.log("Firebase Admin initialized lazily with projectId:", projectId);
+    } else {
+      throw new Error("FIREBASE_PROJECT_ID is not set in environment or config.");
+    }
+  }
+}
 
 const app = express();
 
@@ -75,10 +78,15 @@ apiRoutes.post("/gemini", apiLimiter, async (req, res) => {
       if (!idToken || idToken.trim() === "") {
         throw new Error("Token kosong");
       }
+      try {
+        initFirebase();
+      } catch (initErr: any) {
+        return res.status(500).json({ error: "Sistem belum dikonfigurasi sepenuhnya. " + initErr.message });
+      }
       await getAuth().verifyIdToken(idToken.trim());
     } catch (error) {
       console.error("Gagal verifikasi token:", error);
-      return res.status(403).json({ error: "Akses Ditolak: Token Autentikasi tidak valid atau telah kedaluwarsa." });
+      return res.status(401).json({ error: "Akses Ditolak: Token Autentikasi tidak valid atau telah kedaluwarsa." });
     }
     // ----------------------------
 
