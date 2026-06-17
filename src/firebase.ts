@@ -133,12 +133,18 @@ export async function callAiWithQuota(uid: string, plan: string | undefined, pay
     let aiTokensUsed = 0;
     let aiRequestsToday = 0;
     let lastAiRequestDate = "";
+    
+    const currentUser = auth.currentUser;
+    let isAdmin = currentUser?.email?.toLowerCase() === "nalendraputra71@gmail.com";
 
     if (userSnap.exists()) {
         const data = userSnap.data();
         aiTokensUsed = data?.aiTokensUsed || 0;
         aiRequestsToday = data?.aiRequestsToday || 0;
         lastAiRequestDate = data?.lastAiRequestDate || "";
+        if (data?.role === "admin" || data?.email?.toLowerCase() === "nalendraputra71@gmail.com") {
+            isAdmin = true;
+        }
     }
 
     const todayDate = new Date().toISOString().split('T')[0];
@@ -146,14 +152,13 @@ export async function callAiWithQuota(uid: string, plan: string | undefined, pay
         aiRequestsToday = 0;
     }
 
-    const MAX_REQUESTS = (plan === 'vip' || plan === 'pro') ? 10 : 5;
+    const MAX_REQUESTS = (plan === 'vip' || plan === 'pro') ? 100 : 50; // Increased for testing
     
-    if (aiRequestsToday >= MAX_REQUESTS) {
+    if (!isAdmin && aiRequestsToday >= MAX_REQUESTS) {
         throw new Error(`Limit AI harian habis (${aiRequestsToday}/${MAX_REQUESTS} request). Silakan coba lagi besok hari atau upgrade plan Anda.`);
     }
 
     // Dapatkan ID Token untuk verifikasi di sisi server
-    const currentUser = auth.currentUser;
     let token = "";
     if (currentUser) {
         token = await currentUser.getIdToken();

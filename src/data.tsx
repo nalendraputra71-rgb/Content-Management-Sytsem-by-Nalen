@@ -286,8 +286,8 @@ export function CustomDropdown({ value, options = [], onChange, dark = false, st
                       }}
                       style={{ 
                         padding: "10px 12px", borderRadius: 8, fontSize: 13, fontWeight: isSelected?800:600, cursor: "pointer", 
-                        background: isSelected ? (color ? color + "20" : "rgba(var(--theme-primary-rgb), 0.1)") : "transparent", 
-                        color: isSelected ? (color || "var(--theme-primary)") : "#2C2016", 
+                        background: "transparent", 
+                        color: "#2C2016", 
                         transition: "all 0.1s",
                         display: "flex", alignItems: "center", gap: 10,
                         marginBottom: 2
@@ -296,12 +296,16 @@ export function CustomDropdown({ value, options = [], onChange, dark = false, st
                       onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = "transparent"; }}
                     >
                       {multiple && (
-                        <div style={{width: 14, height: 14, borderRadius: 4, border: "1px solid", borderColor: isSelected ? (color || "var(--theme-primary)") : "#D1D5DB", background: isSelected ? (color || "var(--theme-primary)") : "white", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0}}>
-                          {isSelected && <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M10 3L4.5 8.5L2 6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                        <div style={{width: 14, height: 14, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0}}>
+                          {isSelected && <svg width="14" height="14" viewBox="0 0 12 12" fill="none"><path d="M10 3L4.5 8.5L2 6" stroke={color || "var(--theme-primary)"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
                         </div>
                       )}
-                      {color && !multiple && <div style={{width:10, height:10, borderRadius:"50%", background:color}}/>}
-                      {color && multiple && <div style={{width:10, height:10, borderRadius:"50%", background:color}}/>}
+                      {!multiple && isSelected && (
+                        <div style={{width: 14, height: 14, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0}}>
+                          <svg width="14" height="14" viewBox="0 0 12 12" fill="none"><path d="M10 3L4.5 8.5L2 6" stroke={color || "var(--theme-primary)"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                        </div>
+                      )}
+                      {color && <div style={{width:10, height:10, borderRadius:"50%", background:color, flexShrink: 0}}/>}
                       <span style={{flex: 1, wordBreak: "break-word"}}>{prefix}{label}</span>
                     </div>
                   );
@@ -376,8 +380,8 @@ export const MS = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","
 export const DAYS_ID = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
 export const DAYS_S = ["Min","Sen","Sel","Rab","Kam","Jum","Sab"];
 export const YEARS = [2024,2025,2026,2027,2028];
-export const MK = ["views","reach","likes","comments","shares","reposts","saves"];
-export const MC: any = {views:"#2C2016",reach:"#3B82F6",likes:"#9C2B4E",comments:"#2B4C7E",shares:"#2D7A5E",reposts:"#A67C1C",saves:"#723680"};
+export const MK = ["views","reach","likes","comments","reposts","shares","saves","profileVisits","bioLinkTaps","follows"];
+export const MC: any = {views:"#2C2016",reach:"#3B82F6",likes:"#9C2B4E",comments:"#2B4C7E",reposts:"#A67C1C",shares:"#2D7A5E",saves:"#723680",profileVisits:"#059669",bioLinkTaps:"#2563EB",follows:"#D97706"};
 
 export const DP = [
   {name:"Pillar 1", color:"#3B82F6",light:"#FDF0EB"},
@@ -476,8 +480,8 @@ export const emptyItem = (y:any,mo:any,d:any,pillars:any,platforms:any,pics:any,
   customFields:[],
   linkAsset:"",linkSosmed:"",
   isAds:false,archived:false,metricsUpdatedAt:null,
-  metrics:{views:0,reach:0,likes:0,comments:0,shares:0,reposts:0,saves:0},
-  adsMetrics:{views:0,reach:0,likes:0,comments:0,shares:0,reposts:0,saves:0,clicks:0,conversions:0}
+  metrics:{views:0,reach:0,likes:0,comments:0,reposts:0,shares:0,saves:0,profileVisits:0,bioLinkTaps:0,follows:0},
+  adsMetrics:{views:0,reach:0,likes:0,comments:0,reposts:0,shares:0,saves:0,profileVisits:0,bioLinkTaps:0,follows:0,clicks:0,conversions:0,msgConvStarted:0,threeSecPlays:0,spendBudget:0,dailyBudget:0,duration:0,cprProfileVisit:0,audience:""}
 });
 
 // ─── SEED ─────────────────────────────────────────────────────────────────────

@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import * as XLSX from "xlsx";
 import { emptyItem, gid, B, CARD } from "./data";
 import { motion } from "motion/react";
+import { Upload } from "lucide-react";
 
 export function CsvModal({onClose, onImport, pillars, platforms, contentTypes, pics, statuses, existingContent}: any) {
   const [dataPreview, setDataPreview] = useState<any[]>([]);
@@ -162,9 +163,9 @@ export function CsvModal({onClose, onImport, pillars, platforms, contentTypes, p
 
   return (
     <motion.div key="csvImportOverlay" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} transition={{ duration: 0.15 }} onClick={onClose} style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.8)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center", padding:16}}>
-      <motion.div key="csvImportCard" initial={{scale:0.95, opacity:0, y:20}} animate={{scale:1, opacity:1, y:0}} exit={{scale:0.95, opacity:0, y:20}} transition={{ type: "spring", damping: 25, stiffness: 300 }} onClick={e=>e.stopPropagation()} style={CARD({width:"100%", maxWidth:600, padding:32, borderRadius:24, boxShadow:"0 20px 40px rgba(0,0,0,0.2)", position:"relative"})}>
+      <motion.div key="csvImportCard" initial={{scale:0.95, opacity:0, y:20}} animate={{scale:1, opacity:1, y:0}} exit={{scale:0.95, opacity:0, y:20}} transition={{ type: "spring", damping: 25, stiffness: 300 }} onClick={e=>e.stopPropagation()} style={{...CARD({width:"100%", maxWidth:600, padding:32, borderRadius:24, boxShadow:"0 20px 40px rgba(0,0,0,0.2)", position:"relative"}), background: "#FFFFFF", backdropFilter: "none", WebkitBackdropFilter: "none"}}>
         <button className="hover-scale" onClick={onClose} style={{position:"absolute",top:20,right:20,background:"rgba(44,32,22,0.05)",border:"none",borderRadius:"50%",width:32,height:32,cursor:"pointer",fontSize:18,color:"#2C2016",display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
-        <h2 style={{fontSize:20, fontWeight:700, margin:"0 0 16px", color:"#2C2016"}}>📥 Bulk Import via CSV</h2>
+        <h2 style={{fontSize:20, fontWeight:700, margin:"0 0 16px", color:"#2C2016", display:"flex", alignItems:"center", gap:8}}><Upload size={20} /> Bulk Import via CSV</h2>
         
         {step===1 && (
             <div>

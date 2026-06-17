@@ -72,7 +72,12 @@ import {
   Check,
   AlertTriangle,
   PanelRight,
-  Maximize2
+  Maximize2,
+  Link2,
+  UserPlus,
+  MessageSquare,
+  PlayCircle,
+  Wallet
 } from "lucide-react";
 
 const getMetricIcon = (k: string, color?: string, size = 14) => {
@@ -96,13 +101,69 @@ const getMetricIcon = (k: string, color?: string, size = 14) => {
       return <MousePointer {...props} />;
     case "conversions":
       return <Target {...props} />;
+    case "profilevisits":
+      return <User {...props} />;
+    case "biolinktaps":
+      return <Link2 {...props} />;
+    case "follows":
+      return <UserPlus {...props} />;
+    case "msgconvstarted":
+      return <MessageSquare {...props} />;
+    case "threesecplays":
+      return <PlayCircle {...props} />;
+    case "spendbudget":
+      return <DollarSign {...props} />;
+    case "dailybudget":
+      return <Wallet {...props} />;
+    case "duration":
+      return <Clock {...props} />;
+    case "cprprofilevisit":
+      return <DollarSign {...props} />;
+    case "audience":
+      return <Users {...props} />;
     default:
       return null;
   }
 };
 
+const formatMetricKey = (k: string) => {
+  const custom: Record<string, string> = {
+    profileVisits: "Profile Visits",
+    bioLinkTaps: "Bio Link Taps",
+    msgConvStarted: "Msg Conv. Started",
+    threeSecPlays: "3s Plays",
+    spendBudget: "Spend Budget",
+    dailyBudget: "Daily Budget",
+    cprProfileVisit: "Cost per Profile Visit",
+    audience: "Audience",
+    duration: "Duration Ad",
+    likes: "Likes & Reactions",
+    clicks: "Link Clicks"
+  };
+  return custom[k] || k;
+};
+
+const ADS_CATEGORIES = [
+  {
+    title: "Overview",
+    keys: ["views", "reach", "comments", "reposts", "bioLinkTaps", "conversions"]
+  },
+  {
+    title: "Engagement",
+    keys: ["threeSecPlays", "clicks", "likes", "saves", "shares"]
+  },
+  {
+    title: "Profile Activity",
+    keys: ["profileVisits", "follows", "msgConvStarted"]
+  },
+  {
+    title: "Details",
+    keys: ["cprProfileVisit", "spendBudget", "dailyBudget", "duration", "audience"]
+  }
+];
+
 export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,onDuplicate,pillars,platforms,contentTypes,pics,statuses,onSettingUpdate}: any) {
-  const [d,setD] = useState({...modal.data,metrics:{...(modal.data.metrics||{})},adsMetrics:{...(modal.data.adsMetrics||{views:0,reach:0,likes:0,comments:0,shares:0,reposts:0,saves:0,clicks:0,conversions:0})},referenceLinks:modal.data.referenceLinks||[],customFields:modal.data.customFields||[]});
+  const [d,setD] = useState({...modal.data,metrics:{...(modal.data.metrics||{})},adsMetrics:{...(modal.data.adsMetrics||{views:0,reach:0,likes:0,comments:0,reposts:0,shares:0,saves:0,profileVisits:0,bioLinkTaps:0,follows:0,clicks:0,conversions:0,msgConvStarted:0,threeSecPlays:0,spendBudget:0,dailyBudget:0,duration:0,cprProfileVisit:0,audience:""})},referenceLinks:modal.data.referenceLinks||[],customFields:modal.data.customFields||[]});
   const [aiResult, setAiResult] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
   const [captionLoading, setCaptionLoading] = useState(false);
@@ -112,6 +173,8 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [hourError, setHourError] = useState(false);
   const [minuteError, setMinuteError] = useState(false);
+  const [productionHourError, setProductionHourError] = useState(false);
+  const [productionMinuteError, setProductionMinuteError] = useState(false);
   const [isReaderMode, setIsReaderMode] = useState(modal.mode !== "add");
   const [editingFieldLeft, setEditingFieldLeft] = useState<string | null>(null);
   const [editingFieldRight, setEditingFieldRight] = useState<string | null>(null);
@@ -189,6 +252,31 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
     }
   };
 
+  const handleProductionHourChange = (e: any) => {
+    isDirty.current = true;
+    const valStr = e.target.value;
+    if (valStr === "") {
+      set("productionHour", "");
+      setProductionHourError(false);
+      return;
+    }
+    const val = Number(valStr);
+    const timeFormat = d.timeFormat || '24H';
+    const minHour = timeFormat === '24H' ? 0 : 1;
+    const maxHour = timeFormat === '24H' ? 23 : 12;
+    
+    if (isNaN(val) || val < minHour || val > maxHour) {
+      set("productionHour", ""); // auto delete
+      setProductionHourError(true);
+      setTimeout(() => {
+        setProductionHourError(false);
+      }, 2500);
+    } else {
+      set("productionHour", val);
+      setProductionHourError(false);
+    }
+  };
+
   const handleFormatChange = (e: any) => {
     isDirty.current = true;
     const newFormat = e.target.value;
@@ -226,6 +314,27 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
     } else {
       set("uploadMinute", val);
       setMinuteError(false);
+    }
+  };
+
+  const handleProductionMinuteChange = (e: any) => {
+    isDirty.current = true;
+    const valStr = e.target.value;
+    if (valStr === "") {
+      set("productionMinute", "");
+      setProductionMinuteError(false);
+      return;
+    }
+    const val = Number(valStr);
+    if (isNaN(val) || val < 0 || val > 59) {
+      set("productionMinute", ""); // auto delete
+      setProductionMinuteError(true);
+      setTimeout(() => {
+        setProductionMinuteError(false);
+      }, 2500);
+    } else {
+      set("productionMinute", val);
+      setProductionMinuteError(false);
     }
   };
 
@@ -417,7 +526,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
         
         Berikan evaluasi singkat dan 3 poin saran perbaikan untuk meningkatkan engagement. Format dalam Bahasa Indonesia, singkat, padat, dan teknis.`;
         
-        const data = await callAiWithQuota(auth.currentUser?.uid || 'anon', undefined, { prompt, model: "gemini-2.5-flash" });
+        const data = await callAiWithQuota(auth.currentUser?.uid || 'anon', undefined, { prompt, model: "gemini-2.0-flash" });
         setAiResult(data.text || "Tidak ada respon dari AI.");
     } catch (e: any) {
         console.error("AI Error:", e);
@@ -451,7 +560,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
         
         Tuliskan HANYA hasil caption akhirnya saja. Jangan berikan pengantar/penutup eksplanasi. Sertakan hashtag yang relevan sesuai dengan platform. Outputkan dalam format tag HTML dasar seperti <p>, <strong>, <em>, <br> untuk styling format typography-nya.`;
         
-        const data = await callAiWithQuota(auth.currentUser?.uid || 'anon', undefined, { prompt, model: "gemini-2.5-flash" });
+        const data = await callAiWithQuota(auth.currentUser?.uid || 'anon', undefined, { prompt, model: "gemini-2.0-flash" });
         set("caption", (data.text || "").trim());
     } catch (e: any) {
         console.error("AI Error:", e);
@@ -488,7 +597,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
     <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} transition={{ duration: 0.15 }} onClick={handleClose} 
       style={{
         position:"fixed",inset:0,
-        background:"rgba(0,0,0,0.5)", backdropFilter:"blur(12px)", WebkitBackdropFilter:"blur(12px)",
+        background:"rgba(0,0,0,0.5)",
         display:"flex",
         alignItems: layoutMode === "drawer" ? "stretch" : "center",
         justifyContent: layoutMode === "drawer" ? "flex-end" : "center",
@@ -510,7 +619,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
           width:"100%",
           height: layoutMode === "drawer" ? "100%" : "90vh",
           position:"relative",
-          boxShadow: layoutMode === "drawer" ? "-10px 0 60px rgba(0,0,0,0.15)" : "0 24px 60px rgba(0,0,0,0.08)", 
+          boxShadow: layoutMode === "drawer" ? "-10px 0 30px rgba(0,0,0,0.05)" : "0 12px 30px rgba(0,0,0,0.05)", 
           display: "flex", flexDirection: "column"
         }}
       >
@@ -632,9 +741,40 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                     <div style={{width: 140, display: "flex", alignItems: "center", gap: 8, color: "#6b7280", fontSize: 13, fontWeight: 500, flexShrink: 0}}>
                         <Calendar size={14}/> Jadwal Produksi
                     </div>
-                    <div style={{flex: 1, display: "flex", alignItems: "center", padding: "4px 8px"}}>
-                        <span style={{fontSize: 13, fontWeight: 500, color: "#9ca3af"}}>Empty</span>
-                    </div>
+                    {editingFieldLeft === "productionDate" ? (
+                      <div ref={activeFieldRef} style={{flex: 1, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap"}}>
+                        <div style={{display: "flex", alignItems: "center", gap: 4, background: "#FFF", border: "1px solid rgba(44,32,22,0.15)", borderRadius: 6, padding: "4px 8px"}}>
+                          <input type="date" value={`${d.productionYear || new Date().getFullYear()}-${String(d.productionMonth || new Date().getMonth()+1).padStart(2, '0')}-${String(d.productionDay || new Date().getDate()).padStart(2, '0')}`} 
+                            onChange={(e:any) => {
+                              const parts = e.target.value.split("-");
+                              if (parts.length === 3) {
+                                set("productionYear", parseInt(parts[0], 10)); set("productionMonth", parseInt(parts[1], 10)); set("productionDay", parseInt(parts[2], 10));
+                              }
+                            }} 
+                            style={{ background: "transparent", border: "none", fontSize: 13, fontWeight: 500, color: "#111827", outline: "none", cursor: "pointer", padding: "2px 0" }}
+                          />
+                          <input type="number" min={d.timeFormat === '24H' ? 0 : 1} max={d.timeFormat === '24H' ? 23 : 12} value={d.productionHour !== undefined && d.productionHour !== null ? d.productionHour : ""} onChange={handleProductionHourChange} 
+                            style={{ background: "rgba(0,0,0,0.04)", border: "none", fontSize: 13, fontWeight: 500, color: "#111827", width: 28, textAlign: "center", outline: "none", padding: "2px 0", borderRadius: 4 }} placeholder="00" />
+                          <span style={{color:"#111827", fontWeight: 700, fontSize: 13}}>:</span>
+                          <input type="number" min={0} max={59} step={5} value={d.productionMinute !== undefined && d.productionMinute !== null ? d.productionMinute : ""} onChange={handleProductionMinuteChange} 
+                            style={{ background: "rgba(0,0,0,0.04)", border: "none", fontSize: 13, fontWeight: 500, color: "#111827", width: 28, textAlign: "center", outline: "none", padding: "2px 0", borderRadius: 4 }} placeholder="00" />
+                        </div>
+                      </div>
+                    ) : (
+                      <div 
+                        onClick={() => setEditingFieldLeft("productionDate")}
+                        style={{
+                          flex: 1, display: "flex", alignItems: "center", cursor: "pointer",
+                          padding: "4px 8px", borderRadius: 6, transition: "background 0.2s",
+                          minHeight: 28
+                        }}
+                        className="hover:bg-black/5"
+                      >
+                        <span style={{fontSize: 13, fontWeight: 500, color: (d.productionDay && d.productionMonth && d.productionYear) ? "#4b5563" : "rgba(44,32,22,0.4)"}}>
+                          {d.productionDay && d.productionMonth && d.productionYear ? `${String(d.productionDay).padStart(2,'0')}/${String(d.productionMonth).padStart(2,'0')}/${d.productionYear} (${String(d.productionHour !== undefined && d.productionHour !== null ? d.productionHour : 0).padStart(2,'0')}:${String(d.productionMinute !== undefined && d.productionMinute !== null ? d.productionMinute : 0).padStart(2,'0')})` : <span style={{fontStyle: "italic"}}>Atur tanggal produksi...</span>}
+                        </span>
+                      </div>
+                    )}
                  </div>
 
                  {/* Item: Jadwal Upload */}
@@ -831,7 +971,9 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
             top: 0,
             paddingTop: 32,
             paddingBottom: 16,
-            background: "transparent",
+            background: "rgba(255, 255, 255, 0.9)",
+            backdropFilter: "blur(8px)",
+            WebkitBackdropFilter: "blur(8px)",
             zIndex: 40,
             display: "flex",
             alignItems: "center",
@@ -1180,210 +1322,171 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
 
             {/* TAB METRICS (Stats, Bento, ads) */}
             {activeTab === "metrics" && (
-              editingFieldRight === "metrics" ? (
-                <div ref={activeFieldRef} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                  {/* Custom Fields Edit */}
-                  <div style={{
-                    background: "#ffffff", border: "1px solid rgba(44, 32, 22, 0.08)",
-                    borderRadius: 16,
-                    padding: "16px 20px",
-                    boxShadow: "0 8px 32px rgba(0, 0, 0, 0.04)"
-                  }}>
-                     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
-                       <label style={{...L, margin: 0}}><Plus size={14} /> Bidang Kustom (Custom Fields)</label>
-                       <button onClick={(e)=>{ e.stopPropagation(); set("customFields",[...(dRef.current.customFields||[]),{name:"Label Baru",value:""}]); }} style={{...B(false),fontSize:10,padding:"4px 10px", borderRadius: 8}}>+ Tambah Field</button>
-                     </div>
-                     {(d.customFields||[]).length === 0 ? (
-                       <div style={{ fontSize: 11, color: "rgba(44,32,22,0.4)", textAlign: "center", padding: "10px 0" }}>Belum ada custom fields.</div>
-                     ) : (
-                       (d.customFields||[]).map((cf:any,i:number)=>(
-                         <div key={i} style={{display:"flex",gap:8,marginBottom:8, alignItems: "center"}}>
-                            <input value={cf.name} onChange={(e:any)=>set("customFields",dRef.current.customFields.map((f:any,idx:number)=>idx===i?{...f,name:e.target.value}:f))} style={{...I(),width:130, height: "38px"}} placeholder="Nama Field..."/>
-                            <TextareaAutosize value={cf.value} onChange={(e:any)=>set("customFields",dRef.current.customFields.map((f:any,idx:number)=>idx===i?{...f,value:e.target.value}:f))} style={I({resize:"vertical", padding: "8px 12px"})} minRows={1} placeholder="Isi field..."/>
-                            <button onClick={(e)=>{ e.stopPropagation(); set("customFields", dRef.current.customFields.filter((_:any,idx:number)=>idx!==i)); }} style={{background:"none",border:"none",color:"#9C2B4E",cursor:"pointer", padding: "4px 8px"}}>✕</button>
-                         </div>
-                       ))
-                     )}
-                  </div>
-
-                  {/* Metrics Section */}
-                  <div style={{
-                    background: "rgba(44,32,22,0.03)",
-                    border: "1px solid rgba(255, 255, 255, 0.7)",
-                    borderRadius: 16,
-                    padding: "16px 20px"
-                  }}>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-                      <div style={{...L, display: "flex", alignItems: "center", gap: 6, margin: 0}}>
-                        <span><BarChart2 size={12} /> Jangkauan Organik</span>
-                      </div>
-                      {d.metricsUpdatedAt && <div style={{fontSize:9, color:"rgba(44,32,22,0.4)"}}>Last update: {d.metricsUpdatedAt}</div>}
+              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                {/* Item 7: Custom Fields Section */}
+                <div style={{
+                  background: "#ffffff", border: "1px solid rgba(44, 32, 22, 0.08)",
+                  borderRadius: 16,
+                  padding: "16px 20px",
+                  boxShadow: "0 8px 32px rgba(0, 0, 0, 0.04)"
+                }}>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(44,32,22,0.4)", textTransform: "uppercase", letterSpacing: "0.5px", display: "flex", alignItems: "center", gap: 6 }}>
+                      <Plus size={14} /> Bidang Kustom (Custom Fields)
                     </div>
-                    <div style={{display:"grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8}}>
-                      {MK.map((k:string)=>(
-                        <div key={k} style={GRP}>
-                          <label style={{...L, marginBottom: 4, color: MC[k]||"#3B82F6", display: "flex", alignItems: "center", gap: 4, textTransform: "capitalize", fontSize: "11px"}}>
-                            {getMetricIcon(k, MC[k]||"#3B82F6", 12)}
-                            {k}
-                          </label>
-                          <input 
-                            type="number" 
-                            min={0} 
-                            placeholder="0" 
-                            value={d.metrics[k] === 0 ? "" : (d.metrics[k] !== undefined && d.metrics[k] !== null ? d.metrics[k] : "")} 
-                            onChange={(e:any)=>setM(k,e.target.value)} 
-                            style={I({textAlign:"right", fontSize: "12px", padding: "6px 8px"})}
-                          />
+                    <button onClick={(e)=>{ e.stopPropagation(); set("customFields",[...(d.customFields||[]),{name:"Label Baru",value:""}]); setEditingFieldRight("customField_"+((d.customFields?.length||0))); }} style={{fontSize:10,padding:"4px 10px", borderRadius: 8, background: "rgba(44,32,22,0.05)", border: "none", color: "#2C2016", fontWeight: 600, cursor: "pointer"}}>+ Tambah Field</button>
+                  </div>
+                  {(d.customFields||[]).length === 0 ? (
+                    <div style={{ fontSize: 11, color: "rgba(44,32,22,0.4)", textAlign: "center", padding: "10px 0" }}>Belum ada custom fields.</div>
+                  ) : (
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                      {(d.customFields||[]).map((cf:any, idx:number)=>(
+                        <div key={idx} onClick={() => setEditingFieldRight("customField_"+idx)} style={{ background: "rgba(44,32,22,0.02)", padding: "12px 16px", borderRadius: 10, position: "relative", cursor: "pointer" }}>
+                          {editingFieldRight === "customField_"+idx ? (
+                            <div ref={activeFieldRef} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                <input autoFocus value={cf.name} onChange={(e:any)=>set("customFields",d.customFields.map((f:any,i:number)=>i===idx?{...f,name:e.target.value}:f))} style={{ border: "none", background: "transparent", outline: "none", fontSize: 11, fontWeight: 700, color: "rgba(44,32,22,0.5)", textTransform: "uppercase", width: "100%", padding: 0 }} placeholder="Nama Field..."/>
+                                <button onClick={(e)=>{ e.stopPropagation(); set("customFields", d.customFields.filter((_:any,i:number)=>i!==idx)); setEditingFieldRight(null); }} style={{background:"none",border:"none",color:"#9C2B4E",cursor:"pointer", padding: "0 4px", fontSize: 14}}>✕</button>
+                              </div>
+                              <TextareaAutosize value={cf.value} onChange={(e:any)=>set("customFields",d.customFields.map((f:any,i:number)=>i===idx?{...f,value:e.target.value}:f))} style={{ border: "none", background: "transparent", outline: "none", fontSize: 13, color: "#2C2016", width: "100%", padding: 0, resize: "none" }} minRows={1} placeholder="Isi field..."/>
+                            </div>
+                          ) : (
+                            <>
+                              <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(44,32,22,0.5)", textTransform: "uppercase", marginBottom: 4 }}>{cf.name || `Field ${idx+1}`}</div>
+                              <div style={{ fontSize: 13, color: "#2C2016", whiteSpace: "pre-wrap" }}>{cf.value || "-"}</div>
+                            </>
+                          )}
                         </div>
                       ))}
                     </div>
-                    
-                    <div style={{marginTop: 12, display: "flex", alignItems: "center", gap: 10, justifySelf: "flex-end"}}>
-                      <div style={{fontSize: 11, fontWeight: 700, color: "rgba(44,32,22,0.6)", textTransform: "uppercase", letterSpacing: 0.5}}>Ads/Boost:</div>
-                      <button onClick={(e)=>{ e.stopPropagation(); set("isAds",!d.isAds); }} style={{width:32,height:18,borderRadius:9,border:"none",cursor:"pointer",background:d.isAds?"#9C2B4E":"rgba(44,32,22,0.15)",transition:"background .2s",position:"relative",flexShrink:0}}>
-                        <div style={{width:14,height:14,borderRadius:"50%",background:"white",position:"absolute",top:2,left:d.isAds?16:2,transition:"left .2s"}}/>
-                      </button>
-                    </div>
-                  </div>
+                  )}
+                </div>
 
-                  {/* Ads Metrics */}
-                  {d.isAds && (
-                    <div style={{
-                      background: "rgba(156,43,78,0.03)",
-                      border: "1px solid rgba(156,43,78,0.1)",
-                      borderRadius: 16,
-                      padding: "16px 20px"
-                    }}>
+                {/* Item 8: High Impact Stats (Bento Widget) */}
+                <div style={{
+                  background: "#ffffff", border: "1px solid rgba(44, 32, 22, 0.08)",
+                  borderRadius: 16,
+                  padding: "16px 20px",
+                  boxShadow: "0 8px 32px rgba(0, 0, 0, 0.04)"
+                }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: "rgba(44,32,22,0.4)", textTransform: "uppercase", letterSpacing: "0.5px", display: "flex", alignItems: "center", gap: 6 }}><BarChart2 size={12} /> Laporan Statistik Performa</span>
+                    {d.metricsUpdatedAt && <span style={{ fontSize: 10, color: "rgba(44,32,22,0.4)" }}>Terakhir diupdate: {d.metricsUpdatedAt}</span>}
+                  </div>
+                  
+                  <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                    <div style={{ background: "rgba(59,130,246,0.03)", border: "1px solid rgba(59,130,246,0.08)", borderRadius: 12, padding: 14, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
                       <div>
-                        <div style={{...L, marginBottom:12, color:"#9C2B4E", display: "flex", alignItems: "center", gap: 6}}>
-                          <span><DollarSign size={14} style={{marginRight: 4}} /> Hasil Kampanye Berbayar</span>
-                        </div>
-                        <div style={{display:"grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8}}>
-                          {[...MK,"clicks","conversions"].map((k:string)=>(
-                            <div key={k} style={GRP}>
-                              <label style={{...L, marginBottom: 4, color: k==="clicks"||k==="conversions"?"#9C2B4E":MC[k]||"#9C2B4E", display: "flex", alignItems: "center", gap: 4, textTransform: "capitalize", fontSize: "11px"}}>
-                                {getMetricIcon(k, k==="clicks"||k==="conversions"?"#9C2B4E":MC[k]||"#9C2B4E", 12)}
-                                {k}
-                              </label>
-                              <input 
-                                type="number" 
-                                min={0} 
-                                placeholder="0" 
-                                value={d.adsMetrics?.[k] === 0 ? "" : (d.adsMetrics?.[k] !== undefined && d.adsMetrics?.[k] !== null ? d.adsMetrics[k] : "")} 
-                                onChange={(e:any)=>setM(k,e.target.value,true)} 
-                                style={I({textAlign:"right", fontSize: "12px", padding: "6px 8px"})}
-                              />
+                        <div style={{ fontSize: 12, fontWeight: 700, color: "#3B82F6", marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}><Leaf size={14} style={{marginRight: 4}} /> Jangkauan Organik</div>
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(148px, 1fr))", gap: 8, marginBottom: 10 }}>
+                          {MK.map((k:string) => (
+                            <div onClick={() => setEditingFieldRight("metric_"+k)} key={k} style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(44,32,22,0.02)", padding: "6px 10px", borderRadius: 8, cursor: "pointer", position: "relative" }}>
+                              {getMetricIcon(k, MC[k]||"#3B82F6", 14)}
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontSize: 9, color: "rgba(44,32,22,0.5)", textTransform: "capitalize", lineHeight: 1.1, marginBottom: 2 }}>{formatMetricKey(k)}</div>
+                                {editingFieldRight === "metric_"+k ? (
+                                  <input 
+                                    ref={activeFieldRef}
+                                    autoFocus
+                                    type="number" 
+                                    min={0} 
+                                    placeholder="0" 
+                                    value={d.metrics[k] === 0 ? "" : (d.metrics[k] !== undefined && d.metrics[k] !== null ? d.metrics[k] : "")} 
+                                    onChange={(e:any)=>setM(k,e.target.value)} 
+                                    onKeyDown={(e) => e.key === "Enter" && setEditingFieldRight(null)}
+                                    style={{ background: "transparent", border: "none", outline: "none", width: "100%", fontSize: 12, fontWeight: 805, color: "#2C2016", padding: 0 }}
+                                  />
+                                ) : (
+                                  <div style={{ fontSize: 12, fontWeight: 805, color: "#2C2016" }}>{fmt(d.metrics[k] || 0)}</div>
+                                )}
+                              </div>
                             </div>
                           ))}
                         </div>
                       </div>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div onClick={() => setEditingFieldRight("metrics")} style={{ display: "flex", flexDirection: "column", gap: 16, cursor: "pointer" }} title="Klik di mana saja untuk mengedit Statistik Metrik">
-                  {/* Item 7: Custom Fields Section */}
-                  {d.customFields && d.customFields.filter((cf:any) => cf.name?.trim() || cf.value?.trim()).length > 0 && (
-                    <div style={{
-                      background: "#ffffff", border: "1px solid rgba(44, 32, 22, 0.08)",
-                      borderRadius: 16,
-                      padding: "16px 20px",
-                      boxShadow: "0 8px 32px rgba(0, 0, 0, 0.04)"
-                    }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(44,32,22,0.4)", textTransform: "uppercase", marginBottom: 8, letterSpacing: "0.5px", display: "flex", alignItems: "center", gap: 6 }}>
-                        <Plus size={14} /> Bidang Kustom (Custom Fields)
-                      </div>
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                        {d.customFields.filter((cf:any) => cf.name?.trim() || cf.value?.trim()).map((cf:any, idx:number) => (
-                          <div key={idx} style={{ background: "rgba(44,32,22,0.02)", padding: "12px 16px", borderRadius: 10 }}>
-                            <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(44,32,22,0.5)", textTransform: "uppercase", marginBottom: 4 }}>{cf.name || `Field ${idx+1}`}</div>
-                            <div style={{ fontSize: 13, color: "#2C2016", whiteSpace: "pre-wrap" }}>{cf.value || "-"}</div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Item 8: High Impact Stats (Bento Widget) */}
-                  <div style={{
-                    background: "#ffffff", border: "1px solid rgba(44, 32, 22, 0.08)",
-                    borderRadius: 16,
-                    padding: "16px 20px",
-                    boxShadow: "0 8px 32px rgba(0, 0, 0, 0.04)"
-                  }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                      <span style={{ fontSize: 11, fontWeight: 800, color: "rgba(44,32,22,0.4)", textTransform: "uppercase", letterSpacing: "0.5px", display: "flex", alignItems: "center", gap: 6 }}><BarChart2 size={12} /> Laporan Statistik Performa</span>
-                      {d.metricsUpdatedAt && <span style={{ fontSize: 10, color: "rgba(44,32,22,0.4)" }}>Terakhir diupdate: {d.metricsUpdatedAt}</span>}
-                    </div>
-                    
-                    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                      <div style={{ background: "rgba(59,130,246,0.03)", border: "1px solid rgba(59,130,246,0.08)", borderRadius: 12, padding: 14, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-                        <div>
-                          <div style={{ fontSize: 12, fontWeight: 700, color: "#3B82F6", marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}><Leaf size={14} style={{marginRight: 4}} /> Jangkauan Organik</div>
-                          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(148px, 1fr))", gap: 8, marginBottom: 10 }}>
-                            {MK.map((k:string) => (
-                              <div key={k} style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(44,32,22,0.02)", padding: "6px 10px", borderRadius: 8 }}>
-                                {getMetricIcon(k, MC[k]||"#3B82F6", 14)}
-                                <div>
-                                  <div style={{ fontSize: 9, color: "rgba(44,32,22,0.5)", textTransform: "capitalize", lineHeight: 1.1 }}>{k}</div>
-                                  <div style={{ fontSize: 12, fontWeight: 805, color: "#2C2016" }}>{fmt(d.metrics[k] || 0)}</div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
+                      <div style={{ borderTop: "1px dashed rgba(59,130,246,0.15)", paddingTop: 8, display: "flex", flexDirection: "column", gap: 2 }}>
+                        <div style={{ fontSize: 11, color: "rgba(44,32,22,0.7)", display: "flex", justifyContent: "space-between" }}>
+                          <span>Total Interaksi:</span>
+                          <strong style={{ color: "#3B82F6" }}>{fmt(eng(d.metrics))}</strong>
                         </div>
-                        <div style={{ borderTop: "1px dashed rgba(59,130,246,0.15)", paddingTop: 8, display: "flex", flexDirection: "column", gap: 2 }}>
-                          <div style={{ fontSize: 11, color: "rgba(44,32,22,0.7)", display: "flex", justifyContent: "space-between" }}>
-                            <span>Total Interaksi:</span>
-                            <strong style={{ color: "#3B82F6" }}>{fmt(eng(d.metrics))}</strong>
-                          </div>
-                          <div style={{ fontSize: 11, color: "rgba(44,32,22,0.7)", display: "flex", justifyContent: "space-between" }}>
-                            <span>Engagement Rate:</span>
-                            <strong style={{ color: "#3B82F6" }}>{(d.metrics?.reach || 0) > 0 ? ((eng(d.metrics) / d.metrics.reach) * 100).toFixed(2) : 0}%</strong>
-                          </div>
+                        <div style={{ fontSize: 11, color: "rgba(44,32,22,0.7)", display: "flex", justifyContent: "space-between" }}>
+                          <span>Engagement Rate:</span>
+                          <strong style={{ color: "#3B82F6" }}>{(d.metrics?.reach || 0) > 0 ? ((eng(d.metrics) / d.metrics.reach) * 100).toFixed(2) : 0}%</strong>
                         </div>
                       </div>
-     
-                      <div style={{ background: d.isAds ? "rgba(156,43,78,0.03)" : "rgba(44,32,22,0.01)", border: d.isAds ? "1px solid rgba(156,43,78,0.08)" : "1px dashed rgba(44,32,22,0.08)", borderRadius: 12, padding: 14, display: "flex", flexDirection: "column", justifyContent: d.isAds ? "space-between" : "center" }}>
-                        {d.isAds ? (
-                          <>
-                            <div>
-                              <div style={{ fontSize: 12, fontWeight: 700, color: "#9C2B4E", marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}><DollarSign size={14} style={{marginRight: 4}} /> Hasil Kampanye Berbayar</div>
-                              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(148px, 1fr))", gap: 6, marginBottom: 8 }}>
-                                {[...MK, "clicks", "conversions"].map((k:string) => (
-                                  <div key={k} style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(156,43,78,0.02)", padding: "5px 8px", borderRadius: 8 }}>
-                                    {getMetricIcon(k, k==="clicks"||k==="conversions"?"#9C2B4E":MC[k]||"#9C2B4E", 13)}
-                                    <div>
-                                      <div style={{ fontSize: 8, color: "rgba(44,32,22,0.5)", textTransform: "capitalize", lineHeight: 1.1 }}>{k}</div>
-                                      <div style={{ fontSize: 11, fontWeight: 805, color: "#2C2016" }}>{fmt((d.adsMetrics || {})[k] || 0)}</div>
-                                    </div>
+                    </div>
+   
+                    <div style={{ background: d.isAds ? "rgba(156,43,78,0.03)" : "rgba(44,32,22,0.01)", border: d.isAds ? "1px solid rgba(156,43,78,0.08)" : "1px dashed rgba(44,32,22,0.08)", borderRadius: 12, padding: 14, display: "flex", flexDirection: "column", justifyContent: d.isAds ? "space-between" : "center" }}>
+                      {d.isAds ? (
+                        <>
+                          <div>
+                            <div style={{ fontSize: 12, fontWeight: 700, color: "#9C2B4E", marginBottom: 10, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: 6 }}><DollarSign size={14} style={{marginRight: 4}} /> Hasil Kampanye Berbayar</div>
+                              <button onClick={(e)=>{ e.stopPropagation(); set("isAds",!d.isAds); }} style={{width:32,height:18,borderRadius:9,border:"none",cursor:"pointer",background:d.isAds?"#9C2B4E":"rgba(44,32,22,0.15)",transition:"background .2s",position:"relative",flexShrink:0}}>
+                                <div style={{width:14,height:14,borderRadius:"50%",background:"white",position:"absolute",top:2,left:d.isAds?16:2,transition:"left .2s"}}/>
+                              </button>
+                            </div>
+                            <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 8 }}>
+                              {ADS_CATEGORIES.map(cat => (
+                                <div key={cat.title}>
+                                  <div style={{fontSize: 12, fontWeight: 800, color: "#9C2B4E", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.5px", borderBottom: "1px solid rgba(156,43,78,0.15)", paddingBottom: 4}}>{cat.title}</div>
+                                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))", gap: 6 }}>
+                                    {cat.keys.map(k => (
+                                      <div onClick={() => setEditingFieldRight("adsMetric_"+k)} key={k} style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(156,43,78,0.02)", padding: "5px 8px", borderRadius: 8, cursor: "pointer" }}>
+                                        {getMetricIcon(k, k==="clicks"||k==="conversions"?"#9C2B4E":MC[k]||"#9C2B4E", 13)}
+                                        <div style={{flex: 1, minWidth: 0}}>
+                                          <div style={{ fontSize: 8, color: "rgba(44,32,22,0.5)", textTransform: "capitalize", lineHeight: 1.1, marginBottom: 2 }}>{formatMetricKey(k)}</div>
+                                          {editingFieldRight === "adsMetric_"+k ? (
+                                            <input 
+                                              ref={activeFieldRef}
+                                              autoFocus
+                                              type={k === "audience" ? "text" : "number"} 
+                                              min={k === "audience" ? undefined : 0} 
+                                              placeholder={k === "audience" ? "..." : "0"} 
+                                              value={d.adsMetrics?.[k] === 0 && k !== "audience" ? "" : (d.adsMetrics?.[k] !== undefined && d.adsMetrics?.[k] !== null ? d.adsMetrics[k] : "")} 
+                                              onChange={(e:any)=>setM(k,e.target.value,true)} 
+                                              onKeyDown={(e) => e.key === "Enter" && setEditingFieldRight(null)}
+                                              style={{ background: "transparent", border: "none", outline: "none", width: "100%", fontSize: 11, fontWeight: 805, color: "#2C2016", padding: 0 }}
+                                            />
+                                          ) : (
+                                            <div style={{ fontSize: 11, fontWeight: 805, color: "#2C2016", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={k === "audience" ? (d.adsMetrics?.[k] || "") : ""}>
+                                              {k === "audience" ? (d.adsMetrics?.[k] || "-") : fmt((d.adsMetrics || {})[k] || 0)}
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    ))}
                                   </div>
-                                ))}
-                              </div>
+                                </div>
+                              ))}
                             </div>
-                            <div style={{ borderTop: "1px dashed rgba(156,43,78,0.15)", paddingTop: 8, display: "flex", flexDirection: "column", gap: 2 }}>
-                              <div style={{ fontSize: 11, color: "rgba(44,32,22,0.7)", display: "flex", justifyContent: "space-between" }}>
-                                <span>Clicks / Conversions:</span>
-                                <strong style={{ color: "#9C2B4E" }}>{fmt(d.adsMetrics?.clicks || 0)} / {fmt(d.adsMetrics?.conversions || 0)}</strong>
-                              </div>
-                              <div style={{ fontSize: 11, color: "rgba(44,32,22,0.7)", display: "flex", justifyContent: "space-between" }}>
-                                <span>Total Engagement Ads:</span>
-                                <strong style={{ color: "#9C2B4E" }}>{fmt(eng(d.adsMetrics || {}))}</strong>
-                              </div>
-                            </div>
-                          </>
-                        ) : (
-                          <div style={{ textAlign: "center", padding: "10px 0" }}>
-                            <div style={{ fontSize: 18, marginBottom: 2, display: "flex", justifyContent: "center", color: "rgba(44,32,22,0.4)" }}><Leaf size={20} /></div>
-                            <div style={{ fontSize: 12, fontWeight: 750, color: "rgba(44,32,22,0.4)" }}>Bukan Konten Berbayar</div>
-                            <div style={{ fontSize: 10, color: "rgba(44,32,22,0.3)", marginTop: 2 }}>Metrik ads tidak aktif untuk posting organik.</div>
                           </div>
-                        )}
-                      </div>
+                          <div style={{ borderTop: "1px dashed rgba(156,43,78,0.15)", paddingTop: 8, display: "flex", flexDirection: "column", gap: 2 }}>
+                            <div style={{ fontSize: 11, color: "rgba(44,32,22,0.7)", display: "flex", justifyContent: "space-between" }}>
+                              <span>Clicks / Conversions:</span>
+                              <strong style={{ color: "#9C2B4E" }}>{fmt(d.adsMetrics?.clicks || 0)} / {fmt(d.adsMetrics?.conversions || 0)}</strong>
+                            </div>
+                            <div style={{ fontSize: 11, color: "rgba(44,32,22,0.7)", display: "flex", justifyContent: "space-between" }}>
+                              <span>Total Engagement Ads:</span>
+                              <strong style={{ color: "#9C2B4E" }}>{fmt(eng(d.adsMetrics || {}))}</strong>
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6, opacity: 0.5 }}>
+                            <DollarSign size={14} />
+                            <span style={{ fontSize: 12, fontWeight: 600 }}>Tidak ada kampanye berbayar</span>
+                          </div>
+                          <button onClick={(e)=>{ e.stopPropagation(); set("isAds",!d.isAds); }} style={{width:32,height:18,borderRadius:9,border:"none",cursor:"pointer",background:d.isAds?"#9C2B4E":"rgba(44,32,22,0.15)",transition:"background .2s",position:"relative",flexShrink:0}}>
+                            <div style={{width:14,height:14,borderRadius:"50%",background:"white",position:"absolute",top:2,left:d.isAds?16:2,transition:"left .2s"}}/>
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
-              )
+              </div>
             )}
 
           </div>
@@ -1425,7 +1528,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
       <AnimatePresence>
         {showExitConfirm && (
           <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.5)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:400,borderRadius:24}} onClick={e=>e.stopPropagation()}>
-             <motion.div initial={{scale:0.95}} animate={{scale:1}} exit={{scale:0.95}} style={{background:"rgba(255, 255, 255, 0.85)", backdropFilter:"blur(32px)", WebkitBackdropFilter:"blur(32px)", border:"1px solid rgba(255,255,255,0.5)",padding:32,borderRadius:24,maxWidth:360,width:"100%",boxShadow:"0 12px 30px rgba(0,0,0,0.2)",textAlign:"center"}}>
+             <motion.div initial={{scale:0.95}} animate={{scale:1}} exit={{scale:0.95}} style={{background:"#FFFFFF", border:"1px solid rgba(255,255,255,0.5)",padding:32,borderRadius:24,maxWidth:360,width:"100%",boxShadow:"0 12px 30px rgba(0,0,0,0.2)",textAlign:"center"}}>
                 <h3 style={{margin:"0 0 16px",fontSize:20,color:"#2C2016", fontWeight:800}}>Keluar Murni?</h3>
                 <p style={{margin:"0 0 24px",fontSize:14,color:"rgba(44,32,22,0.6)",lineHeight:1.5}}>
                    Konten dari HUB.AI ini belum Anda simpan. Yakin ingin menutupnya? Jika ditutup, draf ini akan hangus dan hilang sepenuhnya.

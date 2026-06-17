@@ -33,7 +33,7 @@ import { TermsOfService, PrivacyPolicy } from "./TermsAndPrivacy";
 import { motion, AnimatePresence } from "motion/react";
 
 import { LandingPage } from "./LandingPage";
-import { Calendar } from "lucide-react";
+import { Calendar, Download } from "lucide-react";
 
 export function cleanAndFormatHolidayText(text: string): string {
   if (!text) return "";
@@ -1525,9 +1525,9 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
       </AnimatePresence>
       <AnimatePresence>
         {exportModal && <motion.div key="export" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} transition={{ duration: 0.15 }} style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.8)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center", padding:16}}>
-          <motion.div initial={{scale:0.95, opacity:0, y:20}} animate={{scale:1, opacity:1, y:0}} exit={{scale:0.95, opacity:0, y:20}} transition={{ type: "spring", damping: 25, stiffness: 300 }} style={CARD({width:"100%", maxWidth:440, padding:32, borderRadius:24, boxShadow:"0 20px 40px rgba(0,0,0,0.2)", position:"relative"})}>
+          <motion.div initial={{scale:0.95, opacity:0, y:20}} animate={{scale:1, opacity:1, y:0}} exit={{scale:0.95, opacity:0, y:20}} transition={{ type: "spring", damping: 25, stiffness: 300 }} style={{...CARD({width:"100%", maxWidth:440, padding:32, borderRadius:24, boxShadow:"0 20px 40px rgba(0,0,0,0.2)", position:"relative"}), background: "#FFFFFF", backdropFilter: "none", WebkitBackdropFilter: "none"}}>
              <button className="hover-scale" onClick={()=>setExportModal(false)} style={{position:"absolute",top:20,right:20,background:"rgba(44,32,22,0.05)",border:"none",borderRadius:"50%",width:32,height:32,cursor:"pointer",fontSize:18,color:"#2C2016",display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
-             <h3 style={{fontSize:20, fontWeight:700, margin:"0 0 8px", color:"#2C2016"}}>Ekspor Data (XLSX)</h3>
+             <h3 style={{fontSize:20, fontWeight:700, margin:"0 0 8px", color:"#2C2016", display:"flex", alignItems:"center", gap:8}}><Download size={20} /> Ekspor Data (XLSX)</h3>
              <p style={{fontSize:14, color:"rgba(44,32,22,0.6)", marginBottom:24, lineHeight:1.5}}>Unduh data konten workspace <strong style={{color:"var(--theme-primary)"}}>{workspace?.name}</strong> dalam format Excel.</p>
              
              <div style={{display:"flex", flexDirection:"column", gap:16, marginBottom: 28, textAlign: "left"}}>
@@ -1644,7 +1644,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
       <AnimatePresence>
         {confirmAction && (
           <motion.div key="confirm" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.8)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center"}}>
-            <motion.div initial={{scale:0.95, opacity:0, y:20}} animate={{scale:1, opacity:1, y:0}} exit={{scale:0.95, opacity:0, y:20}} transition={{ type: "spring", damping: 25, stiffness: 300 }} style={CARD({width:400, padding:32, borderRadius:24, boxShadow:"0 20px 40px rgba(0,0,0,0.2)", textAlign:"center"})}>
+            <motion.div initial={{scale:0.95, opacity:0, y:20}} animate={{scale:1, opacity:1, y:0}} exit={{scale:0.95, opacity:0, y:20}} transition={{ type: "spring", damping: 25, stiffness: 300 }} style={{...CARD({width:400, padding:32, borderRadius:24, boxShadow:"0 20px 40px rgba(0,0,0,0.2)", textAlign:"center"}), background: "#FFFFFF", backdropFilter: "none", WebkitBackdropFilter: "none"}}>
                <h3 style={{fontSize:20, fontWeight:700, marginBottom:16, color: confirmAction.title.includes("Hapus") ? "#9C2B4E" : "#2C2016"}}>{confirmAction.title}</h3>
                <p style={{fontSize:14, color:"rgba(44,32,22,0.6)", marginBottom:24, lineHeight:1.5}}>{confirmAction.msg}</p>
                <div style={{display:"flex",gap:12,justifyContent:"center"}}>

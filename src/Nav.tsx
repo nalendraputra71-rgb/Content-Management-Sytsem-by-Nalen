@@ -3642,15 +3642,13 @@ function MultiSelectFilter({
                         width: "100%",
                         textAlign: "left",
                         padding: "8px 12px",
-                        background: selected
-                          ? "rgba(156,43,78,0.06)"
-                          : "transparent",
-                        color: selected ? "#9C2B4E" : "#4B5563",
+                        background: "transparent",
+                        color: "#4B5563",
                         border: "none",
                         borderRadius: 8,
                         fontSize: 13,
                         cursor: "pointer",
-                        fontWeight: selected ? 700 : 500,
+                        fontWeight: selected ? 600 : 500,
                         display: "flex",
                         alignItems: "center",
                         gap: 10,
@@ -3661,19 +3659,14 @@ function MultiSelectFilter({
                         style={{
                           width: 16,
                           height: 16,
-                          border: selected
-                            ? "none"
-                            : "1.5px solid rgba(44,32,22,0.3)",
-                          borderRadius: 4,
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
-                          background: selected ? "#9C2B4E" : "white",
                           flexShrink: 0,
                         }}
                       >
                         {selected && (
-                          <Check size={12} color="white" strokeWidth={3} />
+                          <Check size={14} color="#9C2B4E" strokeWidth={3} />
                         )}
                       </div>
                       <span

@@ -36,11 +36,6 @@ app.use(express.json({ limit: "15mb" })); // Mencegah payload besar yang bisa DO
 // Define routes once
 const apiRoutes = express.Router();
 
-apiRoutes.post("/log-error", (req, res) => {
-  console.error("Client error:", req.body);
-  res.json({ ok: true });
-});
-
 apiRoutes.get("/trends", async (req, res) => {
   try {
     const geo = (req.query.geo as string) || "ID";
@@ -90,11 +85,24 @@ apiRoutes.post("/gemini", apiLimiter, async (req, res) => {
     }
     // ----------------------------
 
-    const { prompt, model = "gemini-2.5-flash", system, history = [], useSearchGrounding } = req.body;
+    const { prompt, model = "gemini-2.0-flash", system, history = [], useSearchGrounding } = req.body;
     
-    // Gunakan VITE_GEMINI_API_KEY atau GEMINI_API_KEY dari env
-    const apiKey = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
+    // Prioritize custom Gemini_API_Key from user
+    let apiKeyName = "Gemini_API_Key";
+    let apiKey = process.env.Gemini_API_Key;
     
+    if (!apiKey) {
+      if (process.env.VITE_GEMINI_API_KEY) {
+        apiKeyName = "VITE_GEMINI_API_KEY";
+        apiKey = process.env.VITE_GEMINI_API_KEY;
+      } else {
+        apiKeyName = "GEMINI_API_KEY";
+        apiKey = process.env.GEMINI_API_KEY;
+      }
+    }
+    
+    console.log(`[API KEY INFO] Menggunakan kunci: ${apiKeyName} (Prefix: ${apiKey ? apiKey.substring(0, 6) : "none"}). Jika Anda menggunakan kunci gratis, batas limit berlaku.`);
+
     if (!apiKey) {
       return res.status(500).json({ error: "GEMINI_API_KEY (atau VITE_GEMINI_API_KEY) belum dikonfigurasi di server (Settings > Secrets)." });
     }
@@ -154,12 +162,21 @@ apiRoutes.post("/gemini", apiLimiter, async (req, res) => {
     }
     
     return res.json({ 
-      text: response?.text,
+      text: response?.text || "Tidak ada respon dari model",
       usage: response?.usageMetadata 
     });
   } catch (error: any) {
-    console.error("Gemini Proxy Error:", error);
-    return res.status(500).json({ error: error.message || "Gagal mendapatkan respon dari AI." });
+    const isQuotaError = error?.status === 429 || error?.message?.includes("429") || error?.message?.includes("quota") || error?.message?.includes("Quota");
+    
+    if (!isQuotaError) {
+      console.error("Gemini Proxy Error:", error);
+    }
+    
+    if (isQuotaError) {
+       return res.status(429).json({ error: `Maaf, kuota API Gemini telah habis (Quota Exceeded). Key yang digunakan: ${apiKeyName}. Jika Anda menggunakan API Key gratis, batas limit Google berlaku (15/menit).`});
+    }
+    
+    return res.status(500).json({ error: error?.message || "Gagal mendapatkan respon dari AI." });
   }
 });
 

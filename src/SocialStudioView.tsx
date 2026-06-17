@@ -986,7 +986,10 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
           content:
             err.message || "Terjadi kesalahan sistem atau melebihi kuota AI.",
         });
-        console.error("Gemini API Error", err);
+        const isQuotaErr = err.message?.includes("429") || err.message?.includes("kuota");
+        if (!isQuotaErr) {
+            console.error("Gemini API Error", err);
+        }
       }
 
       setChatHistory(updatedHistory);
@@ -4280,7 +4283,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                   </span>
                   <span style={{ fontSize: 12, fontWeight: 700, color: "#193546" }}>
                     {(() => {
-                      const maxReq = (profile?.plan === "pro" || profile?.plan === "vip") ? 10 : 5;
+                      const isSuperAdmin = profile?.role === "admin" || user?.email?.toLowerCase() === "nalendraputra71@gmail.com";
+                      if (isSuperAdmin) return "Unlimited";
+                      const maxReq = (profile?.plan === "pro" || profile?.plan === "vip") ? 100 : 50;
                       const todayStr = new Date().toISOString().split("T")[0];
                       const usedReq = profile?.lastAiRequestDate === todayStr ? (profile?.aiRequestsToday || 0) : 0;
                       return `${usedReq} / ${maxReq}`;
@@ -4289,7 +4294,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                 </div>
                 <div style={{ width: "100%", height: 6, background: "rgba(6,91,152,0.1)", borderRadius: 3, overflow: "hidden" }}>
                   {(() => {
-                    const maxReq = (profile?.plan === "pro" || profile?.plan === "vip") ? 10 : 5;
+                    const isSuperAdmin = profile?.role === "admin" || user?.email?.toLowerCase() === "nalendraputra71@gmail.com";
+                    if (isSuperAdmin) return <div style={{ width: "100%", height: "100%", background: "#0DB8D3", borderRadius: 3 }} />;
+                    const maxReq = (profile?.plan === "pro" || profile?.plan === "vip") ? 100 : 50;
                     const todayStr = new Date().toISOString().split("T")[0];
                     const usedReq = profile?.lastAiRequestDate === todayStr ? (profile?.aiRequestsToday || 0) : 0;
                     const usedPercent = Math.min((usedReq / maxReq) * 100, 100);
