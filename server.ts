@@ -61,6 +61,8 @@ const apiLimiter = rateLimit({
 
 // API Route untuk Gemini Proxy
 apiRoutes.post("/gemini", apiLimiter, async (req, res) => {
+let apiKeyName = "";
+let apiKey = "";
   try {
     // ---- VERIFIKASI TOKEN ----
     const authHeader = req.headers.authorization;
@@ -87,24 +89,14 @@ apiRoutes.post("/gemini", apiLimiter, async (req, res) => {
 
     const { prompt, model = "gemini-2.0-flash", system, history = [], useSearchGrounding } = req.body;
     
-    // Prioritize custom Gemini_API_Key from user
-    let apiKeyName = "Gemini_API_Key";
-    let apiKey = process.env.Gemini_API_Key;
-    
-    if (!apiKey) {
-      if (process.env.VITE_GEMINI_API_KEY) {
-        apiKeyName = "VITE_GEMINI_API_KEY";
-        apiKey = process.env.VITE_GEMINI_API_KEY;
-      } else {
-        apiKeyName = "GEMINI_API_KEY";
-        apiKey = process.env.GEMINI_API_KEY;
-      }
-    }
+    // Mengambil API Key murni dari Google AI Studio dropdown atau secret
+    apiKey = (process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || "").trim();
+    apiKeyName = process.env.VITE_GEMINI_API_KEY ? "VITE_GEMINI_API_KEY" : "GEMINI_API_KEY";
     
     console.log(`[API KEY INFO] Menggunakan kunci: ${apiKeyName} (Prefix: ${apiKey ? apiKey.substring(0, 6) : "none"}). Jika Anda menggunakan kunci gratis, batas limit berlaku.`);
 
     if (!apiKey) {
-      return res.status(500).json({ error: "GEMINI_API_KEY (atau VITE_GEMINI_API_KEY) belum dikonfigurasi di server (Settings > Secrets)." });
+      return res.status(500).json({ error: "GEMINI_API_KEY belum dikonfigurasi di server (Settings > Secrets)." });
     }
 
     // Inisialisasi GoogleGenAI dengan format objek sesuai SDK @google/genai
@@ -167,13 +159,24 @@ apiRoutes.post("/gemini", apiLimiter, async (req, res) => {
     });
   } catch (error: any) {
     const isQuotaError = error?.status === 429 || error?.message?.includes("429") || error?.message?.includes("quota") || error?.message?.includes("Quota");
+    const isBillingError = error?.status === 403 || error?.message?.includes("403") || error?.message?.includes("billing") || error?.message?.includes("forbidden") || error?.message?.toLowerCase().includes("permission denied");
     
-    if (!isQuotaError) {
-      console.error("Gemini Proxy Error:", error);
-    }
+    console.error("Gemini Proxy Error:", error);
     
     if (isQuotaError) {
-       return res.status(429).json({ error: `Maaf, kuota API Gemini telah habis (Quota Exceeded). Key yang digunakan: ${apiKeyName}. Jika Anda menggunakan API Key gratis, batas limit Google berlaku (15/menit).`});
+       const isLimitZero = error?.message?.includes("limit: 0");
+       const keyPrefix = apiKey ? apiKey.substring(0, 6) : "none";
+       const keySuffix = apiKey ? apiKey.substring(apiKey.length - 4) : "none";
+       if (isLimitZero) {
+           return res.status(429).json({ error: `Akses ditolak oleh Google (limit: 0). Server saat ini menggunakan kunci yang berakhiran: "...${keySuffix}" (Nama Secret: ${apiKeyName}). Jika ini BUKAN akhiran dari API Key baru Anda (misalnya Anda mengharapkan berakhiran NO2g), berarti Anda perlu merestart server atau format nama secret salah. Pastikan nama secret adalah "VITE_GEMINI_API_KEY".` });
+       }
+       return res.status(429).json({ error: `Maaf, kuota API Gemini telah habis (Quota Exceeded). Key digunakan: ${apiKeyName} (Akhiran: ...${keySuffix}). Jika Anda menggunakan API Key gratis, batas limit Google gratis berlaku. (Pesan Asli: ${error?.message})`});
+    }
+
+    if (isBillingError) {
+       const keyPrefix = apiKey ? apiKey.substring(0, 6) : "none";
+       const keySuffix = apiKey ? apiKey.substring(apiKey.length - 4) : "none";
+       return res.status(403).json({ error: `Akses ditolak (Forbidden). Server menggunakan API Key berakhiran: "...${keySuffix}" (${apiKeyName}). Jika ini BUKAN akhiran API Key baru, mohon cek kembali menu Secrets, pastikan namanya VITE_GEMINI_API_KEY, lalu restart server.` });
     }
     
     return res.status(500).json({ error: error?.message || "Gagal mendapatkan respon dari AI." });

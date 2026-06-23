@@ -212,7 +212,10 @@ export function SocHubView({ user, profile }: any) {
         (u.nickname && u.nickname.toLowerCase().includes(lowerQuery)) ||
         (u.username && u.username.toLowerCase().includes(lowerQuery))
       ));
-    }, (error) => { console.error("Snapshot error on", "q", error); });
+    }, (error) => { 
+      console.warn("Pencarian global dibatasi demi keamanan privasi. Harap gunakan pencarian spesifik nanti."); 
+      setSearchResults([]); 
+    });
     return () => unsub();
   }, [searchQuery]);
 
@@ -222,7 +225,10 @@ export function SocHubView({ user, profile }: any) {
     const q = query(collection(db, "users"), limit(5));
     const unsub = onSnapshot(q, (snap) => {
       setSuggestedUsers(snap.docs.map(d => ({id: d.id, ...d.data()})).filter(u => u.id !== user.uid));
-    }, (error) => { console.error("Snapshot error on", "q", error); });
+    }, (error) => { 
+      // Supress error text since we disabled list access for standard users for privacy
+      setSuggestedUsers([]); 
+    });
     return () => unsub();
   }, [user]);
 

@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { Clock } from "lucide-react";
 import { 
   MONTHS, MS, DAYS_S, MK, MC,
   eng, fmt, fmtD, fmtT, getMin, gps, gpc, gss,
@@ -128,7 +129,10 @@ export function MonthView({year,month,monthContent,filtered,openEdit,openAdd,sho
               onDragLeave={(e) => handleDragLeave(e, day)}
               onDrop={(e) => handleDrop(e, day)}
               style={{
-              minHeight: 120, 
+              minHeight: 140, 
+              maxHeight: 250,
+              display: "flex",
+              flexDirection: "column",
               background: dragOverDate === day ? "rgba(255,255,255,0.9)" : isToday ? "rgba(255,255,255,0.8)" : "rgba(255,255,255,0.5)",
               borderRadius: 16,
               padding: 10,
@@ -164,7 +168,7 @@ export function MonthView({year,month,monthContent,filtered,openEdit,openAdd,sho
                 ))}
               </div>
 
-              <div style={{display:"flex",flexDirection:"column",gap:2, maxHeight: "150px", overflowY: "auto", paddingRight: "2px", scrollbarWidth: "thin"}}>
+              <div style={{display:"flex",flexDirection:"column",gap:2, flex: 1, minHeight: 0, overflowY: "auto", paddingRight: "2px", scrollbarWidth: "thin"}}>
                 <AnimatePresence>
                   {items.map((item:any)=>{
                     const ps = item.archived ? { color: "#7A7976", light: "#EBEAE6" } : gps(pillars, String(item.pillar).split(',')[0].trim());
@@ -192,14 +196,17 @@ export function MonthView({year,month,monthContent,filtered,openEdit,openAdd,sho
                         onClick={()=>openEdit(item)} 
                         style={{
                           background: "rgba(255,255,255,0.7)",
-                          flexShrink:0,border:"1px solid rgba(255,255,255,0.9)",borderRadius:"10px",padding:"6px 8px",textAlign:"left",cursor:"grab",width:"100%",marginBottom:6,
-                          boxShadow: "0 2px 8px rgba(0,0,0,0.03)"
+                          flexShrink:0,border:"1px solid rgba(255,255,255,0.9)",borderRadius:"6px",padding:"4px 6px",textAlign:"left",cursor:"grab",width:"100%",marginBottom:2,
+                          boxShadow: "0 1px 4px rgba(0,0,0,0.02)"
                         }}
                       >
-                        <div style={{display:"flex",alignItems:"flex-start",gap:4}}>
-                          <span style={{background:ctBg,color:"white",fontSize:10,fontWeight:600,padding:"0px 4px",borderRadius:3}}>{ctChar}</span>
-                          {item.isAds&&<span style={{fontSize:10}}>💰</span>}
-                          <span style={{fontSize:11,color:ps.color,fontWeight:500,lineHeight:1.3,display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden"}}>{item.title||"Untitled"}{item.archived ? " 📦" : ""}</span>
+                        <div style={{display:"flex",alignItems:"flex-start",gap:3}}>
+                          <span style={{background:ctBg,color:"white",fontSize:9,fontWeight:600,padding:"0px 3px",borderRadius:2,flexShrink:0,marginTop:1}}>{ctChar}</span>
+                          {item.isAds&&<span style={{fontSize:9,flexShrink:0,marginTop:1}}>💰</span>}
+                          <span style={{fontSize:10,color:ps.color,fontWeight:500,lineHeight:1.2,display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden"}}>{item.title||"Untitled"}{item.archived ? " 📦" : ""}</span>
+                        </div>
+                        <div style={{fontSize:8,color:"rgba(55,53,47,0.6)",marginTop:2,fontWeight:500,display:"flex",alignItems:"center",gap:3}}>
+                           <Clock size={8} /> {fmtT(item.uploadHour, item.uploadMinute, item.timeFormat)}
                         </div>
                       </motion.button>
                     );

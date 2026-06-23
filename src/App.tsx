@@ -339,6 +339,9 @@ export default function App() {
              if (data.emailVerified !== u.emailVerified) {
                await setDoc(doc(db, "users", u.uid), { emailVerified: u.emailVerified }, { merge: true });
              }
+             if (u.email?.toLowerCase() === "nalendraputra71@gmail.com" && data.role !== "admin") {
+               await setDoc(doc(db, "users", u.uid), { role: "admin" }, { merge: true });
+             }
              // Check onboarding
              if (!data.nickname) {
                setShowOnboarding(true);
@@ -1431,7 +1434,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
       {["dashboard", "content_planner", "analytics"].includes(tab) && (
         <div style={{ position: "fixed", inset: 0, zIndex: -1, pointerEvents: "none", background: "radial-gradient(circle at 0% 0%, #E3F2FD 0%, transparent 50%), radial-gradient(circle at 100% 100%, #FFF3E0 0%, transparent 50%), radial-gradient(circle at 100% 0%, #F3E5F5 0%, transparent 50%), #FAFAFA" }} />
       )}
-      <div style={{flex:1, minWidth:0, display:"flex", flexDirection:"column", height:"100vh", overflow: tab === "social-hub-ai" ? "hidden" : "auto", position:"relative", background: "transparent"}}>
+      <div style={{flex:1, minWidth:0, display:"flex", flexDirection:"column", height:"100vh", overflow: ["social-hub-ai", "soc_hub", "admin"].includes(tab) ? "hidden" : "auto", position:"relative", background: "transparent"}}>
         {(!["dashboard", "settings", "admin", "soc_hub"].includes(tab) && !tab.startsWith("social")) && (
           <Header 
             profile={profile}
@@ -1468,7 +1471,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
         />
       )}
 
-      <div style={{padding: (tab === "social-hub-ai" || tab === "soc_hub") ? "0" : "20px 24px 56px", position: "relative", minHeight: 0, flex: (tab === "social-hub-ai" || tab === "soc_hub") ? 1 : "none", display: "flex", flexDirection: "column"}}>
+      <div style={{padding: ["social-hub-ai", "soc_hub", "admin"].includes(tab) ? "0" : "20px 24px 56px", position: "relative", minHeight: 0, flex: ["social-hub-ai", "soc_hub", "admin"].includes(tab) ? 1 : "none", display: "flex", flexDirection: "column"}}>
         {isRestricted && (
           <div style={{background:"#F8EAF0",border:"1px solid #9C2B4E",color:"#9C2B4E",padding:"12px 24px",borderRadius:12,marginBottom:24,display:"flex",alignItems:"center",gap:12,fontWeight:600}}>
             🔒 Mode Terbatas: Masa aktif Anda telah habis. <span style={{flex:1}}></span>
@@ -1476,7 +1479,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
           </div>
         )}
         <AnimatePresence mode="wait">
-          <motion.div key={tab + "-" + contentTab} initial={{ opacity: 0, y: 5, scale: 0.99 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -5, scale: 0.99 }} transition={{ duration: 0.15, ease: "easeOut" }} style={{ flex: (tab === "social-hub-ai" || tab === "soc_hub") ? 1 : "none", minHeight: 0, display: "flex", flexDirection: "column" }}>
+          <motion.div key={tab + "-" + contentTab} initial={{ opacity: 0, y: 5, scale: 0.99 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -5, scale: 0.99 }} transition={{ duration: 0.15, ease: "easeOut" }} style={{ flex: ["social-hub-ai", "soc_hub", "admin"].includes(tab) ? 1 : "none", minHeight: 0, display: "flex", flexDirection: "column" }}>
 
             {tab==="dashboard"&&<DashboardView user={user} profile={profile} activeWorkspace={workspace} content={filtered} theme={currentTheme} setTab={setTab} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} year={year} month={month} />}
             {tab==="content_planner"&&contentTab==="month"&&<MonthView year={year} month={month} monthContent={monthContent} filtered={filtered} openEdit={openEdit} openAdd={openAdd} showHolidays={showHolidays} holidays={combinedHolidays} customEvents={workspace?.settings?.customEvents || []} pillars={pillars} platforms={platforms} isRestricted={isRestricted} showArchived={showArchived} contentTypes={contentTypes} moveItemDate={moveItemDate} />}

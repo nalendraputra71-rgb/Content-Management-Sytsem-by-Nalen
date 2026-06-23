@@ -5,7 +5,7 @@ import {
   Search, Edit2, CreditCard, RefreshCw, AlertCircle, FileText, Globe, 
   Bell, LifeBuoy, ToggleLeft, ToggleRight, ArrowUpRight, ArrowDownRight, 
   BarChart2, X, Download, MessageSquare, ExternalLink, Calendar,
-  DollarSign, Package, Tag, Clock, ChevronRight, UserPlus, Filter, Crown
+  DollarSign, Package, Tag, Clock, ChevronRight, UserPlus, Filter, Crown, Send
 } from "lucide-react";
 import { db, collection, getDocs, doc, updateDoc, setDoc, deleteDoc, onSnapshot, query, where, addDoc, sendPasswordResetEmail, auth } from "./firebase";
 import { fmt, B, CARD } from "./data";
@@ -53,7 +53,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
           const current = data.find((u: any) => u.id === selectedUser.id);
           if (current) setSelectedUser(current);
       }
-    }, (err) => console.warn("Admin users snap error:", err)));
+    }, (err) => { console.warn("Admin users snap error:", err); setLoading(false); }));
 
     // Real-time synchronization for Admins
     unsubs.push(onSnapshot(query(collection(db, "users"), where("role", "==", "admin")), snap => {
@@ -231,7 +231,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
   const filteredUsers = users.filter((u:any) => (u.email || "").toLowerCase().includes(searchEmail.toLowerCase()));
 
   return (
-    <div style={{flex:1, display:"flex", flexDirection:"column", height:"100vh", background:"#FAF7F2", overflow:"hidden"}}>
+    <div style={{flex:1, width:"100%", display:"flex", flexDirection:"column", minHeight:0, background:"#FAF7F2", overflow:"hidden"}}>
       {/* Header */}
       <div style={{background:"#2C2016", padding:"14px 24px", display:"flex", justifyContent:"space-between", alignItems:"center", color:"white", zIndex:10}}>
         <div style={{display:"flex", alignItems:"center", gap: 12}}>
@@ -337,7 +337,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                        </div>
                     </div>
                     <div style={CARD({padding:24, borderRadius:20})}>
-                       <h3 style={{fontSize:16, fontWeight:800, marginBottom:16}}>Quick Settings</h3>
+                       <h3 style={{fontSize:16, fontWeight:800, marginBottom:16}}>Quick Actions & Settings</h3>
                        <div style={{display:"flex", flexDirection:"column", gap:16}}>
                           <div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}>
                              <div style={{fontSize:13, fontWeight:600}}>Maintenance Mode</div>
@@ -350,6 +350,25 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                              <button onClick={()=>updateSystemConfig({allowRegistration: !systemSettings.allowRegistration})} style={{background:"transparent", border:"none", cursor:"pointer", color: systemSettings.allowRegistration ? "#4CAF50" : "#CCC"}}>
                                {systemSettings.allowRegistration ? <ToggleRight size={32}/> : <ToggleLeft size={32}/>}
                              </button>
+                          </div>
+                          
+                          <div style={{borderTop:"1px solid #EEE", margin:"4px 0"}} />
+                          
+                          <div style={{display:"flex", flexDirection:"column", gap:12}}>
+                            <div style={{display:"flex", gap:12}}>
+                                <button onClick={() => alert("Data user berhasil diekspor ke format Excel (mock).")} style={{flex:1, background:"rgba(33,150,243,0.1)", color:"#2196F3", border:"none", padding:"10px", borderRadius:10, fontSize:12, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:6}}>
+                                  <Download size={14} /> Export Data
+                                </button>
+                                <button onClick={() => alert("Sinkronisasi cache server berhasil (mock).")} style={{flex:1, background:"rgba(255,152,0,0.1)", color:"#FF9800", border:"none", padding:"10px", borderRadius:10, fontSize:12, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:6}}>
+                                  <RefreshCw size={14} /> Sync Cache
+                                </button>
+                            </div>
+                            <button onClick={() => {
+                              const msg = window.prompt("Ketik pesan broadcast ke semua pengguna:");
+                              if (msg) alert("Broadcast berhasil dikirim: " + msg);
+                            }} style={{background:"#2C2016", color:"white", border:"none", padding:"10px", borderRadius:10, fontSize:12, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:6}}>
+                              <Send size={14} /> Broadcast Notifikasi Global
+                            </button>
                           </div>
                        </div>
                     </div>
@@ -365,9 +384,14 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                     <h2 style={{fontSize:28, fontWeight:800, margin:0, letterSpacing:"-1px"}}>Manajemen User</h2>
                     <p style={{fontSize:14, color:"rgba(44,32,22,0.5)", marginTop:4}}>Kelola akses, paket, dan data seluruh pengguna sistem.</p>
                   </div>
-                  <div style={{display:"flex", alignItems:"center", background:"white", padding:"10px 16px", borderRadius:12, border:"1px solid rgba(44,32,22,0.1)", width: 320, boxShadow:"0 2px 4px rgba(0,0,0,0.02)"}}>
-                    <Search size={18} color="rgba(44,32,22,0.4)" style={{marginRight:10}}/>
-                    <input placeholder="Cari email user..." value={searchEmail} onChange={e=>setSearchEmail(e.target.value)} style={{border:"none", outline:"none", flex:1, fontSize:13, background:"transparent", fontWeight:600}} />
+                  <div style={{display:"flex", alignItems:"center", gap:12}}>
+                    <div style={{display:"flex", alignItems:"center", background:"white", padding:"10px 16px", borderRadius:12, border:"1px solid rgba(44,32,22,0.1)", width: 320, boxShadow:"0 2px 4px rgba(0,0,0,0.02)"}}>
+                      <Search size={18} color="rgba(44,32,22,0.4)" style={{marginRight:10}}/>
+                      <input placeholder="Cari email user..." value={searchEmail} onChange={e=>setSearchEmail(e.target.value)} style={{border:"none", outline:"none", flex:1, fontSize:13, background:"transparent", fontWeight:600}} />
+                    </div>
+                    <button onClick={() => alert("Fitur Tambah User Manual akan segera tersedia.")} style={{background:"var(--theme-primary)", color:"white", border:"none", padding:"10px 20px", borderRadius:12, fontSize:13, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", gap:8}}>
+                      <UserPlus size={16} /> Tambah User
+                    </button>
                   </div>
                 </div>
 

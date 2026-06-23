@@ -1430,10 +1430,16 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                         overflow: "hidden",
                         textOverflow: "ellipsis",
                         whiteSpace: "nowrap",
+                        flex: 1,
                       }}
                     >
                       {p.title}
                     </div>
+                    {p.time && (
+                      <div style={{ fontSize: 9, opacity: 0.7, flexShrink: 0 }}>
+                        {p.time}
+                      </div>
+                    )}
                   </motion.div>
                 ))}
               </div>
