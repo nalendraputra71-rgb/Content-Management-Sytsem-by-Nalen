@@ -598,15 +598,14 @@ export const TAB = (active:any) => ({
   whiteSpace: "nowrap" as any
 });
 export const CARD = (ex:any={}) => ({
-  background: "rgba(255,255,255,0.45)",
-  backdropFilter: "blur(16px)",
-  WebkitBackdropFilter: "blur(16px)",
-  transform: "translateZ(0)",
-  willChange: "transform",
+  background: "rgba(255,255,255,0.92)",
+  backdropFilter: "none",
+  WebkitBackdropFilter: "none",
+  transform: "translate3d(0, 0, 0)",
   borderRadius: 24,
   padding: "24px",
-  boxShadow: "0 8px 30px rgba(44,32,22,0.06)",
-  border: "1px solid rgba(255,255,255,0.6)",
+  boxShadow: "0 8px 30px rgba(44,32,22,0.04)",
+  border: "1px solid rgba(255,255,255,0.8)",
   marginBottom: 24,
   ...ex
 });
