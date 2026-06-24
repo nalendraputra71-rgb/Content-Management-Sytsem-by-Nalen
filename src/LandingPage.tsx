@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Check, Calendar, BarChart2, Zap, Sparkles, LayoutDashboard, Share2, TrendingUp, Users, Clock, Instagram, Twitter, Facebook, CloudRain, CheckCircle, StickyNote, Target, ChevronRight, Flame, Activity, ArrowLeft, Bell, ChevronUp, PieChart, Search, MessageSquare, LogOut, Cloud, LayoutGrid, Edit2, Eye, Plus, FileText, Menu } from 'lucide-react';
+import { Check, Calendar, BarChart2, Zap, Sparkles, LayoutDashboard, Share2, TrendingUp, Users, Clock, Instagram, Twitter, Facebook, CloudRain, CheckCircle, StickyNote, Target, ChevronRight, ChevronDown, Flame, Activity, ArrowLeft, Bell, ChevronUp, PieChart, Search, MessageSquare, LogOut, Cloud, LayoutGrid, Edit2, Eye, Plus, FileText, Menu } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 
@@ -13,6 +13,64 @@ const analyticsData = [
   { name: 'Sat', views: 2390, engagement: 3800 },
   { name: 'Sun', views: 3490, engagement: 4300 },
 ];
+
+const faqs = [
+  {
+    q: "Apa itu Hubify Social?",
+    a: "Hubify Social adalah all-in-one platform untuk manajemen sosial media yang dilengkapi dengan AI untuk membantu kreator dan bisnis merencanakan, membuat, dan menganalisis konten secara lebih efektif."
+  },
+  {
+    q: "Apakah ada versi gratisnya?",
+    a: "Saat ini kami menawarkan masa percobaan (trial) gratis selama 30 hari untuk paket Starter, sehingga Anda dapat mengeksplorasi semua fitur dasar tanpa komitmen kartu kredit."
+  },
+  {
+    q: "Apakah saya bisa menghubungkan banyak akun sosial media?",
+    a: "Tentu! Paket Starter kami mendukung hingga 3 integrasi akun sosial media, dan Anda bisa menambahkannya lebih banyak jika mengupgrade ke paket Growth Master."
+  },
+  {
+    q: "Bagaimana cara kerja AI Generator di Hubify?",
+    a: "AI Generator kami menggunakan teknologi AI yang dilatih khusus untuk menghasilkan caption, ide konten, hingga strategi pilar yang relevan dengan niche audiens Anda dalam hitungan detik."
+  },
+  {
+    q: "Apakah data saya aman?",
+    a: "Keamanan data Anda adalah prioritas utama kami. Kami menggunakan infrastruktur standar industri dengan enkripsi data dan secara rutin melakukan audit keamanan untuk memastikan privasi Anda terlindungi."
+  },
+  {
+    q: "Bisakah saya membatalkan langganan kapan saja?",
+    a: "Tentu saja. Anda dapat membatalkan langganan kapan saja melalui menu pengaturan akun Anda. Akses fitur berbayar akan tetap tersedia hingga akhir siklus penagihan Anda."
+  }
+];
+
+function FAQItem({ faq }: { faq: { q: string, a: string } }) {
+  const [isOpen, setIsOpen] = useState(false);
+  return (
+    <div className="border border-slate-200 rounded-2xl bg-white overflow-hidden transition-all hover:border-blue-200">
+      <button 
+        onClick={() => setIsOpen(!isOpen)} 
+        className="w-full px-6 py-5 text-left flex justify-between items-center focus:outline-none"
+      >
+        <span className="font-bold text-[#0B2A4A] text-lg">{faq.q}</span>
+        <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
+          <ChevronDown className="text-blue-500 w-5 h-5" />
+        </motion.div>
+      </button>
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <div className="px-6 pb-5 text-slate-500">
+              {faq.a}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 export function LandingPage() {
   const navigate = useNavigate();
@@ -1034,6 +1092,21 @@ export function LandingPage() {
                 Ambil Paket Tahunan
               </button>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="py-24 px-6 bg-white">
+        <div className="max-w-3xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-5xl font-extrabold text-[#0B2A4A] mb-4">Pertanyaan yang Sering Diajukan</h2>
+            <p className="text-lg text-slate-500">Temukan jawaban untuk pertanyaan umum tentang Hubify Social.</p>
+          </div>
+          <div className="space-y-4">
+            {faqs.map((faq, idx) => (
+              <FAQItem key={idx} faq={faq} />
+            ))}
           </div>
         </div>
       </section>
