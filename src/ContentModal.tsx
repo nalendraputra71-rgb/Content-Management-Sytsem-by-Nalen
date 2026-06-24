@@ -180,6 +180,14 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
   const [editingFieldRight, setEditingFieldRight] = useState<string | null>(null);
   const activeFieldRef = useRef<HTMLDivElement | null>(null);
 
+  const [isReady, setIsReady] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsReady(true);
+    }, 220);
+    return () => clearTimeout(timer);
+  }, []);
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (activeFieldRef.current && !activeFieldRef.current.contains(event.target as Node)) {
@@ -611,10 +619,13 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
         willChange: "opacity"
       }}>
       <motion.div 
-        initial={layoutMode === "drawer" ? { x: "100%", opacity: 0.9 } : { scale: 0.95, opacity: 0, y: 15 }} 
+        initial={layoutMode === "drawer" ? { x: "100%", opacity: 0.85 } : { scale: 0.96, opacity: 0, y: 12 }} 
         animate={layoutMode === "drawer" ? { x: 0, opacity: 1 } : { scale: 1, opacity: 1, y: 0 }} 
-        exit={layoutMode === "drawer" ? { x: "100%", opacity: 0.9 } : { scale: 0.95, opacity: 0, y: 15 }} 
-        transition={{ ease: [0.16, 1, 0.3, 1], duration: 0.35 }}
+        exit={layoutMode === "drawer" ? { x: "100%", opacity: 0.85 } : { scale: 0.96, opacity: 0, y: 12 }} 
+        transition={layoutMode === "drawer" 
+          ? { type: "spring", damping: 32, stiffness: 280, mass: 0.9 } 
+          : { type: "spring", damping: 26, stiffness: 320, mass: 0.9 }
+        }
         onClick={e=>e.stopPropagation()} 
         style={{
           background: "#ffffff", 
@@ -1042,11 +1053,24 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
             </div>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "16px", width: "100%" }}>
-            
-            {/* TAB DRAFT (Objective, Brief, Caption) */}
-            {activeTab === "draft" && (
-              <div style={{ display: "flex", flexDirection: "column", gap: "16px", width: "100%" }}>
+          {!isReady ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: "20px", width: "100%", opacity: 0.6 }} className="animate-pulse">
+              {[1, 2, 3].map((n) => (
+                <div key={n} style={{ background: "#ffffff", border: "1px solid rgba(44, 32, 22, 0.06)", borderRadius: 16, padding: "20px", display: "flex", flexDirection: "column", gap: "12px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{ width: 16, height: 16, borderRadius: "50%", background: "rgba(44,32,22,0.06)" }} />
+                    <div style={{ width: 80, height: 12, borderRadius: 4, background: "rgba(44,32,22,0.06)" }} />
+                  </div>
+                  <div style={{ width: "100%", height: n === 2 ? 140 : 60, borderRadius: 10, background: "rgba(44,32,22,0.02)", border: "1px dashed rgba(44,32,22,0.06)" }} />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px", width: "100%" }}>
+              
+              {/* TAB DRAFT (Objective, Brief, Caption) */}
+              {activeTab === "draft" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "16px", width: "100%" }}>
                 {/* Objective Block */}
                 {editingFieldRight === "objective" ? (
                   <div ref={activeFieldRef} style={{ background: "#ffffff", border: "1px solid rgba(44, 32, 22, 0.08)", borderRadius: 16, padding: "16px 20px", boxShadow: "0 8px 32px rgba(0, 0, 0, 0.04)" }}>
@@ -1498,6 +1522,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
             )}
 
           </div>
+          )}
 
         </div>
         </div>
