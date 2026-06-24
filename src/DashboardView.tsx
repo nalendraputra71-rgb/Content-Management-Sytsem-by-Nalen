@@ -67,16 +67,9 @@ export function DashboardView({ user, profile, activeWorkspace, content, theme, 
   });
   const [todos, setTodos] = useState<any[]>([]);
   const [weather, setWeather] = useState<any>({ temp: "--", desc: "Memuat info...", city: "Mencari lokasi..." });
-  const [time, setTime] = useState(new Date());
   const [trends, setTrends] = useState<string[]>(["Cara viral hari ini", "Content strategy", "Trending audio", "Tips FYP TikTok"]);
   const [trendGeo, setTrendGeo] = useState<string>("ID");
   const [loading, setLoading] = useState(true);
-
-  // Time
-  useEffect(() => {
-    const t = setInterval(() => setTime(new Date()), 1000);
-    return () => clearInterval(t);
-  }, []);
 
   // Trends API
   useEffect(() => {
@@ -216,9 +209,10 @@ export function DashboardView({ user, profile, activeWorkspace, content, theme, 
     }, { merge: true });
   };
 
-  const [clockMenu, setClockMenu] = useState(false);
-  
-  const clockSettings = config.clock || { type: "analog", format: 24 };
+  const clockSettings = { type: "digital", format: 24 };
+  const clockMenu = false;
+  const setClockMenu = (_val?: any) => {};
+  const time = new Date();
 
   if (loading) return <div style={{padding:40, textAlign:"center", color:"rgba(0,0,0,0.3)"}}>Loading Dashboard...</div>;
 
@@ -241,7 +235,7 @@ export function DashboardView({ user, profile, activeWorkspace, content, theme, 
              </div>
              <div style={{ width: 1, height: 64, background: "rgba(0,0,0,0.1)", display: "block" }} />
              
-             <div style={{ position: "relative" }}>
+             <LiveClock config={config} updateConfig={updateConfig} theme={theme} /><div style={{ position: "relative", display: "none" }}>
                {clockSettings.type === "analog" ? (
                  <div 
                    onClick={() => setClockMenu(!clockMenu)}
@@ -390,12 +384,11 @@ export function DashboardView({ user, profile, activeWorkspace, content, theme, 
 // --- TOP LEVEL COMPONENTS ---
 
 function GreetingSection({ profile, theme, trends = ["Cara viral di TikTok hari ini", "AI untuk Content Creator", "Ide konten Instagram kreatif", "Tips jualan di e-commerce", "Trend warna pastel", "Outfit inspirasi minggu ini"], trendGeo, onTrendGeoChange }: any) {
-  const [time, setTime] = useState(new Date());
+  const [hour, setHour] = useState(() => new Date().getHours());
   useEffect(() => {
-    const t = setInterval(() => setTime(new Date()), 1000);
+    const t = setInterval(() => setHour(new Date().getHours()), 60000);
     return () => clearInterval(t);
   }, []);
-  const hour = time.getHours();
   let greeting = "Selamat Malam";
   let greetingIcon = "🌙";
   if (hour >= 5 && hour < 11) {
@@ -791,7 +784,7 @@ function DashboardWidget({ item, isEditing, onResize, ...props }: any) {
   if (!content) return null;
 
   return (
-    <motion.div layout transition={{ type: "spring", stiffness: 300, damping: 30 }} ref={setNodeRef} style={style} className={`w-widget w-widget-span-${item.w} group ${isEditing ? 'active:cursor-grabbing' : ''}`}>
+    <div ref={setNodeRef} style={style} className={`w-widget w-widget-span-${item.w} group ${isEditing ? 'active:cursor-grabbing' : ''}`}>
       <style>
         {`
           .widget-content-container {
@@ -800,23 +793,23 @@ function DashboardWidget({ item, isEditing, onResize, ...props }: any) {
           }
         `}
       </style>
-      <motion.div layout style={{ ...CARD({ padding: 0 }), height: "100%", position: "relative", display: "flex", flexDirection: "column", border: isEditing ? "2px dashed var(--theme-primary, #2C2016)" : "1px solid rgba(0,0,0,0.03)" }}>
+      <div style={{ ...CARD({ padding: 0 }), height: "100%", position: "relative", display: "flex", flexDirection: "column", border: isEditing ? "2px dashed var(--theme-primary, #2C2016)" : "1px solid rgba(0,0,0,0.03)" }}>
         
         {isEditing && (
           <>
-            <motion.div layout {...attributes} {...listeners} style={{ position: "absolute", top: 12, right: 12, zIndex: 20, padding: 8, background: "rgba(0,0,0,0.8)", color: "white", borderRadius: 8, cursor: "grab" }}>
+            <div {...attributes} {...listeners} style={{ position: "absolute", top: 12, right: 12, zIndex: 20, padding: 8, background: "rgba(0,0,0,0.8)", color: "white", borderRadius: 8, cursor: "grab" }}>
               <Move size={16} />
-            </motion.div>
+            </div>
             <ResizeHandle item={item} onResize={onResize} />
           </>
         )}
 
-        <motion.div layout className="widget-content-container" style={{ flex: 1, padding: "clamp(12px, 5cqw, 24px) clamp(12px, 5cqw, 24px)", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+        <div className="widget-content-container" style={{ flex: 1, padding: "clamp(12px, 5cqw, 24px) clamp(12px, 5cqw, 24px)", overflow: "hidden", display: "flex", flexDirection: "column" }}>
           {content || <div style={{flex:1, display:"flex", alignItems:"center", justifyContent:"center", color:"rgba(0,0,0,0.2)", fontSize:12, fontWeight:700}}>Widget Kosong</div>}
-        </motion.div>
+        </div>
 
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   );
 }
 
@@ -1063,7 +1056,6 @@ function TodoItem({ todo, onToggle, onRename, onDelete, theme, disableAnimation 
 
   return (
     <motion.div 
-      layout={!disableAnimation}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: todo.completed ? 0.6 : 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.9 }}
@@ -1283,7 +1275,7 @@ function StickyNotesModal({ notes, updateConfig, onClose, theme }: any) {
           <div style={{ flex: 1, overflowY: "auto", display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 20, padding: 4 }}>
             <AnimatePresence>
               {notes.map((n: any) => (
-                <motion.div layout initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} key={n.id} style={{ background: n.color, borderRadius: 24, padding: 24, position: "relative", display: "flex", flexDirection: "column", boxShadow: "0 10px 30px rgba(0,0,0,0.08)", minHeight: 200 }}>
+                <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} key={n.id} style={{ background: n.color, borderRadius: 24, padding: 24, position: "relative", display: "flex", flexDirection: "column", boxShadow: "0 10px 30px rgba(0,0,0,0.08)", minHeight: 200 }}>
                    <div style={{ display: "flex", gap: 6, marginBottom: 16, flexWrap: "wrap", background: showColorOptions[n.id] ? "rgba(255,255,255,0.4)" : "transparent", padding: 6, borderRadius: 12, width: "max-content", alignItems: "center", transition: "all 0.2s" }}>
                      <button onClick={() => setShowColorOptions(p => ({...p, [n.id]: !p[n.id]}))} style={{ width: 18, height: 18, borderRadius: "50%", background: n.color, border: "2px solid rgba(0,0,0,0.4)", cursor: "pointer", padding: 0 }} title="Ubah Warna" />
                      {showColorOptions[n.id] && colors.filter(c => c !== n.color).map(c => (
@@ -1338,6 +1330,75 @@ function ShortcutWidget({ theme, setTab, navigate }: any) {
           <Sparkles size={"clamp(14px, 5cqw, 18px)"} /> <span style={{display: "inline-block", overflow: "hidden", textOverflow: "ellipsis"}}>Buat Konten</span>
         </button>
       </div>
+    </div>
+  );
+}
+
+// --- ISOLATED LIVE CLOCK COMPONENT FOR HIGH PERFORMANCE ---
+function LiveClock({ config, updateConfig, theme }: any) {
+  const [time, setTime] = useState(new Date());
+  const [clockMenu, setClockMenu] = useState(false);
+
+  useEffect(() => {
+    const t = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  const clockSettings = config.clock || { type: "analog", format: 24 };
+
+  return (
+    <div style={{ position: "relative" }}>
+      {clockSettings.type === "analog" ? (
+        <div 
+          onClick={() => setClockMenu(!clockMenu)}
+          style={{ width: 100, height: 100, borderRadius: "50%", background: "white", border: "5px solid #2C2016", position: "relative", cursor: "pointer" }}
+        >
+          <div style={{ position: "absolute", top: "50%", left: "50%", width: 6, height: 6, background: "#3B82F6", borderRadius: "50%", transform: "translate(-50%, -50%)", zIndex: 10 }} />
+          {/* Hour Hand */}
+          <div style={{ position: "absolute", top: "25%", left: "calc(50% - 2.5px)", width: 5, height: "25%", background: "#2C2016", borderRadius: 4, transformOrigin: "bottom center", transform: `rotate(${(time.getHours() % 12) * 30 + time.getMinutes() * 0.5}deg)` }} />
+          {/* Minute Hand */}
+          <div style={{ position: "absolute", top: "15%", left: "calc(50% - 2px)", width: 4, height: "35%", background: "#666", borderRadius: 4, transformOrigin: "bottom center", transform: `rotate(${time.getMinutes() * 6}deg)` }} />
+          {/* Second Hand */}
+          <div style={{ position: "absolute", top: "10%", left: "calc(50% - 1px)", width: 2, height: "40%", background: "#3B82F6", borderRadius: 4, transformOrigin: "bottom center", transform: `rotate(${time.getSeconds() * 6}deg)` }} />
+        </div>
+      ) : (
+        <div 
+          onClick={() => setClockMenu(!clockMenu)}
+          style={{ fontSize: 56, fontWeight: 900, color: "#2C2016", letterSpacing: "-2px", fontVariantNumeric: "tabular-nums", cursor: "pointer", display: "flex", alignItems: "baseline", gap: 8 }}
+        >
+          {time.toLocaleTimeString("en-US", { 
+            hour: "2-digit", 
+            minute: "2-digit", 
+            hour12: clockSettings.format === 12 
+          }).replace(/\s?[APap][mM]/, "").replace("::", ":")}
+          {clockSettings.format === 12 && (
+            <span style={{ fontSize: 20, fontWeight: 700, color: "rgba(0,0,0,0.4)", letterSpacing: 0 }}>
+              {time.getHours() >= 12 ? 'PM' : 'AM'}
+            </span>
+          )}
+        </div>
+      )}
+      
+      <AnimatePresence>
+        {clockMenu && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} style={{ position: "absolute", top: "100%", right: 0, marginTop: 12, background: "rgba(255,255,255,0.85)", backdropFilter: "none", WebkitBackdropFilter: "none", padding: 16, borderRadius: 16, boxShadow: "0 10px 40px rgba(0,0,0,0.15)", border: "1px solid rgba(255,255,255,0.7)", minWidth: 200, zIndex: 100 }}>
+            <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(0,0,0,0.4)", textTransform: "uppercase", marginBottom: 12 }}>Tampilan Jam</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <button onClick={() => { updateConfig("clock", { ...clockSettings, type: "digital" }); setClockMenu(false); }} style={{ ...B(clockSettings.type === "digital", theme.primary), padding: "8px 12px", fontSize: 13 }}>Jam Digital</button>
+              <button onClick={() => { updateConfig("clock", { ...clockSettings, type: "analog" }); setClockMenu(false); }} style={{ ...B(clockSettings.type === "analog", theme.primary), padding: "8px 12px", fontSize: 13 }}>Jam Analog</button>
+            </div>
+            {clockSettings.type === "digital" && (
+              <>
+                <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(0,0,0,0.4)", textTransform: "uppercase", margin: "16px 0 12px 0" }}>Format Waktu</div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button onClick={() => { updateConfig("clock", { ...clockSettings, format: 24 }); setClockMenu(false); }} style={{ ...B(clockSettings.format === 24, theme.primary), flex: 1, padding: "8px 0", fontSize: 13 }}>24 Jam</button>
+                  <button onClick={() => { updateConfig("clock", { ...clockSettings, format: 12 }); setClockMenu(false); }} style={{ ...B(clockSettings.format === 12, theme.primary), flex: 1, padding: "8px 0", fontSize: 13 }}>AM/PM</button>
+                </div>
+              </>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

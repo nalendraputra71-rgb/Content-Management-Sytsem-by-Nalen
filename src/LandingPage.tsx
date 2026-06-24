@@ -1105,7 +1105,9 @@ export function LandingPage() {
           </div>
           <div className="space-y-4">
             {faqs.map((faq, idx) => (
-              <FAQItem key={idx} faq={faq} />
+              <div key={idx}>
+                <FAQItem faq={faq} />
+              </div>
             ))}
           </div>
         </div>

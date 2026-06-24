@@ -132,7 +132,10 @@ export function CsvModal({onClose, onImport, pillars, platforms, contentTypes, p
                     comments: idxComments !== -1 ? Number(row[idxComments])||0 : 0,
                     shares: idxShares !== -1 ? Number(row[idxShares])||0 : 0,
                     saves: idxSaves !== -1 ? Number(row[idxSaves])||0 : 0,
-                    reposts: 0
+                    reposts: 0,
+                    profileVisits: 0,
+                    bioLinkTaps: 0,
+                    follows: 0
                 };
                 if (idxObjective !== -1) item.objective = textToHtml(cleanStr(row[idxObjective])) || "";
                 if (idxBrief !== -1) item.briefCopywriting = textToHtml(cleanStr(row[idxBrief])) || "";

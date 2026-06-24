@@ -5,7 +5,7 @@ import {
   Search, Edit2, CreditCard, RefreshCw, AlertCircle, FileText, Globe, 
   Bell, LifeBuoy, ToggleLeft, ToggleRight, ArrowUpRight, ArrowDownRight, 
   BarChart2, X, Download, MessageSquare, ExternalLink, Calendar,
-  DollarSign, Package, Tag, Clock, ChevronRight, UserPlus, Filter, Crown, Send
+  DollarSign, Package, Tag, Clock, ChevronRight, UserPlus, Filter, Crown, Send, Layout
 } from "lucide-react";
 import { db, collection, getDocs, doc, updateDoc, setDoc, deleteDoc, onSnapshot, query, where, addDoc, sendPasswordResetEmail, auth } from "./firebase";
 import { fmt, B, CARD } from "./data";
@@ -1037,6 +1037,48 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                               </div>
                             </>
                           )}
+                       </div>
+                    </div>
+
+                    <div style={CARD({padding:24, borderRadius:24})}>
+                       <h3 style={{fontSize:16, fontWeight:800, marginBottom:20, display:"flex", alignItems:"center", gap:8}}><Layout size={18}/> Kendali Akses Fitur</h3>
+                       <div style={{display:"flex", flexDirection:"column", gap:16}}>
+                          <div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}>
+                             <div>
+                                <div style={{fontSize:14, fontWeight:700}}>Menu Content Planner</div>
+                                <div style={{fontSize:12, color:"#999"}}>Tampilkan akses ke fitur perencanaan konten.</div>
+                             </div>
+                             <button onClick={()=>updateSystemConfig({ "features.contentPlanner": systemSettings?.features?.contentPlanner === false ? true : false })} style={{background:"transparent", border:"none", cursor:"pointer"}}>
+                                {systemSettings?.features?.contentPlanner !== false ? <ToggleRight size={32} color="#4CAF50"/> : <ToggleLeft size={32} color="#CCC"/>}
+                             </button>
+                          </div>
+                          <div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}>
+                             <div>
+                                <div style={{fontSize:14, fontWeight:700}}>Menu Hub.ai (AI Generator)</div>
+                                <div style={{fontSize:12, color:"#999"}}>Tampilkan akses ke fitur AI Generator.</div>
+                             </div>
+                             <button onClick={()=>updateSystemConfig({ "features.hubai": systemSettings?.features?.hubai === false ? true : false })} style={{background:"transparent", border:"none", cursor:"pointer"}}>
+                                {systemSettings?.features?.hubai !== false ? <ToggleRight size={32} color="#4CAF50"/> : <ToggleLeft size={32} color="#CCC"/>}
+                             </button>
+                          </div>
+                          <div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}>
+                             <div>
+                                <div style={{fontSize:14, fontWeight:700}}>Menu SocHub (Komunitas)</div>
+                                <div style={{fontSize:12, color:"#999"}}>Tampilkan akses ke fitur komunitas SocHub.</div>
+                             </div>
+                             <button onClick={()=>updateSystemConfig({ "features.sochub": systemSettings?.features?.sochub === false ? true : false })} style={{background:"transparent", border:"none", cursor:"pointer"}}>
+                                {systemSettings?.features?.sochub !== false ? <ToggleRight size={32} color="#4CAF50"/> : <ToggleLeft size={32} color="#CCC"/>}
+                             </button>
+                          </div>
+                          <div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}>
+                             <div>
+                                <div style={{fontSize:14, fontWeight:700}}>Menu Social Studio</div>
+                                <div style={{fontSize:12, color:"#999"}}>Tampilkan akses ke fitur analitik dan manajemen Social Studio.</div>
+                             </div>
+                             <button onClick={()=>updateSystemConfig({ "features.socialStudio": systemSettings?.features?.socialStudio === false ? true : false })} style={{background:"transparent", border:"none", cursor:"pointer"}}>
+                                {systemSettings?.features?.socialStudio !== false ? <ToggleRight size={32} color="#4CAF50"/> : <ToggleLeft size={32} color="#CCC"/>}
+                             </button>
+                          </div>
                        </div>
                     </div>
 

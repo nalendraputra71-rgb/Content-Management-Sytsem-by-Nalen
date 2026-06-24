@@ -99,7 +99,7 @@ service cloud.firestore {
        allow update, delete: if isAdmin();
     }
     match /config/system {
-       allow read: if isSignedIn();
+       allow read: if true;
        allow write: if isAdmin();
     }
     match /usernames/{username} {

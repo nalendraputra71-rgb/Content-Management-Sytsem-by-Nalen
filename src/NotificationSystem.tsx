@@ -86,6 +86,8 @@ export function useNotifications(userProfile: any) {
     let unsubTickets: any;
     let unsubInvites: any;
     
+    let initialGlobalLoaded = false;
+
     import("./firebase").then(({ db, collection, query, onSnapshot, orderBy, where, collectionGroup }) => {
       unsubGlobal = onSnapshot(query(collection(db, "global_notifications"), orderBy("createdAt", "desc")), (snap) => {
         if (!isMounted) return;
@@ -102,14 +104,25 @@ export function useNotifications(userProfile: any) {
           icon: <Bell size={20} color="#2D7A5E" />,
           title: n.title,
           desc: n.desc,
-          time: new Date(n.createdAt).toLocaleDateString("id-ID"),
+          time: new Date(n.createdAt).toLocaleString("id-ID", {dateStyle:"short", timeStyle:"short"}),
           unread: true
         }));
 
         setNotifications(prev => {
            const others = prev.filter(p => !p.id.startsWith("global_"));
-           return applyFilters([...applicableGlobal, ...others]);
+           const newGlobal = applicableGlobal.filter(n => !others.some(o => o.id === n.id));
+           const finalNotifs = applyFilters([...applicableGlobal, ...others]);
+           
+           if (initialGlobalLoaded && newGlobal.length > 0) {
+               const dIds = getDeletedIds();
+               const unarchivedNew = newGlobal.filter(n => !dIds.includes(n.id));
+               if (unarchivedNew.length > 0 && typeof window !== "undefined") {
+                   setTimeout(() => setToast(unarchivedNew[0]), 500);
+               }
+           }
+           return finalNotifs;
         });
+        initialGlobalLoaded = true;
       }, (err:any) => {
         console.warn("Global_notifications onSnapshot error:", err);
       });

@@ -957,6 +957,7 @@ function ChatSupportPanel({
 }
 
 export function Sidebar({
+  systemConfig,
   open,
   setOpen,
   tab,
@@ -997,9 +998,13 @@ export function Sidebar({
   const HUBIVERSE = [
     { id: "social-hub-ai", ic: <Sparkles size={18} />, lb: "Hub.ai" },
     { id: "soc_hub", ic: <Users size={18} />, lb: "SocHub" },
-  ];
+  ].filter(item => {
+    if (item.id === "social-hub-ai" && systemConfig?.features?.hubai === false) return false;
+    if (item.id === "soc_hub" && systemConfig?.features?.sochub === false) return false;
+    return true;
+  });
 
-  const SOCIAL_STUDIO = [
+  const SOCIAL_STUDIO = systemConfig?.features?.socialStudio === false ? [] : [
     {
       id: "social-dashboard",
       ic: <Activity size={18} />,
@@ -1751,139 +1756,140 @@ export function Sidebar({
                         </AnimatePresence>
                       </div>
 
-                      {/* Hubiverse Section */}
-                      <div style={{ marginBottom: 24 }}>
-                        <div
-                          onClick={() => setShowHubiverse(!showHubiverse)}
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                            cursor: "pointer",
-                            marginBottom: open ? 8 : 0,
-                            padding: "0 8px",
-                            opacity: open ? 1 : 0,
-                            height: open ? "auto" : 0,
-                            pointerEvents: open ? "auto" : "none",
-                            overflow: "hidden",
-                          }}
-                        >
-                          <label
+                      {HUBIVERSE.length > 0 && (
+                        <div style={{ marginBottom: 24 }}>
+                          <div
+                            onClick={() => setShowHubiverse(!showHubiverse)}
                             style={{
-                              fontSize: 9,
-                              fontWeight: 700,
-                              color: "rgba(255,255,255,0.3)",
-                              textTransform: "uppercase",
-                              letterSpacing: 1.5,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
                               cursor: "pointer",
+                              marginBottom: open ? 8 : 0,
+                              padding: "0 8px",
+                              opacity: open ? 1 : 0,
+                              height: open ? "auto" : 0,
+                              pointerEvents: open ? "auto" : "none",
+                              overflow: "hidden",
                             }}
                           >
-                            Hubiverse
-                          </label>
-                          {showHubiverse ? (
-                            <ChevronUp
-                              size={14}
-                              color="rgba(255,255,255,0.3)"
-                            />
-                          ) : (
-                            <ChevronDown
-                              size={14}
-                              color="rgba(255,255,255,0.3)"
-                            />
-                          )}
-                        </div>
-
-                        <AnimatePresence>
-                          {(showHubiverse || !open) && (
-                            <motion.div
-                              initial={{ height: 0, opacity: 0 }}
-                              animate={{ height: "auto", opacity: 1 }}
-                              exit={{ height: 0, opacity: 0 }}
+                            <label
                               style={{
-                                display: "flex",
-                                flexDirection: "column",
-                                gap: 2,
-                                overflow: "visible",
+                                fontSize: 9,
+                                fontWeight: 700,
+                                color: "rgba(255,255,255,0.3)",
+                                textTransform: "uppercase",
+                                letterSpacing: 1.5,
+                                cursor: "pointer",
                               }}
                             >
-                              {HUBIVERSE.map((v: any) => (
-                                <button
-                                  className="hover-scale"
-                                  key={v.id}
-                                  onClick={() => {
-                                    setTab(v.id);
-                                    if (!open) setOpen(true);
-                                  }}
-                                  style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: open ? 12 : 0,
-                                    width: "100%",
-                                    padding: open ? "8px 12px" : "10px 0",
-                                    justifyContent: open
-                                      ? "flex-start"
-                                      : "center",
-                                    background:
-                                      tab === v.id
-                                        ? "rgba(255,255,255,0.1)"
-                                        : "transparent",
-                                    border: "none",
-                                    borderRadius: 12,
-                                    color:
-                                      tab === v.id
-                                        ? "white"
-                                        : "rgba(250,247,242,0.6)",
-                                    cursor: "pointer",
-                                    transition: "all 0.3s ease",
-                                    position: "relative",
-                                  }}
-                                >
-                                  <div
+                              Hubiverse
+                            </label>
+                            {showHubiverse ? (
+                              <ChevronUp
+                                size={14}
+                                color="rgba(255,255,255,0.3)"
+                              />
+                            ) : (
+                              <ChevronDown
+                                size={14}
+                                color="rgba(255,255,255,0.3)"
+                              />
+                            )}
+                          </div>
+
+                          <AnimatePresence>
+                            {(showHubiverse || !open) && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: "auto", opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                style={{
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  gap: 2,
+                                  overflow: "visible",
+                                }}
+                              >
+                                {HUBIVERSE.map((v: any) => (
+                                  <button
+                                    className="hover-scale"
+                                    key={v.id}
+                                    onClick={() => {
+                                      setTab(v.id);
+                                      if (!open) setOpen(true);
+                                    }}
                                     style={{
-                                      width: 32,
                                       display: "flex",
-                                      justifyContent: "center",
                                       alignItems: "center",
-                                      flexShrink: 0,
+                                      gap: open ? 12 : 0,
+                                      width: "100%",
+                                      padding: open ? "8px 12px" : "10px 0",
+                                      justifyContent: open
+                                        ? "flex-start"
+                                        : "center",
+                                      background:
+                                        tab === v.id
+                                          ? "rgba(255,255,255,0.1)"
+                                          : "transparent",
+                                      border: "none",
+                                      borderRadius: 12,
                                       color:
                                         tab === v.id
                                           ? "white"
-                                          : "rgba(255,255,255,0.5)",
+                                          : "rgba(250,247,242,0.6)",
+                                      cursor: "pointer",
+                                      transition: "all 0.3s ease",
+                                      position: "relative",
                                     }}
                                   >
-                                    {v.ic}
-                                  </div>
-                                  <AnimatePresence>
-                                    {open && (
-                                      <motion.span
-                                        initial={{ opacity: 0, width: 0 }}
-                                        animate={{ opacity: 1, width: "auto" }}
-                                        exit={{ opacity: 0, width: 0 }}
-                                        style={{
-                                          overflow: "hidden",
-                                          whiteSpace: "nowrap",
-                                          flex: 1,
-                                          textAlign: "left",
-                                        }}
-                                      >
-                                        <span
+                                    <div
+                                      style={{
+                                        width: 32,
+                                        display: "flex",
+                                        justifyContent: "center",
+                                        alignItems: "center",
+                                        flexShrink: 0,
+                                        color:
+                                          tab === v.id
+                                            ? "white"
+                                            : "rgba(255,255,255,0.5)",
+                                      }}
+                                    >
+                                      {v.ic}
+                                    </div>
+                                    <AnimatePresence>
+                                      {open && (
+                                        <motion.span
+                                          initial={{ opacity: 0, width: 0 }}
+                                          animate={{ opacity: 1, width: "auto" }}
+                                          exit={{ opacity: 0, width: 0 }}
                                           style={{
-                                            fontSize: 12,
-                                            fontWeight:
-                                              tab === v.id ? 700 : 500,
+                                            overflow: "hidden",
+                                            whiteSpace: "nowrap",
+                                            flex: 1,
+                                            textAlign: "left",
                                           }}
                                         >
-                                          {v.lb}
-                                        </span>
-                                      </motion.span>
-                                    )}
-                                  </AnimatePresence>
-                                </button>
-                              ))}
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
+                                          <span
+                                            style={{
+                                              fontSize: 12,
+                                              fontWeight:
+                                                tab === v.id ? 700 : 500,
+                                            }}
+                                          >
+                                            {v.lb}
+                                          </span>
+                                        </motion.span>
+                                      )}
+                                    </AnimatePresence>
+                                  </button>
+                                ))}
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      )}
 
                       {/* Social Management Section */}
                       <div
@@ -2010,66 +2016,68 @@ export function Sidebar({
                                   )}
                                 </AnimatePresence>
                               </button>
-                              <button
-                                className="hover-scale"
-                                onClick={() => {
-                                  setTab("content_planner");
-                                  if (!open) setOpen(true);
-                                }}
-                                style={{
-                                  width: "100%",
-                                  textAlign: "left",
-                                  background:
-                                    tab === "content_planner"
-                                      ? "rgba(255,255,255,0.1)"
-                                      : "transparent",
-                                  border: "none",
-                                  padding: open ? "8px 12px" : "10px 0",
-                                  justifyContent: open
-                                    ? "flex-start"
-                                    : "center",
-                                  color:
-                                    tab === "content_planner"
-                                      ? "white"
-                                      : "rgba(255,255,255,0.7)",
-                                  borderRadius: 12,
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: open ? 12 : 0,
-                                  fontSize: 12,
-                                  fontWeight: 700,
-                                  cursor: "pointer",
-                                  transition: "all 0.3s ease",
-                                }}
-                              >
-                                <div
+                              {systemConfig?.features?.contentPlanner !== false && (
+                                <button
+                                  className="hover-scale"
+                                  onClick={() => {
+                                    setTab("content_planner");
+                                    if (!open) setOpen(true);
+                                  }}
                                   style={{
-                                    width: 32,
+                                    width: "100%",
+                                    textAlign: "left",
+                                    background:
+                                      tab === "content_planner"
+                                        ? "rgba(255,255,255,0.1)"
+                                        : "transparent",
+                                    border: "none",
+                                    padding: open ? "8px 12px" : "10px 0",
+                                    justifyContent: open
+                                      ? "flex-start"
+                                      : "center",
+                                    color:
+                                      tab === "content_planner"
+                                        ? "white"
+                                        : "rgba(255,255,255,0.7)",
+                                    borderRadius: 12,
                                     display: "flex",
-                                    justifyContent: "center",
                                     alignItems: "center",
-                                    flexShrink: 0,
+                                    gap: open ? 12 : 0,
+                                    fontSize: 12,
+                                    fontWeight: 700,
+                                    cursor: "pointer",
+                                    transition: "all 0.3s ease",
                                   }}
                                 >
-                                  <Calendar size={18} />
-                                </div>
-                                <AnimatePresence>
-                                  {open && (
-                                    <motion.span
-                                      initial={{ opacity: 0, width: 0 }}
-                                      animate={{ opacity: 1, width: "auto" }}
-                                      exit={{ opacity: 0, width: 0 }}
-                                      style={{
-                                        overflow: "hidden",
-                                        whiteSpace: "nowrap",
-                                        flex: 1,
-                                      }}
-                                    >
-                                      Content Planner
-                                    </motion.span>
-                                  )}
-                                </AnimatePresence>
-                              </button>
+                                  <div
+                                    style={{
+                                      width: 32,
+                                      display: "flex",
+                                      justifyContent: "center",
+                                      alignItems: "center",
+                                      flexShrink: 0,
+                                    }}
+                                  >
+                                    <Calendar size={18} />
+                                  </div>
+                                  <AnimatePresence>
+                                    {open && (
+                                      <motion.span
+                                        initial={{ opacity: 0, width: 0 }}
+                                        animate={{ opacity: 1, width: "auto" }}
+                                        exit={{ opacity: 0, width: 0 }}
+                                        style={{
+                                          overflow: "hidden",
+                                          whiteSpace: "nowrap",
+                                          flex: 1,
+                                        }}
+                                      >
+                                        Content Planner
+                                      </motion.span>
+                                    )}
+                                  </AnimatePresence>
+                                </button>
+                              )}
                               <button
                                 className="hover-scale"
                                 onClick={() => {
@@ -2137,172 +2145,174 @@ export function Sidebar({
 
                       {/* Social Studio Section */}
 
-                      <div style={{ marginBottom: 24 }}>
-                        <div
-                          onClick={() => setShowSocial(!showSocial)}
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                            cursor: "pointer",
-                            marginBottom: open ? 8 : 0,
-                            padding: "0 8px",
-                            opacity: open ? 1 : 0,
-                            height: open ? "auto" : 0,
-                            pointerEvents: open ? "auto" : "none",
-                            overflow: "hidden",
-                          }}
-                        >
+                      {SOCIAL_STUDIO.length > 0 && (
+                        <div style={{ marginBottom: 24 }}>
                           <div
+                            onClick={() => setShowSocial(!showSocial)}
                             style={{
                               display: "flex",
                               alignItems: "center",
-                              gap: 6,
+                              justifyContent: "space-between",
+                              cursor: "pointer",
+                              marginBottom: open ? 8 : 0,
+                              padding: "0 8px",
+                              opacity: open ? 1 : 0,
+                              height: open ? "auto" : 0,
+                              pointerEvents: open ? "auto" : "none",
+                              overflow: "hidden",
                             }}
                           >
-                            <label
-                              style={{
-                                fontSize: 9,
-                                fontWeight: 700,
-                                color: "rgba(255,255,255,0.3)",
-                                textTransform: "uppercase",
-                                letterSpacing: 1.5,
-                                cursor: "pointer",
-                              }}
-                            >
-                              Social Studio
-                            </label>
-                          </div>
-                          {showSocial ? (
-                            <ChevronUp
-                              size={14}
-                              color="rgba(255,255,255,0.3)"
-                            />
-                          ) : (
-                            <ChevronDown
-                              size={14}
-                              color="rgba(255,255,255,0.3)"
-                            />
-                          )}
-                        </div>
-
-                        <AnimatePresence>
-                          {(showSocial || !open) && (
-                            <motion.div
-                              initial={{ height: 0, opacity: 0 }}
-                              animate={{ height: "auto", opacity: 1 }}
-                              exit={{ height: 0, opacity: 0 }}
+                            <div
                               style={{
                                 display: "flex",
-                                flexDirection: "column",
-                                gap: 2,
-                                overflow: "visible",
+                                alignItems: "center",
+                                gap: 6,
                               }}
                             >
-                              {SOCIAL_STUDIO.map((v: any) => (
-                                <button
-                                  className="hover-scale"
-                                  key={v.id}
-                                  onClick={() => {
-                                    setTab(v.id);
-                                    if (!open) setOpen(true);
-                                  }}
-                                  style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: open ? 12 : 0,
-                                    width: "100%",
-                                    padding: open ? "8px 12px" : "10px 0",
-                                    justifyContent: open
-                                      ? "flex-start"
-                                      : "center",
-                                    background:
-                                      tab === v.id
-                                        ? "rgba(255,255,255,0.1)"
-                                        : "transparent",
-                                    border: "none",
-                                    borderRadius: 12,
-                                    color:
-                                      tab === v.id
-                                        ? "white"
-                                        : "rgba(250,247,242,0.6)",
-                                    cursor: "pointer",
-                                    transition: "all 0.3s ease",
-                                    position: "relative",
-                                  }}
-                                >
-                                  <div
+                              <label
+                                style={{
+                                  fontSize: 9,
+                                  fontWeight: 700,
+                                  color: "rgba(255,255,255,0.3)",
+                                  textTransform: "uppercase",
+                                  letterSpacing: 1.5,
+                                  cursor: "pointer",
+                                }}
+                              >
+                                Social Studio
+                              </label>
+                            </div>
+                            {showSocial ? (
+                              <ChevronUp
+                                size={14}
+                                color="rgba(255,255,255,0.3)"
+                              />
+                            ) : (
+                              <ChevronDown
+                                size={14}
+                                color="rgba(255,255,255,0.3)"
+                              />
+                            )}
+                          </div>
+
+                          <AnimatePresence>
+                            {(showSocial || !open) && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: "auto", opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                style={{
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  gap: 2,
+                                  overflow: "visible",
+                                }}
+                              >
+                                {SOCIAL_STUDIO.map((v: any) => (
+                                  <button
+                                    className="hover-scale"
+                                    key={v.id}
+                                    onClick={() => {
+                                      setTab(v.id);
+                                      if (!open) setOpen(true);
+                                    }}
                                     style={{
-                                      width: 32,
                                       display: "flex",
-                                      justifyContent: "center",
                                       alignItems: "center",
-                                      flexShrink: 0,
+                                      gap: open ? 12 : 0,
+                                      width: "100%",
+                                      padding: open ? "8px 12px" : "10px 0",
+                                      justifyContent: open
+                                        ? "flex-start"
+                                        : "center",
+                                      background:
+                                        tab === v.id
+                                          ? "rgba(255,255,255,0.1)"
+                                          : "transparent",
+                                      border: "none",
+                                      borderRadius: 12,
                                       color:
                                         tab === v.id
                                           ? "white"
-                                          : "rgba(255,255,255,0.5)",
+                                          : "rgba(250,247,242,0.6)",
+                                      cursor: "pointer",
+                                      transition: "all 0.3s ease",
+                                      position: "relative",
                                     }}
                                   >
-                                    {v.ic}
-                                  </div>
-                                  <AnimatePresence>
-                                    {open && (
-                                      <>
-                                        <motion.span
-                                          initial={{ opacity: 0, width: 0 }}
-                                          animate={{
-                                            opacity: 1,
-                                            width: "auto",
-                                          }}
-                                          exit={{ opacity: 0, width: 0 }}
-                                          style={{
-                                            overflow: "hidden",
-                                            whiteSpace: "nowrap",
-                                            flex: 1,
-                                            textAlign: "left",
-                                          }}
-                                        >
-                                          <span
-                                            style={{
-                                              fontSize: 12,
-                                              fontWeight:
-                                                tab === v.id ? 700 : 500,
-                                            }}
-                                          >
-                                            {v.lb}
-                                          </span>
-                                        </motion.span>
-                                        {v.soon && (
+                                    <div
+                                      style={{
+                                        width: 32,
+                                        display: "flex",
+                                        justifyContent: "center",
+                                        alignItems: "center",
+                                        flexShrink: 0,
+                                        color:
+                                          tab === v.id
+                                            ? "white"
+                                            : "rgba(255,255,255,0.5)",
+                                      }}
+                                    >
+                                      {v.ic}
+                                    </div>
+                                    <AnimatePresence>
+                                      {open && (
+                                        <>
                                           <motion.span
-                                            initial={{ opacity: 0 }}
-                                            animate={{ opacity: 1 }}
-                                            exit={{ opacity: 0 }}
+                                            initial={{ opacity: 0, width: 0 }}
+                                            animate={{
+                                              opacity: 1,
+                                              width: "auto",
+                                            }}
+                                            exit={{ opacity: 0, width: 0 }}
                                             style={{
-                                              position: "absolute",
-                                              right: 10,
-                                              background:
-                                                "rgba(255,255,255,0.2)",
-                                              color: "white",
-                                              padding: "2px 6px",
-                                              borderRadius: 4,
-                                              fontSize: 8,
-                                              fontWeight: 900,
-                                              letterSpacing: 0.5,
+                                              overflow: "hidden",
+                                              whiteSpace: "nowrap",
+                                              flex: 1,
+                                              textAlign: "left",
                                             }}
                                           >
-                                            SOON
+                                            <span
+                                              style={{
+                                                fontSize: 12,
+                                                fontWeight:
+                                                  tab === v.id ? 700 : 500,
+                                              }}
+                                            >
+                                              {v.lb}
+                                            </span>
                                           </motion.span>
-                                        )}
-                                      </>
-                                    )}
-                                  </AnimatePresence>
-                                </button>
-                              ))}
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
+                                          {v.soon && (
+                                            <motion.span
+                                              initial={{ opacity: 0 }}
+                                              animate={{ opacity: 1 }}
+                                              exit={{ opacity: 0 }}
+                                              style={{
+                                                position: "absolute",
+                                                right: 10,
+                                                background:
+                                                  "rgba(255,255,255,0.2)",
+                                                color: "white",
+                                                padding: "2px 6px",
+                                                borderRadius: 4,
+                                                fontSize: 8,
+                                                fontWeight: 900,
+                                                letterSpacing: 0.5,
+                                              }}
+                                            >
+                                              SOON
+                                            </motion.span>
+                                          )}
+                                        </>
+                                      )}
+                                    </AnimatePresence>
+                                  </button>
+                                ))}
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      )}
 
                       {/* Extras Section (Analytics/Settings) */}
                       <div

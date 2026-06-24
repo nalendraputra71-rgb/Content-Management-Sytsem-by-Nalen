@@ -594,7 +594,12 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
   const canDelete = !isNew;
 
   return (
-    <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} transition={{ duration: 0.15 }} onClick={handleClose} 
+    <motion.div 
+      initial={{ opacity: 0 }} 
+      animate={{ opacity: 1 }} 
+      exit={{ opacity: 0 }} 
+      transition={{ duration: 0.2, ease: "easeInOut" }} 
+      onClick={handleClose} 
       style={{
         position:"fixed",inset:0,
         background:"rgba(0,0,0,0.5)",
@@ -602,13 +607,14 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
         alignItems: layoutMode === "drawer" ? "stretch" : "center",
         justifyContent: layoutMode === "drawer" ? "flex-end" : "center",
         zIndex:300,
-        padding: layoutMode === "drawer" ? 0 : 16
+        padding: layoutMode === "drawer" ? 0 : 16,
+        willChange: "opacity"
       }}>
       <motion.div 
-        initial={layoutMode === "drawer" ? {x: "100%", opacity:1} : {scale:0.97, opacity:0, y:15}} 
-        animate={layoutMode === "drawer" ? {x: 0, opacity:1} : {scale:1, opacity:1, y:0}} 
-        exit={layoutMode === "drawer" ? {x: "100%", opacity:1} : {scale:0.97, opacity:0, y:15}} 
-        transition={{ duration: 0.25, ease: "easeOut" }}
+        initial={layoutMode === "drawer" ? { x: "100%", opacity: 0.9 } : { scale: 0.95, opacity: 0, y: 15 }} 
+        animate={layoutMode === "drawer" ? { x: 0, opacity: 1 } : { scale: 1, opacity: 1, y: 0 }} 
+        exit={layoutMode === "drawer" ? { x: "100%", opacity: 0.9 } : { scale: 0.95, opacity: 0, y: 15 }} 
+        transition={{ ease: [0.16, 1, 0.3, 1], duration: 0.35 }}
         onClick={e=>e.stopPropagation()} 
         style={{
           background: "#ffffff", 
@@ -620,7 +626,9 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
           height: layoutMode === "drawer" ? "100%" : "90vh",
           position:"relative",
           boxShadow: layoutMode === "drawer" ? "-10px 0 30px rgba(0,0,0,0.05)" : "0 12px 30px rgba(0,0,0,0.05)", 
-          display: "flex", flexDirection: "column"
+          display: "flex", flexDirection: "column",
+          willChange: "transform, opacity",
+          transform: "translate3d(0,0,0)"
         }}
       >
         {/* Modal Controls */}

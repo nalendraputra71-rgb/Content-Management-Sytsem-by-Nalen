@@ -329,6 +329,8 @@ export default function App() {
   useEffect(() => {
     const unsub = onSnapshot(doc(db, "config", "system"), (snap) => {
       if(snap.exists()) setSystemConfig(snap.data());
+    }, (error) => {
+      console.warn("config/system onSnapshot warn:", error.message);
     });
     return () => unsub();
   }, []);
@@ -634,6 +636,13 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme, systemConfig 
   const [holidayApis, setHolidayApis] = useState<string[]>([]);
   const [apiHolidays, setApiHolidays] = useState<Record<string, string>>({});
   const [loadingHolidayApis, setLoadingHolidayApis] = useState(false);
+
+  useEffect(() => {
+    if (tab === "content_planner" && systemConfig?.features?.contentPlanner === false) setTab("dashboard");
+    if (tab === "social-hub-ai" && systemConfig?.features?.hubai === false) setTab("dashboard");
+    if (tab === "soc_hub" && systemConfig?.features?.sochub === false) setTab("dashboard");
+    if (tab.startsWith("social-") && tab !== "social-hub-ai" && systemConfig?.features?.socialStudio === false) setTab("dashboard");
+  }, [tab, systemConfig?.features]);
 
   useEffect(() => {
     const handler = () => openAdd(new Date().getDate());
@@ -1422,6 +1431,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme, systemConfig 
   return (
     <div style={{display:"flex", height:"100vh", overflow:"hidden", background:"var(--theme-bg, #FAFAFA)"}}>
       <Sidebar 
+        systemConfig={systemConfig}
         open={sidebarOpen} setOpen={setSidebarOpen} tab={tab} setTab={handleTabChange} 
         workspaces={workspaces} activeWorkspace={workspace} onWorkspaceSelect={setWorkspace} 
         user={user} profile={profile} onLogout={()=>{ signOut(auth).then(() => window.location.hash = "#/login"); }}
