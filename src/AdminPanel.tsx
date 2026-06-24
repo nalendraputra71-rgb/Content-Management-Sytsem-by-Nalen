@@ -153,7 +153,31 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
 
   const updateSystemConfig = async (updates: any) => {
     try {
-      await setDoc(doc(db, "config", "system"), updates, { merge: true });
+      const expandedUpdates: any = {};
+      for (const key of Object.keys(updates)) {
+        if (key.includes(".")) {
+          const parts = key.split(".");
+          let current = expandedUpdates;
+          for (let i = 0; i < parts.length - 1; i++) {
+            const part = parts[i];
+            if (!current[part]) current[part] = {};
+            current = current[part];
+          }
+          current[parts[parts.length - 1]] = updates[key];
+        } else {
+          expandedUpdates[key] = updates[key];
+        }
+      }
+
+      const finalUpdates: any = { ...expandedUpdates };
+      if (expandedUpdates.features && systemSettings?.features) {
+        finalUpdates.features = {
+          ...systemSettings.features,
+          ...expandedUpdates.features
+        };
+      }
+
+      await setDoc(doc(db, "config", "system"), finalUpdates, { merge: true });
     } catch (e: any) { alert(e.message); }
   };
 

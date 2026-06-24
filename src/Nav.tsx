@@ -995,16 +995,22 @@ export function Sidebar({
     { id: "analytics", ic: <PieChart size={18} />, lb: "Analitik" },
   ];
 
+  const isSuperAdmin =
+    profile?.role === "admin" ||
+    profile?.email?.toLowerCase() === "nalendraputra71@gmail.com" ||
+    user?.email?.toLowerCase() === "nalendraputra71@gmail.com";
+
   const HUBIVERSE = [
     { id: "social-hub-ai", ic: <Sparkles size={18} />, lb: "Hub.ai" },
     { id: "soc_hub", ic: <Users size={18} />, lb: "SocHub" },
   ].filter(item => {
+    if (isSuperAdmin) return true;
     if (item.id === "social-hub-ai" && systemConfig?.features?.hubai === false) return false;
     if (item.id === "soc_hub" && systemConfig?.features?.sochub === false) return false;
     return true;
   });
 
-  const SOCIAL_STUDIO = systemConfig?.features?.socialStudio === false ? [] : [
+  const SOCIAL_STUDIO = (systemConfig?.features?.socialStudio === false && !isSuperAdmin) ? [] : [
     {
       id: "social-dashboard",
       ic: <Activity size={18} />,
@@ -1037,10 +1043,6 @@ export function Sidebar({
     },
   ];
 
-  const isSuperAdmin =
-    profile?.role === "admin" ||
-    profile?.email?.toLowerCase() === "nalendraputra71@gmail.com" ||
-    user?.email?.toLowerCase() === "nalendraputra71@gmail.com";
   const EXTRA = [
     ...(isSuperAdmin
       ? [
@@ -2016,7 +2018,7 @@ export function Sidebar({
                                   )}
                                 </AnimatePresence>
                               </button>
-                              {systemConfig?.features?.contentPlanner !== false && (
+                              {(systemConfig?.features?.contentPlanner !== false || isSuperAdmin) && (
                                 <button
                                   className="hover-scale"
                                   onClick={() => {

@@ -657,12 +657,18 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme, systemConfig 
   const [apiHolidays, setApiHolidays] = useState<Record<string, string>>({});
   const [loadingHolidayApis, setLoadingHolidayApis] = useState(false);
 
+  const isSuperAdmin =
+    profile?.role === "admin" ||
+    profile?.email?.toLowerCase() === "nalendraputra71@gmail.com" ||
+    user?.email?.toLowerCase() === "nalendraputra71@gmail.com";
+
   useEffect(() => {
+    if (isSuperAdmin) return;
     if (tab === "content_planner" && systemConfig?.features?.contentPlanner === false) setTab("dashboard");
     if (tab === "social-hub-ai" && systemConfig?.features?.hubai === false) setTab("dashboard");
     if (tab === "soc_hub" && systemConfig?.features?.sochub === false) setTab("dashboard");
     if (tab.startsWith("social-") && tab !== "social-hub-ai" && systemConfig?.features?.socialStudio === false) setTab("dashboard");
-  }, [tab, systemConfig?.features]);
+  }, [tab, systemConfig?.features, isSuperAdmin]);
 
   useEffect(() => {
     const handler = () => openAdd(new Date().getDate());
