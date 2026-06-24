@@ -37,9 +37,19 @@ service cloud.firestore {
     }
 
     // ─── USERS ───────────────────────────────────────────────────────────────
+    match /config/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /global_notifications/{notifId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
     match /users/{userId} {
       allow get: if isSignedIn();
-      allow list: if isAdmin();
+      allow list: if isSignedIn();
       allow create: if isSignedIn() && request.auth.uid == userId && incoming().uid == userId;
       allow update: if isSignedIn() && (
         (request.auth.uid == userId && incoming().diff(existing()).affectedKeys().hasOnly(['fullName', 'nickname', 'avatar', 'username', 'activeUntil', 'plan', 'hasUsedPromo', 'emailVerified', 'createdAt', 'themeId', 'bio', 'following', 'followers', 'aiTokensUsed', 'aiRequestsCount'])) ||

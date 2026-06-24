@@ -324,6 +324,14 @@ export default function App() {
   const [profile, setProfile] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [systemConfig, setSystemConfig] = useState<any>(null);
+
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, "config", "system"), (snap) => {
+      if(snap.exists()) setSystemConfig(snap.data());
+    });
+    return () => unsub();
+  }, []);
 
   useEffect(() => {
     testFirestoreConnection();
@@ -411,7 +419,7 @@ export default function App() {
         <Route path="/login" element={(user && profile) ? <Navigate to="/" /> : <AuthScreen currentUser={user && !profile ? user : null} onUserCreated={(u)=>setUser(u)} />} />
         <Route path="/profile" element={(user && profile) ? <CMSLayout><UserProfile userProfile={profile} activeWorkspace={null} onUpdate={setProfile} /></CMSLayout> : <Navigate to="/login" />} />
         <Route path="/billing" element={(user && profile) ? <CMSLayout><BillingView userProfile={profile} activeWorkspace={null} onUpdate={setProfile} /></CMSLayout> : <Navigate to="/login" />} />
-        <Route path="/*" element={(user && profile) ? <CMSLayout><Dashboard user={user} profile={profile} onUpdateProfile={updateProfileSettings} currentTheme={currentTheme} /></CMSLayout> : <LandingPage />} />
+        <Route path="/*" element={(user && profile) ? <CMSLayout><Dashboard user={user} profile={profile} onUpdateProfile={updateProfileSettings} currentTheme={currentTheme} systemConfig={systemConfig} /></CMSLayout> : <LandingPage />} />
       </Routes>
       <AnimatePresence>
         {showOnboarding && user && (
@@ -578,7 +586,7 @@ function QuickAddEventModal({ workspace, onClose, onSaveSettings }: any) {
   );
 }
 
-function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
+function Dashboard({ user, profile, onUpdateProfile, currentTheme, systemConfig }: any) {
   const [tab, setTab]           = useState("dashboard");
   const [contentTab, setContentTab] = useState("month");
   const [workspace, setWorkspace] = useState<any>(null);
@@ -1435,6 +1443,24 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme }: any) {
         <div style={{ position: "fixed", inset: 0, zIndex: -1, pointerEvents: "none", background: "radial-gradient(circle at 0% 0%, #E3F2FD 0%, transparent 50%), radial-gradient(circle at 100% 100%, #FFF3E0 0%, transparent 50%), radial-gradient(circle at 100% 0%, #F3E5F5 0%, transparent 50%), #FAFAFA" }} />
       )}
       <div style={{flex:1, minWidth:0, display:"flex", flexDirection:"column", height:"100vh", overflow: ["social-hub-ai", "soc_hub", "admin"].includes(tab) ? "hidden" : "auto", position:"relative", background: "transparent"}}>
+        {systemConfig?.bannerActive && systemConfig?.bannerMessage && (
+          <div style={{
+            background: systemConfig.bannerType === "alert" ? "#9C2B4E" : systemConfig.bannerType === "warning" ? "#FBC02D" : "#1D4D7A",
+            color: systemConfig.bannerType === "warning" ? "#2C2016" : "white",
+            padding: "10px 24px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 12,
+            fontSize: 13,
+            fontWeight: 600,
+            zIndex: 100,
+            flexShrink: 0
+          }}>
+             <span style={{flex:1, textAlign:"center"}}>{systemConfig.bannerMessage}</span>
+          </div>
+        )}
+
         {(!["dashboard", "settings", "admin", "soc_hub"].includes(tab) && !tab.startsWith("social")) && (
           <Header 
             profile={profile}

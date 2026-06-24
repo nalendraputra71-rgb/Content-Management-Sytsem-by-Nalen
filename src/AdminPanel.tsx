@@ -212,6 +212,30 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
      } catch(e:any) { alert(e.message); }
   };
 
+  const [bcTitle, setBcTitle] = useState("");
+  const [bcDesc, setBcDesc] = useState("");
+  const [bcTarget, setBcTarget] = useState("all");
+  const [bcSending, setBcSending] = useState(false);
+
+  const handleSendBroadcast = async () => {
+    if(!bcTitle || !bcDesc) return alert("Title and Desc are required.");
+    setBcSending(true);
+    try {
+      await addDoc(collection(db, "global_notifications"), {
+        title: bcTitle,
+        desc: bcDesc,
+        target: bcTarget,
+        createdAt: new Date().getTime(),
+      });
+      alert("Broadcast terkirim.");
+      setBcTitle("");
+      setBcDesc("");
+    } catch(e:any) {
+      alert(e.message);
+    }
+    setBcSending(false);
+  };
+
   const isAdminUser = userProfile?.role === "admin" || userProfile?.email?.toLowerCase() === "nalendraputra71@gmail.com";
   if (!userProfile || !isAdminUser) {
     return <div style={{flex: 1, display:"flex", alignItems:"center", justifyContent:"center", color:"#9C2B4E", fontSize: 16, fontWeight: 700}}>Akses Ditolak.</div>;
@@ -225,6 +249,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
     { id: "plans", lb: "Paket & Promo", ic: <Tag size={18}/> },
     { id: "support", lb: "Support & Tiket", ic: <LifeBuoy size={18}/> },
     { id: "deletion_feedback", lb: "Alasan Hapus Akun", ic: <AlertCircle size={18}/> },
+    { id: "broadcasts", lb: "Broadcasts", ic: <Send size={18}/> },
     { id: "settings", lb: "Pengaturan", ic: <Settings size={18}/> }
   ];
 
@@ -893,6 +918,57 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
               </motion.div>
             )}
 
+            {/* BROADCASTS */}
+            {activeTab === "broadcasts" && (
+              <motion.div key="broadcasts" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0}} style={{maxWidth:600}}>
+                 <h2 style={{fontSize:28, fontWeight:800, marginBottom:24, letterSpacing:"-1px"}}>Kirim Broadcast Notification</h2>
+                 
+                 <div style={CARD({padding:24, borderRadius:24})}>
+                    <div style={{display:"flex", flexDirection:"column", gap:16}}>
+                       <div>
+                          <label style={{display:"block", fontSize:12, fontWeight:700, marginBottom:8}}>Judul Notifikasi</label>
+                          <input 
+                            value={bcTitle} 
+                            onChange={(e)=>setBcTitle(e.target.value)}
+                            style={{width:"100%", padding:"12px", borderRadius:12, border:"1px solid #EEE", fontSize:14}} 
+                            placeholder="Contoh: Fitur Baru: AI Generator"
+                          />
+                       </div>
+                       <div>
+                          <label style={{display:"block", fontSize:12, fontWeight:700, marginBottom:8}}>Isi Pesan</label>
+                          <textarea 
+                            value={bcDesc} 
+                            onChange={(e)=>setBcDesc(e.target.value)}
+                            style={{width:"100%", padding:"12px", borderRadius:12, border:"1px solid #EEE", fontSize:14, minHeight:80, fontFamily:"inherit"}} 
+                            placeholder="Contoh: Kami baru saja merilis fitur AI Generator..."
+                          />
+                       </div>
+                       <div>
+                          <label style={{display:"block", fontSize:12, fontWeight:700, marginBottom:8}}>Target User</label>
+                          <select 
+                            value={bcTarget} 
+                            onChange={(e)=>setBcTarget(e.target.value)}
+                            style={{width:"100%", padding:"12px", borderRadius:12, border:"1px solid #EEE", fontSize:14, background:"white", outline:"none"}}
+                          >
+                            <option value="all">Semua User</option>
+                            <option value="pro">Hanya User PRO</option>
+                            <option value="expired">Hanya User Expired / Free</option>
+                          </select>
+                       </div>
+                       
+                       <button 
+                         onClick={handleSendBroadcast} 
+                         disabled={bcSending || !bcTitle || !bcDesc}
+                         className="hover-scale btn-hover"
+                         style={{...B(true), width:"100%", height:48, borderRadius:24, opacity: (bcSending || !bcTitle || !bcDesc) ? 0.5 : 1}}
+                       >
+                         {bcSending ? "Mengirim..." : "Kirim Notifikasi"}
+                       </button>
+                    </div>
+                 </div>
+              </motion.div>
+            )}
+
             {/* SETTINGS */}
             {activeTab === "settings" && (
               <motion.div key="settings" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0}} style={{maxWidth:600}}>
@@ -920,6 +996,47 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                                 {systemSettings.allowRegistration ? <ToggleRight size={32} color="#4CAF50"/> : <ToggleLeft size={32} color="#CCC"/>}
                              </button>
                           </div>
+                       </div>
+                    </div>
+
+                    <div style={CARD({padding:24, borderRadius:24})}>
+                       <h3 style={{fontSize:16, fontWeight:800, marginBottom:20, display:"flex", alignItems:"center", gap:8}}><AlertCircle size={18}/> Global Banner</h3>
+                       <div style={{display:"flex", flexDirection:"column", gap:16}}>
+                          <div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}>
+                             <div>
+                                <div style={{fontSize:14, fontWeight:700}}>Tampilkan Banner</div>
+                                <div style={{fontSize:12, color:"#999"}}>Banner info/alert akan muncul di bagian paling atas aplikasi.</div>
+                             </div>
+                             <button onClick={()=>updateSystemConfig({bannerActive: !systemSettings.bannerActive})} style={{background:"transparent", border:"none", cursor:"pointer"}}>
+                                {systemSettings.bannerActive ? <ToggleRight size={32} color="#4CAF50"/> : <ToggleLeft size={32} color="#CCC"/>}
+                             </button>
+                          </div>
+                          {systemSettings.bannerActive && (
+                            <>
+                              <div>
+                                 <label style={{display:"block", fontSize:12, fontWeight:700, marginBottom:8}}>Isi Pesan Banner</label>
+                                 <textarea 
+                                   value={systemSettings.bannerMessage || ""} 
+                                   onChange={(e)=>setSystemSettings({...systemSettings, bannerMessage: e.target.value})}
+                                   onBlur={(e)=>updateSystemConfig({bannerMessage: e.target.value})}
+                                   style={{width:"100%", padding:"12px", borderRadius:12, border:"1px solid #EEE", fontSize:14, minHeight:60, fontFamily:"inherit"}} 
+                                   placeholder="Contoh: Sedang ada pemeliharaan server pada 24 Juni 2026."
+                                 />
+                              </div>
+                              <div>
+                                 <label style={{display:"block", fontSize:12, fontWeight:700, marginBottom:8}}>Warna Banner</label>
+                                 <select 
+                                   value={systemSettings.bannerType || "info"} 
+                                   onChange={(e)=>updateSystemConfig({bannerType: e.target.value})}
+                                   style={{width:"100%", padding:"12px", borderRadius:12, border:"1px solid #EEE", fontSize:14, background:"white", outline:"none"}}
+                                 >
+                                   <option value="info">Info (Biru)</option>
+                                   <option value="warning">Warning (Kuning)</option>
+                                   <option value="alert">Alert (Merah)</option>
+                                 </select>
+                              </div>
+                            </>
+                          )}
                        </div>
                     </div>
 
