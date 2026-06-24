@@ -33,7 +33,7 @@ import { TermsOfService, PrivacyPolicy } from "./TermsAndPrivacy";
 import { motion, AnimatePresence } from "motion/react";
 
 import { LandingPage } from "./LandingPage";
-import { Calendar, Download } from "lucide-react";
+import { Calendar, Download, X } from "lucide-react";
 
 export function cleanAndFormatHolidayText(text: string): string {
   if (!text) return "";
@@ -608,6 +608,26 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme, systemConfig 
   const [isSettingsDirty, setIsSettingsDirty] = useState(false);
   const [pendingTab, setPendingTab] = useState<string | null>(null);
   const workspaceRef = useRef(workspace);
+
+  const [bannerDismissed, setBannerDismissed] = useState(false);
+
+  useEffect(() => {
+    if (systemConfig?.bannerMessage) {
+      const dismissed = localStorage.getItem("dismissed_banner_message");
+      if (dismissed === systemConfig.bannerMessage) {
+        setBannerDismissed(true);
+      } else {
+        setBannerDismissed(false);
+      }
+    }
+  }, [systemConfig?.bannerMessage]);
+
+  const handleDismissBanner = () => {
+    if (systemConfig?.bannerMessage) {
+      localStorage.setItem("dismissed_banner_message", systemConfig.bannerMessage);
+    }
+    setBannerDismissed(true);
+  };
 
   useEffect(() => {
     workspaceRef.current = workspace;
@@ -1453,23 +1473,65 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme, systemConfig 
         <div style={{ position: "fixed", inset: 0, zIndex: -1, pointerEvents: "none", background: "radial-gradient(circle at 0% 0%, #E3F2FD 0%, transparent 50%), radial-gradient(circle at 100% 100%, #FFF3E0 0%, transparent 50%), radial-gradient(circle at 100% 0%, #F3E5F5 0%, transparent 50%), #FAFAFA" }} />
       )}
       <div style={{flex:1, minWidth:0, display:"flex", flexDirection:"column", height:"100vh", overflow: ["social-hub-ai", "soc_hub", "admin"].includes(tab) ? "hidden" : "auto", position:"relative", background: "transparent"}}>
-        {systemConfig?.bannerActive && systemConfig?.bannerMessage && (
-          <div style={{
-            background: systemConfig.bannerType === "alert" ? "#9C2B4E" : systemConfig.bannerType === "warning" ? "#FBC02D" : "#1D4D7A",
-            color: systemConfig.bannerType === "warning" ? "#2C2016" : "white",
-            padding: "10px 24px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 12,
-            fontSize: 13,
-            fontWeight: 600,
-            zIndex: 100,
-            flexShrink: 0
-          }}>
-             <span style={{flex:1, textAlign:"center"}}>{systemConfig.bannerMessage}</span>
-          </div>
-        )}
+        <AnimatePresence>
+          {systemConfig?.bannerActive && systemConfig?.bannerMessage && !bannerDismissed && (
+            <motion.div 
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ ease: [0.16, 1, 0.3, 1], duration: 0.35 }}
+              style={{
+                background: systemConfig.bannerType === "alert" ? "#9C2B4E" : systemConfig.bannerType === "warning" ? "#FBC02D" : "#1D4D7A",
+                color: systemConfig.bannerType === "warning" ? "#2C2016" : "white",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 13,
+                fontWeight: 600,
+                zIndex: 100,
+                flexShrink: 0,
+                position: "relative",
+                overflow: "hidden"
+              }}
+            >
+              <div style={{
+                padding: "10px 48px 10px 24px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: "100%",
+                gap: 12
+              }}>
+                 <span style={{flex:1, textAlign:"center"}}>{systemConfig.bannerMessage}</span>
+                 <button 
+                   onClick={handleDismissBanner}
+                   style={{
+                     position: "absolute",
+                     right: 16,
+                     top: "50%",
+                     transform: "translateY(-50%)",
+                     background: "rgba(0,0,0,0.06)",
+                     border: "none",
+                     borderRadius: "50%",
+                     width: 24,
+                     height: 24,
+                     display: "flex",
+                     alignItems: "center",
+                     justifyContent: "center",
+                     cursor: "pointer",
+                     color: "inherit",
+                     transition: "all 0.15s",
+                     opacity: 0.8
+                   }}
+                   className="hover:bg-black/10 hover:scale-105 active:scale-95 hover:opacity-100"
+                   title="Tutup Banner"
+                 >
+                   <X size={14} />
+                 </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {(!["dashboard", "settings", "admin", "soc_hub"].includes(tab) && !tab.startsWith("social")) && (
           <Header 
