@@ -57,6 +57,14 @@ service cloud.firestore {
         isAdmin()
       );
       allow delete: if isAdmin();
+      
+      match /hubaiConfig/{document=**} {
+        allow read, write: if isSignedIn() && request.auth.uid == userId;
+      }
+      
+      match /aiChats/{document=**} {
+        allow read, write: if isSignedIn() && request.auth.uid == userId;
+      }
     }
 
     // ─── DASHBOARD & TODOS ──────────────────────────────────────────────────
@@ -189,14 +197,6 @@ service cloud.firestore {
       }
 
       match /inbox/{messageId} {
-        allow read, write: if isSignedIn();
-      }
-
-      match /aiChats/{chatId} {
-        allow read, write: if isSignedIn();
-      }
-
-      match /hubaiConfig/{configId} {
         allow read, write: if isSignedIn();
       }
 

@@ -29,6 +29,7 @@ import {
   Youtube,
   Link2,
   TrendingUp,
+  TrendingDown,
   Calendar as CalendarIcon,
   Image as ImageIcon,
   Send,
@@ -68,11 +69,16 @@ import {
   Pin,
   Edit2,
   Lightbulb,
+  Heart,
+  Upload,
+  Image as ImageIcon,
 } from "lucide-react";
 import Markdown from "react-markdown";
 import {
   LineChart,
   Line,
+  AreaChart,
+  Area,
   BarChart,
   Bar,
   XAxis,
@@ -310,6 +316,30 @@ const PLATFORMS = [
     ),
     color: "#000000",
   },
+  {
+    id: "threads",
+    name: "Threads",
+    icon: (
+      <div
+        style={{
+          fontWeight: 800,
+          fontSize: 12,
+          display: "flex",
+          alignItems: "center",
+          height: "100%",
+        }}
+      >
+        @
+      </div>
+    ),
+    color: "#000000",
+  },
+  {
+    id: "linkedin",
+    name: "LinkedIn",
+    icon: <Linkedin size={18} />,
+    color: "#0A66C2",
+  },
 ];
 
 export function SocialStudioView({
@@ -376,6 +406,11 @@ export function SocialStudioView({
   const [aiLoading, setAiLoading] = useState(false);
 
   const [dashTimeRange, setDashTimeRange] = useState("30 Hari Terakhir");
+  const [showCreatePostPopup, setShowCreatePostPopup] = useState(false);
+  const [createPostMode, setCreatePostMode] = useState<"now" | "schedule">("now");
+  const [createPostCaption, setCreatePostCaption] = useState("");
+  const [createPostImage, setCreatePostImage] = useState<string | null>(null);
+  const [createPostPlatforms, setCreatePostPlatforms] = useState<string[]>([]);
   const [analyticsMetric, setAnalyticsMetric] = useState("er");
   const [analyticsPlatform, setAnalyticsPlatform] = useState("all");
   const [analyticsTimeRange, setAnalyticsTimeRange] =
@@ -681,9 +716,9 @@ export function SocialStudioView({
     return () => window.removeEventListener("click", handleGlobalClick);
   }, []);
   useEffect(() => {
-    if (!workspaceId) return;
+    if (!user?.uid) return;
     const unsub = onSnapshot(
-      doc(db, "workspaces", workspaceId, "hubaiConfig", "config"),
+      doc(db, "users", user.uid, "hubaiConfig", "config"),
       (snap) => {
         if (snap.exists()) {
           const data = snap.data();
@@ -720,14 +755,14 @@ export function SocialStudioView({
       },
     );
     return unsub;
-  }, [workspaceId, db]);
+  }, [user?.uid, db]);
 
   const saveConfig = async () => {
-    if (!workspaceId) return;
+    if (!user?.uid) return;
     setSavingConfig(true);
     try {
       await setDoc(
-        doc(db, "workspaces", workspaceId, "hubaiConfig", "config"),
+        doc(db, "users", user.uid, "hubaiConfig", "config"),
         { configs: hubaiConfigs },
       );
       alert("Konfigurasi HUB.AI berhasil disimpan!");
@@ -752,9 +787,9 @@ export function SocialStudioView({
   }, [chatHistory, chatLoading, tab, activeSessionId, targetMessageIndex]);
 
   useEffect(() => {
-    if (!workspaceId) return;
+    if (!user?.uid) return;
     const q = query(
-      collection(db, "workspaces", workspaceId, "aiChats"),
+      collection(db, "users", user.uid, "aiChats"),
       orderBy("updatedAt", "desc"),
     );
     const unsub = onSnapshot(
@@ -767,7 +802,7 @@ export function SocialStudioView({
       },
     );
     return unsub;
-  }, [workspaceId, db]);
+  }, [user?.uid, db]);
 
   const handleChatSubmit = async (overrideMsg?: string) => {
     const msgToUse = typeof overrideMsg === "string" ? overrideMsg : chatInput;
@@ -781,10 +816,10 @@ export function SocialStudioView({
     setChatLoading(true);
 
     try {
-      if (!currentSessionId && workspaceId) {
+      if (!currentSessionId && user?.uid) {
         try {
           const docRef = await addDoc(
-            collection(db, "workspaces", workspaceId, "aiChats"),
+            collection(db, "users", user.uid, "aiChats"),
             {
               title:
                 userMsg.substring(0, 30) + (userMsg.length > 30 ? "..." : ""),
@@ -797,10 +832,10 @@ export function SocialStudioView({
         } catch (err) {
           console.error("Gagal save session ke Firebase", err);
         }
-      } else if (currentSessionId && workspaceId) {
+      } else if (currentSessionId && user?.uid) {
         try {
           await setDoc(
-            doc(db, "workspaces", workspaceId, "aiChats", currentSessionId),
+            doc(db, "users", user.uid, "aiChats", currentSessionId),
             {
               messages: newHistory,
               updatedAt: serverTimestamp(),
@@ -995,10 +1030,10 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
       setChatHistory(updatedHistory);
       setAnimatingMessageIndex(updatedHistory.length - 1);
 
-      if (currentSessionId && workspaceId) {
+      if (currentSessionId && user?.uid) {
         try {
           await setDoc(
-            doc(db, "workspaces", workspaceId, "aiChats", currentSessionId),
+            doc(db, "users", user.uid, "aiChats", currentSessionId),
             {
               messages: updatedHistory,
               updatedAt: serverTimestamp(),
@@ -1676,7 +1711,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                 e.stopPropagation();
                 if (editSessionTitle.trim() !== "") {
                   await updateDoc(
-                    doc(db, "workspaces", workspaceId!, "aiChats", s.id),
+                    doc(db, "users", user.uid, "aiChats", s.id),
                     { title: editSessionTitle },
                   );
                 }
@@ -1695,7 +1730,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
             onBlur={async () => {
               if (editSessionTitle.trim() !== "") {
                 await updateDoc(
-                  doc(db, "workspaces", workspaceId!, "aiChats", s.id),
+                  doc(db, "users", user.uid, "aiChats", s.id),
                   { title: editSessionTitle },
                 );
               }
@@ -1755,7 +1790,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                   onClick={async (e) => {
                     e.stopPropagation();
                     await updateDoc(
-                      doc(db, "workspaces", workspaceId!, "aiChats", s.id),
+                      doc(db, "users", user.uid, "aiChats", s.id),
                       { pinned: !s.pinned },
                     );
                     setActiveHistoryMenuId(null);
@@ -1808,7 +1843,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                       confirm("Yakin ingin menghapus histori percakapan ini?")
                     ) {
                       await deleteDoc(
-                        doc(db, "workspaces", workspaceId!, "aiChats", s.id),
+                        doc(db, "users", user.uid, "aiChats", s.id),
                       );
                       if (activeSessionId === s.id) {
                         setActiveSessionId(null);
@@ -1915,250 +1950,450 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                 >
                   <Settings size={16} color="rgba(44,32,22,0.6)" />
                 </button>
+                <button
+                  className="hover-scale hover-bg"
+                  onClick={() => setShowCreatePostPopup(true)}
+                  style={{
+                    background: "var(--theme-primary)",
+                    border: "none",
+                    borderRadius: 12,
+                    padding: "10px 16px",
+                    cursor: "pointer",
+                    fontWeight: 800,
+                    color: "white",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                  }}
+                >
+                  <Plus size={16} /> Create a Post
+                </button>
               </div>
             </div>
 
-            {/* Integrations Preview */}
-            <div
-              style={{
-                background: "white",
-                borderRadius: 20,
-                border: "1px solid rgba(44,32,22,0.05)",
-                padding: 24,
-                marginBottom: 24,
-              }}
-            >
-              <h3 style={{ fontSize: 16, fontWeight: 800, marginBottom: 16 }}>
-                Integrasi Platform
-              </h3>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
-                  gap: 16,
-                }}
-              >
-                {PLATFORMS.filter((p) => p.id !== "all").map((p) => {
-                  const isConn = connectedPlatforms.includes(p.id);
-                  return (
-                    <div
-                      key={p.id}
-                      onClick={() => toggleConnection(p.id)}
-                      className="hover-scale"
-                      style={{
-                        padding: 16,
-                        borderRadius: 16,
-                        border: "1px solid rgba(44,32,22,0.1)",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 12,
-                        cursor: "pointer",
-                        background: isConn ? "#FDF0EB" : "transparent",
-                        transition: "all 0.2s",
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: 40,
-                          height: 40,
-                          borderRadius: 20,
-                          background: isConn ? p.color : `${p.color}15`,
-                          color: isConn ? "white" : p.color,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                      >
-                        {p.icon}
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <div
-                          style={{
-                            fontSize: 15,
-                            fontWeight: 800,
-                            color: "#2C2016",
-                          }}
-                        >
-                          {p.name}
-                        </div>
-                        <div
-                          style={{
-                            fontSize: 12,
-                            color: isConn ? "#3B82F6" : "rgba(44,32,22,0.4)",
-                            fontWeight: 700,
-                          }}
-                        >
-                          {isConn ? "1 akun terhubung" : "Tambahkan akun"}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Chart Overview */}
-            <div
-              style={{
-                background: "white",
-                borderRadius: 20,
-                border: "1px solid rgba(44,32,22,0.05)",
-                padding: 24,
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: 24,
-                }}
-              >
-                <h3 style={{ fontSize: 18, fontWeight: 800, margin: 0 }}>
-                  Trend Interaksi
-                </h3>
-                <div style={{ display: "flex", gap: 12 }}>
-                  <CustomDropdown
-                    value={analyticsPlatform}
-                    options={PLATFORMS}
-                    onChange={setAnalyticsPlatform}
-                    renderOption={(o) => (
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 8,
-                          fontWeight: 700,
-                        }}
-                      >
-                        {o.icon} <span>{o.name}</span>
-                      </div>
-                    )}
-                  />
-                </div>
-              </div>
-
-              <div style={{ height: 350, width: "100%" }}>
-                <ResponsiveContainer>
-                  <LineChart
-                    data={MOCK_CHART_DATA}
-                    margin={{ top: 5, right: 20, bottom: 5, left: 0 }}
-                  >
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      vertical={false}
-                      stroke="rgba(44,32,22,0.05)"
-                    />
-                    <XAxis
-                      dataKey="date"
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{
-                        fontSize: 12,
-                        fill: "rgba(44,32,22,0.5)",
-                        fontWeight: 600,
-                      }}
-                    />
-                    <YAxis
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{
-                        fontSize: 12,
-                        fill: "rgba(44,32,22,0.5)",
-                        fontWeight: 600,
-                      }}
-                    />
-                    <RechartsTooltip
-                      contentStyle={{
-                        borderRadius: 12,
-                        border: "none",
-                        boxShadow: "0 5px 20px rgba(0,0,0,0.1)",
-                        fontWeight: 700,
-                      }}
-                    />
-                    <Legend
-                      iconType="circle"
-                      wrapperStyle={{
-                        fontSize: 13,
-                        fontWeight: 700,
-                        color: "#2C2016",
-                      }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="views"
-                      name="Views"
-                      stroke="var(--theme-primary)"
-                      strokeWidth={3}
-                      dot={{ r: 4, strokeWidth: 2 }}
-                      activeDot={{ r: 6 }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="reach"
-                      name="Reach"
-                      stroke="#2D7A5E"
-                      strokeWidth={3}
-                      dot={{ r: 4, strokeWidth: 2 }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="likes"
-                      name="Likes"
-                      stroke="#9C2B4E"
-                      strokeWidth={3}
-                      dot={{ r: 4, strokeWidth: 2 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-                  gap: 16,
-                  marginTop: 24,
-                }}
-              >
-                {[
-                  { lb: "Views", v: "124.5K", i: <Activity size={20} /> },
-                  { lb: "Reach", v: "89.2K", i: <TrendingUp size={20} /> },
-                  { lb: "Total ER", v: "4.8%", i: <BarChart3 size={20} /> },
-                  { lb: "Total Likes", v: "12.4K", i: <CopyPlus size={20} /> },
-                ].map((s, i) => (
+            {/* KONEKSI PLATFORM - Minimalist Pills */}
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
+              <span style={{ fontSize: 13, fontWeight: 800, color: "rgba(44,32,22,0.4)", textTransform: "uppercase", letterSpacing: 0.5, marginRight: 8 }}>
+                Connected to:
+              </span>
+              {PLATFORMS.filter((p) => p.id !== "all").map((p) => {
+                const isConn = connectedPlatforms.includes(p.id);
+                return (
                   <div
-                    key={i}
+                    key={p.id}
+                    onClick={() => toggleConnection(p.id)}
+                    className="hover-scale"
                     style={{
-                      background: "#FAFAFA",
-                      borderRadius: 16,
-                      padding: 20,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      padding: "6px 12px 6px 6px",
+                      cursor: "pointer",
+                      background: isConn ? "white" : "transparent",
+                      border: isConn ? "1px solid rgba(44,32,22,0.1)" : "1px dashed rgba(44,32,22,0.2)",
+                      borderRadius: 32,
+                      boxShadow: isConn ? "0 2px 8px rgba(0,0,0,0.02)" : "none",
+                      transition: "all 0.2s"
                     }}
                   >
                     <div
                       style={{
+                        width: 24,
+                        height: 24,
+                        borderRadius: 12,
+                        background: isConn ? p.color : "rgba(44,32,22,0.05)",
+                        color: isConn ? "white" : "rgba(44,32,22,0.4)",
                         display: "flex",
-                        justifyContent: "space-between",
-                        color: "rgba(44,32,22,0.4)",
-                        marginBottom: 12,
+                        alignItems: "center",
+                        justifyContent: "center",
                       }}
                     >
-                      <div style={{ fontSize: 13, fontWeight: 800 }}>
-                        {s.lb}
-                      </div>
-                      {s.i}
+                      {typeof p.icon === "string" ? <span style={{fontSize: 9, fontWeight: 800}}>{p.icon}</span> : React.cloneElement(p.icon as React.ReactElement, { size: 12 })}
                     </div>
-                    <div
-                      style={{
-                        fontSize: 26,
-                        fontWeight: 800,
-                        color: "#2C2016",
-                      }}
-                    >
-                      {s.v}
+                    <span style={{ fontSize: 13, fontWeight: 700, color: isConn ? "#2C2016" : "rgba(44,32,22,0.4)" }}>{p.name}</span>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 320px",
+                gap: 24,
+                alignItems: "start",
+              }}
+            >
+              {/* MAIN COLUMN */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+                {/* 1. KEY METRICS */}
+                <div
+                  style={{
+                    background: "white",
+                    borderRadius: 24,
+                    border: "1px solid rgba(44,32,22,0.08)",
+                    padding: "24px 32px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 24,
+                  }}
+                >
+                  {[
+                    { lb: "Followers", v: "1.2M", i: <Users size={18} />, trend: "+2.4%" },
+                    { lb: "Reach", v: "89.2K", i: <TrendingUp size={18} />, trend: "+12%" },
+                    { lb: "Engagement", v: "4.8%", i: <BarChart3 size={18} />, trend: "-0.5%" },
+                    { lb: "Mentions", v: "1,204", i: <MessageCircle size={18} />, trend: "+8%" },
+                  ].map((s, i) => {
+                    const isPositive = s.trend.startsWith("+");
+                    return (
+                      <React.Fragment key={i}>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 12, flex: 1 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, color: "rgba(44,32,22,0.4)", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                            {s.i}
+                            {s.lb}
+                          </div>
+                          <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
+                            <div style={{ fontSize: 32, fontWeight: 800, color: "#2C2016", letterSpacing: "-1px", lineHeight: 1 }}>
+                              {s.v}
+                            </div>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: isPositive ? "#2D7A5E" : "#9C2B4E", display: "flex", alignItems: "center", gap: 4 }}>
+                              {isPositive ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+                              {s.trend}
+                            </div>
+                          </div>
+                        </div>
+                        {i < 3 && <div style={{ width: 1, height: 48, background: "rgba(44,32,22,0.08)" }} />}
+                      </React.Fragment>
+                    );
+                  })}
+                </div>
+
+                {/* 2. TREND INTERAKSI (CHART) */}
+                <div
+                  style={{
+                    background: "white",
+                    borderRadius: 24,
+                    border: "1px solid rgba(44,32,22,0.05)",
+                    padding: 32,
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: 32,
+                    }}
+                  >
+                    <h3 style={{ fontSize: 18, fontWeight: 800, margin: 0, color: "#2C2016" }}>
+                      Trend Interaksi
+                    </h3>
+                    <CustomDropdown
+                      value={analyticsPlatform}
+                      options={PLATFORMS}
+                      onChange={setAnalyticsPlatform}
+                      renderOption={(o) => (
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                            fontWeight: 700,
+                          }}
+                        >
+                          {o.icon} <span>{o.name}</span>
+                        </div>
+                      )}
+                    />
+                  </div>
+
+                  <div style={{ height: 300, width: "100%" }}>
+                    <ResponsiveContainer>
+                      <AreaChart
+                        data={MOCK_CHART_DATA}
+                        margin={{ top: 5, right: 20, bottom: 5, left: 0 }}
+                      >
+                        <defs>
+                          <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="var(--theme-primary)" stopOpacity={0.3}/>
+                            <stop offset="95%" stopColor="var(--theme-primary)" stopOpacity={0}/>
+                          </linearGradient>
+                          <linearGradient id="colorReach" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#2D7A5E" stopOpacity={0.3}/>
+                            <stop offset="95%" stopColor="#2D7A5E" stopOpacity={0}/>
+                          </linearGradient>
+                          <linearGradient id="colorLikes" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#9C2B4E" stopOpacity={0.3}/>
+                            <stop offset="95%" stopColor="#9C2B4E" stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid
+                          strokeDasharray="3 3"
+                          vertical={false}
+                          stroke="rgba(44,32,22,0.05)"
+                        />
+                        <XAxis
+                          dataKey="date"
+                          axisLine={false}
+                          tickLine={false}
+                          tick={{
+                            fontSize: 12,
+                            fill: "rgba(44,32,22,0.4)",
+                            fontWeight: 700,
+                          }}
+                          dy={10}
+                        />
+                        <YAxis
+                          axisLine={false}
+                          tickLine={false}
+                          tick={{
+                            fontSize: 12,
+                            fill: "rgba(44,32,22,0.4)",
+                            fontWeight: 700,
+                          }}
+                          dx={-10}
+                        />
+                        <RechartsTooltip
+                          contentStyle={{
+                            borderRadius: 12,
+                            border: "none",
+                            boxShadow: "0 8px 30px rgba(0,0,0,0.12)",
+                            fontWeight: 700,
+                            padding: "12px 16px"
+                          }}
+                          itemStyle={{ fontSize: 13, fontWeight: 700 }}
+                          labelStyle={{ color: "rgba(44,32,22,0.4)", marginBottom: 8, fontSize: 12, fontWeight: 800 }}
+                        />
+                        <Legend
+                          iconType="circle"
+                          wrapperStyle={{
+                            fontSize: 13,
+                            fontWeight: 800,
+                            color: "#2C2016",
+                            paddingTop: 20
+                          }}
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey="views"
+                          name="Views"
+                          stroke="var(--theme-primary)"
+                          fillOpacity={1}
+                          fill="url(#colorViews)"
+                          strokeWidth={3}
+                          activeDot={{ r: 6, strokeWidth: 0, fill: "var(--theme-primary)" }}
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey="reach"
+                          name="Reach"
+                          stroke="#2D7A5E"
+                          fillOpacity={1}
+                          fill="url(#colorReach)"
+                          strokeWidth={3}
+                          activeDot={{ r: 6, strokeWidth: 0, fill: "#2D7A5E" }}
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey="likes"
+                          name="Likes"
+                          stroke="#9C2B4E"
+                          fillOpacity={1}
+                          fill="url(#colorLikes)"
+                          strokeWidth={3}
+                          activeDot={{ r: 6, strokeWidth: 0, fill: "#9C2B4E" }}
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                {/* 3. TOP PERFORMING POSTS */}
+                <div
+                  style={{
+                    background: "white",
+                    borderRadius: 24,
+                    border: "1px solid rgba(44,32,22,0.05)",
+                    padding: 32,
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: 24,
+                    }}
+                  >
+                    <h3 style={{ fontSize: 18, fontWeight: 800, margin: 0, color: "#2C2016" }}>
+                      Top Performing Content
+                    </h3>
+                    <button style={{ background: "rgba(44,32,22,0.03)", border: "none", color: "var(--theme-primary)", fontWeight: 700, fontSize: 13, cursor: "pointer", padding: "8px 16px", borderRadius: 16 }} className="hover-bg">
+                      Lihat Semua
+                    </button>
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                    {[
+                      { plat: "instagram", icon: <Instagram size={14}/>, text: "Campaign Launch: Promo Akhir Tahun", er: "8.2%", likes: "12K", img: "https://images.unsplash.com/photo-1611162616305-c69b3fa7fbe0?q=80&w=150&auto=format&fit=crop" },
+                      { plat: "tiktok", icon: "TT", text: "Behind The Scene Pembuatan Produk Baru", er: "12.4%", likes: "45K", img: "https://images.unsplash.com/photo-1611605698335-8b1569810432?q=80&w=150&auto=format&fit=crop" },
+                      { plat: "linkedin", icon: <Linkedin size={14}/>, text: "Pencapaian Perusahaan Kuartal III", er: "4.1%", likes: "890", img: "https://images.unsplash.com/photo-1560179707-f14e90ef3623?q=80&w=150&auto=format&fit=crop" },
+                    ].map((post, i) => (
+                      <div
+                        key={i}
+                        className="hover-bg"
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 16,
+                          padding: "12px 16px",
+                          borderRadius: 16,
+                          background: "rgba(44,32,22,0.02)",
+                          cursor: "pointer",
+                          transition: "all 0.2s"
+                        }}
+                      >
+                        <div style={{ position: "relative", flexShrink: 0 }}>
+                          <img src={post.img} alt="post" style={{ width: 56, height: 56, borderRadius: 14, objectFit: "cover" }} />
+                          <div style={{ position: "absolute", bottom: -6, right: -6, width: 24, height: 24, borderRadius: 12, background: PLATFORMS.find(p => p.id === post.plat)?.color || "#2C2016", display: "flex", alignItems: "center", justifyContent: "center", color: "white", border: "2px solid white" }}>
+                            {typeof post.icon === "string" ? <span style={{fontWeight:800, fontSize:9}}>{post.icon}</span> : React.cloneElement(post.icon as React.ReactElement, { size: 12 })}
+                          </div>
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0, paddingRight: 16 }}>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: "#2C2016", marginBottom: 6, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                            {post.text}
+                          </div>
+                          <div style={{ display: "flex", gap: 16, fontSize: 12, fontWeight: 700, color: "rgba(44,32,22,0.5)" }}>
+                            <span style={{ display: "flex", alignItems: "center", gap: 6 }}><BarChart3 size={14}/> ER: {post.er}</span>
+                            <span style={{ display: "flex", alignItems: "center", gap: 6 }}><Heart size={14}/> {post.likes}</span>
+                          </div>
+                        </div>
+                        <div style={{ width: 32, height: 32, borderRadius: 16, background: "white", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+                           <ChevronRight size={16} color="rgba(44,32,22,0.4)" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* SIDEBAR */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+                {/* B. UPCOMING SCHEDULE */}
+                <div
+                  style={{
+                    background: "white",
+                    borderRadius: 24,
+                    border: "1px solid rgba(44,32,22,0.05)",
+                    padding: 32,
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: 24,
+                    }}
+                  >
+                    <h3 style={{ fontSize: 18, fontWeight: 800, margin: 0, color: "#2C2016" }}>
+                      Jadwal Post
+                    </h3>
+                    <div style={{ padding: "8px", background: "rgba(44,32,22,0.03)", borderRadius: 12 }}>
+                      <CalendarIcon size={18} color="var(--theme-primary)" />
                     </div>
                   </div>
-                ))}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+                    {[
+                      { time: "Hari ini, 15:00", text: "Tips & Trik Produktivitas", plat: "instagram" },
+                      { time: "Besok, 09:00", text: "Pengumuman Fitur Baru", plat: "linkedin" },
+                      { time: "Jumat, 19:00", text: "Q&A Session", plat: "threads" },
+                    ].map((item, i) => (
+                      <div key={i} style={{ display: "flex", gap: 16, position: "relative" }}>
+                        {i !== 2 && (
+                          <div style={{ position: "absolute", top: 28, left: 13, bottom: -24, width: 2, background: "rgba(44,32,22,0.05)", borderRadius: 1 }} />
+                        )}
+                        <div style={{ width: 28, height: 28, borderRadius: 14, background: PLATFORMS.find(p => p.id === item.plat)?.color || "#2C2016", color: "white", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, zIndex: 1, border: "4px solid white" }}>
+                           {typeof PLATFORMS.find(p => p.id === item.plat)?.icon === "string" ? <span style={{fontWeight:800, fontSize:10}}>TT</span> : React.cloneElement(PLATFORMS.find(p => p.id === item.plat)?.icon as React.ReactElement, { size: 12 })}
+                        </div>
+                        <div style={{ marginTop: 2 }}>
+                          <div style={{ fontSize: 12, fontWeight: 800, color: "var(--theme-primary)", marginBottom: 4, letterSpacing: 0.5 }}>
+                            {item.time}
+                          </div>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: "#2C2016" }}>
+                            {item.text}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <button
+                    className="hover-bg"
+                    style={{
+                      width: "100%",
+                      marginTop: 32,
+                      padding: 14,
+                      borderRadius: 14,
+                      border: "none",
+                      background: "rgba(44,32,22,0.03)",
+                      color: "#2C2016",
+                      fontWeight: 800,
+                      cursor: "pointer",
+                      fontSize: 13,
+                      transition: "all 0.2s"
+                    }}
+                  >
+                    Lihat Kalender Lengkap
+                  </button>
+                </div>
+
+                {/* C. ACTION ITEMS / TASKS */}
+                <div
+                  style={{
+                    background: "white",
+                    borderRadius: 20,
+                    border: "1px solid rgba(44,32,22,0.05)",
+                    padding: 24,
+                    boxShadow: "0 4px 20px rgba(0,0,0,0.02)"
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: 20,
+                    }}
+                  >
+                    <h3 style={{ fontSize: 16, fontWeight: 800, margin: 0 }}>
+                      Action Items
+                    </h3>
+                    <div style={{ background: "rgba(156,43,78,0.1)", color: "#9C2B4E", fontSize: 11, fontWeight: 800, padding: "4px 10px", borderRadius: 12 }}>
+                      2 Need Approval
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                    {[
+                      { text: "Approve draft: Campaign Year-End", type: "approval" },
+                      { text: "Balas 15 komentar di postingan IG", type: "task" },
+                      { text: "Review hasil A/B testing ad copy", type: "task" },
+                    ].map((item, i) => (
+                      <div key={i} className="hover-bg" style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "10px 12px", borderRadius: 12, cursor: "pointer", transition: "all 0.2s" }}>
+                        <div style={{ marginTop: 2 }}>
+                          {item.type === "approval" ? (
+                            <CheckSquare size={18} color="#9C2B4E" />
+                          ) : (
+                            <div style={{ width: 16, height: 16, borderRadius: 4, border: "2px solid rgba(44,32,22,0.2)" }} />
+                          )}
+                        </div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: item.type === "approval" ? "#9C2B4E" : "#2C2016", lineHeight: 1.4 }}>
+                          {item.text}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
               </div>
             </div>
           </motion.div>
@@ -6445,6 +6680,372 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
           </div>
         )}
       </div>
+
+      {/* Create Post Popup */}
+      <AnimatePresence>
+        {showCreatePostPopup && (
+          <div
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: "rgba(0,0,0,0.5)",
+              zIndex: 9999,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 24,
+            }}
+            onClick={() => setShowCreatePostPopup(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                background: "white",
+                borderRadius: 24,
+                width: 1000,
+                maxWidth: "95%",
+                maxHeight: "90vh",
+                boxShadow: "0 10px 40px rgba(0,0,0,0.15)",
+                display: "flex",
+                flexDirection: "column",
+                overflow: "hidden",
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 28px", borderBottom: "1px solid rgba(44,32,22,0.05)", flexShrink: 0 }}>
+                <h2 style={{ fontSize: 18, fontWeight: 800, margin: 0, color: "#2C2016" }}>Create a Post</h2>
+                <button
+                  onClick={() => setShowCreatePostPopup(false)}
+                  style={{ background: "transparent", border: "none", width: 28, height: 28, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "rgba(44,32,22,0.4)" }}
+                  className="hover-bg"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              <div style={{ flex: 1, overflowY: "auto", padding: 28, display: "flex", flexDirection: "column" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: 40, alignItems: "start" }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+                    <div>
+                      <label style={{ fontSize: 13, fontWeight: 700, color: "rgba(44,32,22,0.5)", marginBottom: 12, display: "block", textTransform: "uppercase", letterSpacing: 0.5 }}>Platform</label>
+                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                        {PLATFORMS.filter(p => p.id !== "all").map(p => {
+                          const isSelected = createPostPlatforms.includes(p.id);
+                          return (
+                            <div
+                              key={p.id}
+                              onClick={() => {
+                                if (isSelected) {
+                                  setCreatePostPlatforms(prev => prev.filter(id => id !== p.id));
+                                } else {
+                                  setCreatePostPlatforms(prev => [...prev, p.id]);
+                                }
+                              }}
+                              title={p.name}
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                width: 36,
+                                height: 36,
+                                borderRadius: 18,
+                                border: isSelected ? "none" : "1px solid rgba(44,32,22,0.08)",
+                                background: isSelected ? p.color : "transparent",
+                                color: isSelected ? "white" : "rgba(44,32,22,0.4)",
+                                cursor: "pointer",
+                                transition: "all 0.2s",
+                              }}
+                              className={!isSelected ? "hover-bg" : ""}
+                            >
+                              {typeof p.icon === "string" ? <span style={{fontWeight: 800, fontSize: 12}}>{p.icon}</span> : React.cloneElement(p.icon as React.ReactElement, { size: 16 })}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div style={{ display: "flex", flexDirection: "column" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                        <label style={{ fontSize: 13, fontWeight: 700, color: "rgba(44,32,22,0.5)", margin: 0, display: "block", textTransform: "uppercase", letterSpacing: 0.5 }}>Caption</label>
+                        <button style={{ background: "transparent", color: "var(--theme-primary)", border: "none", padding: 0, fontSize: 12, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }} className="hover-scale">
+                          <Sparkles size={14} /> Generate AI
+                        </button>
+                      </div>
+                      <textarea
+                        value={createPostCaption}
+                        onChange={(e) => setCreatePostCaption(e.target.value)}
+                        placeholder="What's on your mind?"
+                        style={{
+                          width: "100%",
+                          minHeight: 120,
+                          borderRadius: 16,
+                          border: "none",
+                          background: "rgba(44,32,22,0.03)",
+                          padding: "16px",
+                          fontSize: 14,
+                          resize: "vertical",
+                          outline: "none",
+                          fontFamily: "inherit",
+                          lineHeight: 1.6,
+                          color: "#2C2016",
+                          transition: "all 0.2s"
+                        }}
+                        onFocus={(e) => e.target.style.background = "rgba(44,32,22,0.06)"}
+                        onBlur={(e) => e.target.style.background = "rgba(44,32,22,0.03)"}
+                      />
+                    </div>
+                    
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                       <div style={{ display: "flex", flexDirection: "column" }}>
+                         <label style={{ fontSize: 13, fontWeight: 700, color: "rgba(44,32,22,0.5)", marginBottom: 12, display: "block", textTransform: "uppercase", letterSpacing: 0.5 }}>First Comment</label>
+                         <input
+                            type="text"
+                            placeholder="#hashtag..."
+                            style={{
+                              width: "100%",
+                              borderRadius: 12,
+                              border: "none",
+                              background: "rgba(44,32,22,0.03)",
+                              padding: "12px 16px",
+                              fontSize: 14,
+                              outline: "none",
+                              fontFamily: "inherit",
+                              color: "#2C2016",
+                              transition: "all 0.2s"
+                            }}
+                            onFocus={(e) => e.target.style.background = "rgba(44,32,22,0.06)"}
+                            onBlur={(e) => e.target.style.background = "rgba(44,32,22,0.03)"}
+                          />
+                       </div>
+                       <div style={{ display: "flex", flexDirection: "column" }}>
+                         <label style={{ fontSize: 13, fontWeight: 700, color: "rgba(44,32,22,0.5)", marginBottom: 12, display: "block", textTransform: "uppercase", letterSpacing: 0.5 }}>Location</label>
+                         <input
+                            type="text"
+                            placeholder="Jakarta, Indonesia"
+                            style={{
+                              width: "100%",
+                              borderRadius: 12,
+                              border: "none",
+                              background: "rgba(44,32,22,0.03)",
+                              padding: "12px 16px",
+                              fontSize: 14,
+                              outline: "none",
+                              fontFamily: "inherit",
+                              color: "#2C2016",
+                              transition: "all 0.2s"
+                            }}
+                            onFocus={(e) => e.target.style.background = "rgba(44,32,22,0.06)"}
+                            onBlur={(e) => e.target.style.background = "rgba(44,32,22,0.03)"}
+                          />
+                       </div>
+                    </div>
+
+                    <div>
+                      <label style={{ fontSize: 13, fontWeight: 700, color: "rgba(44,32,22,0.5)", marginBottom: 12, display: "block", textTransform: "uppercase", letterSpacing: 0.5 }}>Media</label>
+                      <div
+                        style={{
+                          width: "100%",
+                          height: 140,
+                          borderRadius: 16,
+                          border: "none",
+                          background: "rgba(44,32,22,0.03)",
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: 12,
+                          cursor: "pointer",
+                          color: "rgba(44,32,22,0.5)",
+                          position: "relative",
+                          transition: "all 0.2s"
+                        }}
+                        className="hover-bg"
+                        onClick={() => {
+                          const input = document.createElement("input");
+                          input.type = "file";
+                          input.accept = "image/*,video/*";
+                          input.onchange = (e: any) => {
+                            if (e.target.files?.[0]) {
+                              const url = URL.createObjectURL(e.target.files[0]);
+                              setCreatePostImage(url);
+                            }
+                          };
+                          input.click();
+                        }}
+                      >
+                        {createPostImage ? (
+                           <div style={{position: "absolute", top: 0, left: 0, right: 0, bottom: 0, borderRadius: 16, overflow: "hidden", padding: 8}}>
+                             <img src={createPostImage} alt="Preview" style={{width: "100%", height: "100%", objectFit: "cover", borderRadius: 12}} />
+                             <div style={{position: "absolute", top: 16, right: 16, background: "rgba(0,0,0,0.5)", color: "white", width: 28, height: 28, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", backdropFilter: "blur(4px)"}} onClick={(e) => { e.stopPropagation(); setCreatePostImage(null); }} className="hover-scale">
+                               <X size={14}/>
+                             </div>
+                           </div>
+                        ) : (
+                          <>
+                            <div style={{ width: 48, height: 48, borderRadius: 24, background: "rgba(44,32,22,0.04)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                              <Upload size={20} color="rgba(44,32,22,0.5)" />
+                            </div>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(44,32,22,0.4)" }}>Click to browse files</div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: "flex", flexDirection: "column" }}>
+                    <div style={{ display: "flex", flexDirection: "column" }}>
+                      <label style={{ fontSize: 13, fontWeight: 700, color: "rgba(44,32,22,0.5)", marginBottom: 12, display: "block", textTransform: "uppercase", letterSpacing: 0.5 }}>Live Preview</label>
+                      <div style={{ background: "white", borderRadius: 24, overflow: "hidden", border: "1px solid rgba(44,32,22,0.08)", boxShadow: "0 8px 30px rgba(0,0,0,0.04)", display: "flex", flexDirection: "column", height: 620 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 12, padding: 16, flexShrink: 0 }}>
+                          <div style={{ width: 32, height: 32, borderRadius: 16, background: "var(--theme-primary)", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 800 }}>
+                            {workspace?.name?.charAt(0) || "U"}
+                          </div>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: "#2C2016" }}>{workspace?.name || "Workspace"}</div>
+                        </div>
+                        <div style={{ width: "100%", background: "rgba(44,32,22,0.02)", display: "flex", alignItems: "center", justifyContent: "center", flex: 1, position: "relative" }}>
+                          {createPostImage ? (
+                            <img src={createPostImage} alt="Post" style={{ width: "100%", height: "100%", objectFit: "contain", position: "absolute", top: 0, left: 0 }} />
+                          ) : (
+                            <ImageIcon size={40} color="rgba(44,32,22,0.08)" />
+                          )}
+                        </div>
+                        <div style={{ padding: 16, flexShrink: 0, borderTop: "1px solid rgba(44,32,22,0.04)" }}>
+                           <div style={{ fontSize: 13, color: "#2C2016", lineHeight: 1.5, whiteSpace: "pre-wrap", fontWeight: 400, overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical" }}>
+                             {createPostCaption || <span style={{ color: "rgba(44,32,22,0.3)" }}>Your post caption will appear here...</span>}
+                           </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 28px", borderTop: "1px solid rgba(44,32,22,0.05)", background: "white", flexShrink: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                  <div style={{ display: "flex", background: "rgba(44,32,22,0.03)", borderRadius: 10, padding: 4 }}>
+                    <button
+                      onClick={() => setCreatePostMode("now")}
+                      style={{
+                        background: createPostMode === "now" ? "white" : "transparent",
+                        border: "none",
+                        borderRadius: 8,
+                        padding: "8px 16px",
+                        fontSize: 13,
+                        fontWeight: 700,
+                        color: createPostMode === "now" ? "#2C2016" : "rgba(44,32,22,0.4)",
+                        cursor: "pointer",
+                        boxShadow: createPostMode === "now" ? "0 2px 8px rgba(0,0,0,0.04)" : "none",
+                        transition: "all 0.2s"
+                      }}
+                    >
+                      Post Sekarang
+                    </button>
+                    <button
+                      onClick={() => setCreatePostMode("schedule")}
+                      style={{
+                        background: createPostMode === "schedule" ? "white" : "transparent",
+                        border: "none",
+                        borderRadius: 8,
+                        padding: "8px 16px",
+                        fontSize: 13,
+                        fontWeight: 700,
+                        color: createPostMode === "schedule" ? "#2C2016" : "rgba(44,32,22,0.4)",
+                        cursor: "pointer",
+                        boxShadow: createPostMode === "schedule" ? "0 2px 8px rgba(0,0,0,0.04)" : "none",
+                        transition: "all 0.2s"
+                      }}
+                    >
+                      Jadwal Post
+                    </button>
+                  </div>
+                  
+                  {createPostMode === "schedule" && (
+                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                      <input
+                        type="date"
+                        style={{
+                          borderRadius: 10,
+                          border: "none",
+                          background: "rgba(44,32,22,0.03)",
+                          padding: "8px 12px",
+                          fontSize: 13,
+                          outline: "none",
+                          fontFamily: "inherit",
+                          color: "#2C2016",
+                          transition: "all 0.2s"
+                        }}
+                        onFocus={(e) => e.target.style.background = "rgba(44,32,22,0.06)"}
+                        onBlur={(e) => e.target.style.background = "rgba(44,32,22,0.03)"}
+                      />
+                      <input
+                        type="time"
+                        style={{
+                          borderRadius: 10,
+                          border: "none",
+                          background: "rgba(44,32,22,0.03)",
+                          padding: "8px 12px",
+                          fontSize: 13,
+                          outline: "none",
+                          fontFamily: "inherit",
+                          color: "#2C2016",
+                          transition: "all 0.2s"
+                        }}
+                        onFocus={(e) => e.target.style.background = "rgba(44,32,22,0.06)"}
+                        onBlur={(e) => e.target.style.background = "rgba(44,32,22,0.03)"}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ display: "flex", gap: 12 }}>
+                  <button
+                    onClick={() => setShowCreatePostPopup(false)}
+                    style={{
+                      background: "transparent",
+                      border: "none",
+                      borderRadius: 10,
+                      padding: "10px 20px",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      color: "rgba(44,32,22,0.4)",
+                      fontSize: 13,
+                    }}
+                    className="hover-bg"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    onClick={() => {
+                       setShowCreatePostPopup(false);
+                       setCreatePostCaption("");
+                       setCreatePostImage(null);
+                       setCreatePostPlatforms([]);
+                    }}
+                    style={{
+                      background: "var(--theme-primary)",
+                      border: "none",
+                      borderRadius: 10,
+                      padding: "10px 24px",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      color: "white",
+                      fontSize: 13,
+                    }}
+                    className="hover-scale hover-bg"
+                  >
+                    {createPostMode === "now" ? "Post Sekarang" : "Jadwalkan Post"}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

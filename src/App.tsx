@@ -26,6 +26,7 @@ import { AuthScreen } from "./AuthScreen";
 import { UserProfile } from "./UserProfile";
 import { BillingView } from "./BillingView";
 import { ShareWorkspaceModal } from "./ShareWorkspaceModal";
+import { CreateWorkspaceModal } from "./CreateWorkspaceModal";
 import { DashboardView } from "./DashboardView";
 
 import { TermsOfService, PrivacyPolicy } from "./TermsAndPrivacy";
@@ -593,6 +594,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme, systemConfig 
   const [contentTab, setContentTab] = useState("month");
   const [workspace, setWorkspace] = useState<any>(null);
   const [workspaces, setWorkspaces] = useState<any[]>([]);
+  const [createWsModal, setCreateWsModal] = useState(false);
   const [content, setContent]   = useState<any[]>([]);
   const [wsLoading, setWsLoading] = useState(true);
   const [contentLoading, setContentLoading] = useState(false);
@@ -879,9 +881,63 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme, systemConfig 
     return profile && (profile.emailVerified === false || !profile.nickname);
   }, [profile]);
 
+  const handleCreateWorkspace = async (name: string, copyFromId: string | null = null) => {
+    if (!user) return;
+    try {
+      let settingsToCopy = {
+        title: name,
+        // No tagline, no theme, just name by default as user requested.
+      };
+
+      if (copyFromId) {
+        const sourceWs = workspaces.find((w: any) => w.id === copyFromId);
+        if (sourceWs && sourceWs.settings) {
+          // Exclude title/tagline/theme if we just want pillars/platforms etc.
+          // The user specifically wants to copy settings.
+          settingsToCopy = {
+            ...sourceWs.settings,
+            title: name,
+            tagline: "", // ensure it's empty
+            theme: "" // ensure no theme copied if not wanted, or keep it. Let's just remove theme/tagline
+          };
+          delete (settingsToCopy as any).theme;
+        } else {
+           // Also try fetching from DB if not fully loaded
+           const wsDoc = await getDoc(doc(db, "workspaces", copyFromId));
+           if (wsDoc.exists() && wsDoc.data().settings) {
+              settingsToCopy = {
+                 ...wsDoc.data().settings,
+                 title: name,
+                 tagline: ""
+              };
+              delete (settingsToCopy as any).theme;
+           }
+        }
+      }
+
+      const wsRef = doc(collection(db, "workspaces"));
+      await setDoc(wsRef, {
+        name: name,
+        ownerId: user.uid,
+        settings: settingsToCopy
+      });
+      await setDoc(doc(db, "workspaces", wsRef.id, "members", user.uid), {
+        userId: user.uid,
+        workspaceId: wsRef.id,
+        role: "owner"
+      });
+      setWorkspace({ id: wsRef.id, name, ownerId: user.uid });
+      setSaveMsg("Workspace baru berhasil dibuat.");
+      setTimeout(() => setSaveMsg(""), 3000);
+      setCreateWsModal(false);
+    } catch (e: any) {
+      handleFirestoreError(e, 'write');
+    }
+  };
+
   const handleLeaveWorkspace = async (ws: any) => {
     if (!user || !ws) return;
-    const isOwner = workspaces.find(w => w.id === ws.id)?.createdBy === user.uid;
+    const isOwner = workspaces.find(w => w.id === ws.id)?.ownerId === user.uid || workspaces.find(w => w.id === ws.id)?.createdBy === user.uid;
     if (isOwner) {
       alert("Anda adalah pemilik workspace ini. Anda tidak bisa keluar, silakan hapus workspace atau pindahkan kepemilikan.");
       return;
@@ -899,7 +955,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme, systemConfig 
 
   const handleDeleteWorkspace = async (ws: any) => {
     if (!user || !ws) return;
-    const isOwner = workspaces.find(w => w.id === ws.id)?.createdBy === user.uid;
+    const isOwner = workspaces.find(w => w.id === ws.id)?.ownerId === user.uid || workspaces.find(w => w.id === ws.id)?.createdBy === user.uid;
     if (!isOwner) {
       alert("Hanya pemilik yang dapat menghapus workspace.");
       return;
@@ -1465,6 +1521,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme, systemConfig 
         onOpenSidebar={() => setSidebarOpen(true)}
         onLeaveWorkspace={handleLeaveWorkspace}
         onDeleteWorkspace={handleDeleteWorkspace}
+        onCreateWorkspaceRequest={() => setCreateWsModal(true)}
         onRenameWorkspace={async (wsId: string, newName: string) => {
           try {
             await updateDoc(doc(db, "workspaces", wsId), { name: newName });
@@ -1606,7 +1663,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme, systemConfig 
               onDirty={setIsSettingsDirty}
               onLeave={() => handleLeaveWorkspace(workspace)}
               onDelete={() => handleDeleteWorkspace(workspace)}
-              isOwner={workspace?.createdBy === user?.uid}
+              isOwner={workspace?.ownerId === user?.uid || workspace?.createdBy === user?.uid}
             />}
             {tab==="admin"&&<AdminPanel userProfile={profile} onLogout={()=>{ signOut(auth).then(() => window.location.hash = "#/login"); }} />}
           </motion.div>
@@ -1615,6 +1672,9 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme, systemConfig 
 
       <AnimatePresence>
         {shareModal && <ShareWorkspaceModal key="share" workspace={workspace} userProfile={profile} onClose={()=>setShareModal(false)} />}
+      </AnimatePresence>
+      <AnimatePresence>
+        {createWsModal && <CreateWorkspaceModal key="createWs" workspaces={workspaces} onClose={()=>setCreateWsModal(false)} onCreate={handleCreateWorkspace} />}
       </AnimatePresence>
       <AnimatePresence>
         {modal && <ContentModal key="content" modal={modal} onSave={handleSave} onClose={()=>setModal(null)} onArchive={archiveItem} onRestore={unarchiveItem} onDelete={deleteItem} onDuplicate={(data:any) => {

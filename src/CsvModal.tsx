@@ -43,8 +43,8 @@ export function CsvModal({onClose, onImport, pillars, platforms, contentTypes, p
   };
 
   const template = [
-    ["Judul Konten", "Tanggal (1-31)", "Bulan (1-12)", "Tahun", "Jam (0-23)", "Menit", "Pillar", "Platform", "Tipe Konten", "PIC", "Status Konten", "Status Ads", "Views", "Reach", "Likes", "Comments", "Shares", "Saves", "Objective", "Brief Konten", "Caption", "Link Aset", "Link Sosmed", "Link Referensi"],
-    ["Contoh Konten Instagram", "15", "5", "2025", "10", "30", pillars[0]?.name||"Pillar Utama", platforms[0]?.name||"Instagram", contentTypes?.[0]?.name||"Video Pendek", pics[0]||"PIC 1", statuses[0]||"Draft", "N", "100", "80", "10", "2", "1", "5", "Meningkatkan brand awareness", "Gunakan nada bicara santai", "Keren banget nih!", "https://drive.google.com/...", "https://instagram.com/...", "https://contoh.com, https://contoh2.com"]
+    ["Judul Konten", "Tanggal (1-31)", "Bulan (1-12)", "Tahun", "Jam (0-23)", "Menit", "Pillar", "Platform", "Tipe Konten", "PIC", "Status Konten", "Status Ads", "Views", "Reach", "Likes", "Comments", "Shares", "Saves", "Objective", "Hook", "Brief Konten", "Call to Action", "Catatan Referensi", "Caption", "Link Aset", "Link Sosmed", "Link Referensi"],
+    ["Contoh Konten Instagram", "15", "5", "2025", "10", "30", pillars[0]?.name||"Pillar Utama", platforms[0]?.name||"Instagram", contentTypes?.[0]?.name||"Video Pendek", pics[0]||"PIC 1", statuses[0]||"Draft", "N", "100", "80", "10", "2", "1", "5", "Meningkatkan brand awareness", "Tahukah kamu bahwa...", "Gunakan nada bicara santai", "Klik link di bio!", "Contoh referensi tone: kasual", "Keren banget nih!", "https://drive.google.com/...", "https://instagram.com/...", "https://contoh.com, https://contoh2.com"]
   ];
 
   const handleDownloadTemplate = () => {
@@ -106,7 +106,10 @@ export function CsvModal({onClose, onImport, pillars, platforms, contentTypes, p
             const idxShares = getColIdx(["share"]);
             const idxSaves = getColIdx(["save"]);
             const idxObjective = getColIdx(["objective"]);
+            const idxHook = getColIdx(["hook"]);
             const idxBrief = getColIdx(["brief"]);
+            const idxCta = getColIdx(["call to action", "cta"]);
+            const idxRefText = getColIdx(["catatan referensi", "catatan"]);
             const idxCaption = getColIdx(["caption"]);
             const idxLinkAset = getColIdx(["link aset", "aset"]);
             const idxLinkSosmed = getColIdx(["link sosmed", "sosmed"]);
@@ -138,7 +141,10 @@ export function CsvModal({onClose, onImport, pillars, platforms, contentTypes, p
                     follows: 0
                 };
                 if (idxObjective !== -1) item.objective = textToHtml(cleanStr(row[idxObjective])) || "";
+                if (idxHook !== -1) item.hook = textToHtml(cleanStr(row[idxHook])) || "";
                 if (idxBrief !== -1) item.briefCopywriting = textToHtml(cleanStr(row[idxBrief])) || "";
+                if (idxCta !== -1) item.cta = textToHtml(cleanStr(row[idxCta])) || "";
+                if (idxRefText !== -1) item.referenceText = cleanStr(row[idxRefText]) || "";
                 if (idxCaption !== -1) item.caption = textToHtml(cleanStr(row[idxCaption])) || "";
                 if (idxLinkAset !== -1) item.linkAsset = cleanStr(row[idxLinkAset]) || "";
                 if (idxLinkSosmed !== -1) item.linkSosmed = cleanStr(row[idxLinkSosmed]) || "";

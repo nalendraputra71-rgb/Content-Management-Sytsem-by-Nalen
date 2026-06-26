@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Bell, CalendarClock, PartyPopper, X, ChevronDown, ChevronUp, Archive, Trash2, HelpCircle, CheckCheck } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
@@ -43,7 +43,7 @@ export function useNotifications(userProfile: any) {
       if (userProfile?.hasUsedPromo) {
         notifs.push({
           id: "pro_active",
-          icon: <PartyPopper size={20} color="#538135" />,
+          icon: <PartyPopper size={14} color="#538135" />,
           title: "Akun PRO Aktif!",
           desc: `Terima kasih telah berlangganan! Akun PRO Anda aktif sampai dengan tanggal ${activeUntil.toLocaleDateString("id-ID", {dateStyle:"medium"})}.`,
           time: "Baru saja",
@@ -52,7 +52,7 @@ export function useNotifications(userProfile: any) {
       } else {
       notifs.push({
         id: "welcome",
-        icon: <PartyPopper size={20} color="#3B82F6" />,
+        icon: <PartyPopper size={14} color="#3B82F6" />,
         title: "Selamat Datang!",
         desc: "Nikmati 7 hari free trial penuh fitur.",
         time: "Sistem",
@@ -63,7 +63,7 @@ export function useNotifications(userProfile: any) {
     if (isExpired) {
       notifs.unshift({
         id: "expired",
-        icon: <CalendarClock size={20} color="#9C2B4E" />,
+        icon: <CalendarClock size={14} color="#9C2B4E" />,
         title: "Masa Aktif Berakhir",
         desc: "Langganan Anda telah berakhir. Silakan perpanjang paket.",
         time: "Hari ini",
@@ -72,7 +72,7 @@ export function useNotifications(userProfile: any) {
     } else if (sisaHari <= 3 && sisaHari > 0) {
       notifs.unshift({
         id: "expiring_soon",
-        icon: <CalendarClock size={20} color="var(--theme-primary)" />,
+        icon: <CalendarClock size={14} color="var(--theme-primary)" />,
         title: `Akses berakhir dalam ${sisaHari} hari!`,
         desc: `Segera perpanjang langganan agar alur kerja tidak terhenti.`,
         time: "Hari ini",
@@ -101,7 +101,7 @@ export function useNotifications(userProfile: any) {
           return false;
         }).map((n:any) => ({
           id: `global_${n.id}`,
-          icon: <Bell size={20} color="#2D7A5E" />,
+          icon: <Bell size={14} color="#2D7A5E" />,
           title: n.title,
           desc: n.desc,
           time: new Date(n.createdAt).toLocaleString("id-ID", {dateStyle:"short", timeStyle:"short"}),
@@ -140,7 +140,7 @@ export function useNotifications(userProfile: any) {
                if (lastMsg && lastMsg.sender === "admin") {
                   ticketNotifs.push({
                      id: `ticket_${d.id}`,
-                     icon: <Bell size={20} color="#3B82F6" />,
+                     icon: <Bell size={14} color="#3B82F6" />,
                      title: "Balasan Tiket Bantuan",
                      desc: lastMsg.text,
                      time: new Date(lastMsg.timestamp).toLocaleString("id-ID", {dateStyle:"short", timeStyle:"short"}),
@@ -179,7 +179,7 @@ export function useNotifications(userProfile: any) {
                    type: "invite",
                    workspaceId: data.workspaceId,
                    memberId: d.id,
-                   icon: <Bell size={20} color="#3B82F6" />,
+                   icon: <Bell size={14} color="#3B82F6" />,
                    title: "Undangan Workspace Baru",
                    desc: `${inviter} mengundang Anda untuk bergabung ke "${wsName}".`,
                    time: new Date(data.joinedAt || Date.now()).toLocaleString("id-ID", {dateStyle:"short", timeStyle:"short"}),
@@ -218,7 +218,7 @@ export function useNotifications(userProfile: any) {
                personalNotifs.push({
                    id: `personal_${d.id}`,
                    type: data.type || "social",
-                   icon: <Bell size={20} color="#3B82F6" />,
+                   icon: <Bell size={14} color="#3B82F6" />,
                    title: data.title,
                    desc: data.body,
                    link: data.link,
@@ -298,7 +298,7 @@ export function NotificationToast({ toast, onClose, onClick, onInviteAction }: {
 
   useEffect(() => {
     if (expanded || toast?.type === "invite") return;
-    const timer = setTimeout(() => onClose(), 5000);
+    const timer = setTimeout(() => onClose(), 4000);
     return () => clearTimeout(timer);
   }, [expanded, onClose, toast]);
 
@@ -307,62 +307,38 @@ export function NotificationToast({ toast, onClose, onClick, onInviteAction }: {
       {toast && (
         <motion.div 
           layout
-          initial={{ opacity: 0, y: -50, scale: 0.95 }} 
+          initial={{ opacity: 0, y: -20, scale: 0.95 }} 
           animate={{ opacity: 1, y: 0, scale: 1 }} 
-          exit={{ opacity: 0, x: 300, scale: 0.95 }}
-          drag="x"
-          dragConstraints={{ left: 0, right: 0 }}
-          dragElastic={0.2}
-          onDragEnd={(e, info) => {
-            if (info.offset.x > 100) onClose();
-          }}
-          whileDrag={{ scale: 0.98 }}
+          exit={{ opacity: 0, y: -20, scale: 0.95 }}
           style={{
-            position: "fixed", top: 20, right: 20, zIndex: 1000, 
-            background: "white", padding: 16, borderRadius: 16, 
-            width: (expanded || toast.type === "invite") ? 320 : "auto", maxWidth: "calc(100vw - 40px)", boxShadow: "0 10px 40px rgba(0,0,0,0.1)",
-            border: "1px solid rgba(44,32,22,0.05)", display: "flex", gap: 16, alignItems: "flex-start",
-            cursor: (expanded || toast.type === "invite") ? "default" : "grab", overflow: "hidden"
+            position: "fixed", top: 24, left: "50%", transform: "translateX(-50%)", zIndex: 1000, 
+            background: "white", padding: "10px 16px", borderRadius: 32, 
+            boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+            border: "1px solid rgba(44,32,22,0.05)", display: "flex", gap: 12, alignItems: "center",
+            cursor: "pointer", maxWidth: "90vw", width: "max-content", margin: "0 auto"
           }}
           onClick={() => {
-            if (!expanded && toast.type !== "invite") {
-              setExpanded(true);
-              onClick(); // Mark as read or open side panel
-            }
+            onClick(); // Mark as read or open side panel
           }}
         >
-          <div style={{width: 36, height: 36, borderRadius: 18, background: "#FAFAFA", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0}}>
-            {toast.icon}
+          <div style={{width: 24, height: 24, borderRadius: 12, background: "rgba(44,32,22,0.05)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0}}>
+            {typeof toast.icon === "string" ? toast.icon : React.cloneElement(toast.icon as React.ReactElement, { size: 14 })}
           </div>
-          <div style={{flex: 1, minWidth: 0}}>
-            <div style={{fontSize: 14, fontWeight: 700, color: "#2C2016", marginBottom: 4}}>{toast.title}</div>
-            {(expanded || toast.type === "invite") ? (
-               <motion.div layout initial={{height:0, opacity:0}} animate={{height:"auto", opacity:1}} style={{fontSize:12, color:"rgba(44,32,22,0.6)", lineHeight:1.5}}>
-                 {toast.desc}
-                 {toast.type === "invite" && (
-                    <div style={{display: "flex", gap: 8, marginTop: 12}}>
-                        <button onClick={(e)=>{ e.stopPropagation(); onInviteAction?.(toast.workspaceId, toast.memberId, 'accept'); }} style={{flex:1, padding:"8px", background:"#3B82F6", border:"none", borderRadius:8, color:"white", fontSize:12, fontWeight:700, cursor:"pointer"}}>Terima</button>
-                        <button onClick={(e)=>{ e.stopPropagation(); onInviteAction?.(toast.workspaceId, toast.memberId, 'reject'); }} style={{flex:1, padding:"8px", background:"#F5F5F5", border:"none", borderRadius:8, color:"#2C2016", fontSize:12, fontWeight:700, cursor:"pointer"}}>Tolak</button>
-                    </div>
-                 )}
-               </motion.div>
-            ) : (
-               <motion.div layout style={{fontSize: 12, color: "rgba(44,32,22,0.6)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis"}}>
-                 {toast.desc}
-               </motion.div>
-            )}
+          <div style={{display: "flex", alignItems: "center", gap: 8}}>
+            <div style={{fontSize: 13, fontWeight: 700, color: "#2C2016"}}>{toast.title}</div>
+            <div style={{fontSize: 13, color: "rgba(44,32,22,0.5)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 200}}>
+              {toast.desc}
+            </div>
           </div>
-          <button onClick={(e) => { e.stopPropagation(); onClose(); }} style={{background: "none", border: "none", cursor: "pointer", color: "rgba(44,32,22,0.4)", flexShrink:0, padding: 4}} className="hover:text-black">
-            <X size={16}/>
-          </button>
-          {(!expanded && toast.type !== "invite") && (
-             <motion.div 
-                initial={{width: "100%"}} 
-                animate={{width: "0%"}} 
-                transition={{duration: 5, ease: "linear"}} 
-                style={{position: "absolute", bottom: 0, left: 0, height: 3, background: "var(--theme-primary)"}} 
-             />
+          {toast.type === "invite" && (
+            <div style={{display: "flex", gap: 6, marginLeft: 8}}>
+                <button onClick={(e)=>{ e.stopPropagation(); onInviteAction?.(toast.workspaceId, toast.memberId, 'accept'); }} style={{padding:"6px 12px", background:"#3B82F6", border:"none", borderRadius:16, color:"white", fontSize:12, fontWeight:700, cursor:"pointer"}}>Terima</button>
+                <button onClick={(e)=>{ e.stopPropagation(); onInviteAction?.(toast.workspaceId, toast.memberId, 'reject'); }} style={{padding:"6px 12px", background:"rgba(44,32,22,0.05)", border:"none", borderRadius:16, color:"#2C2016", fontSize:12, fontWeight:700, cursor:"pointer"}}>Tolak</button>
+            </div>
           )}
+          <button onClick={(e) => { e.stopPropagation(); onClose(); }} style={{background: "none", border: "none", cursor: "pointer", color: "rgba(44,32,22,0.3)", flexShrink:0, padding: 4, display: "flex", alignItems: "center", justifyContent: "center", marginLeft: 8}} className="hover:text-black hover:bg-gray-100 rounded-full transition-colors">
+            <X size={14}/>
+          </button>
         </motion.div>
       )}
     </AnimatePresence>
@@ -380,7 +356,7 @@ export function NotificationPanel({ notifications, onClose, onRead, onContactSup
       style={{ display: "flex", flexDirection: "column", height: "100%", whiteSpace: "normal" }}
     >
       <div style={{padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid rgba(255,255,255,0.05)"}}>
-        <h3 style={{margin: 0, fontSize: 13, fontWeight: 800, color: "rgba(255,255,255,0.8)", textTransform:"uppercase", letterSpacing:1, display:"flex", alignItems:"center", gap:8}}>
+        <h3 style={{margin: 0, fontSize: 12, fontWeight: 800, color: "rgba(255,255,255,0.8)", textTransform:"uppercase", letterSpacing:1, display:"flex", alignItems:"center", gap:8}}>
           Notifikasi
         </h3>
         <div style={{display:"flex", gap: 8, alignItems: "center"}}>
@@ -424,14 +400,14 @@ export function NotificationPanel({ notifications, onClose, onRead, onContactSup
                }}
                className="hover:bg-[rgba(255,255,255,0.05)] group"
             >
-              <div style={{width: 32, height: 32, borderRadius: 16, background: "white", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, position:"relative"}}>
+              <div style={{width: 28, height: 28, borderRadius: 14, background: "white", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, position:"relative"}}>
                 {n.icon}
                 {n.unread && (
-                   <div style={{position: "absolute", top: -2, right: -2, width: 10, height: 10, borderRadius: 5, background: "var(--theme-primary)", border: "2px solid #1E293B"}} />
+                   <div style={{position: "absolute", top: -2, right: -2, width: 8, height: 8, borderRadius: 4, background: "var(--theme-primary)", border: "2px solid #1E293B"}} />
                 )}
               </div>
               <div style={{flex: 1, paddingRight: 16}}>
-                <div style={{fontSize: 13, fontWeight: n.unread ? 800 : 600, color: n.unread ? "white" : "rgba(255,255,255,0.7)", marginBottom: 2}}>{n.title}</div>
+                <div style={{fontSize: 12, fontWeight: n.unread ? 800 : 600, color: n.unread ? "white" : "rgba(255,255,255,0.7)", marginBottom: 2}}>{n.title}</div>
                 {n.unread ? (
                   <div style={{fontSize: 12, color: "rgba(255,255,255,0.8)", lineHeight: 1.4, marginBottom: 6}}>
                       {n.desc}

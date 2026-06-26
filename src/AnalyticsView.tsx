@@ -819,43 +819,43 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
   };
 
   const CDataList = ({title, list, rank=1}:any) => (
-    <div style={{...CARD({background: "white", padding: "20px", borderRadius: 16, border: "1px solid rgba(0,0,0,0.06)", boxShadow: "0 4px 20px rgba(0,0,0,0.02)"})}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
-        <h4 style={{fontSize:16,fontWeight:800,margin:0, color:"#111827", letterSpacing: "-0.5px"}}>{title}</h4>
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+      <div className="flex justify-between items-center mb-4">
+        <h4 className="text-base font-bold text-gray-900 m-0 tracking-tight">{title}</h4>
       </div>
-      {list.length===0 && <p style={{fontSize:13,color:"rgba(0,0,0,0.5)", textAlign: "center", padding: "20px 0"}}>Data tidak tersedia untuk filter saat ini.</p>}
-      <div style={{display: "flex", flexDirection: "column", gap: 10}}>
+      {list.length===0 && <p className="text-sm text-gray-500 text-center py-5">Data tidak tersedia untuk filter saat ini.</p>}
+      <div className="flex flex-col gap-2.5">
         {list.map((item:any,i:number)=>{
           const e=getEng(item),ps=gps(pillars,item.pillar);
           return (
-            <motion.div whileHover={{ scale: 1.01 }} key={item.id} style={{display:"flex",alignItems:"flex-start",gap:12,padding:"12px",background:i===0&&rank===1?"#FEFCE8":"#FAFAFA",border:i===0&&rank===1?"1px solid #FEF08A":"1px solid rgba(0,0,0,0.04)",borderRadius:12, transition: "all 0.2s"}}>
+            <motion.div whileHover={{ scale: 1.01 }} key={item.id} className={`flex items-start gap-3 p-3 rounded-xl transition-all duration-200 ${i===0&&rank===1 ? "bg-amber-50 border border-amber-200" : "bg-gray-50 border border-black/5"}`}>
               {rank===1 && (
-                <div style={{width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", fontSize:12,fontWeight:800,color:i===0?"#CA8A04":i===1?"#9CA3AF":"#D1D5DB", background: i===0?"#FEF08A":i===1?"#F3F4F6":"white", borderRadius: "50%", flexShrink:0, border: "2px solid white", boxShadow: "0 2px 4px rgba(0,0,0,0.05)"}}>{i+1}</div>
+                <div className={`w-7 h-7 flex items-center justify-center text-xs font-bold rounded-full shrink-0 border-2 border-white shadow-sm ${i===0?"text-amber-600 bg-amber-200":i===1?"text-gray-400 bg-gray-100":"text-gray-300 bg-white"}`}>{i+1}</div>
               )}
-              <div style={{width: 40, height: 40, borderRadius: 8, background: "#F3F4F6", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden", border: "1px solid rgba(0,0,0,0.08)"}}>
+              <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center shrink-0 overflow-hidden border border-black/10">
                 {item.referenceImage ? (
-                  <img src={item.referenceImage} alt="thumb" style={{width: "100%", height: "100%", objectFit: "cover"}} />
+                  <img src={item.referenceImage} alt="thumb" className="w-full h-full object-cover" />
                 ) : item.linkSosmed ? (
-                  <SocialThumbnail url={item.linkSosmed} fallback={<div style={{fontSize: 20}}>{item.platform?.toLowerCase()?.includes('instagram') ? '📸' : item.platform?.toLowerCase()?.includes('tiktok') ? '🎵' : '🔗'}</div>} />
+                  <SocialThumbnail url={item.linkSosmed} fallback={<div className="text-xl">{item.platform?.toLowerCase()?.includes('instagram') ? '📸' : item.platform?.toLowerCase()?.includes('tiktok') ? '🎵' : '🔗'}</div>} />
                 ) : (
-                  <div style={{fontSize: 9, color: "rgba(0,0,0,0.4)", textAlign: "center", lineHeight: 1.1, display: "flex", alignItems: "center", justifyContent: "center", height: "100%", fontWeight: 600}}>NO<br/>IMG</div>
+                  <div className="text-[9px] text-gray-400 text-center leading-tight flex items-center justify-center h-full font-semibold">NO<br/>IMG</div>
                 )}
               </div>
-              <div style={{flex:1,minWidth:0}}>
-                <div style={{fontSize:13,fontWeight:700,display:"flex",alignItems:"center",gap:8, color: "#111827", marginBottom: 4}}>
-                  <span onClick={()=>openEdit(item)} style={{cursor:"pointer", color:"inherit", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis"}} title="Buka Detail Brief">{item.title||"(Tanpa judul)"}</span>
-                  {item.linkSosmed && <a href={item.linkSosmed} target="_blank" rel="noreferrer" style={{textDecoration:"none",fontSize:13}} title="Buka Postingan">🔗</a>}
-                  {item.linkUpload && <a href={item.linkUpload} target="_blank" rel="noreferrer" style={{textDecoration:"none",fontSize:13}} title="Akses Upload/Aset">📤</a>}
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-bold flex items-center gap-2 text-gray-900 mb-1">
+                  <span onClick={()=>openEdit(item)} className="cursor-pointer truncate" title="Buka Detail Brief">{item.title||"(Tanpa judul)"}</span>
+                  {item.linkSosmed && <a href={item.linkSosmed} target="_blank" rel="noreferrer" className="no-underline text-sm" title="Buka Postingan">🔗</a>}
+                  {item.linkUpload && <a href={item.linkUpload} target="_blank" rel="noreferrer" className="no-underline text-sm" title="Akses Upload/Aset">📤</a>}
                 </div>
-                <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
+                <div className="flex gap-1.5 flex-wrap items-center">
                   <PBadge name={item.platform} platforms={platforms}/>
-                  <span style={{background:ps.light||"#F3F4F6",color:ps.color||"#111827",fontSize:10,fontWeight:600,padding:"2px 8px",borderRadius:12}}>{item.pillar}</span>
-                  {item.isAds&&<span style={{fontSize:10,color:"#EC4899",fontWeight:800, background:"#FDF2F8", padding:"2px 8px", borderRadius:12}}>💰 Ads</span>}
+                  <span style={{background:ps.light||"#F3F4F6",color:ps.color||"#111827"}} className="text-[10px] font-semibold px-2 py-0.5 rounded-full">{item.pillar}</span>
+                  {item.isAds&&<span className="text-[10px] text-pink-500 font-bold bg-pink-50 px-2 py-0.5 rounded-full">💰 Ads</span>}
                 </div>
               </div>
-              <div style={{textAlign:"right",flexShrink:0, display:"flex", flexDirection:"column", justifyContent:"center"}}>
-                <div style={{fontSize:18,fontWeight:800,color:"#111827", letterSpacing:"-0.5px"}}>{fmt(topSort==="engagement"?e:topSort==="reach"?getR(item):getV(item))}</div>
-                <div style={{fontSize:10,fontWeight:600,color:"rgba(0,0,0,0.5)",textTransform:"uppercase", letterSpacing: 0.5}}>{topSort}</div>
+              <div className="text-right shrink-0 flex flex-col justify-center">
+                <div className="text-lg font-bold text-gray-900 tracking-tight">{fmt(topSort==="engagement"?e:topSort==="reach"?getR(item):getV(item))}</div>
+                <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">{topSort}</div>
               </div>
             </motion.div>
           )
@@ -864,29 +864,42 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
     </div>
   );
 
-  const MCard = ({label,val,sub,color="var(--theme-primary)", pctStr, icon: Icon, bg="glass"}: any) => {
-    const isGlass = bg === "glass";
-    const bgVal = isGlass ? "rgba(255,255,255,0.45)" : bg;
+  const MCard = ({label,val,sub, colorTheme="glass", pctStr, icon: Icon}: any) => {
+    const isGlass = colorTheme === "glass";
+    
+    // Deep dark colors with a subtle tint for a premium, highlighted look
+    const themeStyles: Record<string, {bg: string, border: string, text: string, subText: string, iconBg: string, iconColor: string}> = {
+      glass: { bg: "bg-white", border: "border-gray-100", text: "text-gray-900", subText: "text-gray-500", iconBg: "bg-gray-100", iconColor: "text-gray-700" },
+      blue: { bg: "bg-blue-950", border: "border-blue-900/50", text: "text-white", subText: "text-blue-300", iconBg: "bg-blue-900/50", iconColor: "text-blue-400" },
+      amber: { bg: "bg-amber-950", border: "border-amber-900/50", text: "text-white", subText: "text-amber-300", iconBg: "bg-amber-900/50", iconColor: "text-amber-400" },
+      purple: { bg: "bg-purple-950", border: "border-purple-900/50", text: "text-white", subText: "text-purple-300", iconBg: "bg-purple-900/50", iconColor: "text-purple-400" },
+      emerald: { bg: "bg-emerald-950", border: "border-emerald-900/50", text: "text-white", subText: "text-emerald-300", iconBg: "bg-emerald-900/50", iconColor: "text-emerald-400" },
+      rose: { bg: "bg-rose-950", border: "border-rose-900/50", text: "text-white", subText: "text-rose-300", iconBg: "bg-rose-900/50", iconColor: "text-rose-400" },
+      cyan: { bg: "bg-cyan-950", border: "border-cyan-900/50", text: "text-white", subText: "text-cyan-300", iconBg: "bg-cyan-900/50", iconColor: "text-cyan-400" }
+    };
+    
+    const theme = themeStyles[colorTheme] || themeStyles.glass;
+    
     return (
-    <motion.div whileHover={{ y: -2 }} style={{...CARD({ flex:1, minWidth:0, display:"flex", flexDirection:"column", justifyContent:"space-between", height:"100%", padding:"16px", background: bgVal, backdropFilter: isGlass ? "blur(16px)" : "none", WebkitBackdropFilter: isGlass ? "blur(16px)" : "none", transform: "translateZ(0)", willChange: "transform", border: "1px solid rgba(255,255,255,0.6)", borderRadius: 24, boxShadow: "0 8px 32px rgba(0,0,0,0.04)", overflow: "hidden", wordBreak: "break-word" })}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12,gap:8, flexWrap: "wrap"}}>
-        <div style={{display:"flex", alignItems:"center", gap: 6, minWidth: 0}}>
-          {Icon && <div style={{background:`rgba(0,0,0,0.04)`, padding: 6, borderRadius: 8, flexShrink: 0}}><Icon size={14} color={color} /></div>}
-          <div style={{fontSize:11,fontWeight:700,letterSpacing:0.5,textTransform:"uppercase",color: !isGlass?"rgba(255,255,255,0.7)":"rgba(0,0,0,0.5)",lineHeight:1.4}}>{label}</div>
+    <motion.div whileHover={{ y: -2 }} className={`flex-1 min-w-0 flex flex-col justify-between h-full p-5 rounded-2xl border ${theme.border} shadow-sm overflow-hidden break-words transition-shadow hover:shadow-md ${theme.bg}`}>
+      <div className="flex justify-between items-start mb-3 gap-2 flex-wrap">
+        <div className="flex items-center gap-2 min-w-0">
+          {Icon && <div className={`${theme.iconBg} p-1.5 rounded-lg shrink-0`}><Icon size={16} className={theme.iconColor} /></div>}
+          <div className={`text-[11px] font-bold tracking-wide uppercase leading-snug ${theme.subText}`}>{label}</div>
         </div>
         {pctStr && (
-          <div style={{display: "flex", flexDirection: "column", alignItems: "flex-end", flexShrink: 0}}>
-            <div style={{fontSize:10,fontWeight:700,color:pctStr.startsWith('+')?"#10B981":pctStr.startsWith('-')?"#EF4444":"rgba(0,0,0,0.4)",background:pctStr.startsWith('+')?"#D1FAE5":pctStr.startsWith('-')?"#FEE2E2":"#F3F4F6",padding:"4px 6px",borderRadius:8,whiteSpace:"nowrap", display:"flex", alignItems:"center", gap:2}}>
+          <div className="flex flex-col items-end shrink-0">
+            <div className={`text-[10px] font-bold px-1.5 py-1 rounded-lg whitespace-nowrap flex items-center gap-0.5 ${pctStr.startsWith('+') ? (isGlass ? 'text-emerald-600 bg-emerald-50' : 'text-emerald-400 bg-emerald-400/10') : pctStr.startsWith('-') ? (isGlass ? 'text-red-500 bg-red-50' : 'text-red-400 bg-red-400/10') : (isGlass ? 'text-gray-500 bg-gray-100' : 'text-gray-400 bg-white/10')}`}>
               {pctStr.startsWith('+') ? <ArrowUpRight size={10}/> : pctStr.startsWith('-') ? <ArrowDownRight size={10}/> : null}
               {pctStr}
             </div>
-            {getPeriodText() && <div style={{fontSize: 9, color: !isGlass?"rgba(255,255,255,0.4)":"rgba(0,0,0,0.4)", marginTop: 4, fontWeight: 600, whiteSpace:"nowrap"}}>{getPeriodText()}</div>}
+            {getPeriodText() && <div className={`text-[9px] mt-1 font-semibold whitespace-nowrap ${theme.subText}`}>{getPeriodText()}</div>}
           </div>
         )}
       </div>
-      <div style={{minWidth: 0}}>
-        <div style={{fontSize:24,fontWeight:800,color:!isGlass?"#fff":"#111827",lineHeight:1.1, letterSpacing: "-0.5px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis"}} title={String(val)}>{val}</div>
-        {sub&&<div style={{fontSize:11,color:!isGlass?"rgba(255,255,255,0.6)":"rgba(0,0,0,0.5)",marginTop:6,fontWeight:500, lineHeight: 1.4}}>{sub}</div>}
+      <div className="min-w-0">
+        <div className={`text-2xl font-bold leading-tight tracking-tight whitespace-nowrap overflow-hidden text-ellipsis ${theme.text}`} title={String(val)}>{val}</div>
+        {sub && <div className={`text-[11px] mt-1.5 font-medium leading-snug ${theme.subText}`}>{sub}</div>}
       </div>
     </motion.div>
   )};
@@ -948,69 +961,69 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
       </div>
 
       {/* Metrics Row */}
-      <div style={{display:"grid",gap:16,gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))"}}>
-        <MCard label="Total Konten" val={total} sub={`Dipublikasikan: ${pub}`} color="#3B82F6" icon={PieChart} pctStr={calcPct(total, prevTotal)} bg="#111827" />
-        <MCard label="Views (Impresi)" val={fmt(tV)} pctStr={calcPct(tV, prevTV)} color="#EAB308" icon={Activity}/>
-        <MCard label="Reach" val={fmt(tR)} pctStr={calcPct(tR, prevTR)} color="#8B5CF6" icon={Users}/>
-        <MCard label="Engagement" val={fmt(tE)} sub={`Tingkat Interaksi: ${er}% (vs ${(prevER).toFixed(2)}%)`} pctStr={calcPct(tE, prevTE)} color="#10B981" icon={Target}/>
+      <div className="flex flex-wrap gap-4 w-[calc(100%+48px)] -mx-6 px-6">
+        <div className="flex-1 min-w-[200px]"><MCard label="Total Konten" val={total} sub={`Dipublikasikan: ${pub}`} colorTheme="blue" icon={PieChart} pctStr={calcPct(total, prevTotal)} /></div>
+        <div className="flex-1 min-w-[200px]"><MCard label="Views (Impresi)" val={fmt(tV)} pctStr={calcPct(tV, prevTV)} colorTheme="amber" icon={Activity}/></div>
+        <div className="flex-1 min-w-[200px]"><MCard label="Reach" val={fmt(tR)} pctStr={calcPct(tR, prevTR)} colorTheme="purple" icon={Users}/></div>
+        <div className="flex-1 min-w-[200px]"><MCard label="Engagement" val={fmt(tE)} sub={`Tingkat Interaksi: ${er}% (vs ${(prevER).toFixed(2)}%)`} pctStr={calcPct(tE, prevTE)} colorTheme="emerald" icon={Target}/></div>
         {(adsFilter==="all"||adsFilter==="ads") && <>
-          <MCard label="Ad Clicks" val={fmt(tClicks)} color="#EC4899" icon={Zap} pctStr={calcPct(tClicks, prevTClicks)}/>
-          <MCard label="Ad Conversions" val={fmt(tConv)} color="#EC4899" icon={Star} pctStr={calcPct(tConv, prevTConv)}/>
+          <div className="flex-1 min-w-[200px]"><MCard label="Ad Clicks" val={fmt(tClicks)} colorTheme="rose" icon={Zap} pctStr={calcPct(tClicks, prevTClicks)}/></div>
+          <div className="flex-1 min-w-[200px]"><MCard label="Ad Conversions" val={fmt(tConv)} colorTheme="cyan" icon={Star} pctStr={calcPct(tConv, prevTConv)}/></div>
         </>}
       </div>
 
       {/* Restricted Overlay & Main Dashboard Content */}
-      <div style={{position:"relative"}}>
+      <div className="relative">
         {isRestricted && (
-          <div style={{position:"absolute",inset:0,zIndex:10,backdropFilter: "none",display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(255, 255, 255, 0.4)",borderRadius:20}}>
-            <div style={{background:"rgba(255,255,255,0.65)",backdropFilter: "none",WebkitBackdropFilter: "none",transform:"translateZ(0)",willChange:"transform",padding:"24px 32px",borderRadius:24,boxShadow:"0 20px 60px rgba(0,0,0,0.08)",textAlign:"center",maxWidth:400,border:"1px solid rgba(255,255,255,0.7)"}}>
-              <AlertCircle size={40} color="var(--theme-primary)" style={{margin: "0 auto 12px"}} />
-              <h3 style={{fontSize:18,fontWeight:800,marginBottom:8,color:"#111827", letterSpacing: "-0.5px"}}>Akses Analitik Premium</h3>
-              <p style={{fontSize:13,color:"rgba(0,0,0,0.6)",marginBottom:20, lineHeight:1.6}}>Upgrade ke paket Pro untuk membuka analisis prediktif, AI Insights mendalam, heatmap performa, dan integrasi multi-platform tak terbatas.</p>
-              <button className="hover-scale" onClick={()=>window.location.hash="/billing"} style={{background:"var(--theme-primary)",color:"white",padding:"12px 24px",borderRadius:10,fontWeight:700,fontSize:14,border:"none",cursor:"pointer",width:"100%", boxShadow: "0 4px 14px rgba(59,130,246,0.4)"}}>Upgrade Sekarang</button>
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/40 rounded-[20px]">
+            <div className="bg-white/80 p-6 md:p-8 rounded-[24px] shadow-[0_20px_60px_rgba(0,0,0,0.08)] text-center max-w-[400px] border border-white/70">
+              <AlertCircle size={40} className="text-blue-500 mx-auto mb-3" />
+              <h3 className="text-[18px] font-bold mb-2 text-gray-900 tracking-tight">Akses Analitik Premium</h3>
+              <p className="text-[13px] text-gray-600 mb-5 leading-relaxed">Upgrade ke paket Pro untuk membuka analisis prediktif, AI Insights mendalam, heatmap performa, dan integrasi multi-platform tak terbatas.</p>
+              <button className="hover-scale w-full bg-blue-600 text-white py-3 px-6 rounded-xl font-bold text-[14px] border-none cursor-pointer shadow-[0_4px_14px_rgba(59,130,246,0.4)]" onClick={()=>window.location.hash="/billing"}>Upgrade Sekarang</button>
             </div>
           </div>
         )}
 
-        <div style={{display: "flex", flexDirection: "column", gap: 24, filter: isRestricted ? "blur(8px)" : "none", pointerEvents: isRestricted ? "none" : "auto", userSelect: isRestricted ? "none" : "auto"}}>
+        <div className={`flex flex-col gap-6 ${isRestricted ? "blur-[8px] pointer-events-none select-none" : ""}`}>
           
           {/* Executive Summary Block */}
-          <div style={{...CARD({background: "#111827", color: "white", padding: "20px", borderRadius: 16, border: "1px solid rgba(255,255,255,0.1)", display: "flex", flexDirection: "column" })}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}>
-              <div style={{display:"flex", alignItems:"center", gap: 8}}>
-                <div style={{background:"rgba(255,255,255,0.1)", padding: 6, borderRadius: 8}}><GeminiIcon size={16} /></div>
-                <h4 style={{fontSize:16,fontWeight:800,margin:0,color:"white", letterSpacing: "-0.5px"}}>Executive Summary</h4>
+          <div className="bg-white text-gray-900 p-3.5 rounded-xl border border-gray-100 flex flex-col shadow-sm">
+            <div className="flex justify-between items-start mb-2.5">
+              <div className="flex items-center gap-2">
+                <div className="bg-blue-50 p-1 rounded-md text-blue-600"><GeminiIcon size={14} /></div>
+                <h4 className="text-[14px] font-bold m-0 text-gray-900 tracking-tight">Executive Summary</h4>
               </div>
             </div>
             
-            <ul style={{fontSize:13,lineHeight:1.6,margin:0,paddingLeft:16,marginBottom:20,color:"rgba(255,255,255,0.8)"}}>
-              <li><strong style={{color:"white"}}>Total Konten:</strong> {total} (Dipublikasikan: {pub}) dalam periode terpilih.</li>
-              <li><strong style={{color:"white"}}>Jangkauan & Impresi:</strong> Total views mencapai <strong style={{color:"#60A5FA"}}>{fmt(tV)}</strong> impresi dengan ukuran audiens (reach) sekitar <strong style={{color:"#60A5FA"}}>{fmt(tR)}</strong>.</li>
-              <li><strong style={{color:"white"}}>Tingkat Interaksi:</strong> Menghasilkan <strong style={{color:"#34D399"}}>{fmt(tE)} engagement</strong> (ER: {er}%).</li>
-              {adsFilter!=="organic" && tClicks>0 && <li><strong style={{color:"white"}}>Return Konversi Iklan:</strong> {fmt(tClicks)} clicks & {fmt(tConv)} conversions.</li>}
+            <ul className="text-[12px] leading-relaxed m-0 pl-4 mb-3 text-gray-600">
+              <li><strong className="text-gray-900">Total Konten:</strong> {total} (Dipublikasikan: {pub}) dalam periode terpilih.</li>
+              <li><strong className="text-gray-900">Jangkauan & Impresi:</strong> Total views mencapai <strong className="text-blue-600">{fmt(tV)}</strong> impresi dengan ukuran audiens (reach) sekitar <strong className="text-blue-600">{fmt(tR)}</strong>.</li>
+              <li><strong className="text-gray-900">Tingkat Interaksi:</strong> Menghasilkan <strong className="text-emerald-600">{fmt(tE)} engagement</strong> (ER: {er}%).</li>
+              {adsFilter!=="organic" && tClicks>0 && <li><strong className="text-gray-900">Return Konversi Iklan:</strong> {fmt(tClicks)} clicks & {fmt(tConv)} conversions.</li>}
             </ul>
 
-            <div style={{marginTop: "auto", borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: 20}}>
+            <div className="mt-auto border-t border-gray-100 pt-3">
               {aiInsight ? (
-                <div style={{background:"rgba(255,255,255,0.04)",padding:16,borderRadius:12}}>
+                <div className="bg-blue-50/50 p-3 rounded-lg border border-blue-100/50">
                   <div 
-                    style={{display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer"}}
+                    className="flex justify-between items-center cursor-pointer"
                     onClick={() => setShowAiInsight(!showAiInsight)}
                   >
-                    <div style={{fontSize:13,fontWeight:700,color:"#93C5FD",display:"flex",alignItems:"center",gap:8}}>
+                    <div className="text-[12px] font-bold text-blue-700 flex items-center gap-2">
                       ✨ Insight & Rekomendasi AI
                     </div>
-                    <ChevronDown size={18} color="#93C5FD" style={{transform: showAiInsight ? "rotate(180deg)" : "none", transition: "all 0.3s"}} />
+                    <ChevronDown size={16} className="text-blue-700 transition-all duration-300" style={{transform: showAiInsight ? "rotate(180deg)" : "none"}} />
                   </div>
                   {showAiInsight && (
-                    <div style={{fontSize:13,lineHeight:1.6,color:"rgba(255,255,255,0.8)",marginTop:16}} className="markdown-body dark">
+                    <div className="text-[12px] leading-relaxed text-gray-700 mt-2.5 markdown-body">
                       <Markdown>{aiInsight}</Markdown>
                     </div>
                   )}
                 </div>
               ) : (
-                <button onClick={fetchAiInsight} disabled={aiLoading} className="hover-scale" style={{background:"white",color:"#111827",border:"none",padding:"12px 20px",borderRadius:12,fontWeight:700,fontSize:14,cursor:aiLoading?"wait":"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap: 10, width: "100%", boxShadow: "0 4px 12px rgba(0,0,0,0.2)" }}>
-                  <GeminiIcon size={18} />
+                <button onClick={fetchAiInsight} disabled={aiLoading} className="hover-scale w-full bg-gray-900 text-white border-none py-2.5 px-4 rounded-lg font-bold text-[12px] cursor-pointer flex items-center justify-center gap-2 shadow-[0_2px_8px_rgba(0,0,0,0.1)] disabled:cursor-wait">
+                  <GeminiIcon size={14} />
                   {aiLoading ? <LoadingDots /> : "Generate AI Insights"}
                 </button>
               )}
@@ -1020,16 +1033,16 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
           {/* Distribution Row */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6" style={{ minWidth: 0 }}>
             {/* Performance by Platform */}
-            <div style={{minWidth: 0, background: "rgba(255,255,255,0.45)", backdropFilter: "none", WebkitBackdropFilter: "none", transform: "translateZ(0)", willChange: "transform", padding: "20px", borderRadius: 24, border: "1px solid rgba(255,255,255,0.6)", boxShadow: "0 8px 32px rgba(0,0,0,0.04)", display: "flex", flexDirection: "column"}}>
-              <div style={{display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20, gap: 12, flexWrap: "wrap"}}>
-                <div style={{display:"flex", alignItems:"center", gap: 8}}>
-                  <div style={{background:"#FEF3C7", padding: 6, borderRadius: 8}}><PieChart size={16} color="#D97706" /></div>
-                  <h4 style={{fontSize:15,fontWeight:800,margin:0, color:"#111827", letterSpacing: "-0.5px"}}>Distribusi Platform</h4>
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex flex-col min-w-0 transition-shadow hover:shadow-md">
+              <div className="flex justify-between items-start mb-5 gap-3 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <div className="bg-amber-100 p-1.5 rounded-lg text-amber-600"><PieChart size={18} /></div>
+                  <h4 className="font-bold text-gray-900 text-[15px] m-0 tracking-tight">Distribusi Platform</h4>
                 </div>
-                <div style={{display:"flex", gap: 8, alignItems:"center", flexWrap: "wrap"}}>
-                  <div style={{display:"flex", background:"#F3F4F6", borderRadius:8, padding:2}}>
-                    <button onClick={()=>setPlatformChartType("doughnut")} style={{background:platformChartType==="doughnut"?"white":"transparent",border:"none",borderRadius:6,padding:"4px 8px",fontSize:11,fontWeight:700,color:platformChartType==="doughnut"?"#111827":"rgba(0,0,0,0.5)",cursor:"pointer",boxShadow:platformChartType==="doughnut"?"0 2px 4px rgba(0,0,0,0.05)":"none"}}>Doughnut</button>
-                    <button onClick={()=>setPlatformChartType("bar")} style={{background:platformChartType==="bar"?"white":"transparent",border:"none",borderRadius:6,padding:"4px 8px",fontSize:11,fontWeight:700,color:platformChartType==="bar"?"#111827":"rgba(0,0,0,0.5)",cursor:"pointer",boxShadow:platformChartType==="bar"?"0 2px 4px rgba(0,0,0,0.05)":"none"}}>Bar</button>
+                <div className="flex gap-2 items-center flex-wrap">
+                  <div className="flex bg-gray-100 rounded-lg p-0.5">
+                    <button onClick={()=>setPlatformChartType("doughnut")} className={`border-none rounded-md px-2.5 py-1 text-[11px] font-bold cursor-pointer transition-all ${platformChartType==="doughnut" ? "bg-white text-gray-900 shadow-sm" : "bg-transparent text-gray-500 hover:text-gray-700"}`}>Doughnut</button>
+                    <button onClick={()=>setPlatformChartType("bar")} className={`border-none rounded-md px-2.5 py-1 text-[11px] font-bold cursor-pointer transition-all ${platformChartType==="bar" ? "bg-white text-gray-900 shadow-sm" : "bg-transparent text-gray-500 hover:text-gray-700"}`}>Bar</button>
                   </div>
                   <CustomDropdown 
                     value={platformMetric} 
@@ -1076,15 +1089,15 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
             </div>
             
             {/* PIC Workload */}
-            <div style={{minWidth: 0, background: "rgba(255,255,255,0.45)", backdropFilter: "none", WebkitBackdropFilter: "none", transform: "translateZ(0)", willChange: "transform", padding: "20px", borderRadius: 24, border: "1px solid rgba(255,255,255,0.6)", boxShadow: "0 8px 32px rgba(0,0,0,0.04)", display: "flex", flexDirection: "column"}}>
-              <div style={{display:"flex", alignItems:"center", gap: 10, marginBottom: 20, justifyContent: "space-between", flexWrap: "wrap"}}>
-                <div style={{display:"flex", alignItems:"center", gap: 8}}>
-                  <div style={{background:"#E0E7FF", padding: 6, borderRadius: 8}}><Users size={16} color="#4F46E5" /></div>
-                  <h4 style={{fontSize:15,fontWeight:800,margin:0, color:"#111827", letterSpacing: "-0.5px"}}>Distribusi Konten PIC</h4>
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex flex-col min-w-0 transition-shadow hover:shadow-md">
+              <div className="flex items-center gap-2.5 mb-5 justify-between flex-wrap">
+                <div className="flex items-center gap-2">
+                  <div className="bg-indigo-100 p-1.5 rounded-lg text-indigo-600"><Users size={18} /></div>
+                  <h4 className="font-bold text-gray-900 text-[15px] m-0 tracking-tight">Distribusi Konten PIC</h4>
                 </div>
-                <div style={{display:"flex", background:"#F3F4F6", borderRadius:8, padding:2}}>
-                  <button onClick={()=>setPicChartType("doughnut")} style={{background:picChartType==="doughnut"?"white":"transparent",border:"none",borderRadius:6,padding:"4px 8px",fontSize:11,fontWeight:700,color:picChartType==="doughnut"?"#111827":"rgba(0,0,0,0.5)",cursor:"pointer",boxShadow:picChartType==="doughnut"?"0 2px 4px rgba(0,0,0,0.05)":"none"}}>Doughnut</button>
-                  <button onClick={()=>setPicChartType("bar")} style={{background:picChartType==="bar"?"white":"transparent",border:"none",borderRadius:6,padding:"4px 8px",fontSize:11,fontWeight:700,color:picChartType==="bar"?"#111827":"rgba(0,0,0,0.5)",cursor:"pointer",boxShadow:picChartType==="bar"?"0 2px 4px rgba(0,0,0,0.05)":"none"}}>Bar</button>
+                <div className="flex bg-gray-100 rounded-lg p-0.5">
+                  <button onClick={()=>setPicChartType("doughnut")} className={`border-none rounded-md px-2.5 py-1 text-[11px] font-bold cursor-pointer transition-all ${picChartType==="doughnut" ? "bg-white text-gray-900 shadow-sm" : "bg-transparent text-gray-500 hover:text-gray-700"}`}>Doughnut</button>
+                  <button onClick={()=>setPicChartType("bar")} className={`border-none rounded-md px-2.5 py-1 text-[11px] font-bold cursor-pointer transition-all ${picChartType==="bar" ? "bg-white text-gray-900 shadow-sm" : "bg-transparent text-gray-500 hover:text-gray-700"}`}>Bar</button>
                 </div>
               </div>
               <ResponsiveContainer width="100%" height={320} style={{marginTop: "auto"}} debounce={300}>
@@ -1120,13 +1133,13 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
             </div>
 
             {/* Performance by Pillar */}
-            <div style={{minWidth: 0, background: "rgba(255,255,255,0.45)", backdropFilter: "none", WebkitBackdropFilter: "none", transform: "translateZ(0)", willChange: "transform", padding: "20px", borderRadius: 24, border: "1px solid rgba(255,255,255,0.6)", boxShadow: "0 8px 32px rgba(0,0,0,0.04)", display: "flex", flexDirection: "column"}}>
-              <div style={{display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20, gap: 12, flexWrap: "wrap"}}>
-                <div style={{display:"flex", alignItems:"center", gap: 8}}>
-                  <div style={{background:"#DCFCE7", padding: 6, borderRadius: 8}}><PieChart size={16} color="#16A34A" /></div>
-                  <h4 style={{fontSize:15,fontWeight:800,margin:0, color:"#111827", letterSpacing: "-0.5px"}}>Distribusi Pilar Konten</h4>
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex flex-col min-w-0 transition-shadow hover:shadow-md">
+              <div className="flex justify-between items-start mb-5 gap-3 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <div className="bg-green-100 p-1.5 rounded-lg text-green-600"><PieChart size={18} /></div>
+                  <h4 className="font-bold text-gray-900 text-[15px] m-0 tracking-tight">Distribusi Pilar Konten</h4>
                 </div>
-                <div style={{display:"flex", gap: 8, alignItems:"center", flexWrap: "wrap"}}>
+                <div className="flex gap-2 items-center flex-wrap">
                   <CustomDropdown 
                     value={pillarMetric} 
                     onChange={setPillarMetric} 
@@ -1161,13 +1174,13 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
             </div>
 
             {/* Performance by Content Type */}
-            <div style={{minWidth: 0, background: "rgba(255,255,255,0.45)", backdropFilter: "none", WebkitBackdropFilter: "none", transform: "translateZ(0)", willChange: "transform", padding: "20px", borderRadius: 24, border: "1px solid rgba(255,255,255,0.6)", boxShadow: "0 8px 32px rgba(0,0,0,0.04)", display: "flex", flexDirection: "column"}}>
-              <div style={{display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20, gap: 12, flexWrap: "wrap"}}>
-                <div style={{display:"flex", alignItems:"center", gap: 8}}>
-                  <div style={{background:"#FCE7F3", padding: 6, borderRadius: 8}}><PieChart size={16} color="#DB2777" /></div>
-                  <h4 style={{fontSize:15,fontWeight:800,margin:0, color:"#111827", letterSpacing: "-0.5px"}}>Tipe Konten</h4>
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex flex-col min-w-0 transition-shadow hover:shadow-md">
+              <div className="flex justify-between items-start mb-5 gap-3 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <div className="bg-pink-100 p-1.5 rounded-lg text-pink-600"><PieChart size={18} /></div>
+                  <h4 className="font-bold text-gray-900 text-[15px] m-0 tracking-tight">Tipe Konten</h4>
                 </div>
-                <div style={{display:"flex", gap: 8, alignItems:"center", flexWrap: "wrap"}}>
+                <div className="flex gap-2 items-center flex-wrap">
                   <CustomDropdown 
                     value={typeMetric} 
                     onChange={setTypeMetric} 
@@ -1197,14 +1210,14 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
           </div>
 
           {/* Trends Charts List */}
-          <div style={{minWidth: 0, background: "rgba(255,255,255,0.45)", backdropFilter: "none", WebkitBackdropFilter: "none", transform: "translateZ(0)", willChange: "transform", padding: "20px", borderRadius: 24, border: "1px solid rgba(255,255,255,0.6)", boxShadow: "0 8px 32px rgba(0,0,0,0.04)", display: "flex", flexDirection: "column"}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20,flexWrap:"wrap",gap:12}}>
-              <div style={{display:"flex", alignItems:"center", gap: 8}}>
-                <div style={{background:"#F3F4F6", padding: 6, borderRadius: 8}}><TrendingUp size={16} color="#111827" /></div>
-                <h4 style={{fontSize:16,fontWeight:800,margin:0,color:"#111827", letterSpacing: "-0.5px"}}>Tren Pertumbuhan</h4>
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex flex-col min-w-0 transition-shadow hover:shadow-md">
+            <div className="flex justify-between items-center mb-5 flex-wrap gap-3">
+              <div className="flex items-center gap-2">
+                <div className="bg-gray-100 p-1.5 rounded-lg text-gray-900"><TrendingUp size={18} /></div>
+                <h4 className="font-bold text-gray-900 text-[15px] m-0 tracking-tight">Tren Pertumbuhan</h4>
               </div>
             </div>
-            <div style={{display:"grid", gap:20, gridTemplateColumns:"repeat(auto-fit, minmax(360px, 1fr))"}}>
+            <div className="grid gap-5 grid-cols-1 lg:grid-cols-2">
               {["views","reach","likes","comments","shares","saves","clicks"].map(k=>(
                 <div key={k} style={{background: "#F9FAFB", padding: "20px", borderRadius: "16px", border: "1px solid rgba(0,0,0,0.04)"}}>
                   <div style={{fontSize: 14, fontWeight: 800, textTransform: "capitalize", color: "#111827", marginBottom: 16, display: "flex", alignItems: "center", gap: 8}}>
@@ -1235,12 +1248,12 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
           </div>
           
           {/* Heatmap (Full Width) */}
-          <div style={{minWidth: 0, background: "rgba(255,255,255,0.45)", backdropFilter: "none", WebkitBackdropFilter: "none", transform: "translateZ(0)", willChange: "transform", padding: "20px", borderRadius: 24, border: "1px solid rgba(255,255,255,0.6)", boxShadow: "0 8px 32px rgba(0,0,0,0.04)", width: "100%", overflow: "hidden"}}>
-            <div style={{width: "100%"}}>
-              <div style={{display:"flex", alignItems:"center", gap: 10, marginBottom: 20, justifyContent: "space-between", flexWrap: "wrap"}}>
-                <div style={{display:"flex", alignItems:"center", gap: 8}}>
-                  <div style={{background:"#FEE2E2", padding: 6, borderRadius: 8}}><Clock size={16} color="#DC2626" /></div>
-                  <h4 style={{fontSize:15,fontWeight:800,margin:0, color:"#111827", letterSpacing: "-0.5px"}}>Heatmap Aktivitas (Best Time)</h4>
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 min-w-0 transition-shadow hover:shadow-md overflow-hidden w-full">
+            <div className="w-full">
+              <div className="flex items-center gap-2.5 mb-5 justify-between flex-wrap">
+                <div className="flex items-center gap-2">
+                  <div className="bg-red-100 p-1.5 rounded-lg text-red-600"><Clock size={18} /></div>
+                  <h4 className="font-bold text-gray-900 text-[15px] m-0 tracking-tight">Heatmap Aktivitas (Best Time)</h4>
                 </div>
                 <CustomDropdown 
                   value={heatmapMetric} 
@@ -1271,18 +1284,18 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
             </div>
           </div>
 
-          <div style={{display:"flex",gap:16,alignItems:"center",background: "rgba(255,255,255,0.45)", backdropFilter: "none", WebkitBackdropFilter: "none", transform: "translateZ(0)", willChange: "transform", padding:"16px 20px", borderRadius:24, border: "1px solid rgba(255,255,255,0.6)", boxShadow: "0 8px 32px rgba(0,0,0,0.04)",flexWrap:"wrap", marginTop: 8}}>
-            <div style={{display:"flex",gap:12,alignItems:"center"}}>
-              <div style={{fontSize:13,fontWeight:700,color:"rgba(0,0,0,0.5)", textTransform: "uppercase", letterSpacing: 0.5}}>Urutkan:</div>
-              <div style={{display:"flex", gap: 4, background:"#F3F4F6", padding:4, borderRadius:8}}>
+          <div className="flex gap-4 items-center bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4 flex-wrap mt-2 min-w-0">
+            <div className="flex gap-3 items-center">
+              <div className="text-[13px] font-bold text-gray-500 uppercase tracking-wider">Urutkan:</div>
+              <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
                 {[["engagement","Interaksi"],["reach","Jangkauan"],["views","Tayangan"]].map(([k,l])=>(
-                  <button key={k} onClick={()=>setTopSort(k)} style={{background:topSort===k?"white":"transparent", color:topSort===k?"#111827":"rgba(0,0,0,0.6)", padding:"6px 14px", borderRadius:6, border:"none", fontWeight: 600, fontSize:13, cursor:"pointer", transition:"all 0.2s", boxShadow:topSort===k?"0 2px 6px rgba(0,0,0,0.05)":"none"}}>{l}</button>
+                  <button key={k} onClick={()=>setTopSort(k)} className={`px-3.5 py-1.5 rounded-md border-none font-semibold text-[13px] cursor-pointer transition-all ${topSort===k ? "bg-white text-gray-900 shadow-sm" : "bg-transparent text-gray-500 hover:text-gray-700"}`}>{l}</button>
                 ))}
               </div>
             </div>
-            <div style={{width:1,height:28,background:"rgba(0,0,0,0.1)"}}/>
-            <div style={{display:"flex",gap:12,alignItems:"center"}}>
-              <div style={{fontSize:13,fontWeight:700,color:"rgba(0,0,0,0.5)", textTransform: "uppercase", letterSpacing: 0.5}}>Platform:</div>
+            <div className="hidden sm:block w-px h-7 bg-black/10 shrink-0"/>
+            <div className="flex gap-3 items-center">
+              <div className="text-[13px] font-bold text-gray-500 uppercase tracking-wider">Platform:</div>
               <CustomDropdown 
                 value={topPlatform} 
                 onChange={setTopPlatform} 
@@ -1295,7 +1308,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
             </div>
           </div>
 
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(320px,1fr))",gap:24}}>
+          <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
             <div>
               <CDataList 
                 title={`🏆 Top 10 Konten Terbaik${topPlatform!=="All"?" ("+topPlatform+")":""}`} 

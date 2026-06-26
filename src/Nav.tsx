@@ -973,11 +973,12 @@ export function Sidebar({
   onLeaveWorkspace,
   onDeleteWorkspace,
   onRenameWorkspace,
+  onCreateWorkspaceRequest,
   onTitleChange,
 }: any) {
   const navigate = useNavigate();
   const [showViews, setShowViews] = useState(true);
-  const [showWorkspaces, setShowWorkspaces] = useState(true);
+  const [showWorkspaces, setShowWorkspaces] = useState(false);
   const [showSocial, setShowSocial] = useState(true);
   const [showHubiverse, setShowHubiverse] = useState(true);
   const [showSocMgmt, setShowSocMgmt] = useState(true);
@@ -1357,64 +1358,104 @@ export function Sidebar({
                       style={{ padding: open ? "20px 16px" : "20px 12px" }}
                     >
                       {/* Workspaces Section */}
-                      <div style={{ marginBottom: 24 }}>
+                      <div style={{ marginBottom: 24, position: "relative" }}>
                         <div
-                          onClick={() => setShowWorkspaces(!showWorkspaces)}
+                          onClick={() => {
+                            if (!open) {
+                              setOpen(true);
+                              setShowWorkspaces(true);
+                            } else {
+                              setShowWorkspaces(!showWorkspaces);
+                            }
+                          }}
+                          className="hover-scale"
                           style={{
                             display: "flex",
                             alignItems: "center",
-                            justifyContent: "space-between",
+                            gap: open ? 12 : 0,
+                            padding: open ? "10px 12px" : "10px 0",
+                            background: "rgba(255,255,255,0.05)",
+                            borderRadius: 12,
                             cursor: "pointer",
-                            marginBottom: open ? 8 : 0,
-                            padding: "0 8px",
-                            opacity: open ? 1 : 0,
-                            height: open ? "auto" : 0,
-                            pointerEvents: open ? "auto" : "none",
-                            overflow: "hidden",
+                            justifyContent: open ? "flex-start" : "center",
                           }}
                         >
-                          <label
+                          <div
                             style={{
-                              fontSize: 9,
-                              fontWeight: 700,
-                              color: "rgba(255,255,255,0.3)",
-                              textTransform: "uppercase",
-                              letterSpacing: 1.5,
-                              cursor: "pointer",
+                              width: 32,
+                              display: "flex",
+                              justifyContent: "center",
+                              alignItems: "center",
+                              flexShrink: 0,
                             }}
                           >
-                            Workspaces
-                          </label>
-                          {showWorkspaces ? (
-                            <ChevronUp
-                              size={14}
-                              color="rgba(255,255,255,0.3)"
-                            />
-                          ) : (
-                            <ChevronDown
-                              size={14}
-                              color="rgba(255,255,255,0.3)"
-                            />
+                            <div
+                              style={{
+                                width: 24,
+                                height: 24,
+                                borderRadius: 6,
+                                background: "var(--theme-gradient)",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: 11,
+                                fontWeight: 800,
+                                color: "white"
+                              }}
+                            >
+                              {activeWorkspace?.name?.charAt(0).toUpperCase() || "W"}
+                            </div>
+                          </div>
+                          {open && (
+                            <>
+                              <div
+                                style={{
+                                  flex: 1,
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                  whiteSpace: "nowrap",
+                                  color: "white",
+                                  fontSize: 13,
+                                  fontWeight: 600,
+                                }}
+                              >
+                                {activeWorkspace?.name || "Workspace"}
+                              </div>
+                              <ChevronDown size={14} color="rgba(255,255,255,0.5)" />
+                            </>
                           )}
                         </div>
 
+                        {/* Dropdown Menu */}
                         <AnimatePresence>
-                          {(showWorkspaces || !open) && (
+                          {showWorkspaces && open && (
                             <motion.div
-                              initial={{ height: 0, opacity: 0 }}
-                              animate={{ height: "auto", opacity: 1 }}
-                              exit={{ height: 0, opacity: 0 }}
+                              initial={{ opacity: 0, y: -10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: -10 }}
                               style={{
+                                position: "absolute",
+                                top: "100%",
+                                left: 0,
+                                right: 0,
+                                marginTop: 8,
+                                background: "var(--theme-sidebar)",
+                                border: "1px solid rgba(255,255,255,0.1)",
+                                borderRadius: 12,
+                                padding: 8,
+                                zIndex: 100,
                                 display: "flex",
                                 flexDirection: "column",
-                                gap: 8,
-                                overflow: "visible",
+                                gap: 4,
+                                boxShadow: "0 10px 30px rgba(0,0,0,0.5)",
+                                maxHeight: 300,
+                                overflowY: "auto"
                               }}
                             >
+                              <div style={{fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", padding: "4px 8px 8px"}}>Workspaces</div>
+                              
                               {workspaces.map((ws: any) => {
-                                const isOwner =
-                                  ws.ownerId === user?.uid ||
-                                  ws.createdBy === user?.uid;
+                                const isOwner = ws.ownerId === user?.uid || ws.createdBy === user?.uid;
                                 return (
                                   <div
                                     key={ws.id}
@@ -1428,7 +1469,7 @@ export function Sidebar({
                                       className="hover-scale"
                                       onClick={() => {
                                         onWorkspaceSelect(ws);
-                                        if (!open) setOpen(true);
+                                        setShowWorkspaces(false);
                                       }}
                                       onDoubleClick={(e) => {
                                         if (isOwner && onRenameWorkspace) {
@@ -1440,319 +1481,124 @@ export function Sidebar({
                                       style={{
                                         width: "100%",
                                         textAlign: "left",
-                                        background:
-                                          activeWorkspace?.id === ws.id
-                                            ? "var(--theme-gradient)"
-                                            : "transparent",
+                                        background: activeWorkspace?.id === ws.id ? "rgba(255,255,255,0.1)" : "transparent",
                                         border: "none",
-                                        borderRadius: 12,
-                                        padding: open ? "8px 12px" : "10px 0",
-                                        justifyContent: open
-                                          ? "flex-start"
-                                          : "center",
-                                        color:
-                                          activeWorkspace?.id === ws.id
-                                            ? "white"
-                                            : "#FAFAFA",
-                                        fontSize: 13,
+                                        borderRadius: 8,
+                                        padding: "8px",
+                                        color: activeWorkspace?.id === ws.id ? "white" : "rgba(255,255,255,0.7)",
+                                        fontSize: 12,
                                         fontWeight: 600,
                                         cursor: "pointer",
                                         transition: "all 0.3s ease",
                                         display: "flex",
                                         alignItems: "center",
-                                        gap: open ? 12 : 0,
+                                        gap: 8,
                                       }}
                                     >
                                       <div
                                         style={{
-                                          width: 32,
+                                          width: 20,
+                                          height: 20,
+                                          borderRadius: 4,
+                                          background: activeWorkspace?.id === ws.id ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.05)",
                                           display: "flex",
-                                          justifyContent: "center",
                                           alignItems: "center",
-                                          flexShrink: 0,
+                                          justifyContent: "center",
+                                          fontSize: 10,
+                                          fontWeight: 800,
                                         }}
                                       >
-                                        <div
-                                          style={{
-                                            width: 24,
-                                            height: 24,
-                                            borderRadius: 6,
-                                            background:
-                                              activeWorkspace?.id === ws.id
-                                                ? "rgba(255,255,255,0.2)"
-                                                : "rgba(255,255,255,0.05)",
-                                            display: "flex",
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                            fontSize: 11,
-                                            fontWeight: 800,
-                                          }}
-                                        >
-                                          {ws.name.charAt(0).toUpperCase()}
-                                        </div>
+                                        {ws.name.charAt(0).toUpperCase()}
                                       </div>
-                                      <AnimatePresence>
-                                        {open && (
-                                          <motion.div
-                                            initial={{ opacity: 0, width: 0 }}
-                                            animate={{
-                                              opacity: 1,
-                                              width: "auto",
-                                            }}
-                                            exit={{ opacity: 0, width: 0 }}
-                                            style={{
-                                              overflow: "visible",
-                                              textOverflow: "ellipsis",
-                                              whiteSpace: "nowrap",
-                                              flex: 1,
-                                              display: "flex",
-                                              alignItems: "center",
-                                            }}
+                                      
+                                      {renamingWs === ws.id ? (
+                                        <input
+                                          autoFocus
+                                          value={renameValue}
+                                          onChange={(e) => setRenameValue(e.target.value)}
+                                          onBlur={() => {
+                                            if (onRenameWorkspace && renameValue.trim() && renameValue.trim() !== ws.name) {
+                                              onRenameWorkspace(ws.id, renameValue.trim());
+                                            }
+                                            setRenamingWs(null);
+                                          }}
+                                          onKeyDown={(e) => {
+                                            if (e.key === "Enter") {
+                                              if (onRenameWorkspace && renameValue.trim() && renameValue.trim() !== ws.name) {
+                                                onRenameWorkspace(ws.id, renameValue.trim());
+                                              }
+                                              setRenamingWs(null);
+                                            } else if (e.key === "Escape") {
+                                              setRenamingWs(null);
+                                            }
+                                          }}
+                                          style={{
+                                            width: "100%", background: "rgba(255,255,255,0.2)", color: "white",
+                                            border: "none", borderRadius: 4, padding: "2px 6px", outline: "none",
+                                            fontSize: 12, fontWeight: 600,
+                                          }}
+                                        />
+                                      ) : (
+                                        <>
+                                          <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                            {ws.name}
+                                          </span>
+                                          <div
+                                            className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                            style={{ display: "flex", gap: 4, alignItems: "center" }}
                                           >
-                                            {renamingWs === ws.id ? (
-                                              <input
-                                                autoFocus
-                                                value={renameValue}
-                                                onChange={(e) =>
-                                                  setRenameValue(e.target.value)
-                                                }
-                                                onBlur={() => {
-                                                  if (
-                                                    onRenameWorkspace &&
-                                                    renameValue.trim() &&
-                                                    renameValue.trim() !==
-                                                      ws.name
-                                                  ) {
-                                                    onRenameWorkspace(
-                                                      ws.id,
-                                                      renameValue.trim(),
-                                                    );
-                                                  }
-                                                  setRenamingWs(null);
+                                            {isOwner ? (
+                                              <div
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  setLeavingWs({ id: ws.id, type: "delete", name: ws.name });
                                                 }}
-                                                onKeyDown={(e) => {
-                                                  if (e.key === "Enter") {
-                                                    if (
-                                                      onRenameWorkspace &&
-                                                      renameValue.trim() &&
-                                                      renameValue.trim() !==
-                                                        ws.name
-                                                    ) {
-                                                      onRenameWorkspace(
-                                                        ws.id,
-                                                        renameValue.trim(),
-                                                      );
-                                                    }
-                                                    setRenamingWs(null);
-                                                  } else if (
-                                                    e.key === "Escape"
-                                                  ) {
-                                                    setRenamingWs(null);
-                                                  }
-                                                }}
-                                                style={{
-                                                  width: "100%",
-                                                  background:
-                                                    "rgba(255,255,255,0.2)",
-                                                  color: "white",
-                                                  border: "none",
-                                                  borderRadius: 4,
-                                                  padding: "2px 6px",
-                                                  outline: "none",
-                                                  fontSize: 13,
-                                                  fontWeight: 600,
-                                                }}
-                                              />
+                                                style={{ padding: 4, borderRadius: 4, background: "rgba(225,29,72,0.8)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                                                title="Hapus Workspace"
+                                              >
+                                                <Trash2 size={12} color="white" />
+                                              </div>
                                             ) : (
-                                              <>
-                                                <span
-                                                  style={{
-                                                    flex: 1,
-                                                    overflow: "hidden",
-                                                    textOverflow: "ellipsis",
-                                                  }}
-                                                >
-                                                  {ws.name}
-                                                </span>
-                                                <div
-                                                  className={
-                                                    (wsMenuOpen === ws.id
-                                                      ? "opacity-100"
-                                                      : "opacity-0 group-hover:opacity-100") +
-                                                    " transition-opacity"
-                                                  }
-                                                  style={{
-                                                    display: "flex",
-                                                    gap: 4,
-                                                    alignItems: "center",
-                                                  }}
-                                                >
-                                                  <AnimatePresence>
-                                                    {wsMenuOpen === ws.id && (
-                                                      <motion.div
-                                                        initial={{
-                                                          opacity: 0,
-                                                          width: 0,
-                                                          marginRight: 0,
-                                                        }}
-                                                        animate={{
-                                                          opacity: 1,
-                                                          width: "auto",
-                                                          marginRight: 4,
-                                                        }}
-                                                        exit={{
-                                                          opacity: 0,
-                                                          width: 0,
-                                                          marginRight: 0,
-                                                        }}
-                                                        style={{
-                                                          display: "flex",
-                                                          gap: 4,
-                                                          overflow: "hidden",
-                                                        }}
-                                                      >
-                                                        {isOwner && (
-                                                          <div
-                                                            onClick={(e) => {
-                                                              e.stopPropagation();
-                                                              setRenamingWs(
-                                                                ws.id,
-                                                              );
-                                                              setRenameValue(
-                                                                ws.name,
-                                                              );
-                                                              setWsMenuOpen(
-                                                                null,
-                                                              );
-                                                            }}
-                                                            style={{
-                                                              padding: 6,
-                                                              borderRadius: 6,
-                                                              background:
-                                                                "rgba(255,255,255,0.15)",
-                                                              cursor: "pointer",
-                                                              display: "flex",
-                                                              alignItems:
-                                                                "center",
-                                                              justifyContent:
-                                                                "center",
-                                                            }}
-                                                            title="Edit Nama"
-                                                          >
-                                                            <Edit2
-                                                              size={12}
-                                                              color="white"
-                                                            />
-                                                          </div>
-                                                        )}
-                                                        {isOwner ? (
-                                                          <div
-                                                            onClick={(e) => {
-                                                              e.stopPropagation();
-                                                              setLeavingWs({
-                                                                id: ws.id,
-                                                                type: "delete",
-                                                                name: ws.name,
-                                                              });
-                                                              setWsMenuOpen(
-                                                                null,
-                                                              );
-                                                            }}
-                                                            style={{
-                                                              padding: 6,
-                                                              borderRadius: 6,
-                                                              background:
-                                                                "rgba(225,29,72,0.8)",
-                                                              cursor: "pointer",
-                                                              display: "flex",
-                                                              alignItems:
-                                                                "center",
-                                                              justifyContent:
-                                                                "center",
-                                                            }}
-                                                            title="Hapus Workspace"
-                                                          >
-                                                            <Trash2
-                                                              size={12}
-                                                              color="white"
-                                                            />
-                                                          </div>
-                                                        ) : (
-                                                          <div
-                                                            onClick={(e) => {
-                                                              e.stopPropagation();
-                                                              setLeavingWs({
-                                                                id: ws.id,
-                                                                type: "leave",
-                                                                name: ws.name,
-                                                              });
-                                                              setWsMenuOpen(
-                                                                null,
-                                                              );
-                                                            }}
-                                                            style={{
-                                                              padding: 6,
-                                                              borderRadius: 6,
-                                                              background:
-                                                                "rgba(225,29,72,0.8)",
-                                                              cursor: "pointer",
-                                                              display: "flex",
-                                                              alignItems:
-                                                                "center",
-                                                              justifyContent:
-                                                                "center",
-                                                            }}
-                                                            title="Tinggalkan Workspace"
-                                                          >
-                                                            <LogOut
-                                                              size={12}
-                                                              color="white"
-                                                            />
-                                                          </div>
-                                                        )}
-                                                      </motion.div>
-                                                    )}
-                                                  </AnimatePresence>
-
-                                                  <div
-                                                    onClick={(e) => {
-                                                      e.stopPropagation();
-                                                      setWsMenuOpen(
-                                                        wsMenuOpen === ws.id
-                                                          ? null
-                                                          : ws.id,
-                                                      );
-                                                    }}
-                                                    style={{
-                                                      padding: 6,
-                                                      borderRadius: 6,
-                                                      background:
-                                                        wsMenuOpen === ws.id
-                                                          ? "rgba(255,255,255,0.2)"
-                                                          : "rgba(255,255,255,0.1)",
-                                                      display: "flex",
-                                                      alignItems: "center",
-                                                      justifyContent: "center",
-                                                      cursor: "pointer",
-                                                      transition: "all 0.2s",
-                                                    }}
-                                                  >
-                                                    {wsMenuOpen === ws.id ? (
-                                                      <X size={14} />
-                                                    ) : (
-                                                      <MoreVertical size={14} />
-                                                    )}
-                                                  </div>
-                                                </div>
-                                              </>
+                                              <div
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  setLeavingWs({ id: ws.id, type: "leave", name: ws.name });
+                                                }}
+                                                style={{ padding: 4, borderRadius: 4, background: "rgba(225,29,72,0.8)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                                                title="Tinggalkan Workspace"
+                                              >
+                                                <LogOut size={12} color="white" />
+                                              </div>
                                             )}
-                                          </motion.div>
-                                        )}
-                                      </AnimatePresence>
+                                          </div>
+                                        </>
+                                      )}
                                     </button>
                                   </div>
                                 );
                               })}
+                              
+                              <div style={{height: 1, background: "rgba(255,255,255,0.1)", margin: "4px 0"}} />
+                              
+                              <button
+                                onClick={() => {
+                                  onCreateWorkspaceRequest?.();
+                                  setShowWorkspaces(false);
+                                }}
+                                style={{
+                                  display: "flex", alignItems: "center", gap: 8, padding: "8px 10px",
+                                  background: "transparent", border: "none", color: "white",
+                                  fontSize: 12, fontWeight: 600, cursor: "pointer", borderRadius: 8,
+                                  textAlign: "left"
+                                }}
+                                className="hover:bg-white/10 transition-colors"
+                              >
+                                <div style={{width: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(255,255,255,0.1)", borderRadius: 4}}>
+                                  <Plus size={12} />
+                                </div>
+                                Tambah Workspace
+                              </button>
+
                             </motion.div>
                           )}
                         </AnimatePresence>

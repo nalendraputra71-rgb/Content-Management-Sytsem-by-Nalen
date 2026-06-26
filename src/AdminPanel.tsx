@@ -41,6 +41,32 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
     trialDays: 7
   });
 
+  const bannerActiveDraft = systemSettings?.bannerActiveDraft !== undefined ? systemSettings.bannerActiveDraft : (systemSettings?.bannerActive || false);
+  const bannerMessageDraft = systemSettings?.bannerMessageDraft !== undefined ? systemSettings.bannerMessageDraft : (systemSettings?.bannerMessage || "");
+  const bannerTypeDraft = systemSettings?.bannerTypeDraft !== undefined ? systemSettings.bannerTypeDraft : (systemSettings?.bannerType || "info");
+
+  const hasUnpublishedBannerChanges = 
+    bannerActiveDraft !== (systemSettings?.bannerActive || false) || 
+    bannerMessageDraft !== (systemSettings?.bannerMessage || "") || 
+    bannerTypeDraft !== (systemSettings?.bannerType || "info");
+
+  const handlePublishBanner = async () => {
+    try {
+      await updateSystemConfig({
+        bannerActive: bannerActiveDraft,
+        bannerMessage: bannerMessageDraft,
+        bannerType: bannerTypeDraft,
+        bannerActiveDraft: bannerActiveDraft,
+        bannerMessageDraft: bannerMessageDraft,
+        bannerTypeDraft: bannerTypeDraft
+      });
+      setSaveMsg("Banner berhasil dipublikasikan!");
+      setTimeout(() => setSaveMsg(""), 3000);
+    } catch (e: any) {
+      alert("Gagal memublikasikan banner: " + e.message);
+    }
+  };
+
   useEffect(() => {
     let unsubs: any[] = [];
     
@@ -1024,25 +1050,32 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                     </div>
 
                     <div style={CARD({padding:24, borderRadius:24})}>
-                       <h3 style={{fontSize:16, fontWeight:800, marginBottom:20, display:"flex", alignItems:"center", gap:8}}><AlertCircle size={18}/> Global Banner</h3>
+                       <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20}}>
+                          <h3 style={{fontSize:16, fontWeight:800, display:"flex", alignItems:"center", gap:8, margin:0}}><AlertCircle size={18}/> Global Banner</h3>
+                          {hasUnpublishedBannerChanges && (
+                             <span style={{fontSize:11, background:"rgba(245,158,11,0.1)", color:"#D97706", padding:"4px 10px", borderRadius:20, fontWeight:700}}>
+                                Draf (Belum Dipublikasikan)
+                             </span>
+                          )}
+                       </div>
                        <div style={{display:"flex", flexDirection:"column", gap:16}}>
                           <div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}>
                              <div>
                                 <div style={{fontSize:14, fontWeight:700}}>Tampilkan Banner</div>
                                 <div style={{fontSize:12, color:"#999"}}>Banner info/alert akan muncul di bagian paling atas aplikasi.</div>
                              </div>
-                             <button onClick={()=>updateSystemConfig({bannerActive: !systemSettings.bannerActive})} style={{background:"transparent", border:"none", cursor:"pointer"}}>
-                                {systemSettings.bannerActive ? <ToggleRight size={32} color="#4CAF50"/> : <ToggleLeft size={32} color="#CCC"/>}
+                             <button onClick={()=>updateSystemConfig({bannerActiveDraft: !bannerActiveDraft})} style={{background:"transparent", border:"none", cursor:"pointer"}}>
+                                {bannerActiveDraft ? <ToggleRight size={32} color="#4CAF50"/> : <ToggleLeft size={32} color="#CCC"/>}
                              </button>
                           </div>
-                          {systemSettings.bannerActive && (
+                          {bannerActiveDraft && (
                             <>
                               <div>
                                  <label style={{display:"block", fontSize:12, fontWeight:700, marginBottom:8}}>Isi Pesan Banner</label>
                                  <textarea 
-                                   value={systemSettings.bannerMessage || ""} 
-                                   onChange={(e)=>setSystemSettings({...systemSettings, bannerMessage: e.target.value})}
-                                   onBlur={(e)=>updateSystemConfig({bannerMessage: e.target.value})}
+                                   value={bannerMessageDraft} 
+                                   onChange={(e)=>setSystemSettings({...systemSettings, bannerMessageDraft: e.target.value})}
+                                   onBlur={(e)=>updateSystemConfig({bannerMessageDraft: e.target.value})}
                                    style={{width:"100%", padding:"12px", borderRadius:12, border:"1px solid #EEE", fontSize:14, minHeight:60, fontFamily:"inherit"}} 
                                    placeholder="Contoh: Sedang ada pemeliharaan server pada 24 Juni 2026."
                                  />
@@ -1050,8 +1083,8 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                               <div>
                                  <label style={{display:"block", fontSize:12, fontWeight:700, marginBottom:8}}>Warna Banner</label>
                                  <select 
-                                   value={systemSettings.bannerType || "info"} 
-                                   onChange={(e)=>updateSystemConfig({bannerType: e.target.value})}
+                                   value={bannerTypeDraft} 
+                                   onChange={(e)=>updateSystemConfig({bannerTypeDraft: e.target.value})}
                                    style={{width:"100%", padding:"12px", borderRadius:12, border:"1px solid #EEE", fontSize:14, background:"white", outline:"none"}}
                                  >
                                    <option value="info">Info (Biru)</option>
@@ -1061,6 +1094,29 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                               </div>
                             </>
                           )}
+
+                          <button 
+                            onClick={handlePublishBanner}
+                            className="hover-scale btn-hover"
+                            style={{
+                              ...B(true), 
+                              width:"100%", 
+                              height:44, 
+                              borderRadius:22, 
+                              marginTop: 10,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              gap: 8,
+                              background: hasUnpublishedBannerChanges ? "var(--theme-primary, #2C2016)" : "rgba(44,32,22,0.06)",
+                              color: hasUnpublishedBannerChanges ? "white" : "rgba(44,32,22,0.4)",
+                              cursor: hasUnpublishedBannerChanges ? "pointer" : "default"
+                            }}
+                            disabled={!hasUnpublishedBannerChanges}
+                          >
+                             <Send size={16} />
+                             Publish Banner
+                          </button>
                        </div>
                     </div>
 
