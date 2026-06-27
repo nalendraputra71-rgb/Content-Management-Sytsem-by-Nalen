@@ -85,6 +85,19 @@ export function CsvModal({onClose, onImport, pillars, platforms, contentTypes, p
                 if (idx === -1) idx = headerRow.findIndex(h => keys.some(k => h.includes(k)));
                 return idx;
             };
+
+            const findExactMatch = (options: any[], value: any) => {
+                if (value === undefined || value === null) return "";
+                const valStr = String(value).trim().toLowerCase();
+                if (!valStr) return "";
+                for (const opt of (options || [])) {
+                    const optName = opt?.name || opt;
+                    if (String(optName).trim().toLowerCase() === valStr) {
+                        return optName; // return the exactly cased option from the list
+                    }
+                }
+                return String(value).trim(); // fallback
+            };
             
             const idxId = getColIdx(["id system", "id"]);
             const idxTitle = getColIdx(["judul"]);
@@ -121,11 +134,11 @@ export function CsvModal({onClose, onImport, pillars, platforms, contentTypes, p
                 item.title = cleanStr(row[idxTitle]);
                 if (idxHour !== -1) item.uploadHour = Number(row[idxHour])||9;
                 if (idxMin !== -1) item.uploadMinute = Number(row[idxMin])||0;
-                if (idxPillar !== -1) item.pillar = String(row[idxPillar]||item.pillar);
-                if (idxPlatform !== -1) item.platform = String(row[idxPlatform]||item.platform);
-                if (idxContentType !== -1) item.contentType = String(row[idxContentType]||item.contentType);
-                if (idxPic !== -1) item.pic = String(row[idxPic]||item.pic);
-                if (idxStatus !== -1) item.status = String(row[idxStatus]||item.status);
+                if (idxPillar !== -1 && row[idxPillar]) item.pillar = findExactMatch(pillars, row[idxPillar]);
+                if (idxPlatform !== -1 && row[idxPlatform]) item.platform = findExactMatch(platforms, row[idxPlatform]);
+                if (idxContentType !== -1 && row[idxContentType]) item.contentType = findExactMatch(contentTypes, row[idxContentType]);
+                if (idxPic !== -1 && row[idxPic]) item.pic = findExactMatch(pics, row[idxPic]);
+                if (idxStatus !== -1 && row[idxStatus]) item.status = findExactMatch(statuses, row[idxStatus]);
                 if (idxAds !== -1) item.isAds = String(row[idxAds]).toUpperCase() === "Y";
                 
                 item.metrics = {

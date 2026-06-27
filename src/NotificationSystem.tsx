@@ -91,6 +91,10 @@ export function useNotifications(userProfile: any) {
     import("./firebase").then(({ db, collection, query, onSnapshot, orderBy, where, collectionGroup }) => {
       unsubGlobal = onSnapshot(query(collection(db, "global_notifications"), orderBy("createdAt", "desc")), (snap) => {
         if (!isMounted) return;
+        
+        const isInitial = !initialGlobalLoaded;
+        initialGlobalLoaded = true;
+
         const globalNotifs = snap.docs.map(d => ({id: d.id, ...d.data()})) as any[];
         
         // Filter by target
@@ -110,19 +114,20 @@ export function useNotifications(userProfile: any) {
 
         setNotifications(prev => {
            const others = prev.filter(p => !p.id.startsWith("global_"));
-           const newGlobal = applicableGlobal.filter(n => !others.some(o => o.id === n.id));
+           const newGlobal = applicableGlobal.filter(n => !prev.some(o => o.id === n.id));
            const finalNotifs = applyFilters([...applicableGlobal, ...others]);
            
-           if (initialGlobalLoaded && newGlobal.length > 0) {
+           if (!isInitial && newGlobal.length > 0) {
                const dIds = getDeletedIds();
-               const unarchivedNew = newGlobal.filter(n => !dIds.includes(n.id));
+               const toastedIds = JSON.parse(localStorage.getItem(`toastedNotifs_${userProfile?.uid}`) || '[]');
+               const unarchivedNew = newGlobal.filter(n => !dIds.includes(n.id) && !toastedIds.includes(n.id));
                if (unarchivedNew.length > 0 && typeof window !== "undefined") {
                    setTimeout(() => setToast(unarchivedNew[0]), 500);
+                   localStorage.setItem(`toastedNotifs_${userProfile?.uid}`, JSON.stringify([...toastedIds, unarchivedNew[0].id]));
                }
            }
            return finalNotifs;
         });
-        initialGlobalLoaded = true;
       }, (err:any) => {
         console.warn("Global_notifications onSnapshot error:", err);
       });
@@ -168,6 +173,9 @@ export function useNotifications(userProfile: any) {
          let initialInvitesLoaded = false;
          unsubInvites = onSnapshot(query(collectionGroup(db, "members"), where("userId", "==", userProfile.uid)), (snap) => {
             if (!isMounted) return;
+            const isInitial = !initialInvitesLoaded;
+            initialInvitesLoaded = true;
+            
             const inviteNotifs: any[] = [];
             snap.forEach(d => {
                const data = d.data();
@@ -189,22 +197,24 @@ export function useNotifications(userProfile: any) {
 
             setNotifications(prev => {
                 const others = prev.filter(p => !p.id.startsWith("invite_"));
-                const newInvites = inviteNotifs.filter(n => !others.some(o => o.id === n.id));
+                const newInvites = inviteNotifs.filter(n => !prev.some(o => o.id === n.id));
                 const finalNotifs = applyFilters([...inviteNotifs, ...others]);
                 
                 // Show toast for new invites
-                if (initialInvitesLoaded && newInvites.length > 0) {
-                     // Check if not deleted
+                if (!isInitial && newInvites.length > 0) {
+                     // Check if not deleted and not toasted
                      const dIds = getDeletedIds();
-                     const unarchivedNew = newInvites.filter(n => !dIds.includes(n.id));
+                     const toastedIds = JSON.parse(localStorage.getItem(`toastedNotifs_${userProfile?.uid}`) || '[]');
+                     
+                     const unarchivedNew = newInvites.filter(n => !dIds.includes(n.id) && !toastedIds.includes(n.id));
                      if (unarchivedNew.length > 0 && typeof window !== "undefined") {
                          // wait a bit to avoid flashes
                          setTimeout(() => setToast(unarchivedNew[0]), 500); 
+                         localStorage.setItem(`toastedNotifs_${userProfile?.uid}`, JSON.stringify([...toastedIds, unarchivedNew[0].id]));
                      }
                 }
                 return finalNotifs;
             });
-            initialInvitesLoaded = true;
          }, (err:any) => {
             console.warn("Invites onSnapshot error:", err);
          });
@@ -212,6 +222,9 @@ export function useNotifications(userProfile: any) {
          let initialPersonalLoaded = false;
          let unsubPersonal = onSnapshot(query(collection(db, "notifications"), where("userId", "==", userProfile.uid)), (snap) => {
             if (!isMounted) return;
+            const isInitial = !initialPersonalLoaded;
+            initialPersonalLoaded = true;
+            
             const personalNotifs: any[] = [];
             snap.forEach(d => {
                const data = d.data();
@@ -236,19 +249,21 @@ export function useNotifications(userProfile: any) {
 
             setNotifications(prev => {
                 const others = prev.filter(p => !p.id.startsWith("personal_"));
-                const newPersonal = personalNotifs.filter(n => !others.some(o => o.id === n.id));
+                const newPersonal = personalNotifs.filter(n => !prev.some(o => o.id === n.id));
                 const finalNotifs = applyFilters([...personalNotifs, ...others]);
                 
-                if (initialPersonalLoaded && newPersonal.length > 0) {
+                if (!isInitial && newPersonal.length > 0) {
                      const dIds = getDeletedIds();
-                     const unarchivedNew = newPersonal.filter(n => !dIds.includes(n.id));
+                     const toastedIds = JSON.parse(localStorage.getItem(`toastedNotifs_${userProfile?.uid}`) || '[]');
+
+                     const unarchivedNew = newPersonal.filter(n => !dIds.includes(n.id) && !toastedIds.includes(n.id));
                      if (unarchivedNew.length > 0 && typeof window !== "undefined") {
                          setTimeout(() => setToast(unarchivedNew[0]), 500); 
+                         localStorage.setItem(`toastedNotifs_${userProfile?.uid}`, JSON.stringify([...toastedIds, unarchivedNew[0].id]));
                      }
                 }
                 return finalNotifs;
             });
-            initialPersonalLoaded = true;
          }, (err:any) => {
             console.warn("Personal onSnapshot error:", err);
          });
@@ -311,7 +326,7 @@ export function NotificationToast({ toast, onClose, onClick, onInviteAction }: {
           animate={{ opacity: 1, y: 0, scale: 1 }} 
           exit={{ opacity: 0, y: -20, scale: 0.95 }}
           style={{
-            position: "fixed", top: 24, left: "50%", transform: "translateX(-50%)", zIndex: 1000, 
+            position: "fixed", top: 24, right: 24, zIndex: 1000, 
             background: "white", padding: "10px 16px", borderRadius: 32, 
             boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
             border: "1px solid rgba(44,32,22,0.05)", display: "flex", gap: 12, alignItems: "center",

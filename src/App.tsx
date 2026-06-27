@@ -34,7 +34,7 @@ import { TermsOfService, PrivacyPolicy } from "./TermsAndPrivacy";
 import { motion, AnimatePresence } from "motion/react";
 
 import { LandingPage } from "./LandingPage";
-import { Calendar, Download, X } from "lucide-react";
+import { Calendar, Download, X, CheckCircle2 } from "lucide-react";
 
 export function cleanAndFormatHolidayText(text: string): string {
   if (!text) return "";
@@ -1422,22 +1422,111 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme, systemConfig 
   const updateWsSettings = async (updates: any) => {
     if (!workspace) return;
     try {
+      const { renames, ...settingsUpdates } = updates;
+      
       const wsRef = doc(db, "workspaces", workspace.id);
       const currentSettings = workspace.settings || {};
       const newSettings = { ...currentSettings };
       
-      Object.keys(updates).forEach(k => {
-        newSettings[k] = updates[k];
+      Object.keys(settingsUpdates).forEach(k => {
+        newSettings[k] = settingsUpdates[k];
       });
       
       const fsUpdates: any = { settings: newSettings };
-      if (updates.title) {
-        fsUpdates.name = updates.title;
+      if (settingsUpdates.title) {
+        fsUpdates.name = settingsUpdates.title;
       }
       await updateDoc(wsRef, fsUpdates);
       
-      if (updates.title) {
-        document.title = updates.title;
+      if (settingsUpdates.title) {
+        document.title = settingsUpdates.title;
+      }
+      
+      if (renames && (Object.keys(renames.pillars || {}).length > 0 || Object.keys(renames.platforms || {}).length > 0 || Object.keys(renames.contentTypes || {}).length > 0 || Object.keys(renames.pics || {}).length > 0 || Object.keys(renames.statuses || {}).length > 0)) {
+        const batch = writeBatch(db);
+        let batchCount = 0;
+        
+        content.forEach((item: any) => {
+          let updated = false;
+          const newItem = { ...item };
+          
+          if (renames.pillars && renames.pillars[item.pillar]) {
+            newItem.pillar = renames.pillars[item.pillar];
+            updated = true;
+          }
+          if (renames.platforms && renames.platforms[item.platform]) {
+            newItem.platform = renames.platforms[item.platform];
+            updated = true;
+          }
+          if (renames.contentTypes && renames.contentTypes[item.contentType]) {
+            newItem.contentType = renames.contentTypes[item.contentType];
+            updated = true;
+          }
+          if (renames.pics && renames.pics[item.pic]) {
+            newItem.pic = renames.pics[item.pic];
+            updated = true;
+          }
+          if (renames.statuses && renames.statuses[item.status]) {
+            newItem.status = renames.statuses[item.status];
+            updated = true;
+          }
+          
+          if (updated) {
+            batch.update(doc(db, "workspaces", workspace.id, "content", item.id), {
+              pillar: newItem.pillar,
+              platform: newItem.platform,
+              contentType: newItem.contentType,
+              pic: newItem.pic,
+              status: newItem.status
+            });
+            batchCount++;
+          }
+        });
+
+        if (batchCount > 0) {
+          // If we have more than 500 items to update we should chunk it, but let's assume <500 for now.
+          const CHUNK_SIZE = 450;
+          if (batchCount <= CHUNK_SIZE) {
+            await batch.commit();
+          } else {
+             // to handle large batches properly, we would split, but for simplicity let's stick to simple implementation
+             // or write chunking:
+             const allUpdates: any[] = [];
+             content.forEach((item: any) => {
+                let updated = false;
+                const newItem = { ...item };
+                
+                if (renames.pillars && renames.pillars[item.pillar]) {
+                  newItem.pillar = renames.pillars[item.pillar];
+                  updated = true;
+                }
+                if (renames.platforms && renames.platforms[item.platform]) {
+                  newItem.platform = renames.platforms[item.platform];
+                  updated = true;
+                }
+                if (renames.contentTypes && renames.contentTypes[item.contentType]) {
+                  newItem.contentType = renames.contentTypes[item.contentType];
+                  updated = true;
+                }
+                if (renames.pics && renames.pics[item.pic]) {
+                  newItem.pic = renames.pics[item.pic];
+                  updated = true;
+                }
+                if (renames.statuses && renames.statuses[item.status]) {
+                  newItem.status = renames.statuses[item.status];
+                  updated = true;
+                }
+                if (updated) allUpdates.push({id: item.id, data: {pillar: newItem.pillar, platform: newItem.platform, contentType: newItem.contentType, pic: newItem.pic, status: newItem.status}});
+             });
+             
+             for (let i = 0; i < allUpdates.length; i += CHUNK_SIZE) {
+                 const chunk = allUpdates.slice(i, i + CHUNK_SIZE);
+                 const chunkBatch = writeBatch(db);
+                 chunk.forEach(u => chunkBatch.update(doc(db, "workspaces", workspace.id, "content", u.id), u.data));
+                 await chunkBatch.commit();
+             }
+          }
+        }
       }
     } catch (e: any) {
       console.error("Update settings error:", e);
@@ -1842,6 +1931,15 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme, systemConfig 
                  }} style={{...B(false, "#9C2B4E"), borderRadius:24, height:48, border:"none", color:"#9C2B4E", fontWeight:700}}>Tinggalkan Tanpa Menyimpan</button>
                </div>
             </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {saveMsg && (
+          <motion.div key="saveMsgToast" initial={{opacity:0, y:50}} animate={{opacity:1, y:0}} exit={{opacity:0, y:50}} 
+            style={{position:"fixed", bottom:40, right:40, background:"#2D7A5E", color:"white", padding:"16px 24px", borderRadius:16, display:"flex", alignItems:"center", gap:12, boxShadow:"0 10px 30px rgba(45,122,94,0.3)", zIndex:9999, fontWeight:700}}>
+            <CheckCircle2 color="white" size={20} />
+            {saveMsg}
           </motion.div>
         )}
       </AnimatePresence>

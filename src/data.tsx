@@ -37,24 +37,61 @@ export const htmlToPlainText = (html: any) => {
   return text.trim();
 };
 
-export function CustomDropdown({ value, options = [], onChange, dark = false, style = {}, prefix = "", alignRight = false, onUpdateOptions, multiple = false, initiallyOpen = false, onClose }: { value: any, options?: any[], onChange: (val: any) => void, dark?: boolean, style?: any, prefix?: string, alignRight?: boolean, onUpdateOptions?: (newOptions: any[]) => void, multiple?: boolean, initiallyOpen?: boolean, onClose?: () => void }) {
+export function CustomDropdown({ value, options = [], onChange, dark = false, style = {}, prefix = "", alignRight = false, onUpdateOptions, multiple = false, initiallyOpen = false, onClose }: { value: any, options?: any[], onChange: (val: any) => void, dark?: boolean, style?: any, prefix?: string, alignRight?: boolean, onUpdateOptions?: (newOptions: any[], renames?: any) => void, multiple?: boolean, initiallyOpen?: boolean, onClose?: () => void }) {
   const [open, setOpen] = useState(initiallyOpen);
   const [editMode, setEditMode] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const [localOptions, setLocalOptions] = useState<any[]>(options);
+  const [originalOptionsMap, setOriginalOptionsMap] = useState<any[]>(options);
 
   // Sync with prop options when not editing
   useEffect(() => {
     if (!editMode) {
       setLocalOptions(options || []);
+      setOriginalOptionsMap(options || []);
     }
   }, [options, editMode]);
 
   const handleSaveEdit = (optsToSave?: any[]) => {
-    const finalOpts = optsToSave !== undefined ? optsToSave : localOptions;
+    const rawOpts = optsToSave !== undefined ? optsToSave : localOptions;
+    const renames: any = {};
+    
+    rawOpts.forEach((opt, i) => {
+        const orig = originalOptionsMap[i];
+        if (orig) {
+            const oldName = typeof orig === 'string' ? orig : orig.name;
+            const newName = typeof opt === 'string' ? opt : opt.name;
+            if (oldName && newName && oldName !== newName) {
+                renames[oldName] = newName;
+            }
+        }
+    });
+
+    if (Object.keys(renames).length > 0) {
+      if (multiple && Array.isArray(value)) {
+        let changed = false;
+        const newValue = value.map(v => {
+          if (renames[v]) { changed = true; return renames[v]; }
+          return v;
+        });
+        if (changed) onChange(newValue);
+      } else if (!multiple && value && typeof value === 'string' && renames[value]) {
+        onChange(renames[value]);
+      }
+    }
+
+    const seen = new Set();
+    const finalOpts = rawOpts.filter(x => {
+        const name = typeof x === 'string' ? x : x.name;
+        const nameLower = String(name || "").trim().toLowerCase();
+        if (!nameLower || seen.has(nameLower)) return false;
+        seen.add(nameLower);
+        return true;
+    });
+
     setEditMode(false);
     if (onUpdateOptions) {
-      onUpdateOptions(finalOpts);
+      onUpdateOptions(finalOpts, renames);
     }
   };
 
@@ -123,39 +160,19 @@ export function CustomDropdown({ value, options = [], onChange, dark = false, st
         {open && (
           <motion.div 
             initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }} transition={{ duration: 0.15 }}
-            style={{ position: "absolute", top: "100%", left: alignRight ? "auto" : 0, right: alignRight ? 0 : "auto", minWidth: "100%", width: "max-content", maxWidth: "250px", marginTop: 4, background: "white", border: "1px solid rgba(44,32,22,0.1)", borderRadius: 12, padding: 6, zIndex: 9999, boxShadow: "0 10px 40px rgba(0,0,0,0.15)", maxHeight: 300, overflowY: "auto", overflowX: "hidden" }}
+            style={{ position: "absolute", top: "100%", left: alignRight ? "auto" : 0, right: alignRight ? 0 : "auto", minWidth: "100%", width: "max-content", maxWidth: editMode ? "320px" : "250px", marginTop: 4, background: "white", border: "1px solid rgba(44,32,22,0.1)", borderRadius: 12, padding: 6, zIndex: 9999, boxShadow: "0 10px 40px rgba(0,0,0,0.15)", maxHeight: 350, overflowY: "auto", overflowX: "hidden" }}
           >
             {editMode && onUpdateOptions ? (
               <div 
-                style={{display: "flex", flexDirection: "column", gap: 8, padding: "8px 4px"}}
+                style={{display: "flex", flexDirection: "column", gap: 8, padding: "8px 4px", minWidth: 260}}
                 onClick={(e) => e.stopPropagation()}
                 onMouseDown={(e) => e.stopPropagation()}
               >
                 <div style={{fontSize: 11, fontWeight: 800, color: "#4B5563", textTransform: "uppercase", letterSpacing: 0.8, paddingBottom: 6, borderBottom: "1px solid #F3F4F6", display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4}}>
-                  <span>Edit Opsi</span>
-                  <button 
-                    onClick={(e) => { 
-                      e.stopPropagation(); 
-                      handleSaveEdit(); 
-                    }} 
-                    style={{
-                      background: "rgba(59, 130, 246, 0.1)", 
-                      border: "none", 
-                      padding: "4px 8px",
-                      borderRadius: 6,
-                      cursor: "pointer", 
-                      color: "#2563EB", 
-                      fontSize: 10, 
-                      fontWeight: 700,
-                      transition: "all 0.2s"
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = "rgba(59, 130, 246, 0.18)"}
-                    onMouseLeave={(e) => e.currentTarget.style.background = "rgba(59, 130, 246, 0.1)"}
-                  >
-                    Selesai
-                  </button>
+                  <span>Edit Opsi (Autosave)</span>
                 </div>
-                <div style={{display: "flex", flexDirection: "column", gap: 6, maxHeight: "180px", overflowY: "auto", paddingRight: 2}}>
+                <div style={{display: "flex", flexDirection: "column", gap: 6, maxHeight: "250px", overflowY: "auto", paddingRight: 2}}>
+
                   {localOptions.map((o, i) => {
                     const isStr = typeof o === 'string';
                     const val = isStr ? o : o.id || o.name || o;
@@ -312,29 +329,7 @@ export function CustomDropdown({ value, options = [], onChange, dark = false, st
                 })}
                 {multiple && (
                   <div style={{ display: "flex", justifyContent: "flex-end", padding: "6px 12px", borderTop: "1px solid rgba(44,32,22,0.06)", marginTop: 4 }}>
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setOpen(false);
-                        if (onClose) onClose();
-                      }}
-                      style={{
-                        padding: "6px 14px",
-                        background: "#2563EB",
-                        color: "white",
-                        border: "none",
-                        borderRadius: 6,
-                        fontSize: 11,
-                        fontWeight: 750,
-                        cursor: "pointer",
-                        boxShadow: "0 2px 4px rgba(37,99,235,0.2)",
-                        transition: "all 0.15s"
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.background = "#1D4ED8"}
-                      onMouseLeave={(e) => e.currentTarget.style.background = "#2563EB"}
-                    >
-                      Selesai
-                    </button>
+                    <span style={{ fontSize: 10, color: "rgba(44,32,22,0.4)" }}>Klik di luar untuk selesai</span>
                   </div>
                 )}
                 {onUpdateOptions && (

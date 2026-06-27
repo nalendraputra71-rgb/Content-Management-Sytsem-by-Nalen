@@ -118,8 +118,8 @@ export function TermsOfService() {
               <p>Seluruh kekayaan intelektual berupa merek dagang, desain antarmuka pengguna, aset visual, logo, grafis, kode sumber (source code), dan dokumentasi teknis Hubify Social adalah hak milik eksklusif milik Hubify Social. Pengguna dilarang merekayasa balik (reverse engineer), mendistribusikan ulang, menyalin, atau menduplikasi elemen branding kami tanpa izin tertulis formal dari manajemen Hubify Social.</p>
 
               <h2 className="text-2xl font-bold text-[#0B2A4A] mt-8 mb-4">9. Batasan Tanggung Jawab & Penafian (Disclaimer)</h2>
-              <p className="uppercase text-xs font-bold text-slate-800 bg-slate-100 p-4 border-l-4 border-slate-400 rounded-r-lg my-4">
-                LAYANAN DIMAKSUD DISEDIAKAN DALAM KONDISI &quot;SEBAGAIMANA ADANYA&quot; (AS IS) DAN &quot;SEBAGAIMANA TERSEDIA&quot; (AS AVAILABLE). HUBIFY SOCIAL MENOLAK SEMUA JAMINAN BAIK TERSURAT MAUPUN TERSIRAT, TERMASUK PULA JAMINAN KELAYAKAN DAGANG ATAU KETEPATAN TUJUAN KHUSUS. DALAM KEADAAN APA PUN, HUBIFY SOCIAL TIDAK BERTANGGUNG JAWAB ATAS SEGALA KERUGIAN TIDAK LANGSUNG, INSIDENTAL, KHUSUS, ATAU KONSEKUENSIAL, TERMASUK NAMUN TIDAK TERBATAS PADA HILANGNYA LABA, DATA, ATAU CITRA BAIK, YANG TIMBUL DARI ATAU SEHUBUNGAN DENGAN PENGGUNAAN ATAU KETIDAKMAMPUAN MENGGUNAKAN LAYANAN.
+              <p>
+                Layanan dimaksud disediakan dalam kondisi &quot;sebagaimana adanya&quot; (as is) dan &quot;sebagaimana tersedia&quot; (as available). Hubify Social menolak semua jaminan baik tersurat maupun tersirat, termasuk pula jaminan kelayakan dagang atau ketepatan tujuan khusus. Dalam keadaan apa pun, Hubify Social tidak bertanggung jawab atas segala kerugian tidak langsung, insidental, khusus, atau konsekuensial, termasuk namun tidak terbatas pada hilangnya laba, data, atau citra baik, yang timbul dari atau sehubungan dengan penggunaan atau ketidakmampuan menggunakan layanan.
               </p>
 
               <h2 className="text-2xl font-bold text-[#0B2A4A] mt-8 mb-4">10. Penghentian Layanan (Termination)</h2>
@@ -160,8 +160,8 @@ export function TermsOfService() {
               <p>All intellectual property rights including registered trademarks, user interface structures, visual compositions, system logos, graphics, source codes, and technical documentation are the exclusive property of Hubify Social. Users are prohibited from reverse-engineering, redistributing, copying, or duplicating any branding identifiers without formal prior written authorization from the Hubify Social corporate board.</p>
 
               <h2 className="text-2xl font-bold text-[#0B2A4A] mt-8 mb-4">9. Disclaimer of Warranties & Limitation of Liability</h2>
-              <p className="uppercase text-xs font-bold text-slate-800 bg-slate-100 p-4 border-l-4 border-slate-400 rounded-r-lg my-4 font-mono">
-                THE SERVICE IS PROVIDED ON AN &quot;AS IS&quot; AND &quot;AS AVAILABLE&quot; BASIS. HUBIFY SOCIAL DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING IMPLIED WARRANTIES OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR OBJECTIVE. IN NO EVENT SHALL HUBIFY SOCIAL BE SUBJECT TO LIABILITY FOR ANY INDIRECT, INCIDENTAL, SPECIAL, OR CONSEQUENTIAL DAMAGES INCLUDING BUT NOT LIMITED TO LOSS OF REVENUES, DATA ASSETS, OR COOPERATIVE BRAND INTEGRITY ARISING DIRECTLY OR INDIRECTLY FROM SERVICE INABILITY.
+              <p>
+                The service is provided on an &quot;as is&quot; and &quot;as available&quot; basis. Hubify Social disclaims all warranties, express or implied, including implied warranties of merchantability or fitness for a particular objective. In no event shall Hubify Social be subject to liability for any indirect, incidental, special, or consequential damages including but not limited to loss of revenues, data assets, or cooperative brand integrity arising directly or indirectly from service inability.
               </p>
 
               <h2 className="text-2xl font-bold text-[#0B2A4A] mt-8 mb-4">10. Termination of Service</h2>

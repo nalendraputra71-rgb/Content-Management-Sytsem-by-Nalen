@@ -667,7 +667,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
             {/* LEFT COLUMN: IDENTITAS & SETTINGS */}
             <div style={{ 
               width: "380px", 
-              padding: "32px 28px", 
+              padding: "32px 28px 250px 28px", 
               flexShrink: 0, 
               display: "flex", 
               flexDirection: "column", 
@@ -708,7 +708,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                     </div>
                     {editingFieldLeft === "status" ? (
                       <div ref={activeFieldRef} style={{flex: 1}}>
-                        <CustomDropdown dark={false} value={d.status} options={statuses} prefix="" onChange={(v)=>{set("status", v);}} initiallyOpen={true} onClose={() => setEditingFieldLeft(null)} onUpdateOptions={(opts) => onSettingUpdate && onSettingUpdate({statuses: opts})} 
+                        <CustomDropdown alignRight={true} dark={false} value={d.status} options={statuses} prefix="" onChange={(v)=>{set("status", v);}} initiallyOpen={true} onClose={() => setEditingFieldLeft(null)} onUpdateOptions={(opts, renames) => onSettingUpdate && onSettingUpdate({statuses: opts, ...(renames && Object.keys(renames).length > 0 ? { renames: { statuses: renames } } : {})})} 
                           style={{ padding: "4px 10px", fontSize: 12, fontWeight: 600, background: getTranslucentColor(activeStatusColor, "20"), color: activeStatusColor, border: "1px solid rgba(44,32,22,0.15)", boxShadow: "none", borderRadius: 6 }} />
                       </div>
                     ) : (
@@ -735,7 +735,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                     </div>
                     {editingFieldLeft === "pic" ? (
                       <div ref={activeFieldRef} style={{flex: 1}}>
-                        <CustomDropdown dark={false} multiple={true} value={d.pic} options={pics} prefix="" onChange={(v)=>{set("pic", Array.isArray(v) ? v.join(", ") : v);}} initiallyOpen={true} onClose={() => setEditingFieldLeft(null)} onUpdateOptions={(opts) => onSettingUpdate && onSettingUpdate({pics: opts})} 
+                        <CustomDropdown alignRight={true} dark={false} multiple={true} value={d.pic} options={pics} prefix="" onChange={(v)=>{set("pic", Array.isArray(v) ? v.join(", ") : v);}} initiallyOpen={true} onClose={() => setEditingFieldLeft(null)} onUpdateOptions={(opts, renames) => onSettingUpdate && onSettingUpdate({pics: opts, ...(renames && Object.keys(renames).length > 0 ? { renames: { pics: renames } } : {})})} 
                           style={{ width: "100%", padding: "4px 8px", fontSize: 13, fontWeight: 600, background: "transparent", color: "#111827", border: "1px solid rgba(44,32,22,0.15)", borderRadius: 6, boxShadow: "none" }} />
                       </div>
                     ) : (
@@ -844,7 +844,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                     </div>
                     {editingFieldLeft === "pillar" ? (
                       <div ref={activeFieldRef} style={{flex: 1}}>
-                        <CustomDropdown dark={false} value={d.pillar} options={pillars} prefix="" onChange={(v)=>{set("pillar", v);}} initiallyOpen={true} onClose={() => setEditingFieldLeft(null)} onUpdateOptions={(opts) => onSettingUpdate && onSettingUpdate({pillars: opts})} 
+                        <CustomDropdown alignRight={true} dark={false} value={d.pillar} options={pillars} prefix="" onChange={(v)=>{set("pillar", v);}} initiallyOpen={true} onClose={() => setEditingFieldLeft(null)} onUpdateOptions={(opts, renames) => onSettingUpdate && onSettingUpdate({pillars: opts, ...(renames && Object.keys(renames).length > 0 ? { renames: { pillars: renames } } : {})})} 
                           style={{ padding: "4px 8px", fontSize: 12, fontWeight: 600, background: "rgba(0,0,0,0.06)", color: "#4b5563", border: "1px solid rgba(44, 32, 22, 0.15)", borderRadius: 6, boxShadow: "none" }} />
                       </div>
                     ) : (
@@ -871,7 +871,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                     </div>
                     {editingFieldLeft === "platform" ? (
                       <div ref={activeFieldRef} style={{flex: 1}}>
-                        <CustomDropdown dark={false} value={d.platform} options={platforms} prefix="" onChange={(v)=>{set("platform", v);}} initiallyOpen={true} onClose={() => setEditingFieldLeft(null)} onUpdateOptions={(opts) => onSettingUpdate && onSettingUpdate({platforms: opts})} 
+                        <CustomDropdown alignRight={true} dark={false} value={d.platform} options={platforms} prefix="" onChange={(v)=>{set("platform", v);}} initiallyOpen={true} onClose={() => setEditingFieldLeft(null)} onUpdateOptions={(opts, renames) => onSettingUpdate && onSettingUpdate({platforms: opts, ...(renames && Object.keys(renames).length > 0 ? { renames: { platforms: renames } } : {})})} 
                           style={{ padding: "4px 8px", fontSize: 12, fontWeight: 600, background: "transparent", color: "#4b5563", border: "1px solid rgba(44,32,22,0.15)", borderRadius: 6, boxShadow: "none" }} />
                       </div>
                     ) : (
@@ -898,7 +898,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                     </div>
                     {editingFieldLeft === "contentType" ? (
                       <div ref={activeFieldRef} style={{flex: 1}}>
-                        <CustomDropdown dark={false} value={d.contentType} options={contentTypes} prefix="" onChange={(v)=>{set("contentType", v);}} initiallyOpen={true} onClose={() => setEditingFieldLeft(null)} onUpdateOptions={(opts) => onSettingUpdate && onSettingUpdate({contentTypes: opts})} 
+                        <CustomDropdown alignRight={true} dark={false} value={d.contentType} options={contentTypes} prefix="" onChange={(v)=>{set("contentType", v);}} initiallyOpen={true} onClose={() => setEditingFieldLeft(null)} onUpdateOptions={(opts, renames) => onSettingUpdate && onSettingUpdate({contentTypes: opts, ...(renames && Object.keys(renames).length > 0 ? { renames: { contentTypes: renames } } : {})})} 
                           style={{ padding: "4px 10px", fontSize: 12, fontWeight: 600, background: getTranslucentColor(activeContentTypeColor, "20"), color: activeContentTypeColor, border: "1px solid rgba(44,32,22,0.15)", boxShadow: "none", borderRadius: 6 }} />
                       </div>
                     ) : (

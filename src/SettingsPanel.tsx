@@ -14,7 +14,8 @@ import {
   Settings, 
   Cloud, 
   FlaskConical,
-  Trash2
+  Trash2,
+  X
 } from "lucide-react";
 
 function getSectionIcon(id: string, size = 16) {
@@ -54,16 +55,69 @@ export const HOLIDAY_API_OPTIONS = [
   { id: "gb", name: "United Kingdom (UK Holidays)", country: "GB", color: "#0891B2" },
 ];
 
+const PRESET_COLORS = ["#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#EC4899", "#2C2016", "#F97316"];
+
+function ColorPickerSelect({ value, onChange }: { value: string, onChange: (val: string) => void }) {
+  const [open, setOpen] = useState(false);
+  
+  return (
+    <div style={{ position: "relative", flexShrink: 0 }}>
+      <div 
+        onClick={() => setOpen(!open)}
+        style={{ width: 28, height: 28, borderRadius: 8, background: value, cursor: "pointer", border: "2px solid white", boxShadow: "0 2px 6px rgba(0,0,0,0.1)" }} 
+      />
+      {open && (
+        <div style={{ position: "absolute", top: 32, left: 0, zIndex: 100, background: "white", padding: 12, borderRadius: 16, boxShadow: "0 10px 40px rgba(0,0,0,0.1)", border: "1px solid rgba(0,0,0,0.05)", display: "flex", flexDirection: "column", gap: 12, width: 220 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+             <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(44,32,22,0.5)" }}>Warna Preset</div>
+             <button onClick={() => setOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, color: "rgba(44,32,22,0.4)" }}><X size={14} /></button>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
+            {PRESET_COLORS.map(c => (
+              <div 
+                key={c}
+                onClick={() => { onChange(c); setOpen(false); }}
+                style={{ width: 28, height: 28, borderRadius: 8, background: c, cursor: "pointer", border: value === c ? "2px solid #2C2016" : "2px solid transparent", display: "flex", alignItems: "center", justifyContent: "center" }}
+              >
+                {value === c && <CheckCircle2 size={14} color="white" />}
+              </div>
+            ))}
+          </div>
+          <div style={{ height: 1, background: "rgba(0,0,0,0.05)" }} />
+          <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(44,32,22,0.5)" }}>Warna Bebas</div>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <div style={{ width: 28, height: 28, borderRadius: 8, overflow: "hidden", border: "1px solid rgba(0,0,0,0.1)", flexShrink: 0 }}>
+               <input type="color" value={value} onChange={(e) => onChange(e.target.value)} style={{ width: "200%", height: "200%", transform: "translate(-25%, -25%)", border: "none", cursor: "pointer" }} />
+            </div>
+            <input value={value} onChange={(e) => onChange(e.target.value)} style={{ flex: 1, fontSize: 12, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 6, padding: "4px 8px" }} />
+          </div>
+        </div>
+      )}
+      {open && <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 99 }} onClick={() => setOpen(false)} />}
+    </div>
+  );
+}
+
 export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, profile, onUpdateProfile, onDirty, onLeave, onDelete, isOwner }: any) {
   const [section, setSection] = useState("visual");
   const [pendingSection, setPendingSection] = useState<string | null>(null);
   
   // Local state for all settings
-  const [localPillars, setLocalPillars] = useState(initialSettings.pillars || []);
-  const [localPlatforms, setLocalPlatforms] = useState(initialSettings.platforms || []);
-  const [localContentTypes, setLocalContentTypes] = useState(initialSettings.contentTypes || []);
-  const [localPics, setLocalPics] = useState(initialSettings.pics || []);
-  const [localStatuses, setLocalStatuses] = useState(initialSettings.statuses || []);
+  const transformInit = (arr: any[]) => (arr || []).map((x:any) => {
+    const isStr = typeof x === 'string';
+    return { 
+      name: isStr ? x : x.name, 
+      color: isStr ? "var(--theme-primary)" : x.color, 
+      light: isStr ? undefined : x.light,
+      _originalName: isStr ? x : x.name 
+    };
+  });
+
+  const [localPillars, setLocalPillars] = useState(() => transformInit(initialSettings.pillars));
+  const [localPlatforms, setLocalPlatforms] = useState(() => transformInit(initialSettings.platforms));
+  const [localContentTypes, setLocalContentTypes] = useState(() => transformInit(initialSettings.contentTypes));
+  const [localPics, setLocalPics] = useState(() => transformInit(initialSettings.pics));
+  const [localStatuses, setLocalStatuses] = useState(() => transformInit(initialSettings.statuses));
   const [localHolidays, setLocalHolidays] = useState(initialSettings.holidays || {});
   const [localHolidayApis, setLocalHolidayApis] = useState(initialSettings.holidayApis || []);
   const [localCustomEvents, setLocalCustomEvents] = useState(initialSettings.customEvents || []);
@@ -112,11 +166,11 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
 
   // Sync if initialSettings change (e.g. workspace switch strictly from backend)
   useEffect(() => {
-    setLocalPillars(initialSettings.pillars || []);
-    setLocalPlatforms(initialSettings.platforms || []);
-    setLocalContentTypes(initialSettings.contentTypes || []);
-    setLocalPics(initialSettings.pics || []);
-    setLocalStatuses(initialSettings.statuses || []);
+    setLocalPillars(transformInit(initialSettings.pillars));
+    setLocalPlatforms(transformInit(initialSettings.platforms));
+    setLocalContentTypes(transformInit(initialSettings.contentTypes));
+    setLocalPics(transformInit(initialSettings.pics));
+    setLocalStatuses(transformInit(initialSettings.statuses));
     setLocalHolidays(initialSettings.holidays || {});
     setLocalHolidayApis(initialSettings.holidayApis || []);
     setLocalCustomEvents(initialSettings.customEvents || []);
@@ -162,16 +216,49 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
     setSaving(true);
     setSaveSuccess(false);
     try {
+      const cleanArray = (arr: any[]) => arr.map(x => {
+        const { _originalName, ...rest } = x;
+        return rest;
+      });
+      
+      const deduplicate = (arr: any[]) => {
+         const seen = new Set();
+         return arr.filter(x => {
+            const name = typeof x === 'string' ? x : x.name;
+            const nameLower = String(name || "").trim().toLowerCase();
+            if (!nameLower || seen.has(nameLower)) return false;
+            seen.add(nameLower);
+            return true;
+         });
+      };
+
+      const computedRenames: any = { pillars: {}, platforms: {}, contentTypes: {}, pics: {}, statuses: {} };
+      
+      const trackRenames = (arr: any[], type: string) => {
+         arr.forEach(x => {
+            if (x._originalName && x._originalName !== x.name) {
+               computedRenames[type][x._originalName] = x.name;
+            }
+         });
+      };
+
+      trackRenames(localPillars, 'pillars');
+      trackRenames(localPlatforms, 'platforms');
+      trackRenames(localContentTypes, 'contentTypes');
+      trackRenames(localPics, 'pics');
+      trackRenames(localStatuses, 'statuses');
+
       await onSave({
-        pillars: localPillars,
-        platforms: localPlatforms,
-        contentTypes: localContentTypes,
-        pics: localPics,
-        statuses: localStatuses,
+        pillars: deduplicate(cleanArray(localPillars)),
+        platforms: deduplicate(cleanArray(localPlatforms)),
+        contentTypes: deduplicate(cleanArray(localContentTypes)),
+        pics: deduplicate(cleanArray(localPics)),
+        statuses: deduplicate(cleanArray(localStatuses)),
         holidays: localHolidays,
         holidayApis: localHolidayApis,
         customEvents: localCustomEvents,
-        showHolidays: localShowHolidays
+        showHolidays: localShowHolidays,
+        renames: computedRenames
       });
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
@@ -187,23 +274,23 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
     setLocalPillars((p: any) => [...p, { name: newVal.trim(), color: newColor, light: newColor + "22" }]);
     setNewVal(""); setNewColor("#3B82F6");
   };
-  const editPillar = (i: any, name: any, color: any) => setLocalPillars((p: any) => p.map((x: any, idx: any) => idx === i ? { name, color, light: color + "22" } : x));
+  const editPillar = (i: any, name: any, color: any) => setLocalPillars((p: any) => p.map((x: any, idx: any) => idx === i ? { ...x, name, color, light: color + "22" } : x));
   const delPillar = (i: any) => setLocalPillars((p: any) => p.filter((_: any, idx: any) => idx !== i));
 
   const addPlatform = () => { if (!newVal.trim()) return; setLocalPlatforms((p: any) => [...p, { name: newVal.trim(), color: newColor }]); setNewVal(""); };
-  const editPlatform = (i: any, name: any, color: any) => setLocalPlatforms((p: any) => p.map((x: any, idx: any) => idx === i ? { name, color } : x));
+  const editPlatform = (i: any, name: any, color: any) => setLocalPlatforms((p: any) => p.map((x: any, idx: any) => idx === i ? { ...x, name, color } : x));
   const delPlatform = (i: any) => setLocalPlatforms((p: any) => p.filter((_: any, idx: any) => idx !== i));
 
   const addContentType = () => { if (!newVal.trim()) return; setLocalContentTypes((p: any) => [...p, { name: newVal.trim(), color: newColor }]); setNewVal(""); };
-  const editContentType = (i: any, name: any, color: any) => setLocalContentTypes((p: any) => p.map((x: any, idx: any) => idx === i ? { name, color } : x));
+  const editContentType = (i: any, name: any, color: any) => setLocalContentTypes((p: any) => p.map((x: any, idx: any) => idx === i ? { ...x, name, color } : x));
   const delContentType = (i: any) => setLocalContentTypes((p: any) => p.filter((_: any, idx: any) => idx !== i));
 
   const addPic = () => { if (!newVal.trim()) return; setLocalPics((p: any) => [...p, { name: newVal.trim(), color: newColor }]); setNewVal(""); };
-  const editPic = (i: any, name: any, color: any) => setLocalPics((p: any) => p.map((x: any, idx: any) => idx === i ? { name, color } : x));
+  const editPic = (i: any, name: any, color: any) => setLocalPics((p: any) => p.map((x: any, idx: any) => idx === i ? { ...x, name, color } : x));
   const delPic = (i: any) => setLocalPics((p: any) => p.filter((_: any, idx: any) => idx !== i));
 
   const addStatus = () => { if (!newVal.trim()) return; setLocalStatuses((s: any) => [...s, { name: newVal.trim(), color: newColor }]); setNewVal(""); };
-  const editStatus = (i: any, name: any, color: any) => setLocalStatuses((p: any) => p.map((x: any, idx: any) => idx === i ? { name, color } : x));
+  const editStatus = (i: any, name: any, color: any) => setLocalStatuses((p: any) => p.map((x: any, idx: any) => idx === i ? { ...x, name, color } : x));
   const delStatus = (i: any) => setLocalStatuses((s: any) => s.filter((_: any, idx: any) => idx !== i));
 
   const addHoliday = () => {
@@ -264,7 +351,7 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
 
   const renderInputRow = (placeholder: string, value: string, onChange: any, onAdd: any, colorPicker: boolean) => (
     <div style={{ display: "flex", gap: 8, marginTop: 12, background: "var(--theme-primary)11", padding: 10, borderRadius: 16, border: "1px dashed var(--theme-primary)44", alignItems: "center" }}>
-      {colorPicker && <div style={{width: 36, height: 36, borderRadius: 10, overflow: "hidden", border: "2px solid white", boxShadow: "0 2px 6px rgba(0,0,0,0.1)", flexShrink: 0}}><input type="color" value={newColor} onChange={(e: any) => setNewColor(e.target.value)} style={{ width: "200%", height: "200%", transform: "translate(-25%, -25%)", border: "none", cursor: "pointer", background: "none" }} /></div>}
+      {colorPicker && <ColorPickerSelect value={newColor} onChange={(val) => setNewColor(val)} />}
       <input value={value} onChange={(e: any) => onChange(e.target.value)} onKeyDown={(e: any) => e.key === "Enter" && onAdd()} placeholder={placeholder} style={I({ flex: 1, border: "none", background: "white", boxShadow: "0 2px 8px rgba(0,0,0,0.04)", fontSize: 14 })} />
       <button onClick={onAdd} className="hover-scale" style={{ ...B(true, "var(--theme-primary)"), padding: "0 20px", height: 42, fontWeight: 700, borderRadius: 12, border: "none", color: "white" }}>Tambah</button>
     </div>
@@ -427,7 +514,7 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {localPillars.map((p: any, i: any) => (
                 <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", background: "white", borderRadius: 12, border: "1px solid rgba(44,32,22,0.05)", boxShadow: "0 2px 8px rgba(44,32,22,0.02)", transition: "all 0.2s" }} className="hover:border-[var(--theme-primary)44]">
-                  <div style={{width: 28, height: 28, borderRadius: 8, overflow: "hidden", border: "2px solid white", boxShadow: "0 2px 6px rgba(0,0,0,0.1)", flexShrink: 0}}><input type="color" value={p.color} onChange={(e: any) => editPillar(i, p.name, e.target.value)} title="Warna Pillar" style={{ width: "200%", height: "200%", transform: "translate(-25%, -25%)", border: "none", cursor: "pointer" }} /></div>
+                  <ColorPickerSelect value={p.color} onChange={(val) => editPillar(i, p.name, val)} />
                   <input value={p.name} onChange={(e: any) => editPillar(i, e.target.value, p.color)} style={{ flex: 1, fontSize: 14, fontWeight: 600, border: "none", background: "transparent", outline: "none", color: "#2C2016" }} />
                   <button onClick={() => delPillar(i)} style={{ background: "#FDF5F8", border: "none", borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#9C2B4E", transition: "all 0.2s" }} className="hover:bg-[#9C2B4E] hover:text-white">Hapus</button>
                 </div>
@@ -450,7 +537,7 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {localPlatforms.map((p: any, i: any) => (
                 <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", background: "white", borderRadius: 12, border: "1px solid rgba(44,32,22,0.05)", boxShadow: "0 2px 8px rgba(44,32,22,0.02)", transition: "all 0.2s" }} className="hover:border-[var(--theme-primary)44]">
-                  <div style={{width: 28, height: 28, borderRadius: 8, overflow: "hidden", border: "2px solid white", boxShadow: "0 2px 6px rgba(0,0,0,0.1)", flexShrink: 0}}><input type="color" value={p.color} onChange={(e: any) => editPlatform(i, p.name, e.target.value)} title="Warna Platform" style={{ width: "200%", height: "200%", transform: "translate(-25%, -25%)", border: "none", cursor: "pointer" }} /></div>
+                  <ColorPickerSelect value={p.color} onChange={(val) => editPlatform(i, p.name, val)} />
                   <input value={p.name} onChange={(e: any) => editPlatform(i, e.target.value, p.color)} style={{ flex: 1, fontSize: 14, fontWeight: 600, border: "none", background: "transparent", outline: "none", color: "#2C2016" }} />
                   <button onClick={() => delPlatform(i)} style={{ background: "#FDF5F8", border: "none", borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#9C2B4E", transition: "all 0.2s" }} className="hover:bg-[#9C2B4E] hover:text-white">Hapus</button>
                 </div>
@@ -473,7 +560,7 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {localContentTypes.map((p: any, i: any) => (
                 <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", background: "white", borderRadius: 12, border: "1px solid rgba(44,32,22,0.05)", boxShadow: "0 2px 8px rgba(44,32,22,0.02)", transition: "all 0.2s" }} className="hover:border-[var(--theme-primary)44]">
-                  <div style={{width: 28, height: 28, borderRadius: 8, overflow: "hidden", border: "2px solid white", boxShadow: "0 2px 6px rgba(0,0,0,0.1)", flexShrink: 0}}><input type="color" value={p.color} onChange={(e: any) => editContentType(i, p.name, e.target.value)} title="Warna Tipe Konten" style={{ width: "200%", height: "200%", transform: "translate(-25%, -25%)", border: "none", cursor: "pointer" }} /></div>
+                  <ColorPickerSelect value={p.color} onChange={(val) => editContentType(i, p.name, val)} />
                   <input value={p.name} onChange={(e: any) => editContentType(i, e.target.value, p.color)} style={{ flex: 1, fontSize: 14, fontWeight: 600, border: "none", background: "transparent", outline: "none", color: "#2C2016" }} />
                   <button onClick={() => delContentType(i)} style={{ background: "#FDF5F8", border: "none", borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#9C2B4E", transition: "all 0.2s" }} className="hover:bg-[#9C2B4E] hover:text-white">Hapus</button>
                 </div>
@@ -499,7 +586,7 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
                 const color = typeof p === 'string' ? "var(--theme-primary)" : p.color;
                 return (
                   <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", background: "white", borderRadius: 12, border: "1px solid rgba(44,32,22,0.05)", boxShadow: "0 2px 8px rgba(44,32,22,0.02)", transition: "all 0.2s" }} className="hover:border-[var(--theme-primary)44]">
-                    <div style={{width: 28, height: 28, borderRadius: 8, overflow: "hidden", border: "2px solid white", boxShadow: "0 2px 6px rgba(0,0,0,0.1)", flexShrink: 0}}><input type="color" value={color} onChange={(e: any) => editPic(i, name, e.target.value)} title="Warna PIC" style={{ width: "200%", height: "200%", transform: "translate(-25%, -25%)", border: "none", cursor: "pointer" }} /></div>
+                    <ColorPickerSelect value={color} onChange={(val) => editPic(i, name, val)} />
                     <input value={name} onChange={(e: any) => editPic(i, e.target.value, color)} style={{ flex: 1, fontSize: 14, fontWeight: 600, border: "none", background: "transparent", outline: "none", color: "#2C2016" }} />
                     <button onClick={() => delPic(i)} style={{ background: "#FDF5F8", border: "none", borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#9C2B4E", transition: "all 0.2s" }} className="hover:bg-[#9C2B4E] hover:text-white">Hapus</button>
                   </div>
@@ -527,7 +614,7 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
                 return (
                   <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", background: "white", borderRadius: 12, border: "1px solid rgba(44,32,22,0.05)", boxShadow: "0 2px 8px rgba(44,32,22,0.02)", transition: "all 0.2s" }} className="hover:border-[var(--theme-primary)44]">
                     <span style={{ fontSize: 12, fontWeight: 800, color: "rgba(44,32,22,0.3)", width: 24, textAlign: "center" }}>{i + 1}.</span>
-                    <div style={{width: 28, height: 28, borderRadius: 8, overflow: "hidden", border: "2px solid white", boxShadow: "0 2px 6px rgba(0,0,0,0.1)", flexShrink: 0}}><input type="color" value={color} onChange={(e: any) => editStatus(i, name, e.target.value)} title="Warna Status" style={{ width: "200%", height: "200%", transform: "translate(-25%, -25%)", border: "none", cursor: "pointer" }} /></div>
+                    <ColorPickerSelect value={color} onChange={(val) => editStatus(i, name, val)} />
                     <input value={name} onChange={(e: any) => editStatus(i, e.target.value, color)} style={{ flex: 1, background: color + "15", color: color, fontSize: 13, fontWeight: 700, padding: "6px 12px", borderRadius: 8, border: "none", outline: "none", maxWidth: "fit-content" }} />
                     <div style={{flex: 1}} />
                     <button onClick={() => delStatus(i)} style={{ background: "#FDF5F8", border: "none", borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#9C2B4E", transition: "all 0.2s" }} className="hover:bg-[#9C2B4E] hover:text-white">Hapus</button>
@@ -762,9 +849,7 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
                    </div>
                    <div style={{flex: 0}}>
                      <label style={{fontSize:11, fontWeight:700, marginBottom:6, display:"block", color:"var(--theme-primary)"}}>Color</label>
-                     <div style={{width: 44, height: 44, borderRadius: 12, overflow: "hidden", border: "2px solid white", boxShadow: "0 2px 8px rgba(0,0,0,0.15)", flexShrink: 0}}>
-                       <input type="color" value={newEvColor} onChange={(e: any) => setNewEvColor(e.target.value)} style={{ width: "200%", height: "200%", transform: "translate(-25%, -25%)", border: "none", cursor: "pointer", background:"none" }} />
-                     </div>
+                     <ColorPickerSelect value={newEvColor} onChange={(val) => setNewEvColor(val)} />
                    </div>
                 </div>
                 <label style={{display:"flex", alignItems:"center", gap:8, fontSize:13, cursor:"pointer", color:"#2C2016", fontWeight: 600}}>
@@ -827,9 +912,7 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
                            </div>
                            <div style={{flex: 0}}>
                              <label style={{fontSize:11, fontWeight:700, marginBottom:6, display:"block", color:"var(--theme-primary)"}}>Color</label>
-                             <div style={{width: 44, height: 44, borderRadius: 12, overflow: "hidden", border: "2px solid rgba(0,0,0,0.05)", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", flexShrink: 0}}>
-                               <input type="color" value={editEvColor} onChange={(e: any) => setEditEvColor(e.target.value)} style={{ width: "200%", height: "200%", transform: "translate(-25%, -25%)", border: "none", cursor: "pointer", background:"none" }} />
-                             </div>
+                             <ColorPickerSelect value={editEvColor} onChange={(val) => setEditEvColor(val)} />
                            </div>
                         </div>
                         <label style={{display:"flex", alignItems:"center", gap:8, fontSize:13, cursor:"pointer", color:"#2C2016", fontWeight: 600}}>
