@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { Instagram, Twitter, Linkedin, Mail } from 'lucide-react';
 
 const PublicHeader = ({ currentLang, onLangChange }: { currentLang?: 'id' | 'en', onLangChange?: (l: 'id' | 'en') => void }) => {
   const navigate = useNavigate();
@@ -40,33 +41,50 @@ const PublicHeader = ({ currentLang, onLangChange }: { currentLang?: 'id' | 'en'
 };
 
 const PublicFooter = ({ currentLang, onLangChange }: { currentLang?: 'id' | 'en', onLangChange?: (l: 'id' | 'en') => void }) => {
-  const navigate = useNavigate();
   return (
     <footer className="bg-black text-white py-12 px-6 text-sm">
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
-        <div className="flex flex-col items-center md:items-start gap-3">
-          <div className="font-extrabold text-xl tracking-tight">Hubify Social</div>
+      <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
+        <div className="flex flex-col gap-4">
+          <div className="font-extrabold text-2xl tracking-tight">Hubify Social</div>
+          <div className="flex items-center gap-4 text-slate-400">
+            <a href="https://instagram.com/hubifysocial" target="_blank" rel="noreferrer" className="hover:text-white transition-colors">
+              <Instagram size={20} />
+            </a>
+            <a href="https://twitter.com/hubifysocial" target="_blank" rel="noreferrer" className="hover:text-white transition-colors">
+              <Twitter size={20} />
+            </a>
+            <a href="https://linkedin.com/company/hubifysocial" target="_blank" rel="noreferrer" className="hover:text-white transition-colors">
+              <Linkedin size={20} />
+            </a>
+            <a href="mailto:support@hubifysocial.com" className="hover:text-white transition-colors flex items-center gap-2">
+              <Mail size={20} />
+              <span className="font-medium text-sm">support@hubifysocial.com</span>
+            </a>
+          </div>
           {onLangChange && currentLang && (
-            <div className="flex bg-neutral-800 p-1 rounded-full items-center border border-neutral-700">
+            <div className="flex bg-neutral-800 p-1 rounded-full items-center border border-neutral-700 w-fit">
               <button 
                 onClick={() => onLangChange('id')} 
                 className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${currentLang === 'id' ? 'bg-white text-black shadow' : 'text-slate-400 hover:text-white bg-transparent'}`}
               >
-                ID (Bahasa Indonesia)
+                ID
               </button>
               <button 
                 onClick={() => onLangChange('en')} 
                 className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${currentLang === 'en' ? 'bg-white text-black shadow' : 'text-slate-400 hover:text-white bg-transparent'}`}
               >
-                EN (English)
+                EN
               </button>
             </div>
           )}
         </div>
-        <div className="text-slate-400">&copy; 2026 Hubify Social. All rights reserved.</div>
-        <div className="flex gap-6">
-          <Link to="/privacy" className="text-slate-400 hover:text-white transition-colors">{currentLang === 'id' ? 'Kebijakan Privasi' : 'Privacy Policy'}</Link>
-          <Link to="/terms" className="text-slate-400 hover:text-white transition-colors">{currentLang === 'id' ? 'Syarat & Ketentuan' : 'Terms of Service'}</Link>
+        
+        <div className="flex flex-col items-start md:items-end gap-3">
+          <div className="flex gap-6">
+            <Link to="/privacy" className="text-slate-400 hover:text-white transition-colors font-semibold">{currentLang === 'id' ? 'Kebijakan Privasi' : 'Privacy Policy'}</Link>
+            <Link to="/terms" className="text-slate-400 hover:text-white transition-colors font-semibold">{currentLang === 'id' ? 'Syarat & Ketentuan' : 'Terms of Service'}</Link>
+          </div>
+          <div className="text-slate-500 font-medium mt-1">&copy; 2026 PT Harapan Untuk Bangsa. All rights reserved.</div>
         </div>
       </div>
     </footer>

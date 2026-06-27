@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Check, Calendar, BarChart2, Zap, Sparkles, LayoutDashboard, Share2, TrendingUp, Users, Clock, Instagram, Twitter, Facebook, CloudRain, CheckCircle, StickyNote, Target, ChevronRight, ChevronDown, Flame, Activity, ArrowLeft, Bell, ChevronUp, PieChart, Search, MessageSquare, LogOut, Cloud, LayoutGrid, Edit2, Eye, Plus, FileText, Menu } from 'lucide-react';
+import { Check, Calendar, BarChart2, Zap, Sparkles, LayoutDashboard, Share2, TrendingUp, Users, Clock, Instagram, Twitter, Facebook, CloudRain, CheckCircle, StickyNote, Target, ChevronRight, ChevronDown, Flame, Activity, ArrowLeft, Bell, ChevronUp, PieChart, Search, MessageSquare, LogOut, Cloud, LayoutGrid, Edit2, Eye, Plus, FileText, Menu, Linkedin, Mail } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 
@@ -1126,13 +1126,33 @@ export function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-black text-white py-12 px-6 text-sm text-center">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="font-extrabold text-xl tracking-tight">Hubify Social</div>
-          <div className="text-slate-400">&copy; 2026 Hubify Social. All rights reserved.</div>
-          <div className="flex gap-6">
-            <Link to="/privacy" className="text-slate-400 hover:text-white transition-colors">Privacy Policy</Link>
-            <Link to="/terms" className="text-slate-400 hover:text-white transition-colors">Terms of Service</Link>
+      <footer className="bg-black text-white py-12 px-6 text-sm">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
+          <div className="flex flex-col gap-4">
+            <div className="font-extrabold text-2xl tracking-tight">Hubify Social</div>
+            <div className="flex items-center gap-4 text-slate-400">
+              <a href="https://instagram.com/hubifysocial" target="_blank" rel="noreferrer" className="hover:text-white transition-colors">
+                <Instagram size={20} />
+              </a>
+              <a href="https://twitter.com/hubifysocial" target="_blank" rel="noreferrer" className="hover:text-white transition-colors">
+                <Twitter size={20} />
+              </a>
+              <a href="https://linkedin.com/company/hubifysocial" target="_blank" rel="noreferrer" className="hover:text-white transition-colors">
+                <Linkedin size={20} />
+              </a>
+              <a href="mailto:support@hubifysocial.com" className="hover:text-white transition-colors flex items-center gap-2">
+                <Mail size={20} />
+                <span className="font-medium text-sm">support@hubifysocial.com</span>
+              </a>
+            </div>
+          </div>
+          
+          <div className="flex flex-col items-start md:items-end gap-3">
+            <div className="flex gap-6">
+              <Link to="/privacy" className="text-slate-400 hover:text-white transition-colors font-semibold">Kebijakan Privasi</Link>
+              <Link to="/terms" className="text-slate-400 hover:text-white transition-colors font-semibold">Syarat & Ketentuan</Link>
+            </div>
+            <div className="text-slate-500 font-medium mt-1">&copy; 2026 PT Harapan Untuk Bangsa. All rights reserved.</div>
           </div>
         </div>
       </footer>
