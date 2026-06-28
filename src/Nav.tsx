@@ -37,6 +37,7 @@ import {
   Check,
   Download,
   Sparkles,
+  Home,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { eng, fmt, YEARS, B, I, TAB, MONTHS, CustomDropdown } from "./data";
@@ -1014,8 +1015,8 @@ export function Sidebar({
   const SOCIAL_STUDIO = (systemConfig?.features?.socialStudio === false && !isSuperAdmin) ? [] : [
     {
       id: "social-dashboard",
-      ic: <Activity size={18} />,
-      lb: "Overview",
+      ic: <Home size={18} />,
+      lb: "Home",
     },
     {
       id: "social-analytics",

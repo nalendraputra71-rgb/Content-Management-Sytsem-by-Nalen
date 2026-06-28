@@ -1,3 +1,4 @@
+import { PlatformPreview } from './components/PlatformPreview';
 import {
   collection,
   query,
@@ -71,9 +72,10 @@ import {
   Lightbulb,
   Heart,
   Upload,
-  Image as ImageIcon,
+  AlertTriangle,
 } from "lucide-react";
 import Markdown from "react-markdown";
+import { PlatformIntegrationModal } from "./PlatformIntegrationModal";
 import {
   LineChart,
   Line,
@@ -133,11 +135,13 @@ function CustomDropdown({
   options,
   onChange,
   renderOption,
+  pill = false,
 }: {
   value: string;
   options: any[];
   onChange: (val: string) => void;
   renderOption?: (o: any) => React.ReactNode;
+  pill?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -171,8 +175,8 @@ function CustomDropdown({
           alignItems: "center",
           justifyContent: "space-between",
           gap: 12,
-          padding: "10px 16px",
-          borderRadius: 12,
+          padding: pill ? "10px 20px" : "10px 16px",
+          borderRadius: pill ? 9999 : 12,
           border: "1px solid rgba(44,32,22,0.1)",
           background: "white",
           fontSize: 13,
@@ -291,12 +295,14 @@ const PLATFORMS = [
     name: "Facebook",
     icon: <Facebook size={18} />,
     color: "#1877F2",
+    contentTypes: [{ id: "feed", label: "Post" }, { id: "reel", label: "Reels" }, { id: "story", label: "Story" }]
   },
   {
     id: "instagram",
     name: "Instagram",
     icon: <Instagram size={18} />,
     color: "#E4405F",
+    contentTypes: [{ id: "feed", label: "Post (Image/Carousel)" }, { id: "reel", label: "Reels" }, { id: "story", label: "Story" }]
   },
   {
     id: "tiktok",
@@ -315,6 +321,7 @@ const PLATFORMS = [
       </div>
     ),
     color: "#000000",
+    contentTypes: [{ id: "video", label: "Video" }, { id: "photo_carousel", label: "Photo Carousel" }]
   },
   {
     id: "threads",
@@ -333,12 +340,14 @@ const PLATFORMS = [
       </div>
     ),
     color: "#000000",
+    contentTypes: [{ id: "thread", label: "Thread" }]
   },
   {
     id: "linkedin",
     name: "LinkedIn",
     icon: <Linkedin size={18} />,
     color: "#0A66C2",
+    contentTypes: [{ id: "post", label: "Post" }, { id: "article", label: "Article" }]
   },
 ];
 
@@ -384,6 +393,20 @@ export function SocialStudioView({
 
   const [connectedPlatforms, setConnectedPlatforms] = useState<string[]>([]);
   const [showMultiAccountPopup, setShowMultiAccountPopup] = useState(false);
+  const [integrationModal, setIntegrationModal] = useState<{
+    isOpen: boolean;
+    platformId: string | null;
+  }>({
+    isOpen: false,
+    platformId: null,
+  });
+  const [disconnectPrompt, setDisconnectPrompt] = useState<{
+    isOpen: boolean;
+    platformId: string | null;
+  }>({
+    isOpen: false,
+    platformId: null,
+  });
 
   useEffect(() => {
     if (!workspaceId) return;
@@ -409,8 +432,12 @@ export function SocialStudioView({
   const [showCreatePostPopup, setShowCreatePostPopup] = useState(false);
   const [createPostMode, setCreatePostMode] = useState<"now" | "schedule">("now");
   const [createPostCaption, setCreatePostCaption] = useState("");
-  const [createPostImage, setCreatePostImage] = useState<string | null>(null);
+  const [createPostMedia, setCreatePostMedia] = useState<{url: string, type: "image" | "video"}[]>([]);
   const [createPostPlatforms, setCreatePostPlatforms] = useState<string[]>([]);
+  const [createPostPlatformTypes, setCreatePostPlatformTypes] = useState<Record<string, string>>({});
+  const [platformOverrides, setPlatformOverrides] = useState<Record<string, { caption?: string; media?: {url: string, type: "image" | "video"}[] }>>({});
+  const [expandedEditPlatforms, setExpandedEditPlatforms] = useState<Record<string, boolean>>({});
+  const [activePreviewPlatform, setActivePreviewPlatform] = useState<string | null>(null);
   const [analyticsMetric, setAnalyticsMetric] = useState("er");
   const [analyticsPlatform, setAnalyticsPlatform] = useState("all");
   const [analyticsTimeRange, setAnalyticsTimeRange] =
@@ -1195,39 +1222,39 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
     }, 1500);
   };
 
-  const toggleConnection = (id: string) => {
+  const toggleConnection = async (id: string) => {
     if (connectedPlatforms.includes(id)) {
-      setShowMultiAccountPopup(true);
+      setDisconnectPrompt({ isOpen: true, platformId: id });
     } else {
-      if (!workspaceId) {
-        alert("Workspace ID not found");
-        return;
-      }
-      const fakeToken = `${id.toUpperCase()}_MOCK_TOKEN_` + Date.now();
-      const docRef = doc(
-        db,
-        "workspaces",
-        workspaceId,
-        "connectedAccounts",
-        id,
-      );
-      setDoc(docRef, {
-        workspaceId,
-        platform: id,
-        accountId: `${id}_mock_id`,
-        accountName: `${id.charAt(0).toUpperCase() + id.slice(1)} Business Account`,
-        accessToken: fakeToken,
-        status: "active",
-        createdAt: serverTimestamp(),
-      })
-        .then(() => {
-          // Success
-        })
-        .catch((e: any) => {
-          console.error("Error setting account", e);
-          alert("Failed to connect account: " + e.message);
-        });
+      setIntegrationModal({ isOpen: true, platformId: id });
     }
+  };
+
+  const handleIntegrationSuccess = (id: string) => {
+    if (!workspaceId) {
+      alert("Workspace ID not found");
+      return;
+    }
+    const fakeToken = `${id.toUpperCase()}_MOCK_TOKEN_` + Date.now();
+    const docRef = doc(
+      db,
+      "workspaces",
+      workspaceId,
+      "connectedAccounts",
+      id,
+    );
+    setDoc(docRef, {
+      workspaceId,
+      platform: id,
+      accountId: `${id}_mock_id`,
+      accountName: `${id.charAt(0).toUpperCase() + id.slice(1)} Business Account`,
+      accessToken: fakeToken,
+      status: "active",
+      createdAt: serverTimestamp(),
+    }).catch((e: any) => {
+      console.error("Error setting account", e);
+      alert("Failed to connect account: " + e.message);
+    });
   };
 
   const generateReport = async () => {
@@ -1883,6 +1910,208 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
     );
   };
 
+  const renderEditorBlock = (pId: string | null, pInfo?: any) => {
+    const caption = pId ? (platformOverrides[pId]?.caption ?? createPostCaption) : createPostCaption;
+    const setCaption = (c: string) => {
+      if (pId) {
+          setPlatformOverrides(prev => ({ ...prev, [pId]: { ...prev[pId], caption: c } }));
+          setCreatePostCaption(c);
+      }
+      else setCreatePostCaption(c);
+    };
+
+    const media = pId ? (platformOverrides[pId]?.media !== undefined ? platformOverrides[pId]?.media : createPostMedia) : createPostMedia;
+    const setMedia = (newMedia: {url: string, type: "image" | "video"}[]) => {
+      if (pId) {
+          setPlatformOverrides(prev => ({ ...prev, [pId]: { ...prev[pId], media: newMedia } }));
+          setCreatePostMedia(newMedia);
+      }
+      else setCreatePostMedia(newMedia);
+    };
+
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 24, padding: pId ? 20 : 0 }}>
+        {pId && pInfo?.contentTypes && (
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                {pInfo.contentTypes.map((ct: any) => {
+                    const isActive = (createPostPlatformTypes[pId] || pInfo.contentTypes[0].id) === ct.id;
+                    return (
+                        <div
+                            key={ct.id}
+                            onClick={() => setCreatePostPlatformTypes(prev => ({...prev, [pId]: ct.id}))}
+                            style={{
+                                fontSize: 11,
+                                fontWeight: 600,
+                                padding: "4px 10px",
+                                borderRadius: 12,
+                                background: isActive ? "var(--theme-primary)" : "rgba(44,32,22,0.04)",
+                                color: isActive ? "white" : "rgba(44,32,22,0.6)",
+                                cursor: "pointer",
+                                border: isActive ? "1px solid var(--theme-primary)" : "1px solid transparent",
+                            }}
+                            className={isActive ? "" : "hover-bg"}
+                        >
+                            {ct.label}
+                        </div>
+                    );
+                })}
+            </div>
+        )}
+
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+            <label style={{ fontSize: 13, fontWeight: 700, color: "rgba(44,32,22,0.5)", margin: 0, display: "block", textTransform: "uppercase", letterSpacing: 0.5 }}>Caption</label>
+            <button style={{ background: "transparent", color: "var(--theme-primary)", border: "none", padding: 0, fontSize: 12, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }} className="hover-scale">
+              <Sparkles size={14} /> Generate AI
+            </button>
+          </div>
+          <textarea
+            value={caption}
+            onChange={(e) => setCaption(e.target.value)}
+            placeholder="What's on your mind?"
+            style={{
+              width: "100%",
+              minHeight: 120,
+              borderRadius: 16,
+              border: "none",
+              background: "rgba(44,32,22,0.03)",
+              padding: "16px",
+              fontSize: 14,
+              resize: "vertical",
+              outline: "none",
+              fontFamily: "inherit",
+              lineHeight: 1.6,
+              color: "#2C2016",
+              transition: "all 0.2s"
+            }}
+            onFocus={(e) => e.target.style.background = "rgba(44,32,22,0.06)"}
+            onBlur={(e) => e.target.style.background = "rgba(44,32,22,0.03)"}
+          />
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          <label style={{ fontSize: 13, fontWeight: 700, color: "rgba(44,32,22,0.5)", marginBottom: 12, display: "block", textTransform: "uppercase", letterSpacing: 0.5 }}>Media</label>
+          <div
+            style={{
+              width: "100%",
+              minHeight: 140,
+              borderRadius: 16,
+              border: "2px dashed rgba(44,32,22,0.1)",
+              background: "rgba(44,32,22,0.02)",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 12,
+              padding: media && media.length > 0 ? "16px" : "0",
+              cursor: "pointer",
+              color: "rgba(44,32,22,0.5)",
+              position: "relative",
+              transition: "all 0.2s"
+            }}
+            className="hover-bg"
+            onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+            onDrop={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              const files = (Array.from(e.dataTransfer.files) as File[]).filter(f => f.type.startsWith("image/") || f.type.startsWith("video/"));
+              if (files.length > 0) {
+                const newMedia = files.map(file => ({
+                  url: URL.createObjectURL(file),
+                  type: file.type.startsWith("video/") ? "video" as const : "image" as const
+                }));
+                setMedia([...(media || []), ...newMedia]);
+              }
+            }}
+            onClick={() => {
+              const input = document.createElement("input");
+              input.type = "file";
+              input.accept = "image/*,video/*";
+              input.multiple = true;
+              input.onchange = (e: any) => {
+                if (e.target.files?.length > 0) {
+                  const files = Array.from(e.target.files) as File[];
+                  const newMedia = files.map(file => ({
+                    url: URL.createObjectURL(file),
+                    type: file.type.startsWith("video/") ? "video" as const : "image" as const
+                  }));
+                  setMedia([...(media || []), ...newMedia]);
+                }
+              };
+              input.click();
+            }}
+          >
+            {media && media.length > 0 ? (
+               <div style={{ width: "100%", display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))", gap: 12 }}>
+                 {media.map((m, idx) => (
+                    <div key={idx} style={{ aspectRatio: "1", borderRadius: 12, overflow: "hidden", position: "relative" }} onClick={(e) => e.stopPropagation()}>
+                        {m.type === "video" ? (
+                            <video src={m.url} autoPlay loop muted style={{width: "100%", height: "100%", objectFit: "cover"}} />
+                        ) : (
+                            <img src={m.url} alt="Preview" style={{width: "100%", height: "100%", objectFit: "cover"}} />
+                        )}
+                        <div style={{position: "absolute", top: 8, right: 8, background: "rgba(0,0,0,0.5)", color: "white", width: 24, height: 24, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", backdropFilter: "blur(4px)"}} 
+                             onClick={(e) => { 
+                                 e.stopPropagation(); 
+                                 const newMedia = [...media];
+                                 newMedia.splice(idx, 1);
+                                 setMedia(newMedia);
+                             }} 
+                             className="hover-scale">
+                          <X size={12}/>
+                        </div>
+                    </div>
+                 ))}
+                 <div style={{ aspectRatio: "1", borderRadius: 12, border: "2px dashed rgba(44,32,22,0.1)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "rgba(44,32,22,0.4)", gap: 4 }}>
+                    <Upload size={16} />
+                    <span style={{ fontSize: 11, fontWeight: 600 }}>Add</span>
+                 </div>
+               </div>
+            ) : (
+              <>
+                <div style={{ width: 48, height: 48, borderRadius: 24, background: "rgba(44,32,22,0.04)", display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>
+                  <Upload size={20} color="rgba(44,32,22,0.5)" />
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(44,32,22,0.4)", pointerEvents: "none" }}>Drag & drop files or click to browse</div>
+              </>
+            )}
+          </div>
+
+          {(() => {
+              if (!media || media.length === 0 || !pId) return null;
+              const firstMediaType = media[0].type;
+              const warnings: string[] = [];
+              const typeId = createPostPlatformTypes[pId] || (pInfo?.contentTypes?.[0]?.id);
+              if (!typeId) return null;
+
+              const typeLabel = pInfo?.contentTypes?.find((x:any) => x.id === typeId)?.label || typeId;
+              
+              if (firstMediaType === "image" && ["reel", "video"].includes(typeId)) {
+                warnings.push(`${pInfo.name} (${typeLabel}) membutuhkan format Video.`);
+              }
+              if (firstMediaType === "video" && ["photo_carousel"].includes(typeId)) {
+                warnings.push(`${pInfo.name} (${typeLabel}) membutuhkan format Gambar.`);
+              }
+              
+              if (warnings.length > 0) {
+                  return (
+                      <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 8, padding: 12, background: "rgba(239,68,68,0.1)", borderRadius: 12, border: "1px solid rgba(239,68,68,0.2)" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#EF4444", fontWeight: 700, fontSize: 13 }}>
+                              <AlertTriangle size={16} /> Format Tidak Sesuai
+                          </div>
+                          <div style={{ fontSize: 12, color: "#EF4444", fontWeight: 500, display: "flex", flexDirection: "column", gap: 4 }}>
+                              {warnings.map((w, i) => <span key={i}>• {w}</span>)}
+                          </div>
+                      </div>
+                  );
+              }
+              return null;
+          })()}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div
       style={{
@@ -1896,16 +2125,61 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
       }}
     >
       <ContentModalMock />
+      <PlatformIntegrationModal
+        isOpen={integrationModal.isOpen}
+        platformId={integrationModal.platformId}
+        onClose={() => setIntegrationModal({ isOpen: false, platformId: null })}
+        onSuccess={handleIntegrationSuccess}
+      />
 
+      <AnimatePresence>
+        {disconnectPrompt.isOpen && disconnectPrompt.platformId && (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="bg-[#FAFAFA] rounded-2xl shadow-xl w-full max-w-sm overflow-hidden flex flex-col"
+            >
+              <div className="p-6 text-center">
+                <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4 text-red-500">
+                  <AlertTriangle size={32} />
+                </div>
+                <h3 className="text-xl font-bold text-[#111827] mb-2">Disconnect {PLATFORMS.find(p => p.id === disconnectPrompt.platformId)?.name}?</h3>
+                <p className="text-sm text-[#111827]/60 mb-6">
+                  Are you sure you want to disconnect this platform? You will need to re-authenticate to connect it again.
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setDisconnectPrompt({ isOpen: false, platformId: null })}
+                    className="flex-1 px-4 py-2.5 rounded-xl font-semibold text-[#111827]/70 bg-black/5 hover:bg-black/10 transition-colors text-sm"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (!workspaceId) return;
+                      try {
+                        await deleteDoc(doc(db, "workspaces", workspaceId, "connectedAccounts", disconnectPrompt.platformId!));
+                        setDisconnectPrompt({ isOpen: false, platformId: null });
+                      } catch (e) {
+                        console.error(e);
+                        alert("Failed to disconnect.");
+                      }
+                    }}
+                    className="flex-1 px-4 py-2.5 rounded-xl font-bold text-white bg-red-500 hover:bg-red-600 transition-colors text-sm"
+                  >
+                    Disconnect
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+      {!showCreatePostPopup ? (
       <div
-        style={{
-          flex: 1,
-          minHeight: 0,
-          overflowY: tab === "social-hub-ai" ? "hidden" : "auto",
-          padding: tab === "social-hub-ai" ? "0" : "32px 40px",
-          display: "flex",
-          flexDirection: "column",
-        }}
+        className={tab === "social-hub-ai" ? "flex-1 min-h-0 flex flex-col overflow-hidden" : "flex-1 min-h-0 flex flex-col overflow-y-auto p-4 sm:p-6 md:p-8 lg:p-10"}
       >
         {/* DASHBOARD OVERVIEW */}
         {tab === "social-dashboard" && (
@@ -1914,130 +2188,106 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
             animate={{ opacity: 1, y: 0 }}
           >
             <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: 24,
-              }}
+              className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6"
             >
               <h2
-                style={{
-                  fontSize: 28,
-                  fontWeight: 800,
-                  color: "#2C2016",
-                  margin: 0,
-                }}
+                className="text-2xl md:text-[28px] font-extrabold text-[#2C2016] m-0"
               >
-                Social Studio Overview
+                Home
               </h2>
-              <div style={{ display: "flex", gap: 12 }}>
+              <div className="flex flex-wrap gap-3 w-full md:w-auto">
                 <CustomDropdown
                   value={dashTimeRange}
                   options={DASHBOARD_TIME_RANGES}
                   onChange={setDashTimeRange}
+                  pill
                 />
                 <button
-                  className="hover-scale"
-                  style={{
-                    background: "white",
-                    border: "1px solid rgba(44,32,22,0.1)",
-                    borderRadius: 12,
-                    padding: "10px 16px",
-                    cursor: "pointer",
-                    fontWeight: 700,
-                  }}
-                >
-                  <Settings size={16} color="rgba(44,32,22,0.6)" />
-                </button>
-                <button
-                  className="hover-scale hover-bg"
+                  className="hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
                   onClick={() => setShowCreatePostPopup(true)}
                   style={{
                     background: "var(--theme-primary)",
                     border: "none",
-                    borderRadius: 12,
-                    padding: "10px 16px",
+                    borderRadius: 9999,
+                    padding: "10px 24px",
                     cursor: "pointer",
                     fontWeight: 800,
                     color: "white",
                     display: "flex",
                     alignItems: "center",
                     gap: 8,
+                    boxShadow: "0 4px 14px 0 rgba(0,118,255,0.39)",
                   }}
                 >
-                  <Plus size={16} /> Create a Post
+                  <Plus size={18} strokeWidth={2.5} /> Create a Post
                 </button>
               </div>
             </div>
 
             {/* KONEKSI PLATFORM - Minimalist Pills */}
-            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
-              <span style={{ fontSize: 13, fontWeight: 800, color: "rgba(44,32,22,0.4)", textTransform: "uppercase", letterSpacing: 0.5, marginRight: 8 }}>
-                Connected to:
+            <div className="flex flex-col gap-3 mb-8">
+              <span className="text-xs font-bold text-[#111827]/40 uppercase tracking-wider">
+                Platform Integrations
               </span>
-              {PLATFORMS.filter((p) => p.id !== "all").map((p) => {
-                const isConn = connectedPlatforms.includes(p.id);
-                return (
-                  <div
-                    key={p.id}
-                    onClick={() => toggleConnection(p.id)}
-                    className="hover-scale"
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      padding: "6px 12px 6px 6px",
-                      cursor: "pointer",
-                      background: isConn ? "white" : "transparent",
-                      border: isConn ? "1px solid rgba(44,32,22,0.1)" : "1px dashed rgba(44,32,22,0.2)",
-                      borderRadius: 32,
-                      boxShadow: isConn ? "0 2px 8px rgba(0,0,0,0.02)" : "none",
-                      transition: "all 0.2s"
-                    }}
-                  >
+              <div className="flex items-center gap-3 flex-wrap">
+                {PLATFORMS.filter((p) => p.id !== "all").map((p) => {
+                  const isConn = connectedPlatforms.includes(p.id);
+                  return (
                     <div
-                      style={{
-                        width: 24,
-                        height: 24,
-                        borderRadius: 12,
-                        background: isConn ? p.color : "rgba(44,32,22,0.05)",
-                        color: isConn ? "white" : "rgba(44,32,22,0.4)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
+                      key={p.id}
+                      onClick={() => toggleConnection(p.id)}
+                      className={`group relative flex items-center gap-3 p-1.5 pr-4 rounded-full cursor-pointer transition-all duration-300 ${
+                        isConn 
+                          ? "bg-white border border-black/5 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:border-red-200 hover:shadow-md hover:bg-red-50/50" 
+                          : "bg-black/[0.02] border border-black/5 hover:bg-black/[0.04] hover:border-black/10"
+                      }`}
                     >
-                      {typeof p.icon === "string" ? <span style={{fontSize: 9, fontWeight: 800}}>{p.icon}</span> : React.cloneElement(p.icon as React.ReactElement, { size: 12 })}
+                      <div
+                        className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors duration-300 ${
+                          isConn 
+                            ? "text-white group-hover:!bg-red-500 group-hover:text-white" 
+                            : "bg-white text-[#111827]/40 shadow-sm"
+                        }`}
+                        style={isConn ? { backgroundColor: p.color } : {}}
+                      >
+                        {isConn ? (
+                          <>
+                            <div className="group-hover:hidden flex items-center justify-center w-full h-full">
+                              {typeof p.icon === "string" ? <span className="text-[10px] font-extrabold">{p.icon}</span> : React.cloneElement(p.icon as React.ReactElement, { size: 14 })}
+                            </div>
+                            <div className="hidden group-hover:flex items-center justify-center w-full h-full">
+                              <X size={14} strokeWidth={3} />
+                            </div>
+                          </>
+                        ) : (
+                          <div className="flex items-center justify-center w-full h-full">
+                            {typeof p.icon === "string" ? <span className="text-[10px] font-extrabold">{p.icon}</span> : React.cloneElement(p.icon as React.ReactElement, { size: 14 })}
+                          </div>
+                        )}
+                      </div>
+                      <span 
+                        className={`text-sm font-semibold transition-colors duration-300 ${
+                          isConn 
+                            ? "text-[#111827] group-hover:text-red-600" 
+                            : "text-[#111827]/60 group-hover:text-[#111827]/90"
+                        }`}
+                      >
+                        {isConn ? p.name : `Connect ${p.name}`}
+                      </span>
                     </div>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: isConn ? "#2C2016" : "rgba(44,32,22,0.4)" }}>{p.name}</span>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
 
             <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 320px",
-                gap: 24,
-                alignItems: "start",
-              }}
+              className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 items-start"
             >
               {/* MAIN COLUMN */}
               <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
                 {/* 1. KEY METRICS */}
                 <div
-                  style={{
-                    background: "white",
-                    borderRadius: 24,
-                    border: "1px solid rgba(44,32,22,0.08)",
-                    padding: "24px 32px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    gap: 24,
-                  }}
+                  className="bg-white rounded-[24px] border border-[rgba(44,32,22,0.08)] p-6 lg:p-8 flex flex-col sm:flex-row flex-wrap lg:flex-nowrap items-start sm:items-center justify-between gap-6"
                 >
                   {[
                     { lb: "Followers", v: "1.2M", i: <Users size={18} />, trend: "+2.4%" },
@@ -2048,12 +2298,12 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                     const isPositive = s.trend.startsWith("+");
                     return (
                       <React.Fragment key={i}>
-                        <div style={{ display: "flex", flexDirection: "column", gap: 12, flex: 1 }}>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 12, flex: 1, minWidth: "120px" }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 8, color: "rgba(44,32,22,0.4)", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>
                             {s.i}
                             {s.lb}
                           </div>
-                          <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
+                          <div style={{ display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
                             <div style={{ fontSize: 32, fontWeight: 800, color: "#2C2016", letterSpacing: "-1px", lineHeight: 1 }}>
                               {s.v}
                             </div>
@@ -2063,7 +2313,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                             </div>
                           </div>
                         </div>
-                        {i < 3 && <div style={{ width: 1, height: 48, background: "rgba(44,32,22,0.08)" }} />}
+                        {i < 3 && <div className="hidden sm:block" style={{ width: 1, height: 48, background: "rgba(44,32,22,0.08)" }} />}
                       </React.Fragment>
                     );
                   })}
@@ -2071,20 +2321,10 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
 
                 {/* 2. TREND INTERAKSI (CHART) */}
                 <div
-                  style={{
-                    background: "white",
-                    borderRadius: 24,
-                    border: "1px solid rgba(44,32,22,0.05)",
-                    padding: 32,
-                  }}
+                  className="bg-white rounded-[24px] border border-[rgba(44,32,22,0.05)] p-6 lg:p-8"
                 >
                   <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      marginBottom: 32,
-                    }}
+                    className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8"
                   >
                     <h3 style={{ fontSize: 18, fontWeight: 800, margin: 0, color: "#2C2016" }}>
                       Trend Interaksi
@@ -2211,20 +2451,10 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
 
                 {/* 3. TOP PERFORMING POSTS */}
                 <div
-                  style={{
-                    background: "white",
-                    borderRadius: 24,
-                    border: "1px solid rgba(44,32,22,0.05)",
-                    padding: 32,
-                  }}
+                  className="bg-white rounded-[24px] border border-[rgba(44,32,22,0.05)] p-6 lg:p-8"
                 >
                   <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      marginBottom: 24,
-                    }}
+                    className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6"
                   >
                     <h3 style={{ fontSize: 18, fontWeight: 800, margin: 0, color: "#2C2016" }}>
                       Top Performing Content
@@ -2281,12 +2511,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
               <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
                 {/* B. UPCOMING SCHEDULE */}
                 <div
-                  style={{
-                    background: "white",
-                    borderRadius: 24,
-                    border: "1px solid rgba(44,32,22,0.05)",
-                    padding: 32,
-                  }}
+                  className="bg-white rounded-[24px] border border-[rgba(44,32,22,0.05)] p-6 lg:p-8"
                 >
                   <div
                     style={{
@@ -6680,44 +6905,14 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
           </div>
         )}
       </div>
-
-      {/* Create Post Popup */}
-      <AnimatePresence>
-        {showCreatePostPopup && (
-          <div
-            style={{
-              position: "fixed",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              background: "rgba(0,0,0,0.5)",
-              zIndex: 9999,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: 24,
-            }}
-            onClick={() => setShowCreatePostPopup(false)}
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              onClick={(e) => e.stopPropagation()}
-              style={{
-                background: "white",
-                borderRadius: 24,
-                width: 1000,
-                maxWidth: "95%",
-                maxHeight: "90vh",
-                boxShadow: "0 10px 40px rgba(0,0,0,0.15)",
-                display: "flex",
-                flexDirection: "column",
-                overflow: "hidden",
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 28px", borderBottom: "1px solid rgba(44,32,22,0.05)", flexShrink: 0 }}>
+      ) : (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          className="flex-1 min-h-0 flex flex-col bg-white overflow-hidden"
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 28px", borderBottom: "1px solid rgba(44,32,22,0.05)", flexShrink: 0 }}>
                 <h2 style={{ fontSize: 18, fontWeight: 800, margin: 0, color: "#2C2016" }}>Create a Post</h2>
                 <button
                   onClick={() => setShowCreatePostPopup(false)}
@@ -6733,193 +6928,157 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                   <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
                     <div>
                       <label style={{ fontSize: 13, fontWeight: 700, color: "rgba(44,32,22,0.5)", marginBottom: 12, display: "block", textTransform: "uppercase", letterSpacing: 0.5 }}>Platform</label>
-                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                        {PLATFORMS.filter(p => p.id !== "all").map(p => {
-                          const isSelected = createPostPlatforms.includes(p.id);
-                          return (
-                            <div
-                              key={p.id}
-                              onClick={() => {
-                                if (isSelected) {
-                                  setCreatePostPlatforms(prev => prev.filter(id => id !== p.id));
-                                } else {
-                                  setCreatePostPlatforms(prev => [...prev, p.id]);
-                                }
-                              }}
-                              title={p.name}
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                width: 36,
-                                height: 36,
-                                borderRadius: 18,
-                                border: isSelected ? "none" : "1px solid rgba(44,32,22,0.08)",
-                                background: isSelected ? p.color : "transparent",
-                                color: isSelected ? "white" : "rgba(44,32,22,0.4)",
-                                cursor: "pointer",
-                                transition: "all 0.2s",
-                              }}
-                              className={!isSelected ? "hover-bg" : ""}
-                            >
-                              {typeof p.icon === "string" ? <span style={{fontWeight: 800, fontSize: 12}}>{p.icon}</span> : React.cloneElement(p.icon as React.ReactElement, { size: 16 })}
+                      <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+                        {PLATFORMS.filter(p => p.id !== "all" && connectedPlatforms.includes(p.id)).length === 0 ? (
+                           <div style={{ fontSize: 13, color: "rgba(44,32,22,0.5)" }}>Silakan hubungkan akun di pengaturan terlebih dahulu.</div>
+                        ) : (
+                            PLATFORMS.filter(p => p.id !== "all" && connectedPlatforms.includes(p.id)).map(p => {
+                              const isSelected = createPostPlatforms.includes(p.id);
+                              return (
+                                <div key={p.id} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                                    <div
+                                      onClick={() => {
+                                    if (isSelected) {
+                                      setCreatePostPlatforms(prev => prev.filter(id => id !== p.id));
+                                      setCreatePostPlatformTypes(prev => {
+                                          const next = {...prev};
+                                          delete next[p.id];
+                                          return next;
+                                      })
+                                    } else {
+                                      setCreatePostPlatforms(prev => [...prev, p.id]);
+                                      if (p.contentTypes && p.contentTypes.length > 0) {
+                                          setCreatePostPlatformTypes(prev => ({...prev, [p.id]: p.contentTypes![0].id}));
+                                      }
+                                    }
+                                  }}
+                                  title={p.name}
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 8,
+                                    padding: "6px 16px 6px 6px",
+                                    borderRadius: 20,
+                                    border: isSelected ? "none" : "1px solid rgba(44,32,22,0.08)",
+                                    background: isSelected ? p.color : "transparent",
+                                    color: isSelected ? "white" : "rgba(44,32,22,0.6)",
+                                    cursor: "pointer",
+                                    transition: "all 0.2s",
+                                    fontWeight: 600,
+                                    fontSize: 13,
+                                  }}
+                                  className={!isSelected ? "hover-bg" : ""}
+                                >
+                                  <div style={{
+                                      width: 28, 
+                                      height: 28, 
+                                      borderRadius: 14, 
+                                      background: isSelected ? "rgba(255,255,255,0.2)" : "rgba(44,32,22,0.05)",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      justifyContent: "center"
+                                  }}>
+                                    {typeof p.icon === "string" ? <span style={{fontWeight: 800, fontSize: 12}}>{p.icon}</span> : React.cloneElement(p.icon as React.ReactElement, { size: 14 })}
+                                  </div>
+                                  <span>{p.name}</span>
+                                </div>
                             </div>
                           );
-                        })}
-                      </div>
-                    </div>
-
-                    <div style={{ display: "flex", flexDirection: "column" }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                        <label style={{ fontSize: 13, fontWeight: 700, color: "rgba(44,32,22,0.5)", margin: 0, display: "block", textTransform: "uppercase", letterSpacing: 0.5 }}>Caption</label>
-                        <button style={{ background: "transparent", color: "var(--theme-primary)", border: "none", padding: 0, fontSize: 12, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }} className="hover-scale">
-                          <Sparkles size={14} /> Generate AI
-                        </button>
-                      </div>
-                      <textarea
-                        value={createPostCaption}
-                        onChange={(e) => setCreatePostCaption(e.target.value)}
-                        placeholder="What's on your mind?"
-                        style={{
-                          width: "100%",
-                          minHeight: 120,
-                          borderRadius: 16,
-                          border: "none",
-                          background: "rgba(44,32,22,0.03)",
-                          padding: "16px",
-                          fontSize: 14,
-                          resize: "vertical",
-                          outline: "none",
-                          fontFamily: "inherit",
-                          lineHeight: 1.6,
-                          color: "#2C2016",
-                          transition: "all 0.2s"
-                        }}
-                        onFocus={(e) => e.target.style.background = "rgba(44,32,22,0.06)"}
-                        onBlur={(e) => e.target.style.background = "rgba(44,32,22,0.03)"}
-                      />
-                    </div>
-                    
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-                       <div style={{ display: "flex", flexDirection: "column" }}>
-                         <label style={{ fontSize: 13, fontWeight: 700, color: "rgba(44,32,22,0.5)", marginBottom: 12, display: "block", textTransform: "uppercase", letterSpacing: 0.5 }}>First Comment</label>
-                         <input
-                            type="text"
-                            placeholder="#hashtag..."
-                            style={{
-                              width: "100%",
-                              borderRadius: 12,
-                              border: "none",
-                              background: "rgba(44,32,22,0.03)",
-                              padding: "12px 16px",
-                              fontSize: 14,
-                              outline: "none",
-                              fontFamily: "inherit",
-                              color: "#2C2016",
-                              transition: "all 0.2s"
-                            }}
-                            onFocus={(e) => e.target.style.background = "rgba(44,32,22,0.06)"}
-                            onBlur={(e) => e.target.style.background = "rgba(44,32,22,0.03)"}
-                          />
-                       </div>
-                       <div style={{ display: "flex", flexDirection: "column" }}>
-                         <label style={{ fontSize: 13, fontWeight: 700, color: "rgba(44,32,22,0.5)", marginBottom: 12, display: "block", textTransform: "uppercase", letterSpacing: 0.5 }}>Location</label>
-                         <input
-                            type="text"
-                            placeholder="Jakarta, Indonesia"
-                            style={{
-                              width: "100%",
-                              borderRadius: 12,
-                              border: "none",
-                              background: "rgba(44,32,22,0.03)",
-                              padding: "12px 16px",
-                              fontSize: 14,
-                              outline: "none",
-                              fontFamily: "inherit",
-                              color: "#2C2016",
-                              transition: "all 0.2s"
-                            }}
-                            onFocus={(e) => e.target.style.background = "rgba(44,32,22,0.06)"}
-                            onBlur={(e) => e.target.style.background = "rgba(44,32,22,0.03)"}
-                          />
-                       </div>
-                    </div>
-
-                    <div>
-                      <label style={{ fontSize: 13, fontWeight: 700, color: "rgba(44,32,22,0.5)", marginBottom: 12, display: "block", textTransform: "uppercase", letterSpacing: 0.5 }}>Media</label>
-                      <div
-                        style={{
-                          width: "100%",
-                          height: 140,
-                          borderRadius: 16,
-                          border: "none",
-                          background: "rgba(44,32,22,0.03)",
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          gap: 12,
-                          cursor: "pointer",
-                          color: "rgba(44,32,22,0.5)",
-                          position: "relative",
-                          transition: "all 0.2s"
-                        }}
-                        className="hover-bg"
-                        onClick={() => {
-                          const input = document.createElement("input");
-                          input.type = "file";
-                          input.accept = "image/*,video/*";
-                          input.onchange = (e: any) => {
-                            if (e.target.files?.[0]) {
-                              const url = URL.createObjectURL(e.target.files[0]);
-                              setCreatePostImage(url);
-                            }
-                          };
-                          input.click();
-                        }}
-                      >
-                        {createPostImage ? (
-                           <div style={{position: "absolute", top: 0, left: 0, right: 0, bottom: 0, borderRadius: 16, overflow: "hidden", padding: 8}}>
-                             <img src={createPostImage} alt="Preview" style={{width: "100%", height: "100%", objectFit: "cover", borderRadius: 12}} />
-                             <div style={{position: "absolute", top: 16, right: 16, background: "rgba(0,0,0,0.5)", color: "white", width: 28, height: 28, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", backdropFilter: "blur(4px)"}} onClick={(e) => { e.stopPropagation(); setCreatePostImage(null); }} className="hover-scale">
-                               <X size={14}/>
-                             </div>
-                           </div>
-                        ) : (
-                          <>
-                            <div style={{ width: 48, height: 48, borderRadius: 24, background: "rgba(44,32,22,0.04)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                              <Upload size={20} color="rgba(44,32,22,0.5)" />
-                            </div>
-                            <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(44,32,22,0.4)" }}>Click to browse files</div>
-                          </>
+                        })
                         )}
                       </div>
                     </div>
+
+                    {createPostPlatforms.length === 0 ? (
+                        renderEditorBlock(null, null)
+                    ) : (
+                        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                            {createPostPlatforms.map(pId => {
+                                const p = PLATFORMS.find(x => x.id === pId);
+                                if (!p) return null;
+                                const isExpanded = expandedEditPlatforms[pId] !== false;
+                                return (
+                                    <div key={pId} style={{ border: "1px solid rgba(44,32,22,0.08)", borderRadius: 16, overflow: "hidden", background: "white", boxShadow: "0 4px 12px rgba(0,0,0,0.02)" }}>
+                                        <div onClick={() => setExpandedEditPlatforms(prev => ({...prev, [pId]: prev[pId] === false ? true : false}))} style={{ padding: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: isExpanded ? "rgba(44,32,22,0.02)" : "transparent", cursor: "pointer", transition: "all 0.2s" }} className="hover-bg">
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                                <div style={{ width: 24, height: 24, borderRadius: 12, background: p.color, color: "white", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                                    {typeof p.icon === "string" ? <span style={{fontWeight: 800, fontSize: 10}}>{p.icon}</span> : React.cloneElement(p.icon as React.ReactElement, { size: 12 })}
+                                                </div>
+                                                <strong style={{ fontSize: 14, color: "#2C2016" }}>{p.name} Edit</strong>
+                                            </div>
+                                            <ChevronRight size={16} style={{ color: "rgba(44,32,22,0.4)", transform: isExpanded ? "rotate(90deg)" : "none", transition: "transform 0.2s" }} />
+                                        </div>
+                                        <AnimatePresence>
+                                            {isExpanded && (
+                                                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} style={{ overflow: "hidden" }}>
+                                                    <div style={{ borderTop: "1px solid rgba(44,32,22,0.04)" }}>
+                                                        {renderEditorBlock(pId, p)}
+                                                    </div>
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
                   </div>
 
                   <div style={{ display: "flex", flexDirection: "column" }}>
                     <div style={{ display: "flex", flexDirection: "column" }}>
-                      <label style={{ fontSize: 13, fontWeight: 700, color: "rgba(44,32,22,0.5)", marginBottom: 12, display: "block", textTransform: "uppercase", letterSpacing: 0.5 }}>Live Preview</label>
-                      <div style={{ background: "white", borderRadius: 24, overflow: "hidden", border: "1px solid rgba(44,32,22,0.08)", boxShadow: "0 8px 30px rgba(0,0,0,0.04)", display: "flex", flexDirection: "column", height: 620 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 12, padding: 16, flexShrink: 0 }}>
-                          <div style={{ width: 32, height: 32, borderRadius: 16, background: "var(--theme-primary)", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 800 }}>
-                            {workspace?.name?.charAt(0) || "U"}
-                          </div>
-                          <div style={{ fontSize: 14, fontWeight: 700, color: "#2C2016" }}>{workspace?.name || "Workspace"}</div>
-                        </div>
-                        <div style={{ width: "100%", background: "rgba(44,32,22,0.02)", display: "flex", alignItems: "center", justifyContent: "center", flex: 1, position: "relative" }}>
-                          {createPostImage ? (
-                            <img src={createPostImage} alt="Post" style={{ width: "100%", height: "100%", objectFit: "contain", position: "absolute", top: 0, left: 0 }} />
-                          ) : (
-                            <ImageIcon size={40} color="rgba(44,32,22,0.08)" />
-                          )}
-                        </div>
-                        <div style={{ padding: 16, flexShrink: 0, borderTop: "1px solid rgba(44,32,22,0.04)" }}>
-                           <div style={{ fontSize: 13, color: "#2C2016", lineHeight: 1.5, whiteSpace: "pre-wrap", fontWeight: 400, overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical" }}>
-                             {createPostCaption || <span style={{ color: "rgba(44,32,22,0.3)" }}>Your post caption will appear here...</span>}
-                           </div>
-                        </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                        <label style={{ fontSize: 13, fontWeight: 700, color: "rgba(44,32,22,0.5)", margin: 0, display: "block", textTransform: "uppercase", letterSpacing: 0.5 }}>Live Preview</label>
                       </div>
+                      
+                      {createPostPlatforms.length > 1 && (
+                          <div style={{ display: "flex", gap: 8, marginBottom: 12, overflowX: "auto", paddingBottom: 4 }}>
+                              {createPostPlatforms.map(pId => {
+                                  const p = PLATFORMS.find(x => x.id === pId);
+                                  if (!p) return null;
+                                  const isActive = (activePreviewPlatform && createPostPlatforms.includes(activePreviewPlatform)) ? activePreviewPlatform === pId : createPostPlatforms[0] === pId;
+                                  return (
+                                      <div
+                                          key={`preview-tab-${pId}`}
+                                          onClick={() => setActivePreviewPlatform(pId)}
+                                          style={{
+                                              padding: "6px 12px",
+                                              borderRadius: 16,
+                                              fontSize: 12,
+                                              fontWeight: 600,
+                                              cursor: "pointer",
+                                              background: isActive ? p.color : "rgba(44,32,22,0.04)",
+                                              color: isActive ? "white" : "rgba(44,32,22,0.6)",
+                                              display: "flex",
+                                              alignItems: "center",
+                                              gap: 6
+                                          }}
+                                          className={isActive ? "" : "hover-bg"}
+                                      >
+                                          {typeof p.icon === "string" ? <span>{p.icon}</span> : React.cloneElement(p.icon as React.ReactElement, { size: 12 })}
+                                          {p.name}
+                                      </div>
+                                  )
+                              })}
+                          </div>
+                      )}
+
+                      {(() => {
+                          const pId = (createPostPlatforms.length > 0) ? ((activePreviewPlatform && createPostPlatforms.includes(activePreviewPlatform)) ? activePreviewPlatform : createPostPlatforms[0]) : null;
+                          const caption = pId ? (platformOverrides[pId]?.caption ?? createPostCaption) : createPostCaption;
+                          const mediaList = pId ? (platformOverrides[pId]?.media !== undefined ? platformOverrides[pId]?.media : createPostMedia) : createPostMedia;
+                          
+                          return (
+                              <div style={{ display: "flex", justifyContent: "center", alignItems: "center", padding: "10px 0" }}>
+                                <PlatformPreview
+                                  platform={pId || "instagram"}
+                                  contentType={createPostPlatformTypes[pId || ""] || "feed"}
+                                  caption={caption}
+                                  mediaList={mediaList || []}
+                                  workspaceName={workspace?.name || "Workspace"}
+                                />
+                              </div>
+                          );
+                      })()}
                     </div>
                   </div>
                 </div>
@@ -7023,7 +7182,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                     onClick={() => {
                        setShowCreatePostPopup(false);
                        setCreatePostCaption("");
-                       setCreatePostImage(null);
+                       setCreatePostMedia([]);
                        setCreatePostPlatforms([]);
                     }}
                     style={{
@@ -7043,9 +7202,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                 </div>
               </div>
             </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      )}
     </div>
   );
 }

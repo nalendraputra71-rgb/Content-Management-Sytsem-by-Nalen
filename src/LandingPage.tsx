@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Check, Calendar, BarChart2, Zap, Sparkles, LayoutDashboard, Share2, TrendingUp, Users, Clock, Instagram, Twitter, Facebook, CloudRain, CheckCircle, StickyNote, Target, ChevronRight, ChevronDown, Flame, Activity, ArrowLeft, Bell, ChevronUp, PieChart, Search, MessageSquare, LogOut, Cloud, LayoutGrid, Edit2, Eye, Plus, FileText, Menu, Linkedin, Mail, Heart } from 'lucide-react';
+import { Check, Calendar, BarChart2, Zap, Sparkles, LayoutDashboard, Share2, TrendingUp, Users, Clock, Instagram, Twitter, Facebook, CloudRain, CheckCircle, StickyNote, Target, ChevronRight, ChevronDown, Flame, Activity, ArrowLeft, Bell, ChevronUp, PieChart, Search, MessageSquare, LogOut, Cloud, LayoutGrid, Edit2, Eye, Plus, FileText, Menu, Linkedin, Mail, Heart, Home } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 
@@ -355,7 +355,7 @@ export function LandingPage() {
                     </div>
                     <div className="space-y-1">
                       <div className="flex items-center gap-3 px-3 py-2 rounded-xl font-medium text-white/70">
-                        <Activity size={16}/> Overview
+                        <Home size={16}/> Home
                       </div>
                       <div className="flex items-center gap-3 px-3 py-2 rounded-xl font-medium text-white/70">
                         <BarChart2 size={16}/> Analytics Expert
@@ -675,8 +675,8 @@ export function LandingPage() {
                     </div>
                     <div className="flex flex-col gap-1">
                       <div className="flex items-center gap-3 px-2 py-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-white/5 cursor-pointer transition-colors">
-                        <Activity className="w-4 h-4" />
-                        <span className="text-sm font-semibold">Overview</span>
+                        <Home className="w-4 h-4" />
+                        <span className="text-sm font-semibold">Home</span>
                       </div>
                       <div className="flex items-center gap-3 px-2 py-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-white/5 cursor-pointer transition-colors">
                         <BarChart2 className="w-4 h-4" />
