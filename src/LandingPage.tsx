@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Check, Calendar, BarChart2, Zap, Sparkles, LayoutDashboard, Share2, TrendingUp, Users, Clock, Instagram, Twitter, Facebook, CloudRain, CheckCircle, StickyNote, Target, ChevronRight, ChevronDown, Flame, Activity, ArrowLeft, Bell, ChevronUp, PieChart, Search, MessageSquare, LogOut, Cloud, LayoutGrid, Edit2, Eye, Plus, FileText, Menu, Linkedin, Mail } from 'lucide-react';
+import { Check, Calendar, BarChart2, Zap, Sparkles, LayoutDashboard, Share2, TrendingUp, Users, Clock, Instagram, Twitter, Facebook, CloudRain, CheckCircle, StickyNote, Target, ChevronRight, ChevronDown, Flame, Activity, ArrowLeft, Bell, ChevronUp, PieChart, Search, MessageSquare, LogOut, Cloud, LayoutGrid, Edit2, Eye, Plus, FileText, Menu, Linkedin, Mail, Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 
@@ -14,30 +14,30 @@ const analyticsData = [
   { name: 'Sun', views: 3490, engagement: 4300 },
 ];
 
-const faqs = [
+const getFaqs = (lang: string) => [
   {
-    q: "Apa itu Hubify Social?",
-    a: "Hubify Social adalah all-in-one platform untuk manajemen sosial media yang dilengkapi dengan AI untuk membantu kreator dan bisnis merencanakan, membuat, dan menganalisis konten secara lebih efektif."
+    q: lang === 'id' ? "Apa itu Hubify Social?" : "What is Hubify Social?",
+    a: lang === 'id' ? "Hubify Social adalah all-in-one platform untuk manajemen sosial media yang dilengkapi dengan AI untuk membantu kreator dan bisnis merencanakan, membuat, dan menganalisis konten secara lebih efektif." : "Hubify Social is an all-in-one platform for social media management equipped with AI to help creators and businesses plan, create, and analyze content more effectively."
   },
   {
-    q: "Apakah ada versi gratisnya?",
-    a: "Saat ini kami menawarkan masa percobaan (trial) gratis selama 30 hari untuk paket Starter, sehingga Anda dapat mengeksplorasi semua fitur dasar tanpa komitmen kartu kredit."
+    q: lang === 'id' ? "Apakah ada versi gratisnya?" : "Is there a free version?",
+    a: lang === 'id' ? "Saat ini kami menawarkan masa percobaan (trial) gratis selama 30 hari untuk paket Starter, sehingga Anda dapat mengeksplorasi semua fitur dasar tanpa komitmen kartu kredit." : "We currently offer a 30-day free trial for the Starter plan, so you can explore all basic features with no credit card commitment."
   },
   {
-    q: "Apakah saya bisa menghubungkan banyak akun sosial media?",
-    a: "Tentu! Paket Starter kami mendukung hingga 3 integrasi akun sosial media, dan Anda bisa menambahkannya lebih banyak jika mengupgrade ke paket Growth Master."
+    q: lang === 'id' ? "Apakah saya bisa menghubungkan banyak akun sosial media?" : "Can I connect multiple social media accounts?",
+    a: lang === 'id' ? "Tentu! Paket Starter kami mendukung hingga 3 integrasi akun sosial media, dan Anda bisa menambahkannya lebih banyak jika mengupgrade ke paket Growth Master." : "Of course! Our Starter plan supports up to 3 social media account integrations, and you can add more by upgrading to the Growth Master plan."
   },
   {
-    q: "Bagaimana cara kerja AI Generator di Hubify?",
-    a: "AI Generator kami menggunakan teknologi AI yang dilatih khusus untuk menghasilkan caption, ide konten, hingga strategi pilar yang relevan dengan niche audiens Anda dalam hitungan detik."
+    q: lang === 'id' ? "Bagaimana cara kerja AI Generator di Hubify?" : "How does the AI Generator work in Hubify?",
+    a: lang === 'id' ? "AI Generator kami menggunakan teknologi AI yang dilatih khusus untuk menghasilkan caption, ide konten, hingga strategi pilar yang relevan dengan niche audiens Anda dalam hitungan detik." : "Our AI Generator uses AI technology specifically trained to generate captions, content ideas, and pillar strategies relevant to your audience niche in seconds."
   },
   {
-    q: "Apakah data saya aman?",
-    a: "Keamanan data Anda adalah prioritas utama kami. Kami menggunakan infrastruktur standar industri dengan enkripsi data dan secara rutin melakukan audit keamanan untuk memastikan privasi Anda terlindungi."
+    q: lang === 'id' ? "Apakah data saya aman?" : "Is my data secure?",
+    a: lang === 'id' ? "Keamanan data Anda adalah prioritas utama kami. Kami menggunakan infrastruktur standar industri dengan enkripsi data dan secara rutin melakukan audit keamanan untuk memastikan privasi Anda terlindungi." : "Your data security is our top priority. We use industry-standard infrastructure with data encryption and regularly conduct security audits to ensure your privacy is protected."
   },
   {
-    q: "Bisakah saya membatalkan langganan kapan saja?",
-    a: "Tentu saja. Anda dapat membatalkan langganan kapan saja melalui menu pengaturan akun Anda. Akses fitur berbayar akan tetap tersedia hingga akhir siklus penagihan Anda."
+    q: lang === 'id' ? "Bisakah saya membatalkan langganan kapan saja?" : "Can I cancel my subscription at any time?",
+    a: lang === 'id' ? "Tentu saja. Anda dapat membatalkan langganan kapan saja melalui menu pengaturan akun Anda. Akses fitur berbayar akan tetap tersedia hingga akhir siklus penagihan Anda." : "Absolutely. You can cancel your subscription at any time through your account settings menu. Access to paid features will remain available until the end of your billing cycle."
   }
 ];
 
@@ -77,6 +77,15 @@ export function LandingPage() {
   const [scrollY, setScrollY] = useState(0);
   const [calendarViewIdx, setCalendarViewIdx] = useState(0);
   const [dragOverDate, setDragOverDate] = useState<number | null>(null);
+
+  const [lang, setLang] = useState<'id' | 'en'>(() => {
+    return (localStorage.getItem('hubify_locale') as 'id' | 'en') || 'en';
+  });
+
+  const handleLangChange = (l: 'id' | 'en') => {
+    setLang(l);
+    localStorage.setItem('hubify_locale', l);
+  };
 
   const [calendarItems, setCalendarItems] = useState([
     { id: 'item-1', date: 1, label: 'Welcome June! ☀️', initial: 'IG', color: 'bg-blue-100 text-blue-700' },
@@ -157,14 +166,14 @@ export function LandingPage() {
           </div>
           
           <nav className="hidden md:flex gap-8 items-center font-semibold text-sm text-[#1D4D7A]">
-            <a href="#fitur" className="hover:text-[#0B2A4A] transition-colors">Fitur</a>
-            <a href="#analitik" className="hover:text-[#0B2A4A] transition-colors">Analitik</a>
-            <a href="#harga" className="hover:text-[#0B2A4A] transition-colors">Harga</a>
+            <a href="#fitur" className="hover:text-[#0B2A4A] transition-colors">{lang === 'id' ? 'Fitur' : 'Features'}</a>
+            <a href="#analitik" className="hover:text-[#0B2A4A] transition-colors">{lang === 'id' ? 'Analitik' : 'Analytics'}</a>
+            <a href="#harga" className="hover:text-[#0B2A4A] transition-colors">{lang === 'id' ? 'Harga' : 'Pricing'}</a>
           </nav>
 
           <div className="flex items-center gap-4">
-            <button onClick={() => navigate('/login', { state: { mode: 'login' }})} className="hidden sm:block text-sm font-bold text-[#1D4D7A] hover:text-[#0B2A4A] transition-colors">Masuk</button>
-            <button onClick={() => navigate('/login', { state: { mode: 'signup' }})} className="bg-[#1D4D7A] text-white text-sm font-bold py-2.5 px-5 rounded-full hover:bg-[#0B2A4A] transition-all transform hover:scale-105 active:scale-95 shadow-lg shadow-[#1D4D7A]/20">Mulai Gratis</button>
+            <button onClick={() => navigate('/login', { state: { mode: 'login' }})} className="hidden sm:block text-sm font-bold text-[#1D4D7A] hover:text-[#0B2A4A] transition-colors">{lang === 'id' ? 'Masuk' : 'Login'}</button>
+            <button onClick={() => navigate('/login', { state: { mode: 'signup' }})} className="bg-[#1D4D7A] text-white text-sm font-bold py-2.5 px-5 rounded-full hover:bg-[#0B2A4A] transition-all transform hover:scale-105 active:scale-95 shadow-lg shadow-[#1D4D7A]/20">{lang === 'id' ? 'Mulai Gratis' : 'Start for Free'}</button>
           </div>
         </div>
       </header>
@@ -233,8 +242,8 @@ export function LandingPage() {
             animate={{ opacity: 1, y: 0 }}
             className="text-[28px] sm:text-4xl md:text-5xl lg:text-[57px] font-extrabold tracking-tight text-[#0B2A4A] leading-[1.1] mb-6 flex flex-col items-center text-center w-full"
           >
-            <span className="whitespace-nowrap">Satu Dashboard. Semua Konten.</span>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1D4D7A] to-blue-500 mt-2 md:mt-4">Markas Besar Kreativitasmu.</span>
+            <span className="whitespace-nowrap">{lang === 'id' ? 'Satu Dashboard. Semua Konten.' : 'One Dashboard. All Content.'}</span>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1D4D7A] to-blue-500 mt-2 md:mt-4">{lang === 'id' ? 'Markas Besar Kreativitasmu.' : 'Your Creative Headquarters.'}</span>
           </motion.h1>
           <motion.p 
             initial={{ opacity: 0, y: 20 }}
@@ -242,7 +251,9 @@ export function LandingPage() {
             transition={{ delay: 0.1 }}
             className="text-lg md:text-xl text-slate-600 max-w-2xl mx-auto mb-10 leading-relaxed"
           >
-            Rancang, jadwalin, dan viralin kontenmu tanpa ribet. Hubify Social menggabungkan kalender cerdas, asisten AI, dan analitik mendalam untuk bantu kamu kuasai algoritma.
+            {lang === 'id' 
+              ? 'Rancang, jadwalin, dan viralin kontenmu tanpa ribet. Hubify Social menggabungkan kalender cerdas, asisten AI, dan analitik mendalam untuk bantu kamu kuasai algoritma.' 
+              : 'Design, schedule, and make your content go viral without the hassle. Hubify Social combines smart calendars, AI assistants, and deep analytics to help you master the algorithm.'}
           </motion.p>
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
@@ -251,10 +262,10 @@ export function LandingPage() {
             className="flex flex-col sm:flex-row gap-4 justify-center"
           >
             <button onClick={() => navigate('/login', { state: { mode: 'signup' }})} className="bg-[#1D4D7A] text-white font-bold py-4 px-8 rounded-full text-lg hover:bg-[#0B2A4A] transition-all transform hover:scale-105 active:scale-95 shadow-xl shadow-[#1D4D7A]/20 flex items-center justify-center gap-2">
-              Gas Sekarang! — Gratis 30 Hari <Zap size={20} className="text-yellow-400" />
+              {lang === 'id' ? 'Gas Sekarang! — Gratis 30 Hari' : 'Start Now! — 30 Days Free'} <Zap size={20} className="text-yellow-400" />
             </button>
             <button onClick={() => { document.getElementById('dashboard-visual')?.scrollIntoView({ behavior: 'smooth' }); }} className="bg-white text-[#1D4D7A] font-bold py-4 px-8 rounded-full text-lg border border-black/5 hover:border-black/10 hover:shadow-md transition-all flex items-center justify-center gap-2">
-              <LayoutDashboard size={20} /> Lihat Interfacenya
+              <LayoutDashboard size={20} /> {lang === 'id' ? 'Lihat Interfacenya' : 'See the Interface'}
             </button>
           </motion.div>
         </div>
@@ -575,8 +586,8 @@ export function LandingPage() {
       {/* Features Bento Grid */}
       <section id="fitur" className="py-24 px-6 max-w-7xl mx-auto">
         <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-5xl font-extrabold text-[#0B2A4A] mb-4">Senjata Rahasia <span className="text-[#1D4D7A]">Content Creator</span></h2>
-          <p className="text-lg text-slate-500 max-w-2xl mx-auto">Dirancang bukan sekedar menyimpan ide, tapi untuk mengeksekusi tren lebih cepat, lebih cerdas.</p>
+          <h2 className="text-3xl md:text-5xl font-extrabold text-[#0B2A4A] mb-4">{lang === 'id' ? 'Senjata Rahasia' : "The Secret Weapon for"} <span className="text-[#1D4D7A]">Content Creator</span></h2>
+          <p className="text-lg text-slate-500 max-w-2xl mx-auto">{lang === 'id' ? 'Dirancang bukan sekedar menyimpan ide, tapi untuk mengeksekusi tren lebih cepat, lebih cerdas.' : 'Designed not just to store ideas, but to execute trends faster and smarter.'}</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -587,7 +598,7 @@ export function LandingPage() {
                 <Calendar size={24} />
               </div>
               <h3 className="text-2xl font-bold text-[#0B2A4A] mb-3">Multi-View Calendar</h3>
-              <p className="text-slate-600">Atur strategi besarmu dengan Board, Timeline, Tabel, atau Calendar view. Geser dan jatuhkan idemu seolah sedang bermain Lego.</p>
+              <p className="text-slate-600">{lang === 'id' ? 'Atur strategi besarmu dengan Board, Timeline, Tabel, atau Calendar view. Geser dan jatuhkan idemu seolah sedang bermain Lego.' : 'Manage your grand strategy with Board, Timeline, Table, or Calendar view. Drag and drop your ideas as if you were playing Lego.'}</p>
             </div>
             {/* Visual stacked securely below text */}
             <div className="flex-1 w-full bg-[#f8f9fa] rounded-2xl border border-black/5 flex flex-row relative overflow-hidden min-h-[550px]">
@@ -869,16 +880,16 @@ export function LandingPage() {
                 <Sparkles size={24} className="text-yellow-400" />
               </div>
               <h3 className="text-2xl font-bold mb-3">AI Copilot</h3>
-              <p className="text-slate-300 mb-8">Habis ide caption? Hubify Social AI siapkan naskah, hashtag, hingga visual ide dalam detik.</p>
+              <p className="text-slate-300 mb-8">{lang === 'id' ? 'Habis ide caption? Hubify Social AI siapkan naskah, hashtag, hingga visual ide dalam detik.' : 'Ran out of caption ideas? Hubify Social AI prepares scripts, hashtags, and visual ideas in seconds.'}</p>
               
               <div className="bg-white/10 backdrop-blur rounded-xl p-4 border border-white/10 mt-auto">
                  <div className="flex gap-2 mb-3 items-end">
-                   <div className="bg-white/20 p-2 rounded-lg rounded-bl-none text-xs w-[90%]">Ide konten makanan untuk 17an...</div>
+                   <div className="bg-white/20 p-2 rounded-lg rounded-bl-none text-xs w-[90%]">{lang === 'id' ? 'Ide konten makanan untuk 17an...' : 'Food content ideas for Independence Day...'}</div>
                  </div>
                  <div className="flex gap-2 items-start flex-row-reverse">
                    <div className="bg-gradient-to-r from-blue-500 to-purple-500 p-2 rounded-lg rounded-br-none text-xs w-[95%] text-left shadow-lg">
-                     <p className="font-bold mb-1">Ide 1: "Nasi Merdeka"</p>
-                     <p className="text-[10px] text-white/80 leading-snug">Hook: Siapa bilang 17an cuma lomba balap karung?</p>
+                     <p className="font-bold mb-1">{lang === 'id' ? 'Ide 1: "Nasi Merdeka"' : 'Idea 1: "Merdeka Rice"'}</p>
+                     <p className="text-[10px] text-white/80 leading-snug">{lang === 'id' ? 'Hook: Siapa bilang 17an cuma lomba balap karung?' : 'Hook: Who says Independence Day is only sack races?'}</p>
                    </div>
                  </div>
               </div>
@@ -892,8 +903,8 @@ export function LandingPage() {
                 <div className="w-12 h-12 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center mb-6">
                   <Share2 size={24} />
                 </div>
-                <h3 className="text-3xl font-bold text-[#0B2A4A] mb-4">Integrasi Tanpa Batas</h3>
-                <p className="text-slate-600 text-lg">Hubungkan semua platform dalam satu ekosistem. Distribusi konten kini cuma butuh satu kali klik, sisanya biar sistem yang urus.</p>
+                <h3 className="text-3xl font-bold text-[#0B2A4A] mb-4">{lang === 'id' ? 'Integrasi Tanpa Batas' : 'Limitless Integration'}</h3>
+                <p className="text-slate-600 text-lg">{lang === 'id' ? 'Hubungkan semua platform dalam satu ekosistem. Distribusi konten kini cuma butuh satu kali klik, sisanya biar sistem yang urus.' : 'Connect all platforms in one ecosystem. Content distribution now only takes one click, let the system handle the rest.'}</p>
              </div>
              
              {/* Visual Orbit/Nodes */}
@@ -931,17 +942,21 @@ export function LandingPage() {
             
             <div className="w-full lg:w-2/5">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm font-bold mb-6">
-                <TrendingUp size={16} /> Insight Mendalam
+                <TrendingUp size={16} /> {lang === 'id' ? 'Insight Mendalam' : 'Deep Insights'}
               </div>
-              <h2 className="text-3xl md:text-5xl font-extrabold text-[#0B2A4A] mb-6 leading-tight">Berhenti Menebak,<br/>Mulai Menganalisa.</h2>
-              <p className="text-lg text-slate-500 mb-8">Ketahui pasti kapan audiensmu aktif, konten mana yang paling mendatangkan cuan, dan optimasi jadwal postingmu berdasarkan data nyata.</p>
+              <h2 className="text-3xl md:text-5xl font-extrabold text-[#0B2A4A] mb-6 leading-tight">{lang === 'id' ? 'Berhenti Menebak,' : 'Stop Guessing,'}<br/>{lang === 'id' ? 'Mulai Menganalisa.' : 'Start Analyzing.'}</h2>
+              <p className="text-lg text-slate-500 mb-8">{lang === 'id' ? 'Ketahui pasti kapan audiensmu aktif, konten mana yang paling mendatangkan cuan, dan optimasi jadwal postingmu berdasarkan data nyata.' : 'Know exactly when your audience is active, which content brings the most profit, and optimize your posting schedule based on real data.'}</p>
               
               <ul className="space-y-4">
-                {[
+                {(lang === 'id' ? [
                   "Pelajari Heatmap 'Best Time to Upload'",
                   "Bandingkan performa Multi-Platform dalam satu layar",
                   "Laporan otomatis 10 Konten Terbaik vs Terburuk"
-                ].map((item, i) => (
+                ] : [
+                  "Study the 'Best Time to Upload' Heatmap",
+                  "Compare Multi-Platform performance on one screen",
+                  "Automated report of Top 10 Best vs Worst Content"
+                ]).map((item, i) => (
                   <li key={i} className="flex items-center gap-3 text-[#0B2A4A] font-medium">
                     <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center text-green-600 shrink-0"><Check size={14} /></div>
                     {item}
@@ -1031,8 +1046,8 @@ export function LandingPage() {
       <section id="harga" className="py-24 px-6 bg-slate-50">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-extrabold text-[#0B2A4A] mb-4">Mulai Secara Gratis.<br/>Upgrade Saat Tumbuh.</h2>
-            <p className="text-lg text-slate-500 max-w-2xl mx-auto">Tanpa komitmen kartu kredit. Semua paket sudah termasuk akses ke fitur dasar Hubify Social.</p>
+            <h2 className="text-3xl md:text-5xl font-extrabold text-[#0B2A4A] mb-4">{lang === 'id' ? 'Mulai Secara Gratis.' : 'Start for Free.'}<br/>{lang === 'id' ? 'Upgrade Saat Tumbuh.' : 'Upgrade As You Grow.'}</h2>
+            <p className="text-lg text-slate-500 max-w-2xl mx-auto">{lang === 'id' ? 'Tanpa komitmen kartu kredit. Semua paket sudah termasuk akses ke fitur dasar Hubify Social.' : 'No credit card required. All plans include access to basic Hubify Social features.'}</p>
           </div>
           
           <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto items-stretch">
@@ -1047,11 +1062,11 @@ export function LandingPage() {
                     <span className="text-slate-500 pb-1 font-semibold">/bulan</span>
                   </div>
                 </div>
-                <p className="text-slate-500 text-sm">Sempurna untuk kreator solo yang ingin lebih fleksibel tanpa komitmen jangka panjang.</p>
+                <p className="text-slate-500 text-sm">{lang === 'id' ? 'Sempurna untuk kreator solo yang ingin lebih fleksibel tanpa komitmen jangka panjang.' : 'Perfect for solo creators who want more flexibility without long-term commitment.'}</p>
               </div>
               
               <ul className="space-y-4 mb-8 flex-1">
-                {["Akses AI Generator", "Multi-View Calendar", "Integrasi 3 Akun Sosmed", "Analitik Dasar", "Email Support"].map((f, i) => (
+                {(lang === 'id' ? ["Akses AI Generator", "Multi-View Calendar", "Integrasi 3 Akun Sosmed", "Analitik Dasar", "Email Support"] : ["AI Generator Access", "Multi-View Calendar", "3 Social Accounts Integration", "Basic Analytics", "Email Support"]).map((f, i) => (
                   <li key={i} className="flex gap-3 text-slate-700 font-medium items-start">
                     <Check size={20} className="text-blue-500 shrink-0 mt-0.5" /> <span>{f}</span>
                   </li>
@@ -1059,14 +1074,14 @@ export function LandingPage() {
               </ul>
               
               <button onClick={() => navigate('/login', { state: { mode: 'signup' }})} className="w-full py-4 rounded-xl font-bold bg-[#FAFAFA] text-[#0B2A4A] border border-black/10 hover:bg-slate-100 transition-colors mt-auto">
-                Mulai Trial 30 Hari
+                {lang === 'id' ? 'Mulai Trial 30 Hari' : 'Start 30-Day Trial'}
               </button>
             </div>
 
             {/* Premium */}
             <div className="bg-[#0B2A4A] rounded-3xl p-8 shadow-2xl border border-blue-900 flex flex-col relative h-full">
               <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-wider shadow-lg">
-                Paling Laris
+                {lang === 'id' ? 'Paling Laris' : 'Best Seller'}
               </div>
               <div className="mb-8 mt-2">
                 <div className="text-xl font-bold text-white mb-2">Growth Master</div>
@@ -1074,14 +1089,14 @@ export function LandingPage() {
                   <span className="text-sm font-semibold text-blue-300/60 line-through decoration-blue-300/40">Rp 1.788.000</span>
                   <div className="flex items-end gap-1">
                     <span className="text-4xl font-extrabold text-white">Rp 849.000</span>
-                    <span className="text-blue-200 pb-1 font-semibold">/tahun</span>
+                    <span className="text-blue-200 pb-1 font-semibold">{lang === 'id' ? '/tahun' : '/year'}</span>
                   </div>
                 </div>
-                <p className="text-blue-200 text-sm">Hemat lebih dari 20%. Solusi pro untuk agensi & korporat yang mengejar target agresif.</p>
+                <p className="text-blue-200 text-sm">{lang === 'id' ? 'Hemat lebih dari 20%. Solusi pro untuk agensi & korporat yang mengejar target agresif.' : 'Save over 20%. Pro solution for agencies & corporates chasing aggressive targets.'}</p>
               </div>
               
               <ul className="space-y-4 mb-8 flex-1">
-                {["Semua fitur Monthly, PLUS:", "Priority Support 24/7", "Export Report PDF", "Unlimited AI Prompts", "Akses Beta Fitur Baru"].map((f, i) => (
+                {(lang === 'id' ? ["Semua fitur Monthly, PLUS:", "Priority Support 24/7", "Export Report PDF", "Unlimited AI Prompts", "Akses Beta Fitur Baru"] : ["All Monthly features, PLUS:", "24/7 Priority Support", "Export PDF Report", "Unlimited AI Prompts", "Beta Access to New Features"]).map((f, i) => (
                   <li key={i} className="flex gap-3 text-white font-medium items-start">
                     <Check size={20} className="text-blue-400 shrink-0 mt-0.5" /> <span>{f}</span>
                   </li>
@@ -1089,7 +1104,7 @@ export function LandingPage() {
               </ul>
               
               <button onClick={() => navigate('/login', { state: { mode: 'signup' }})} className="w-full py-4 rounded-xl font-bold bg-white text-[#0B2A4A] hover:bg-blue-50 transition-colors shadow-lg mt-auto">
-                Ambil Paket Tahunan
+                {lang === 'id' ? 'Ambil Paket Tahunan' : 'Get Annual Plan'}
               </button>
             </div>
           </div>
@@ -1100,11 +1115,11 @@ export function LandingPage() {
       <section className="py-24 px-6 bg-white">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-extrabold text-[#0B2A4A] mb-4">Pertanyaan yang Sering Diajukan</h2>
-            <p className="text-lg text-slate-500">Temukan jawaban untuk pertanyaan umum tentang Hubify Social.</p>
+            <h2 className="text-3xl md:text-5xl font-extrabold text-[#0B2A4A] mb-4">{lang === 'id' ? 'Pertanyaan yang Sering Diajukan' : 'Frequently Asked Questions'}</h2>
+            <p className="text-lg text-slate-500">{lang === 'id' ? 'Temukan jawaban untuk pertanyaan umum tentang Hubify Social.' : 'Find answers to common questions about Hubify Social.'}</p>
           </div>
           <div className="space-y-4">
-            {faqs.map((faq, idx) => (
+            {getFaqs(lang).map((faq, idx) => (
               <div key={idx}>
                 <FAQItem faq={faq} />
               </div>
@@ -1117,42 +1132,91 @@ export function LandingPage() {
       <section className="py-24 px-6 bg-gradient-to-br from-[#0B2A4A] to-[#1D4D7A] text-white text-center relative overflow-hidden">
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5 mix-blend-overlay"></div>
         <div className="max-w-3xl mx-auto relative z-10">
-          <h2 className="text-3xl md:text-5xl font-extrabold mb-6">Siap Jadikan Kontenmu Level Selanjutnya?</h2>
-          <p className="text-blue-100 text-lg mb-10">Ribuan kreator sudah menghemat berjam-jam waktu mingguan mereka. Sekarang giliranmu.</p>
+          <h2 className="text-3xl md:text-5xl font-extrabold mb-6">{lang === 'id' ? 'Siap Jadikan Kontenmu Level Selanjutnya?' : 'Ready to Take Your Content to the Next Level?'}</h2>
+          <p className="text-blue-100 text-lg mb-10">{lang === 'id' ? 'Ribuan kreator sudah menghemat berjam-jam waktu mingguan mereka. Sekarang giliranmu.' : 'Thousands of creators have saved hours of their weekly time. Now it\'s your turn.'}</p>
           <button onClick={() => navigate('/login', { state: { mode: 'signup' }})} className="bg-white text-[#0B2A4A] font-bold py-4 px-10 rounded-full text-lg hover:shadow-2xl hover:scale-105 active:scale-95 transition-all">
-            Mulai Bangun Markasmu 🚀
+            {lang === 'id' ? 'Mulai Bangun Markasmu 🚀' : 'Start Building Your HQ 🚀'}
           </button>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-black text-white py-12 px-6 text-sm">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
-          <div className="flex flex-col gap-4">
-            <div className="font-extrabold text-2xl tracking-tight">Hubify Social</div>
-            <div className="flex items-center gap-4 text-slate-400">
-              <a href="https://instagram.com/hubifysocial" target="_blank" rel="noreferrer" className="hover:text-white transition-colors">
-                <Instagram size={20} />
-              </a>
-              <a href="https://twitter.com/hubifysocial" target="_blank" rel="noreferrer" className="hover:text-white transition-colors">
-                <Twitter size={20} />
-              </a>
-              <a href="https://linkedin.com/company/hubifysocial" target="_blank" rel="noreferrer" className="hover:text-white transition-colors">
-                <Linkedin size={20} />
-              </a>
-              <a href="mailto:support@hubifysocial.com" className="hover:text-white transition-colors flex items-center gap-2">
-                <Mail size={20} />
-                <span className="font-medium text-sm">support@hubifysocial.com</span>
-              </a>
+      <footer className="bg-white border-t border-slate-200 pt-20 pb-10 px-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-12 mb-16">
+            
+            {/* Brand & Social */}
+            <div className="md:col-span-5 flex flex-col gap-6">
+              <div className="font-extrabold text-2xl tracking-tight text-[#0B2A4A]">Hubify Social</div>
+              <p className="text-slate-500 text-sm leading-relaxed max-w-sm">
+                {lang === 'id' 
+                  ? 'Platform manajemen media sosial cerdas untuk kreator dan bisnis. Jadwalkan, analisis, dan berkolaborasi dalam satu markas pintar.' 
+                  : 'Smart social media management platform for creators and businesses. Schedule, analyze, and collaborate in one smart hub.'}
+              </p>
+              <div className="flex items-center gap-5 text-slate-400 mt-2">
+                <a href="https://instagram.com/hubifysocial" target="_blank" rel="noreferrer" className="p-2 rounded-full bg-slate-50 hover:bg-slate-100 hover:text-blue-600 transition-all">
+                  <Instagram size={18} />
+                </a>
+                <a href="https://twitter.com/hubifysocial" target="_blank" rel="noreferrer" className="p-2 rounded-full bg-slate-50 hover:bg-slate-100 hover:text-blue-400 transition-all">
+                  <Twitter size={18} />
+                </a>
+                <a href="https://linkedin.com/company/hubifysocial" target="_blank" rel="noreferrer" className="p-2 rounded-full bg-slate-50 hover:bg-slate-100 hover:text-blue-700 transition-all">
+                  <Linkedin size={18} />
+                </a>
+                <a href="mailto:support@hubifysocial.com" className="p-2 rounded-full bg-slate-50 hover:bg-slate-100 hover:text-red-500 transition-all">
+                  <Mail size={18} />
+                </a>
+              </div>
+              
+              <div className="flex bg-slate-50 p-1 rounded-full items-center border border-slate-200 w-fit mt-2">
+                <button 
+                  onClick={() => handleLangChange('id')} 
+                  className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${lang === 'id' ? 'bg-white text-[#0B2A4A] shadow-sm border border-slate-200' : 'text-slate-500 hover:text-[#0B2A4A] bg-transparent'}`}
+                >
+                  ID
+                </button>
+                <button 
+                  onClick={() => handleLangChange('en')} 
+                  className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${lang === 'en' ? 'bg-white text-[#0B2A4A] shadow-sm border border-slate-200' : 'text-slate-500 hover:text-[#0B2A4A] bg-transparent'}`}
+                >
+                  EN
+                </button>
+              </div>
             </div>
+
+            {/* Empty space for layout */}
+            <div className="hidden md:block md:col-span-1"></div>
+
+            {/* Links - Company */}
+            <div className="md:col-span-2 flex flex-col gap-4">
+              <h4 className="font-bold text-[#0B2A4A] mb-2 uppercase tracking-wider text-xs">{lang === 'id' ? 'Produk' : 'Product'}</h4>
+              <button onClick={() => { document.getElementById('fitur')?.scrollIntoView({ behavior: 'smooth' }); }} className="text-slate-500 hover:text-blue-600 transition-colors font-medium text-sm text-left">{lang === 'id' ? 'Fitur Unggulan' : 'Features'}</button>
+              <button onClick={() => { document.getElementById('harga')?.scrollIntoView({ behavior: 'smooth' }); }} className="text-slate-500 hover:text-blue-600 transition-colors font-medium text-sm text-left">{lang === 'id' ? 'Paket Harga' : 'Pricing'}</button>
+              <Link to="/guides" className="text-slate-500 hover:text-blue-600 transition-colors font-medium text-sm">{lang === 'id' ? 'Panduan Penggunaan' : 'Guides'}</Link>
+              <Link to="/faq" className="text-slate-500 hover:text-blue-600 transition-colors font-medium text-sm">FAQ</Link>
+            </div>
+
+            <div className="md:col-span-2 flex flex-col gap-4">
+              <h4 className="font-bold text-[#0B2A4A] mb-2 uppercase tracking-wider text-xs">{lang === 'id' ? 'Perusahaan' : 'Company'}</h4>
+              <Link to="/about" className="text-slate-500 hover:text-blue-600 transition-colors font-medium text-sm">{lang === 'id' ? 'Tentang Kami' : 'About Us'}</Link>
+              <a href="mailto:support@hubifysocial.com" className="text-slate-500 hover:text-blue-600 transition-colors font-medium text-sm">{lang === 'id' ? 'Hubungi Kami' : 'Contact Us'}</a>
+            </div>
+
+            {/* Links - Legal */}
+            <div className="md:col-span-2 flex flex-col gap-4">
+              <h4 className="font-bold text-[#0B2A4A] mb-2 uppercase tracking-wider text-xs">Legal</h4>
+              <Link to="/privacy" className="text-slate-500 hover:text-blue-600 transition-colors font-medium text-sm">{lang === 'id' ? 'Kebijakan Privasi' : 'Privacy Policy'}</Link>
+              <Link to="/terms" className="text-slate-500 hover:text-blue-600 transition-colors font-medium text-sm">{lang === 'id' ? 'Syarat & Ketentuan' : 'Terms of Service'}</Link>
+            </div>
+
           </div>
-          
-          <div className="flex flex-col items-start md:items-end gap-3">
-            <div className="flex gap-6">
-              <Link to="/privacy" className="text-slate-400 hover:text-white transition-colors font-semibold">Kebijakan Privasi</Link>
-              <Link to="/terms" className="text-slate-400 hover:text-white transition-colors font-semibold">Syarat & Ketentuan</Link>
+
+          {/* Bottom Bar */}
+          <div className="border-t border-slate-100 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="text-slate-400 font-medium text-xs">&copy; {new Date().getFullYear()} PT Harapan Untuk Bangsa. All rights reserved.</div>
+            <div className="flex items-center gap-2 text-slate-400 text-xs font-medium">
+              Made with <Heart size={14} className="text-red-500" /> in Indonesia
             </div>
-            <div className="text-slate-500 font-medium mt-1">&copy; 2026 PT Harapan Untuk Bangsa. All rights reserved.</div>
           </div>
         </div>
       </footer>

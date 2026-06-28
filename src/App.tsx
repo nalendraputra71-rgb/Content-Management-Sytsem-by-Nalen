@@ -29,7 +29,7 @@ import { ShareWorkspaceModal } from "./ShareWorkspaceModal";
 import { CreateWorkspaceModal } from "./CreateWorkspaceModal";
 import { DashboardView } from "./DashboardView";
 
-import { TermsOfService, PrivacyPolicy } from "./TermsAndPrivacy";
+import { TermsOfService, PrivacyPolicy, FAQ, Guides, AboutUs } from "./TermsAndPrivacy";
 
 import { motion, AnimatePresence } from "motion/react";
 
@@ -419,6 +419,9 @@ export default function App() {
       <Routes>
         <Route path="/terms" element={<TermsOfService />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/faq" element={<FAQ />} />
+        <Route path="/guides" element={<Guides />} />
+        <Route path="/about" element={<AboutUs />} />
         <Route path="/login" element={(user && profile) ? <Navigate to="/" /> : <AuthScreen currentUser={user && !profile ? user : null} onUserCreated={(u)=>setUser(u)} />} />
         <Route path="/profile" element={(user && profile) ? <CMSLayout><UserProfile userProfile={profile} activeWorkspace={null} onUpdate={setProfile} /></CMSLayout> : <Navigate to="/login" />} />
         <Route path="/billing" element={(user && profile) ? <CMSLayout><BillingView userProfile={profile} activeWorkspace={null} onUpdate={setProfile} /></CMSLayout> : <Navigate to="/login" />} />
