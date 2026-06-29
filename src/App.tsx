@@ -1724,7 +1724,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme, systemConfig 
         />
       )}
 
-      <div style={{padding: ["social-hub-ai", "soc_hub", "admin"].includes(tab) ? "0" : "20px 24px 56px", position: "relative", minHeight: 0, flex: ["social-hub-ai", "soc_hub", "admin"].includes(tab) ? 1 : "none", display: "flex", flexDirection: "column"}}>
+      <div style={{padding: (tab.startsWith("social") || ["soc_hub", "admin"].includes(tab)) ? "0" : "20px 24px 56px", position: "relative", minHeight: 0, flex: (tab.startsWith("social") || ["soc_hub", "admin"].includes(tab)) ? 1 : "none", display: "flex", flexDirection: "column"}}>
         {isRestricted && (
           <div style={{background:"#F8EAF0",border:"1px solid #9C2B4E",color:"#9C2B4E",padding:"12px 24px",borderRadius:12,marginBottom:24,display:"flex",alignItems:"center",gap:12,fontWeight:600}}>
             🔒 Mode Terbatas: Masa aktif Anda telah habis. <span style={{flex:1}}></span>
@@ -1732,7 +1732,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme, systemConfig 
           </div>
         )}
         <AnimatePresence mode="wait">
-          <motion.div key={tab + "-" + contentTab} initial={{ opacity: 0, y: 5, scale: 0.99 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -5, scale: 0.99 }} transition={{ duration: 0.15, ease: "easeOut" }} style={{ flex: ["social-hub-ai", "soc_hub", "admin"].includes(tab) ? 1 : "none", minHeight: 0, display: "flex", flexDirection: "column" }}>
+          <motion.div key={tab + "-" + contentTab} initial={{ opacity: 0, y: 5, scale: 0.99 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -5, scale: 0.99 }} transition={{ duration: 0.15, ease: "easeOut" }} style={{ flex: (tab.startsWith("social") || ["soc_hub", "admin"].includes(tab)) ? 1 : "none", minHeight: 0, display: "flex", flexDirection: "column" }}>
 
             {tab==="dashboard"&&<DashboardView user={user} profile={profile} activeWorkspace={workspace} content={filtered} theme={currentTheme} setTab={setTab} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} year={year} month={month} />}
             {tab==="content_planner"&&contentTab==="month"&&<MonthView year={year} month={month} monthContent={monthContent} filtered={filtered} openEdit={openEdit} openAdd={openAdd} showHolidays={showHolidays} holidays={combinedHolidays} customEvents={workspace?.settings?.customEvents || []} pillars={pillars} platforms={platforms} isRestricted={isRestricted} showArchived={showArchived} contentTypes={contentTypes} moveItemDate={moveItemDate} />}
