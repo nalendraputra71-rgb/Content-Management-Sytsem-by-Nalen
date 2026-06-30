@@ -21,7 +21,19 @@ function initFirebase() {
       }
     }
     if (projectId) {
-      admin.initializeApp({ projectId });
+      let credential;
+      if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
+        try {
+          const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
+          credential = admin.credential.cert(serviceAccount);
+        } catch (e) {
+          console.error("Failed to parse FIREBASE_SERVICE_ACCOUNT_KEY:", e);
+        }
+      }
+      admin.initializeApp({ 
+        projectId,
+        ...(credential ? { credential } : {})
+      });
       console.log("Firebase Admin initialized lazily with projectId:", projectId);
     } else {
       throw new Error("FIREBASE_PROJECT_ID is not set in environment or config.");
