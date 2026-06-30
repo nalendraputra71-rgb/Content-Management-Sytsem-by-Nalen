@@ -102,15 +102,15 @@ export function MonthView({year,month,monthContent,filtered,openEdit,openAdd,sho
 
   return (
     <div style={{
-      background: "rgba(255, 255, 255, 0.45)",
+      background: "rgba(255, 255, 255, 0.6)",
       backdropFilter: "none",
       WebkitBackdropFilter: "none",
       transform: "translateZ(0)",
       willChange: "transform",
-      borderRadius: "24px",
+      borderRadius: "32px",
       padding: "24px",
-      border: "1px solid rgba(255, 255, 255, 0.6)",
-      boxShadow: "0 8px 32px rgba(0, 0, 0, 0.04)"
+      border: "1px solid rgba(0, 0, 0, 0.03)",
+      boxShadow: "0 10px 40px rgba(0, 0, 0, 0.03)"
     }}>
       <div style={{display:"grid",gridTemplateColumns:"repeat(7,minmax(0,1fr))",gap:8,marginBottom:12}}>
         {DAYS_S.map(d=><div key={d} style={{textAlign:"center",fontSize:12,fontWeight:600,textTransform:"uppercase",color:"rgba(0,0,0,0.5)",letterSpacing:1}}>{d}</div>)}
@@ -133,11 +133,11 @@ export function MonthView({year,month,monthContent,filtered,openEdit,openAdd,sho
               maxHeight: 250,
               display: "flex",
               flexDirection: "column",
-              background: dragOverDate === day ? "rgba(255,255,255,0.9)" : isToday ? "rgba(255,255,255,0.8)" : "rgba(255,255,255,0.5)",
-              borderRadius: 16,
-              padding: 10,
-              border: dragOverDate === day ? "1px dashed rgba(0,122,255,0.5)" : isToday ? "1px solid rgba(0,122,255,0.3)" : "1px solid rgba(255,255,255,0.7)",
-              boxShadow: dragOverDate === day ? "inset 0 0 0 1px rgba(0,122,255,0.2)" : isToday ? "0 4px 16px rgba(0,122,255,0.1)" : "0 2px 10px rgba(0,0,0,0.02)",
+              background: dragOverDate === day ? "rgba(255,255,255,0.9)" : isToday ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.7)",
+              borderRadius: 24,
+              padding: 12,
+              border: dragOverDate === day ? "2px dashed var(--theme-primary)" : isToday ? "2px solid var(--theme-primary)" : "1px solid rgba(0,0,0,0.03)",
+              boxShadow: dragOverDate === day ? "inset 0 0 0 1px rgba(0,122,255,0.1)" : isToday ? "0 8px 24px rgba(var(--theme-primary-rgb),0.15)" : "0 2px 12px rgba(0,0,0,0.02)",
               transition: "all 0.2s"
             }}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
@@ -195,9 +195,9 @@ export function MonthView({year,month,monthContent,filtered,openEdit,openAdd,sho
                         onDragEnd={() => setDragOverDate(null)}
                         onClick={()=>openEdit(item)} 
                         style={{
-                          background: "rgba(255,255,255,0.7)",
-                          flexShrink:0,border:"1px solid rgba(255,255,255,0.9)",borderRadius:"6px",padding:"4px 6px",textAlign:"left",cursor:"grab",width:"100%",marginBottom:2,
-                          boxShadow: "0 1px 4px rgba(0,0,0,0.02)"
+                          background: "rgba(255,255,255,0.8)",
+                          flexShrink:0,border:"1px solid rgba(0,0,0,0.04)",borderRadius:"12px",padding:"6px 8px",textAlign:"left",cursor:"grab",width:"100%",marginBottom:4,
+                          boxShadow: "0 2px 6px rgba(0,0,0,0.02)"
                         }}
                       >
                         <div style={{display:"flex",alignItems:"flex-start",gap:3}}>
@@ -301,15 +301,15 @@ export function BoardView({year,month,content,filtered,openEdit,openAdd,statuses
           <div key={stName} style={{
             minWidth:280,
             flex:"0 0 280px",
-            background: "rgba(255,255,255,0.45)",
+            background: "rgba(255,255,255,0.7)",
             backdropFilter: "none",
             WebkitBackdropFilter: "none",
             transform: "translateZ(0)",
             willChange: "transform",
-            borderRadius: "24px",
-            padding: "20px",
-            border: "1px solid rgba(255,255,255,0.6)",
-            boxShadow: "0 8px 32px rgba(0,0,0,0.04)"
+            borderRadius: "32px",
+            padding: "24px",
+            border: "1px solid rgba(0,0,0,0.03)",
+            boxShadow: "0 10px 40px rgba(0,0,0,0.03)"
           }}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
               <div style={{display:"flex",alignItems:"center",gap:8}}>
@@ -322,12 +322,12 @@ export function BoardView({year,month,content,filtered,openEdit,openAdd,statuses
                 const ps = item.archived ? { color: "#787774", light: "rgba(255,255,255,0.5)" } : (gps(pillars,item.pillar) || {color:"#787774", light:"rgba(255,255,255,0.5)"});
                 return (
                   <div key={item.id} onClick={()=>openEdit(item)} style={{
-                    background:"rgba(255,255,255,0.7)",
-                    borderRadius:16,
+                    background:"rgba(255,255,255,0.8)",
+                    borderRadius:24,
                     padding:"16px",
                     cursor:"pointer",
-                    boxShadow:"0 2px 12px rgba(0,0,0,0.03)",
-                    border:"1px solid rgba(255,255,255,0.9)",
+                    boxShadow:"0 2px 12px rgba(0,0,0,0.02)",
+                    border:"1px solid rgba(0,0,0,0.04)",
                     opacity: item.archived ? 0.75 : 1, display:"flex", flexDirection:"column", gap: 8,
                     transition: "all 0.2s"
                   }} className="hover:scale-[1.02] hover:shadow-lg">
@@ -368,15 +368,15 @@ export function TimelineView({year,month,content,filtered,openEdit,openAdd,pilla
       <div ref={scrollRef} style={{
         overflowX:"auto",
         paddingBottom:20,
-        background: "rgba(255,255,255,0.45)",
+        background: "rgba(255,255,255,0.7)",
         backdropFilter: "none",
         WebkitBackdropFilter: "none",
         transform: "translateZ(0)",
         willChange: "transform",
-        borderRadius: "24px",
+        borderRadius: "32px",
         padding: "24px",
-        border: "1px solid rgba(255,255,255,0.6)",
-        boxShadow: "0 8px 32px rgba(0,0,0,0.04)"
+        border: "1px solid rgba(0,0,0,0.03)",
+        boxShadow: "0 10px 40px rgba(0,0,0,0.03)"
       }}>
         <div style={{display:"flex",gap:24,minWidth:dim*200+"px"}}>
           {Array.from({length:dim},(_,i)=>{
@@ -396,8 +396,8 @@ export function TimelineView({year,month,content,filtered,openEdit,openAdd,pilla
                     const ps = item.archived ? { color: "#787774", light: "rgba(255,255,255,0.5)" } : gps(pillars, firstPillar);
                     return (
                       <button key={item.id} onClick={()=>openEdit(item)} style={{
-                        background:"rgba(255,255,255,0.7)",
-                        border:"1px solid rgba(255,255,255,0.9)",
+                        background:"rgba(255,255,255,0.8)",
+                        border:"1px solid rgba(0,0,0,0.04)",
                         boxShadow: "0 2px 8px rgba(0,0,0,0.03)",
                         borderRadius:"12px",padding:"10px 12px",textAlign:"left",cursor:"pointer",width:"100%", transition: "all 0.2s"
                       }} className="hover:bg-white/80 hover:shadow-md">
@@ -486,15 +486,15 @@ export function TableView({filtered,openEdit,archiveItem,unarchiveItem,deleteIte
 
   return (
     <div style={{
-      background: "rgba(255,255,255,0.45)",
+      background: "rgba(255,255,255,0.7)",
       backdropFilter: "none",
       WebkitBackdropFilter: "none",
       transform: "translateZ(0)",
       willChange: "transform",
-      borderRadius: "24px",
+      borderRadius: "32px",
       overflow: "hidden",
-      boxShadow: "0 8px 32px rgba(0,0,0,0.04)",
-      border: "1px solid rgba(255,255,255,0.6)"
+      boxShadow: "0 10px 40px rgba(0,0,0,0.03)",
+      border: "1px solid rgba(0,0,0,0.03)"
     }}>
       {bulkIds.length>0 && (
         <div style={{padding:"8px 16px",background:"rgba(59,130,246,0.05)",borderBottom:"1px solid rgba(59,130,246,0.1)",display:"flex",gap:12,alignItems:"center"}}>

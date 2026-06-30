@@ -2774,18 +2774,18 @@ export function NavBar({
         top: 16,
         zIndex: 50,
         margin: "16px 24px 0",
-        background: "rgba(255,255,255,0.95)",
+        background: "rgba(255,255,255,0.9)",
         backdropFilter: "none",
         WebkitBackdropFilter: "none",
         transform: "translateZ(0)",
         willChange: "transform",
-        border: "1px solid rgba(255,255,255,0.8)",
-        borderRadius: 20,
+        border: "1px solid rgba(0,0,0,0.03)",
+        borderRadius: 999,
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
         padding: "12px 20px",
-        boxShadow: "0 8px 32px rgba(0,0,0,0.04)",
+        boxShadow: "0 8px 32px rgba(0,0,0,0.03)",
       }}
     >
       <div
@@ -2799,9 +2799,9 @@ export function NavBar({
         <div
           style={{
             display: "flex",
-            background: "#F5F5F5",
-            padding: 4,
-            borderRadius: 10,
+            background: "rgba(0,0,0,0.02)",
+            padding: 6,
+            borderRadius: 999,
             position: "relative",
           }}
         >
@@ -2812,8 +2812,8 @@ export function NavBar({
               onClick={() => setContentTab(t.id)}
               style={{
                 position: "relative",
-                padding: "6px 12px",
-                borderRadius: 6,
+                padding: "8px 16px",
+                borderRadius: 999,
                 border: "none",
                 background: "transparent",
                 color: contentTab === t.id ? "var(--theme-primary)" : "#666",
@@ -2835,7 +2835,7 @@ export function NavBar({
                     right: 0,
                     bottom: 0,
                     background: "white",
-                    borderRadius: 6,
+                    borderRadius: 999,
                     boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
                     zIndex: 0,
                   }}
@@ -2905,8 +2905,9 @@ export function NavBar({
             alignItems: "center",
             gap: 8,
             background: "white",
-            borderRadius: 18,
-            border: "1px solid rgba(0,0,0,0.1)",
+            borderRadius: 999,
+            border: "1px solid rgba(0,0,0,0.05)",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.02)",
             overflow: "hidden",
             cursor: !localSearchOpen ? "pointer" : "text",
             flexShrink: 0,
@@ -2964,9 +2965,9 @@ export function NavBar({
             height: 36,
             display: "flex",
             alignItems: "center",
-            borderRadius: 18,
+            borderRadius: 999,
             background: "var(--theme-primary)",
-            boxShadow: "0 4px 12px rgba(156,43,78,0.2)",
+            boxShadow: "0 4px 16px rgba(var(--theme-primary-rgb),0.3)",
             overflow: "hidden",
           }}
         >
@@ -2984,7 +2985,7 @@ export function NavBar({
                   ...B(true, "transparent"),
                   height: 36,
                   padding: "0 16px",
-                  borderRadius: 18,
+                  borderRadius: 999,
                   fontSize: 12,
                   display: "flex",
                   alignItems: "center",
@@ -3027,7 +3028,7 @@ export function NavBar({
                     border: "none",
                     height: "100%",
                     padding: "0 10px",
-                    borderRadius: 14,
+                    borderRadius: 999,
                     fontSize: 12,
                     fontWeight: 700,
                     display: "flex",
@@ -3060,7 +3061,7 @@ export function NavBar({
                     border: "none",
                     height: "100%",
                     padding: "0 10px",
-                    borderRadius: 14,
+                    borderRadius: 999,
                     fontSize: 12,
                     fontWeight: 700,
                     display: "flex",
@@ -3083,7 +3084,7 @@ export function NavBar({
           style={{
             background: "var(--theme-primary)",
             border: "none",
-            borderRadius: 18,
+            borderRadius: 999,
             width: 36,
             height: 36,
             display: "flex",
@@ -3610,18 +3611,18 @@ export function FilterBar({
       style={{
         position: "relative",
         zIndex: 20,
-        margin: "16px 24px 0",
-        background: "rgba(255,255,255,0.95)",
+        margin: "12px 24px 0",
+        background: "rgba(255,255,255,0.8)",
         backdropFilter: "none",
         WebkitBackdropFilter: "none",
-        border: "1px solid rgba(255,255,255,0.8)",
-        borderRadius: 20,
-        padding: "12px 20px",
+        border: "1px solid rgba(0,0,0,0.03)",
+        borderRadius: 24,
+        padding: "16px 24px",
         display: "flex",
         gap: 16,
         alignItems: "flex-end",
         flexWrap: "wrap",
-        boxShadow: "0 8px 32px rgba(0,0,0,0.04)",
+        boxShadow: "0 4px 20px rgba(0,0,0,0.02)",
       }}
     >
       <div

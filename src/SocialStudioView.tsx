@@ -66,14 +66,18 @@ import {
   MoreHorizontal,
   Share,
   ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
   FileText,
   Pin,
+  Edit,
   Edit2,
   Lightbulb,
   Heart,
   Upload,
   AlertTriangle,
   Info,
+  Video,
 } from "lucide-react";
 import Markdown from "react-markdown";
 import { PlatformIntegrationModal } from "./PlatformIntegrationModal";
@@ -394,41 +398,145 @@ export function SocialStudioView({
     {
       id: "c1",
       platform: "instagram",
-      senderName: "Budi Santoso",
-      content: "Wah, desainnya bagus banget kak! Boleh spill tools nya?",
+      senderName: "Sari Wardeni",
+      content: "Terima kasih, Gontor. Fadkhera berkesempatan...",
       createdAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
       postThumbnail:
-        "https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=100&h=100&fit=crop",
-      postCaption: "Desain UI terbaru kita 🚀",
+        "https://images.unsplash.com/photo-1515347619362-67396c01e523?w=100&h=100&fit=crop",
+      postCaption:
+        "Mulai hari dengan outfit yang rapi dan diri yang lebih terawat....",
+      postLikes: 29,
+      postCommentCount: 6,
+      postTime: "14 hours ago",
+      postMedia:
+        "https://images.unsplash.com/photo-1515347619362-67396c01e523?w=400&h=800&fit=crop",
+      postComments: [
+        {
+          id: "pc1",
+          username: "rzhafir_",
+          text: "🙌",
+          time: "12h",
+          avatar: "https://i.pravatar.cc/150?u=rzhafir",
+          isLiked: false,
+          replies: [],
+        },
+        {
+          id: "pc2",
+          username: "hausofkahf",
+          text: "🤝🤝🤝",
+          time: "12h",
+          avatar: "https://i.pravatar.cc/150?u=haus",
+          isLiked: false,
+          replies: [],
+        },
+        {
+          id: "pc3",
+          username: "adls___",
+          text: "Silverwood sih seger bgt wangi nya + pakai koko nya hmm 🤔",
+          time: "12h",
+          avatar: "https://i.pravatar.cc/150?u=adls",
+          isLiked: false,
+          replies: [],
+        },
+        {
+          id: "pc4",
+          username: "_seno.nr",
+          text: "Combo mantulity 🔥",
+          time: "11h",
+          avatar: "https://i.pravatar.cc/150?u=seno",
+          isLiked: false,
+          replies: [],
+        },
+        {
+          id: "pc5",
+          username: "al_azmi56_",
+          text: "🙌🙌",
+          time: "10h",
+          avatar: "https://i.pravatar.cc/150?u=azmi",
+          isLiked: false,
+          replies: [],
+        },
+        {
+          id: "pc6",
+          username: "budi.stwn",
+          text: "Recomended banget auto CO 🤲",
+          time: "4h",
+          avatar: "https://i.pravatar.cc/150?u=budi",
+          isLiked: false,
+          replies: [],
+        },
+      ],
       replies: [],
     },
     {
       id: "c2",
-      platform: "tiktok",
-      senderName: "Siti Amelia",
-      content: "Berapa harganya ini kak? Ada promo kah?",
+      platform: "instagram",
+      senderName: "Budi Setiawan",
+      content: "Mulai hari dengan outfit yang rapi dan diri yang...",
       createdAt: new Date(Date.now() - 1000 * 60 * 120).toISOString(),
       postThumbnail:
-        "https://images.unsplash.com/photo-1616469829581-73993eb86b02?w=100&h=100&fit=crop",
-      postCaption: "Review produk andalan bulan ini ✨",
-      replies: [
+        "https://images.unsplash.com/photo-1532453288672-3a27e9be9efd?w=100&h=100&fit=crop",
+      postCaption: "Koleksi terbaru dari Fadkhera siap menemani harimu 🌟",
+      postLikes: 45,
+      postCommentCount: 3,
+      postTime: "1 day ago",
+      postMedia:
+        "https://images.unsplash.com/photo-1532453288672-3a27e9be9efd?w=400&h=800&fit=crop",
+      postComments: [
         {
-          content:
-            "Hai kak Siti, harganya Rp150.000 ya, lagi ada promo gratis ongkir!",
-          createdAt: new Date(Date.now() - 1000 * 60 * 60).toISOString(),
-          sender: "brand",
+          id: "pc7",
+          username: "budi_stwn",
+          text: "Berapa harganya ini kak? Ada promo kah?",
+          time: "20h",
+          avatar: "https://i.pravatar.cc/150?u=budi_stwn",
+          isLiked: false,
+          replies: [
+            {
+              id: "r1",
+              username: "brand",
+              text: "Hai kak Budi, harganya Rp150.000 ya, lagi ada promo gratis ongkir!",
+              time: "19h",
+              avatar: "https://i.pravatar.cc/150?u=brand",
+            },
+          ],
+        },
+        {
+          id: "pc8",
+          username: "muhammad_al",
+          text: "Keren! Ditunggu konten selanjutnya.",
+          time: "18h",
+          avatar: "https://i.pravatar.cc/150?u=muhammad",
+          isLiked: false,
+          replies: [],
         },
       ],
+      replies: [],
     },
     {
       id: "c3",
       platform: "instagram",
-      senderName: "John Doe",
-      content: "Keren! Ditunggu konten selanjutnya.",
+      senderName: "Deryansyah",
+      content: "Satu kemeja yang bisa mengikuti banyak agenda...",
       createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
       postThumbnail:
-        "https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=100&h=100&fit=crop",
-      postCaption: "Desain UI terbaru kita 🚀",
+        "https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?w=100&h=100&fit=crop",
+      postCaption: "Satu kemeja yang bisa mengikuti banyak agenda...",
+      postLikes: 112,
+      postCommentCount: 1,
+      postTime: "2 days ago",
+      postMedia:
+        "https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?w=400&h=800&fit=crop",
+      postComments: [
+        {
+          id: "pc9",
+          username: "deryansyah",
+          text: "Satu kemeja yang bisa mengikuti banyak agenda, cakep bener min!",
+          time: "1d",
+          avatar: "https://i.pravatar.cc/150?u=dery",
+          isLiked: true,
+          replies: [],
+        },
+      ],
       replies: [],
     },
   ];
@@ -1438,16 +1546,34 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
     let list = Array.from({ length: 40 }).map((_, i) => {
       const month = 5 + (i % 4); // Bulan: 5 (May), 6 (June), 7 (July), 8 (August)
       const day = ((i * 7) % 28) + 1;
+      const images = [
+        "https://images.unsplash.com/photo-1515347619362-67396c01e523?w=100&h=100&fit=crop",
+        "https://images.unsplash.com/photo-1532453288672-3a27e9be9efd?w=100&h=100&fit=crop",
+        "https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?w=100&h=100&fit=crop",
+        "https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=100&h=100&fit=crop",
+      ];
+      const accounts = ["hausofkahf", "fadkheraofficial", "Fadkhera Pusat"];
+      const postTypes = ["Carousel", "Reel", "Multi media", "Post"];
+
       return {
         id: i,
         title: `Judul Postingan ${i % 2 === 0 ? "Menarik" : "Viral"} ke-${i + 1}`,
-        time: `2026-${month.toString().padStart(2, "0")}-${day.toString().padStart(2, "0")} 19:40`,
+        captionSnippet:
+          i % 2 === 0
+            ? "Apa rahasia di balik penampilan pria yan..."
+            : "Mulai hari dengan outfit yang rapi dan di...",
+        postTypeLabel: postTypes[i % 4],
+        accountName: accounts[i % 3],
+        time: `Mon Jun ${day}, 7:${10 + (i % 50)}pm`,
         type: i % 3 === 0 ? "meta" : i % 3 === 1 ? "instagram" : "tiktok",
-        views: Math.floor(((i * 789) % 500000) + 1000),
+        views: Math.floor(((i * 789) % 50000) + 1000),
+        reach: i % 2 === 0 ? null : Math.floor(((i * 987) % 5000) + 50),
+        likes: Math.floor(((i * 234) % 1000) + 10),
         er: (((i * 2.3) % 5) + 1).toFixed(1),
         comments: Math.floor(((i * 456) % 5000) + 10),
         shares: Math.floor(((i * 123) % 1000) + 5),
         saves: Math.floor(((i * 890) % 10000) + 20),
+        thumbnail: images[i % images.length],
       };
     });
 
@@ -1673,6 +1799,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
             maxWidth: 800,
             display: "flex",
             overflow: "hidden",
+            maxHeight: "90vh",
           }}
         >
           <div
@@ -1685,9 +1812,17 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
               color: "white",
               minHeight: 400,
               position: "relative",
+              overflow: "hidden",
             }}
           >
-            <PlayCircle size={48} opacity={0.5} />
+            {selectedContent.thumbnail ? (
+              <img
+                src={selectedContent.thumbnail}
+                style={{ width: "100%", height: "100%", objectFit: "contain" }}
+              />
+            ) : (
+              <PlayCircle size={48} opacity={0.5} />
+            )}
             <div
               style={{
                 position: "absolute",
@@ -1713,7 +1848,14 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                 alignItems: "center",
               }}
             >
-              <h3 style={{ fontSize: 18, fontWeight: 800, margin: 0 }}>
+              <h3
+                style={{
+                  fontSize: 18,
+                  fontWeight: 800,
+                  margin: 0,
+                  wordBreak: "break-word",
+                }}
+              >
                 {selectedContent.title}
               </h3>
               <button
@@ -1730,6 +1872,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                   alignItems: "center",
                   justifyContent: "center",
                   color: "#2C2016",
+                  flexShrink: 0,
                 }}
               >
                 <X size={18} />
@@ -2667,7 +2810,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                   style={{ display: "flex", flexDirection: "column", gap: 32 }}
                 >
                   {/* 1. KEY METRICS */}
-                  <div className="bg-white rounded-[24px] border border-[rgba(44,32,22,0.08)] p-6 lg:p-8 flex flex-col sm:flex-row flex-wrap lg:flex-nowrap items-start sm:items-center justify-between gap-6">
+                  <div className="bg-white/80 rounded-[32px] border border-black/[0.03] shadow-[0_8px_32px_rgba(0,0,0,0.02)] p-6 lg:p-8 flex flex-col sm:flex-row flex-wrap lg:flex-nowrap items-start sm:items-center justify-between gap-6">
                     {[
                       {
                         lb: "Followers",
@@ -2775,7 +2918,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                   </div>
 
                   {/* 2. TREND INTERAKSI (CHART) */}
-                  <div className="bg-white rounded-[24px] border border-[rgba(44,32,22,0.05)] p-6 lg:p-8">
+                  <div className="bg-white/80 rounded-[32px] border border-black/[0.03] shadow-[0_8px_32px_rgba(0,0,0,0.02)] p-6 lg:p-8">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
                       <h3
                         style={{
@@ -2967,7 +3110,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                   </div>
 
                   {/* 3. TOP PERFORMING POSTS */}
-                  <div className="bg-white rounded-[24px] border border-[rgba(44,32,22,0.05)] p-6 lg:p-8">
+                  <div className="bg-white/80 rounded-[32px] border border-black/[0.03] shadow-[0_8px_32px_rgba(0,0,0,0.02)] p-6 lg:p-8">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                       <h3
                         style={{
@@ -3156,7 +3299,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                   style={{ display: "flex", flexDirection: "column", gap: 32 }}
                 >
                   {/* B. UPCOMING SCHEDULE */}
-                  <div className="bg-white rounded-[24px] border border-[rgba(44,32,22,0.05)] p-6 lg:p-8">
+                  <div className="bg-white/80 rounded-[32px] border border-black/[0.03] shadow-[0_8px_32px_rgba(0,0,0,0.02)] p-6 lg:p-8">
                     <div
                       style={{
                         display: "flex",
@@ -3541,10 +3684,11 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                     key={i}
                     className="hover-scale"
                     style={{
-                      background: "white",
-                      borderRadius: 16,
-                      padding: 20,
-                      border: "1px solid rgba(44,32,22,0.05)",
+                      background: "rgba(255,255,255,0.8)",
+                      borderRadius: 24,
+                      padding: 24,
+                      border: "1px solid rgba(0,0,0,0.03)",
+                      boxShadow: "0 4px 16px rgba(0,0,0,0.02)",
                     }}
                   >
                     <div
@@ -3589,10 +3733,11 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
               {/* Detailed Chart Segment */}
               <div
                 style={{
-                  background: "white",
-                  borderRadius: 20,
-                  border: "1px solid rgba(44,32,22,0.05)",
-                  padding: 24,
+                  background: "rgba(255,255,255,0.8)",
+                  borderRadius: 32,
+                  border: "1px solid rgba(0,0,0,0.03)",
+                  boxShadow: "0 8px 32px rgba(0,0,0,0.02)",
+                  padding: 32,
                   marginBottom: 24,
                 }}
               >
@@ -3739,10 +3884,11 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
               >
                 <div
                   style={{
-                    background: "white",
-                    borderRadius: 20,
-                    padding: 24,
-                    border: "1px solid rgba(44,32,22,0.05)",
+                    background: "rgba(255,255,255,0.8)",
+                    borderRadius: 32,
+                    padding: 32,
+                    border: "1px solid rgba(0,0,0,0.03)",
+                    boxShadow: "0 8px 32px rgba(0,0,0,0.02)",
                   }}
                 >
                   <div
@@ -3982,10 +4128,10 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
 
                 <div
                   style={{
-                    background: "var(--theme-primary)11",
-                    borderRadius: 20,
-                    padding: 24,
-                    border: "1px solid var(--theme-primary)22",
+                    background: "rgba(var(--theme-primary-rgb), 0.05)",
+                    borderRadius: 32,
+                    padding: 32,
+                    border: "1px solid rgba(var(--theme-primary-rgb), 0.1)",
                     display: "flex",
                     flexDirection: "column",
                   }}
@@ -4108,7 +4254,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
-                  marginBottom: 24,
+                  marginBottom: 16,
                 }}
               >
                 <div>
@@ -4116,67 +4262,192 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                     style={{
                       fontSize: 24,
                       fontWeight: 800,
-                      color: "#2C2016",
+                      color: "#111827",
                       margin: 0,
                     }}
                   >
-                    Konten Dipublikasi
+                    Content
                   </h2>
                   <p
                     style={{
                       fontSize: 14,
-                      color: "rgba(44,32,22,0.5)",
+                      color: "rgba(44,32,22,0.6)",
                       margin: "4px 0 0",
-                      fontWeight: 600,
+                      fontWeight: 500,
                     }}
                   >
-                    List 100% postingan yang ditarik secara otomatis.
+                    Schedule, publish and manage posts, reels and stories, and
+                    more.
                   </p>
                 </div>
                 <div style={{ display: "flex", gap: 12 }}>
-                  <CustomDropdown
-                    value={contentPlatform}
-                    options={PLATFORMS}
-                    onChange={setContentPlatform}
-                    renderOption={(o) => (
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 8,
-                          fontWeight: 700,
-                        }}
-                      >
-                        {o.icon} <span>{o.name}</span>
-                      </div>
-                    )}
-                  />
-                  <CustomDropdown
-                    value={contentSort}
-                    options={SORT_OPTIONS}
-                    onChange={setContentSort}
-                  />
-                  <CustomDropdown
-                    value={contentTimeRange}
-                    options={DASHBOARD_TIME_RANGES}
-                    onChange={setContentTimeRange}
-                  />
                   <button
                     className="hover-scale"
                     style={{
-                      background: "#2C2016",
-                      color: "white",
-                      borderRadius: 12,
-                      padding: "10px 16px",
-                      border: "none",
-                      fontWeight: 800,
+                      background: "white",
+                      color: "#111827",
+                      borderRadius: 8,
+                      padding: "8px 16px",
+                      border: "1px solid rgba(0,0,0,0.1)",
+                      fontWeight: 600,
                       cursor: "pointer",
                       display: "flex",
                       alignItems: "center",
                       gap: 8,
                     }}
                   >
-                    <Download size={14} /> Download CSV
+                    <Download size={14} /> Export data <ChevronDown size={14} />
+                  </button>
+                  <button
+                    className="hover-scale"
+                    style={{
+                      background: "white",
+                      color: "#111827",
+                      borderRadius: 8,
+                      padding: "8px 16px",
+                      border: "1px solid rgba(0,0,0,0.1)",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                    }}
+                  >
+                    <Video size={14} /> Create reel
+                  </button>
+                  <button
+                    className="hover-scale"
+                    style={{
+                      background: "var(--theme-primary)",
+                      color: "white",
+                      borderRadius: 8,
+                      padding: "8px 16px",
+                      border: "none",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                    }}
+                  >
+                    <Edit size={14} /> Create post <ChevronDown size={14} />
+                  </button>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  gap: 24,
+                  borderBottom: "1px solid rgba(0,0,0,0.05)",
+                  marginBottom: 16,
+                }}
+              >
+                {[
+                  "Published",
+                  "Scheduled",
+                  "Drafts",
+                  "Expiring",
+                  "Expired",
+                  "Ad Posts",
+                ].map((t, idx) => (
+                  <div
+                    key={t}
+                    style={{
+                      paddingBottom: 12,
+                      fontWeight: 600,
+                      fontSize: 14,
+                      color:
+                        idx === 0
+                          ? "var(--theme-primary)"
+                          : "rgba(44,32,22,0.6)",
+                      borderBottom:
+                        idx === 0
+                          ? "2px solid var(--theme-primary)"
+                          : "2px solid transparent",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {t}
+                  </div>
+                ))}
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginBottom: 16,
+                  flexWrap: "wrap",
+                  gap: 16,
+                }}
+              >
+                <div style={{ display: "flex", gap: 12 }}>
+                  <CustomDropdown
+                    value={"Post type"}
+                    options={[{ id: "Post type", label: "Post type" }]}
+                    onChange={() => {}}
+                  />
+                  <CustomDropdown
+                    value={"Filter"}
+                    options={[{ id: "Filter", label: "Filter" }]}
+                    onChange={() => {}}
+                  />
+                  <div style={{ position: "relative" }}>
+                    <Search
+                      size={14}
+                      color="gray"
+                      style={{
+                        position: "absolute",
+                        left: 12,
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                      }}
+                    />
+                    <input
+                      type="text"
+                      placeholder="Search by ID or caption"
+                      style={{
+                        padding: "8px 16px 8px 36px",
+                        borderRadius: 8,
+                        border: "1px solid rgba(0,0,0,0.1)",
+                        fontSize: 13,
+                        width: 220,
+                      }}
+                    />
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: 12 }}>
+                  <button
+                    style={{
+                      padding: "8px 16px",
+                      background: "white",
+                      border: "1px solid rgba(0,0,0,0.1)",
+                      borderRadius: 8,
+                      fontSize: 13,
+                      fontWeight: 600,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                    }}
+                  >
+                    <CalendarIcon size={14} /> Last 90 days: Mar 31, 2026 - Jun
+                    28, 2026 <ChevronDown size={14} />
+                  </button>
+                  <button
+                    style={{
+                      padding: "8px 16px",
+                      background: "white",
+                      border: "1px solid rgba(0,0,0,0.1)",
+                      borderRadius: 8,
+                      fontSize: 13,
+                      fontWeight: 600,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                    }}
+                  >
+                    <Layout size={14} /> Columns <ChevronDown size={14} />
                   </button>
                 </div>
               </div>
@@ -4207,76 +4478,167 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                     <tr>
                       <th
                         style={{
-                          padding: "16px 20px",
-                          textAlign: "left",
-                          fontWeight: 800,
-                          minWidth: 250,
-                        }}
-                      >
-                        Konten / Judul
-                      </th>
-                      <th
-                        style={{
-                          padding: "16px 20px",
-                          textAlign: "left",
-                          fontWeight: 800,
-                        }}
-                      >
-                        Platform
-                      </th>
-                      <th
-                        style={{
-                          padding: "16px 20px",
-                          textAlign: "right",
-                          fontWeight: 800,
-                        }}
-                      >
-                        Views
-                      </th>
-                      <th
-                        style={{
-                          padding: "16px 20px",
-                          textAlign: "right",
-                          fontWeight: 800,
-                        }}
-                      >
-                        ER
-                      </th>
-                      <th
-                        style={{
-                          padding: "16px 20px",
-                          textAlign: "right",
-                          fontWeight: 800,
-                        }}
-                      >
-                        Komen
-                      </th>
-                      <th
-                        style={{
-                          padding: "16px 20px",
-                          textAlign: "right",
-                          fontWeight: 800,
-                        }}
-                      >
-                        Share
-                      </th>
-                      <th
-                        style={{
-                          padding: "16px 20px",
-                          textAlign: "right",
-                          fontWeight: 800,
-                        }}
-                      >
-                        Save
-                      </th>
-                      <th
-                        style={{
-                          padding: "16px 20px",
+                          padding: "16px",
+                          width: 40,
                           textAlign: "center",
-                          fontWeight: 800,
                         }}
                       >
-                        Action
+                        <input
+                          type="checkbox"
+                          style={{
+                            cursor: "pointer",
+                            width: 16,
+                            height: 16,
+                            borderRadius: 4,
+                            border: "1px solid #ccc",
+                          }}
+                        />
+                      </th>
+                      <th
+                        style={{
+                          padding: "16px 8px",
+                          textAlign: "left",
+                          fontWeight: 700,
+                          minWidth: 350,
+                          color: "#111827",
+                        }}
+                      >
+                        Title
+                      </th>
+                      <th
+                        style={{
+                          padding: "16px 8px",
+                          textAlign: "left",
+                          fontWeight: 700,
+                          color: "#111827",
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 4,
+                          }}
+                        >
+                          Date published{" "}
+                          <ArrowDown size={14} color="var(--theme-primary)" />
+                        </div>
+                      </th>
+                      <th
+                        style={{
+                          padding: "16px 8px",
+                          textAlign: "left",
+                          fontWeight: 700,
+                          color: "#111827",
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 4,
+                          }}
+                        >
+                          Views <Info size={14} color="gray" />{" "}
+                          <ArrowUpDown size={12} color="gray" />
+                        </div>
+                      </th>
+                      <th
+                        style={{
+                          padding: "16px 8px",
+                          textAlign: "left",
+                          fontWeight: 700,
+                          color: "#111827",
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 4,
+                          }}
+                        >
+                          Reach <Info size={14} color="gray" />{" "}
+                          <ArrowUpDown size={12} color="gray" />
+                        </div>
+                      </th>
+                      <th
+                        style={{
+                          padding: "16px 8px",
+                          textAlign: "left",
+                          fontWeight: 700,
+                          color: "#111827",
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 4,
+                          }}
+                        >
+                          Likes and
+                          <br />
+                          reactions <Info size={14} color="gray" />{" "}
+                          <ArrowUpDown size={12} color="gray" />
+                        </div>
+                      </th>
+                      <th
+                        style={{
+                          padding: "16px 8px",
+                          textAlign: "left",
+                          fontWeight: 700,
+                          color: "#111827",
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 4,
+                          }}
+                        >
+                          Comments <Info size={14} color="gray" />{" "}
+                          <ArrowUpDown size={12} color="gray" />
+                        </div>
+                      </th>
+                      <th
+                        style={{
+                          padding: "16px 8px",
+                          textAlign: "left",
+                          fontWeight: 700,
+                          color: "#111827",
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 4,
+                          }}
+                        >
+                          Shares <Info size={14} color="gray" />{" "}
+                          <ArrowUpDown size={12} color="gray" />
+                        </div>
+                      </th>
+                      <th
+                        style={{
+                          padding: "16px 8px",
+                          textAlign: "left",
+                          fontWeight: 700,
+                          color: "#111827",
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 4,
+                          }}
+                        >
+                          Saves <Info size={14} color="gray" />{" "}
+                          <ArrowUpDown size={12} color="gray" />
+                        </div>
                       </th>
                     </tr>
                   </thead>
@@ -4291,93 +4653,262 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                           verticalAlign: "top",
                         }}
                       >
-                        <td style={{ padding: "16px 20px" }}>
+                        <td
+                          style={{
+                            padding: "16px",
+                            textAlign: "center",
+                            width: 40,
+                            verticalAlign: "middle",
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            style={{
+                              cursor: "pointer",
+                              width: 16,
+                              height: 16,
+                              borderRadius: 4,
+                              border: "1px solid #ccc",
+                            }}
+                          />
+                        </td>
+                        <td style={{ padding: "16px 8px" }}>
                           <div
                             style={{
                               display: "flex",
-                              alignItems: "flex-start",
-                              gap: 12,
+                              alignItems: "center",
+                              gap: 16,
+                              justifyContent: "space-between",
                             }}
                           >
                             <div
                               style={{
-                                width: 48,
-                                height: 48,
-                                borderRadius: 8,
-                                background: "#f0f0f0",
-                                flexShrink: 0,
+                                display: "flex",
+                                gap: 12,
+                                alignItems: "center",
+                                minWidth: 0,
+                                flex: 1,
                               }}
-                            ></div>
-                            <div style={{ maxWidth: 300 }}>
+                            >
                               <div
                                 style={{
-                                  fontWeight: 800,
-                                  color: "#2C2016",
-                                  marginBottom: 4,
-                                  whiteSpace: "normal",
-                                  wordBreak: "break-word",
-                                  lineHeight: 1.4,
+                                  position: "relative",
+                                  width: 48,
+                                  height: 48,
+                                  flexShrink: 0,
+                                  borderRadius: 8,
+                                  overflow: "hidden",
+                                  background: "#f0f0f0",
                                 }}
                               >
-                                {post.title}
+                                <img
+                                  src={post.thumbnail}
+                                  style={{
+                                    width: "100%",
+                                    height: "100%",
+                                    objectFit: "cover",
+                                  }}
+                                />
+                                <div
+                                  style={{
+                                    position: "absolute",
+                                    bottom: -4,
+                                    right: -4,
+                                    background: "white",
+                                    borderRadius: "50%",
+                                    padding: 2,
+                                  }}
+                                >
+                                  {post.type === "instagram" ? (
+                                    <div
+                                      style={{
+                                        width: 16,
+                                        height: 16,
+                                        borderRadius: "50%",
+                                        background:
+                                          "linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                      }}
+                                    >
+                                      <Instagram size={10} color="white" />
+                                    </div>
+                                  ) : post.type === "meta" ? (
+                                    <div
+                                      style={{
+                                        width: 16,
+                                        height: 16,
+                                        borderRadius: "50%",
+                                        background: "#1877F2",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                      }}
+                                    >
+                                      <Facebook size={10} color="white" />
+                                    </div>
+                                  ) : (
+                                    <div
+                                      style={{
+                                        width: 16,
+                                        height: 16,
+                                        borderRadius: "50%",
+                                        background: "black",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                      }}
+                                    >
+                                      <div
+                                        style={{
+                                          fontSize: 8,
+                                          color: "white",
+                                          fontWeight: 800,
+                                        }}
+                                      >
+                                        TT
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                               <div
                                 style={{
-                                  fontSize: 11,
-                                  color: "rgba(44,32,22,0.5)",
-                                  fontWeight: 600,
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  minWidth: 0,
+                                  gap: 4,
                                 }}
                               >
-                                {post.time}
+                                <div
+                                  style={{
+                                    fontSize: 13,
+                                    fontWeight: 500,
+                                    color: "#111827",
+                                    whiteSpace: "nowrap",
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                    maxWidth: 200,
+                                  }}
+                                >
+                                  {post.captionSnippet}
+                                </div>
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 8,
+                                    fontSize: 12,
+                                    color: "rgba(0,0,0,0.6)",
+                                  }}
+                                >
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: 4,
+                                    }}
+                                  >
+                                    {post.postTypeLabel === "Carousel" ? (
+                                      <Layout size={12} />
+                                    ) : post.postTypeLabel === "Reel" ? (
+                                      <Video size={12} />
+                                    ) : post.postTypeLabel === "Multi media" ? (
+                                      <ImageIcon size={12} />
+                                    ) : (
+                                      <ImageIcon size={12} />
+                                    )}
+                                    {post.postTypeLabel}
+                                  </div>
+                                  <div
+                                    style={{
+                                      width: 3,
+                                      height: 3,
+                                      borderRadius: "50%",
+                                      background: "currentColor",
+                                    }}
+                                  />
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: 4,
+                                    }}
+                                  >
+                                    <div
+                                      style={{
+                                        width: 16,
+                                        height: 16,
+                                        borderRadius: "50%",
+                                        background: "#ccc",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        overflow: "hidden",
+                                      }}
+                                    >
+                                      <User size={10} color="white" />
+                                    </div>
+                                    {post.accountName}
+                                  </div>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        </td>
-                        <td style={{ padding: "16px 20px" }}>
-                          <div
-                            style={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: 6,
-                              background:
-                                post.type === "instagram"
-                                  ? "#F8EAF0"
-                                  : post.type === "meta"
-                                    ? "#EBF3FC"
-                                    : "#f0f0f0",
-                              color:
-                                post.type === "instagram"
-                                  ? "#E4405F"
-                                  : post.type === "meta"
-                                    ? "#1877F2"
-                                    : "#000",
-                              padding: "4px 8px",
-                              borderRadius: 6,
-                              fontSize: 11,
-                              fontWeight: 800,
-                            }}
-                          >
-                            {post.type === "instagram" ? (
-                              <Instagram size={12} />
-                            ) : post.type === "meta" ? (
-                              <Facebook size={12} />
-                            ) : (
-                              <div style={{ fontSize: 10, fontWeight: 900 }}>
-                                TT
-                              </div>
-                            )}
-                            {post.type === "instagram"
-                              ? "Instagram"
-                              : post.type === "meta"
-                                ? "Facebook"
-                                : "TikTok"}
+                            <div
+                              style={{
+                                display: "flex",
+                                gap: 8,
+                                alignItems: "center",
+                                paddingRight: 16,
+                              }}
+                            >
+                              <button
+                                style={{
+                                  background: "white",
+                                  border: "1px solid rgba(0,0,0,0.1)",
+                                  borderRadius: 6,
+                                  padding: "4px 12px",
+                                  fontSize: 13,
+                                  fontWeight: 600,
+                                  color: "#111827",
+                                  cursor: "pointer",
+                                }}
+                              >
+                                Boost
+                              </button>
+                              <button
+                                style={{
+                                  background: "white",
+                                  border: "1px solid rgba(0,0,0,0.1)",
+                                  borderRadius: 6,
+                                  padding: "4px 8px",
+                                  color: "#111827",
+                                  cursor: "pointer",
+                                }}
+                              >
+                                <MoreHorizontal size={16} />
+                              </button>
+                            </div>
                           </div>
                         </td>
                         <td
                           style={{
-                            padding: "16px 20px",
-                            textAlign: "right",
-                            fontWeight: 800,
+                            padding: "16px 8px",
+                            verticalAlign: "middle",
+                            fontSize: 13,
+                            color: "#111827",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {post.time}
+                        </td>
+                        <td
+                          style={{
+                            padding: "16px 8px",
+                            verticalAlign: "middle",
+                            fontSize: 13,
+                            color: "#111827",
                           }}
                         >
                           {post.views > 1000
@@ -4386,60 +4917,57 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                         </td>
                         <td
                           style={{
-                            padding: "16px 20px",
-                            textAlign: "right",
-                            fontWeight: 800,
-                            color: "var(--theme-primary)",
+                            padding: "16px 8px",
+                            verticalAlign: "middle",
+                            fontSize: 13,
+                            color: "#111827",
                           }}
                         >
-                          {post.er}%
+                          {post.reach
+                            ? post.reach > 1000
+                              ? (post.reach / 1000).toFixed(1) + "K"
+                              : post.reach
+                            : "--"}
                         </td>
                         <td
                           style={{
-                            padding: "16px 20px",
-                            textAlign: "right",
-                            fontWeight: 700,
+                            padding: "16px 8px",
+                            verticalAlign: "middle",
+                            fontSize: 13,
+                            color: "#111827",
+                          }}
+                        >
+                          {post.likes}
+                        </td>
+                        <td
+                          style={{
+                            padding: "16px 8px",
+                            verticalAlign: "middle",
+                            fontSize: 13,
+                            color: "#111827",
                           }}
                         >
                           {post.comments}
                         </td>
                         <td
                           style={{
-                            padding: "16px 20px",
-                            textAlign: "right",
-                            fontWeight: 700,
+                            padding: "16px 8px",
+                            verticalAlign: "middle",
+                            fontSize: 13,
+                            color: "#111827",
                           }}
                         >
                           {post.shares}
                         </td>
                         <td
                           style={{
-                            padding: "16px 20px",
-                            textAlign: "right",
-                            fontWeight: 700,
+                            padding: "16px 8px",
+                            verticalAlign: "middle",
+                            fontSize: 13,
+                            color: "#111827",
                           }}
                         >
                           {post.saves}
-                        </td>
-                        <td
-                          style={{ padding: "16px 20px", textAlign: "center" }}
-                        >
-                          <button
-                            onClick={() => setSelectedContent(post)}
-                            className="hover-scale"
-                            style={{
-                              background: "transparent",
-                              border: "1px solid rgba(44,32,22,0.2)",
-                              borderRadius: 8,
-                              padding: "6px 12px",
-                              cursor: "pointer",
-                              fontWeight: 800,
-                              fontSize: 11,
-                              color: "#2C2016",
-                            }}
-                          >
-                            Detail
-                          </button>
                         </td>
                       </tr>
                     ))}
@@ -4858,10 +5386,11 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
             >
               <div
                 style={{
-                  width: 300,
-                  background: "white",
-                  borderRadius: 20,
-                  border: "1px solid rgba(44,32,22,0.05)",
+                  width: 320,
+                  background: "rgba(255,255,255,0.8)",
+                  borderRadius: 32,
+                  border: "1px solid rgba(0,0,0,0.03)",
+                  boxShadow: "0 8px 32px rgba(0,0,0,0.02)",
                   display: "flex",
                   flexDirection: "column",
                   overflow: "hidden",
@@ -5223,7 +5752,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                           }}
                         >
                           <div
-                            className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 overflow-hidden"
+                            className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 overflow-hidden relative"
                             style={{
                               border: "1px solid rgba(44,32,22,0.05)",
                             }}
@@ -5236,6 +5765,33 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                                 objectFit: "cover",
                               }}
                             />
+                            {msg.platform === "instagram" && (
+                              <div
+                                style={{
+                                  position: "absolute",
+                                  bottom: -2,
+                                  right: -2,
+                                  background: "white",
+                                  borderRadius: "50%",
+                                  padding: 2,
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    background:
+                                      "linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)",
+                                    borderRadius: "50%",
+                                    padding: 2,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    color: "white",
+                                  }}
+                                >
+                                  <Instagram size={8} />
+                                </div>
+                              </div>
+                            )}
                           </div>
                           <div style={{ overflow: "hidden", flex: 1 }}>
                             <div
@@ -5262,32 +5818,11 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                                     whiteSpace: "nowrap",
                                     textOverflow: "ellipsis",
                                     overflow: "hidden",
+                                    fontWeight: 700,
+                                    fontSize: 13,
                                   }}
                                 >
-                                  {msg.senderName}
-                                </span>
-                                <span
-                                  style={{
-                                    fontSize: 9,
-                                    background:
-                                      msg.platform === "meta" ||
-                                      msg.platform === "instagram"
-                                        ? "#F8EAF0"
-                                        : "#f0f0f0",
-                                    color:
-                                      msg.platform === "meta" ||
-                                      msg.platform === "instagram"
-                                        ? "#E4405F"
-                                        : "#000",
-                                    padding: "2px 6px",
-                                    borderRadius: 4,
-                                    fontWeight: 800,
-                                  }}
-                                >
-                                  {msg.platform === "meta" ||
-                                  msg.platform === "instagram"
-                                    ? "IG"
-                                    : "TT"}
+                                  {msg.postCaption}
                                 </span>
                               </div>
                               <div
@@ -5308,7 +5843,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                             </div>
                             <div
                               style={{
-                                fontSize: 11,
+                                fontSize: 12,
                                 color:
                                   selectedComment?.id === msg.id
                                     ? "#111827"
@@ -5319,7 +5854,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                                 fontWeight: 400,
                               }}
                             >
-                              {msg.content}
+                              {msg.senderName} commented
                             </div>
                           </div>
                         </div>
@@ -5332,9 +5867,10 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
               <div
                 style={{
                   flex: 1,
-                  background: "white",
-                  borderRadius: 20,
-                  border: "1px solid rgba(44,32,22,0.05)",
+                  background: "rgba(255,255,255,0.8)",
+                  borderRadius: 32,
+                  border: "1px solid rgba(0,0,0,0.03)",
+                  boxShadow: "0 8px 32px rgba(0,0,0,0.02)",
                   display: "flex",
                   flexDirection: "column",
                   overflow: "hidden",
@@ -5782,7 +6318,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                         }}
                       >
                         <div
-                          className="w-10 h-10 rounded-xl flex items-center justify-center text-white overflow-hidden"
+                          className="w-12 h-12 rounded-xl flex items-center justify-center text-white overflow-hidden"
                           style={{
                             border: "1px solid rgba(44,32,22,0.05)",
                           }}
@@ -5799,7 +6335,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                         <div>
                           <div
                             style={{
-                              fontWeight: 800,
+                              fontWeight: 700,
                               fontSize: 14,
                               color: "#111827",
                             }}
@@ -5810,29 +6346,27 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                             style={{
                               fontSize: 12,
                               color: "rgba(44,32,22,0.6)",
-                              fontWeight: 600,
+                              fontWeight: 500,
                               display: "flex",
                               alignItems: "center",
                               gap: 4,
-                              cursor: "pointer",
                             }}
                           >
-                            Assign this conversation <ChevronDown size={12} />
+                            {selectedComment.postLikes} likes •{" "}
+                            {selectedComment.postCommentCount} comments •{" "}
+                            {selectedComment.postTime}
                           </div>
                         </div>
                       </div>
                       <div style={{ display: "flex", gap: 6 }}>
-                        <button className="w-8 h-8 rounded-lg border border-gray-200 text-gray-600 flex items-center justify-center hover:bg-gray-50 transition-colors">
-                          <AlertTriangle size={14} />
+                        <button
+                          className="px-3 py-1.5 rounded-lg border border-gray-200 text-gray-400 flex items-center justify-center hover:bg-gray-50 transition-colors"
+                          style={{ fontSize: 13, fontWeight: 600 }}
+                        >
+                          Boost unavailable
                         </button>
                         <button className="w-8 h-8 rounded-lg border border-gray-200 text-gray-600 flex items-center justify-center hover:bg-gray-50 transition-colors">
-                          <Trash2 size={14} />
-                        </button>
-                        <button className="w-8 h-8 rounded-lg border border-gray-200 text-gray-600 flex items-center justify-center hover:bg-gray-50 transition-colors">
-                          <Star size={14} />
-                        </button>
-                        <button className="w-8 h-8 rounded-lg border border-gray-200 text-gray-600 flex items-center justify-center hover:bg-gray-50 transition-colors">
-                          <Check size={14} />
+                          <MoreHorizontal size={14} />
                         </button>
                       </div>
                     </div>
@@ -5840,169 +6374,211 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                       ref={commentChatScrollRef}
                       style={{
                         flex: 1,
-                        padding: 24,
+                        padding: 0,
                         overflowY: "auto",
                         display: "flex",
                         flexDirection: "column",
-                        gap: 16,
-                        background: "#FAFAFA",
+                        background: "white",
                       }}
                     >
-                      <div style={{ textAlign: "center", marginBottom: 16 }}>
-                        <span
-                          style={{
-                            background: "transparent",
-                            fontSize: 12,
-                            fontWeight: 500,
-                            color: "rgba(44,32,22,0.5)",
-                          }}
-                        >
-                          {selectedComment.createdAt
-                            ? new Date(
-                                selectedComment.createdAt,
-                              ).toLocaleDateString("en-US", {
-                                year: "numeric",
-                                month: "long",
-                                day: "numeric",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })
-                            : "May 23, 2026, 1:20 PM"}
-                        </span>
-                      </div>
                       <div
                         style={{
-                          background: "white",
-                          border: "1px solid rgba(44,32,22,0.05)",
-                          padding: "12px 16px",
-                          borderRadius: "16px 16px 16px 4px",
-                          maxWidth: "70%",
-                          alignSelf: "flex-start",
-                          boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+                          padding: "16px 24px",
+                          borderBottom: "1px solid rgba(0,0,0,0.05)",
                         }}
                       >
-                        <div
-                          style={{
-                            fontSize: 13,
-                            fontWeight: 700,
-                            color: "#8b5cf6",
-                            marginBottom: 4,
-                          }}
-                        >
-                          {selectedComment.senderName}
-                        </div>
-                        <div
-                          style={{
-                            fontSize: 14,
-                            lineHeight: 1.5,
-                            color: "#111827",
-                            fontWeight: 500,
-                          }}
-                        >
-                          {selectedComment.content}
-                        </div>
-                        <div
-                          style={{
-                            fontSize: 11,
-                            color: "rgba(44,32,22,0.4)",
-                            fontWeight: 500,
-                            marginTop: 4,
-                            textAlign: "left",
-                          }}
-                        >
-                          {selectedComment.createdAt
-                            ? new Date(
-                                selectedComment.createdAt,
-                              ).toLocaleTimeString("id-ID", {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })
-                            : "13.41"}
-                        </div>
-                      </div>
-                      {selectedComment.replies &&
-                        selectedComment.replies.map(
-                          (reply: any, idx: number) => (
+                        <div style={{ display: "flex", gap: 12 }}>
+                          <img
+                            src={selectedComment.postThumbnail}
+                            style={{
+                              width: 32,
+                              height: 32,
+                              borderRadius: "50%",
+                              objectFit: "cover",
+                            }}
+                          />
+                          <div style={{ flex: 1 }}>
                             <div
-                              key={idx}
                               style={{
-                                background:
-                                  reply.sender === "brand"
-                                    ? "#8b5cf6"
-                                    : "white",
-                                color:
-                                  reply.sender === "brand"
-                                    ? "white"
-                                    : "#111827",
-                                border:
-                                  reply.sender === "brand"
-                                    ? "none"
-                                    : "1px solid rgba(44,32,22,0.05)",
-                                padding: "12px 16px",
-                                borderRadius:
-                                  reply.sender === "brand"
-                                    ? "16px 16px 4px 16px"
-                                    : "16px 16px 16px 4px",
-                                maxWidth: "70%",
-                                alignSelf:
-                                  reply.sender === "brand"
-                                    ? "flex-end"
-                                    : "flex-start",
-                                boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+                                fontSize: 14,
+                                color: "#111827",
+                                lineHeight: 1.5,
                               }}
                             >
+                              <span style={{ fontWeight: 700, marginRight: 6 }}>
+                                fadkhera_id
+                              </span>
+                              {selectedComment.postCaption}
+                            </div>
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 12,
+                                marginTop: 8,
+                                fontSize: 13,
+                                color: "gray",
+                                fontWeight: 600,
+                              }}
+                            >
+                              <span>{selectedComment.postTime}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {selectedComment.postComments &&
+                        selectedComment.postComments.map((pc: any) => (
+                          <div
+                            key={pc.id}
+                            style={{
+                              display: "flex",
+                              gap: 12,
+                              padding: "16px 24px",
+                            }}
+                          >
+                            <img
+                              src={pc.avatar}
+                              style={{
+                                width: 32,
+                                height: 32,
+                                borderRadius: "50%",
+                              }}
+                            />
+                            <div style={{ flex: 1 }}>
                               <div
                                 style={{
                                   fontSize: 14,
+                                  color: "#111827",
                                   lineHeight: 1.5,
-                                  fontWeight: 500,
-                                  whiteSpace: "pre-wrap",
                                 }}
                               >
-                                {reply.content}
+                                <span
+                                  style={{ fontWeight: 700, marginRight: 6 }}
+                                >
+                                  {pc.username}
+                                </span>
+                                {pc.text}
                               </div>
                               <div
                                 style={{
-                                  fontSize: 11,
-                                  color:
-                                    reply.sender === "brand"
-                                      ? "rgba(255,255,255,0.7)"
-                                      : "rgba(44,32,22,0.4)",
-                                  fontWeight: 500,
-                                  marginTop: 4,
-                                  textAlign:
-                                    reply.sender === "brand" ? "right" : "left",
-                                  display:
-                                    reply.sender === "brand" ? "flex" : "block",
-                                  alignItems:
-                                    reply.sender === "brand"
-                                      ? "center"
-                                      : "initial",
-                                  gap: reply.sender === "brand" ? 4 : 0,
-                                  justifyContent:
-                                    reply.sender === "brand"
-                                      ? "flex-end"
-                                      : "initial",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 12,
+                                  marginTop: 8,
+                                  fontSize: 13,
+                                  color: "gray",
+                                  fontWeight: 600,
                                 }}
                               >
-                                {reply.createdAt
-                                  ? new Date(
-                                      reply.createdAt,
-                                    ).toLocaleTimeString("id-ID", {
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                    })
-                                  : "13.41"}
-                                {reply.sender === "brand" && (
-                                  <Check
-                                    size={12}
-                                    color="rgba(255,255,255,0.7)"
-                                  />
-                                )}
+                                <span>{pc.time}</span>
+                                <span
+                                  style={{
+                                    cursor: "pointer",
+                                    color: "rgba(44,32,22,0.6)",
+                                  }}
+                                >
+                                  Reply
+                                </span>
+                                <span
+                                  style={{
+                                    cursor: "pointer",
+                                    color: "var(--theme-primary)",
+                                  }}
+                                >
+                                  Send message
+                                </span>
+                                <MoreHorizontal
+                                  size={14}
+                                  style={{ cursor: "pointer" }}
+                                />
                               </div>
+
+                              {pc.replies &&
+                                pc.replies.map((reply: any) => (
+                                  <div
+                                    key={reply.id}
+                                    style={{
+                                      display: "flex",
+                                      gap: 12,
+                                      marginTop: 16,
+                                    }}
+                                  >
+                                    <img
+                                      src={reply.avatar}
+                                      style={{
+                                        width: 28,
+                                        height: 28,
+                                        borderRadius: "50%",
+                                      }}
+                                    />
+                                    <div style={{ flex: 1 }}>
+                                      <div
+                                        style={{
+                                          fontSize: 14,
+                                          color: "#111827",
+                                          lineHeight: 1.5,
+                                        }}
+                                      >
+                                        <span
+                                          style={{
+                                            fontWeight: 700,
+                                            marginRight: 6,
+                                          }}
+                                        >
+                                          {reply.username}
+                                        </span>
+                                        {reply.text}
+                                      </div>
+                                      <div
+                                        style={{
+                                          display: "flex",
+                                          alignItems: "center",
+                                          gap: 12,
+                                          marginTop: 8,
+                                          fontSize: 13,
+                                          color: "gray",
+                                          fontWeight: 600,
+                                        }}
+                                      >
+                                        <span>{reply.time}</span>
+                                        <span
+                                          style={{
+                                            cursor: "pointer",
+                                            color: "rgba(44,32,22,0.6)",
+                                          }}
+                                        >
+                                          Reply
+                                        </span>
+                                        <span
+                                          style={{
+                                            cursor: "pointer",
+                                            color: "var(--theme-primary)",
+                                          }}
+                                        >
+                                          Send message
+                                        </span>
+                                        <MoreHorizontal
+                                          size={14}
+                                          style={{ cursor: "pointer" }}
+                                        />
+                                      </div>
+                                    </div>
+                                    <button>
+                                      <Heart size={14} color="gray" />
+                                    </button>
+                                  </div>
+                                ))}
                             </div>
-                          ),
-                        )}
+                            <button>
+                              <Heart
+                                size={16}
+                                color={pc.isLiked ? "#E4405F" : "gray"}
+                                fill={pc.isLiked ? "#E4405F" : "none"}
+                              />
+                            </button>
+                          </div>
+                        ))}
                     </div>
                     <div
                       style={{
@@ -6123,18 +6699,22 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                             )}
                           </div>
                           <input
-                            placeholder={`Reply on ${selectedComment.platform === "tiktok" ? "TikTok" : "Instagram"}...`}
+                            placeholder={`Add a comment for ${selectedComment.senderName}...`}
                             value={msgContent}
                             onChange={(e) => setMsgContent(e.target.value)}
                             onKeyDown={(e) => {
                               if (e.key === "Enter" && msgContent.trim()) {
                                 const updatedMsg = { ...selectedComment };
-                                if (!updatedMsg.replies)
-                                  updatedMsg.replies = [];
-                                updatedMsg.replies.push({
-                                  content: msgContent,
-                                  createdAt: new Date().toISOString(),
-                                  sender: "brand",
+                                if (!updatedMsg.postComments)
+                                  updatedMsg.postComments = [];
+                                updatedMsg.postComments.push({
+                                  id: `new-${Date.now()}`,
+                                  username: "brand",
+                                  text: msgContent,
+                                  time: "Just now",
+                                  avatar: "https://i.pravatar.cc/150?u=brand",
+                                  isLiked: false,
+                                  replies: [],
                                 });
                                 setSelectedComment(updatedMsg);
                                 setMsgContent("");
@@ -6174,11 +6754,16 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                             onClick={() => {
                               if (!msgContent.trim()) return;
                               const updatedMsg = { ...selectedComment };
-                              if (!updatedMsg.replies) updatedMsg.replies = [];
-                              updatedMsg.replies.push({
-                                content: msgContent,
-                                createdAt: new Date().toISOString(),
-                                sender: "brand",
+                              if (!updatedMsg.postComments)
+                                updatedMsg.postComments = [];
+                              updatedMsg.postComments.push({
+                                id: `new-${Date.now()}`,
+                                username: "brand",
+                                text: msgContent,
+                                time: "Just now",
+                                avatar: "https://i.pravatar.cc/150?u=brand",
+                                isLiked: false,
+                                replies: [],
                               });
                               setSelectedComment(updatedMsg);
                               setMsgContent("");
@@ -6236,452 +6821,519 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                     flexShrink: 0,
                   }}
                 >
-                  <div
-                    style={{
-                      padding: "16px",
-                      borderBottom: "1px solid rgba(44,32,22,0.05)",
-                    }}
-                  >
-                    <h3
-                      style={{
-                        fontSize: 14,
-                        fontWeight: 800,
-                        margin: "0 0 4px",
-                        color: "#111827",
-                      }}
-                    >
-                      Contact details
-                    </h3>
-                    <p
-                      style={{
-                        fontSize: 12,
-                        color: "rgba(44,32,22,0.5)",
-                        margin: "0 0 12px",
-                        fontWeight: 500,
-                      }}
-                    >
-                      Add more details about this contact.
-                    </p>
-                    <button
-                      style={{
-                        padding: "6px 10px",
-                        borderRadius: 12,
-                        background: "white",
-                        border: "1px solid rgba(44,32,22,0.15)",
-                        color: "#111827",
-                        fontWeight: 700,
-                        fontSize: 12,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 6,
-                        cursor: "pointer",
-                        transition: "all 0.2s",
-                        width: "fit-content",
-                      }}
-                      className="hover-scale"
-                    >
-                      <Plus size={14} /> Add details
-                    </button>
-                  </div>
-
-                  <div
-                    style={{
-                      padding: "16px",
-                      borderBottom: "1px solid rgba(44,32,22,0.05)",
-                    }}
-                  >
-                    <h3
-                      style={{
-                        fontSize: 13,
-                        fontWeight: 800,
-                        margin: "0 0 12px",
-                        color: "#111827",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                      }}
-                    >
-                      {inboxViewMode === "dms"
-                        ? "Profile"
-                        : "Instagram profile"}
-                      <Info size={12} color="rgba(44,32,22,0.4)" />
-                    </h3>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 10,
-                        marginBottom: 12,
-                      }}
-                    >
+                  {inboxViewMode === "comments" && selectedComment ? (
+                    <div style={{ padding: 16 }}>
                       <div
                         style={{
-                          width: 14,
-                          height: 14,
-                          borderRadius: "50%",
-                          background: "#f0f0f0",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontWeight: 700,
-                          color: "#9ca3af",
+                          width: "100%",
+                          borderRadius: 16,
+                          overflow: "hidden",
+                          position: "relative",
+                          border: "1px solid rgba(0,0,0,0.05)",
+                          background: "black",
                         }}
                       >
-                        {selectedInboxMsg?.platform === "meta" ||
-                        selectedInboxMsg?.platform === "instagram" ||
-                        selectedComment?.platform === "meta" ||
-                        selectedComment?.platform === "instagram" ? (
-                          <Instagram size={14} color="rgba(44,32,22,0.6)" />
-                        ) : (
-                          <MessageCircle size={14} color="rgba(44,32,22,0.6)" />
-                        )}
+                        <img
+                          src={selectedComment.postMedia}
+                          style={{
+                            width: "100%",
+                            height: "auto",
+                            maxHeight: 400,
+                            objectFit: "contain",
+                            display: "block",
+                          }}
+                        />
+                        <div
+                          style={{
+                            position: "absolute",
+                            inset: 0,
+                            background: "rgba(0,0,0,0.2)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: 48,
+                              height: 48,
+                              borderRadius: "50%",
+                              background: "rgba(255,255,255,0.3)",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              backdropFilter: "blur(4px)",
+                              cursor: "pointer",
+                            }}
+                          >
+                            <div
+                              style={{
+                                width: 0,
+                                height: 0,
+                                borderTop: "8px solid transparent",
+                                borderBottom: "8px solid transparent",
+                                borderLeft: "12px solid white",
+                                marginLeft: 4,
+                              }}
+                            ></div>
+                          </div>
+                        </div>
                       </div>
+                    </div>
+                  ) : (
+                    <>
                       <div
                         style={{
-                          fontWeight: 600,
-                          fontSize: 12,
-                          color: "rgba(44,32,22,0.6)",
+                          padding: "16px",
+                          borderBottom: "1px solid rgba(44,32,22,0.05)",
                         }}
                       >
-                        @
-                        {(
-                          selectedInboxMsg?.senderName ||
-                          selectedComment?.senderName ||
-                          "user"
-                        )
-                          .toLowerCase()
-                          .replace(/\s+/g, "")}
+                        <h3
+                          style={{
+                            fontSize: 14,
+                            fontWeight: 800,
+                            margin: "0 0 4px",
+                            color: "#111827",
+                          }}
+                        >
+                          Contact details
+                        </h3>
+                        <p
+                          style={{
+                            fontSize: 12,
+                            color: "rgba(44,32,22,0.5)",
+                            margin: "0 0 12px",
+                            fontWeight: 500,
+                          }}
+                        >
+                          Add more details about this contact.
+                        </p>
+                        <button
+                          style={{
+                            padding: "6px 10px",
+                            borderRadius: 12,
+                            background: "white",
+                            border: "1px solid rgba(44,32,22,0.15)",
+                            color: "#111827",
+                            fontWeight: 700,
+                            fontSize: 12,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
+                            cursor: "pointer",
+                            transition: "all 0.2s",
+                            width: "fit-content",
+                          }}
+                          className="hover-scale"
+                        >
+                          <Plus size={14} /> Add details
+                        </button>
                       </div>
-                    </div>
-                    <div
-                      style={{
-                        fontSize: 11,
-                        color: "rgba(44,32,22,0.6)",
-                        fontWeight: 500,
-                        lineHeight: 1.5,
-                        marginBottom: 10,
-                      }}
-                    >
-                      www.yogyagroup.com • FB Page: Belanja Hemat Ya Yogya •
-                      Twitter & Line ID: @info_yogyagroup • TikTok: yogyagroup
-                      #BelanjaHematYaYogya
-                    </div>
-                    <div
-                      style={{
-                        fontSize: 12,
-                        color: "var(--theme-primary)",
-                        fontWeight: 600,
-                        cursor: "pointer",
-                        marginBottom: 10,
-                      }}
-                    >
-                      YOGYA GROUP OFFICIAL
-                    </div>
-                    <div
-                      style={{
-                        fontSize: 12,
-                        color: "var(--theme-primary)",
-                        fontWeight: 600,
-                        cursor: "pointer",
-                      }}
-                    >
-                      https://linktr.ee/YogyaGroup
-                    </div>
-                  </div>
 
-                  <div
-                    style={{
-                      padding: "12px 16px",
-                      borderBottom: "1px solid rgba(44,32,22,0.05)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                    }}
-                  >
-                    <h3
-                      style={{
-                        fontSize: 13,
-                        fontWeight: 800,
-                        margin: 0,
-                        color: "#111827",
-                      }}
-                    >
-                      Activity
-                    </h3>
-                    <span
-                      style={{
-                        fontSize: 10,
-                        background: "rgba(44,32,22,0.05)",
-                        padding: "2px 8px",
-                        borderRadius: 12,
-                        fontWeight: 600,
-                        color: "rgba(44,32,22,0.6)",
-                      }}
-                    >
-                      Recommended
-                    </span>
-                  </div>
-
-                  <div
-                    style={{
-                      padding: "16px",
-                      borderBottom: "1px solid rgba(44,32,22,0.05)",
-                    }}
-                  >
-                    <h3
-                      style={{
-                        fontSize: 13,
-                        fontWeight: 800,
-                        margin: "0 0 10px",
-                        color: "#111827",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 6,
-                      }}
-                    >
-                      Lead stage <Info size={12} color="rgba(44,32,22,0.4)" />
-                    </h3>
-                    <button
-                      style={{
-                        width: "100%",
-                        padding: "6px 10px",
-                        borderRadius: 8,
-                        background: "white",
-                        border: "1px solid rgba(44,32,22,0.15)",
-                        color: "#111827",
-                        fontWeight: 600,
-                        fontSize: 12,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        cursor: "pointer",
-                        transition: "all 0.2s",
-                      }}
-                      className="hover-scale"
-                    >
-                      Mark as lead
-                    </button>
-                  </div>
-
-                  <div
-                    style={{
-                      padding: "16px",
-                      borderBottom: "1px solid rgba(44,32,22,0.05)",
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        marginBottom: 10,
-                      }}
-                    >
-                      <h3
+                      <div
                         style={{
-                          fontSize: 13,
-                          fontWeight: 800,
-                          margin: 0,
-                          color: "#111827",
+                          padding: "16px",
+                          borderBottom: "1px solid rgba(44,32,22,0.05)",
                         }}
                       >
-                        Order status
-                      </h3>
-                      <span
-                        style={{
-                          fontSize: 11,
-                          color: "var(--theme-primary)",
-                          fontWeight: 600,
-                          cursor: "pointer",
-                        }}
-                      >
-                        Clear status
-                      </span>
-                    </div>
-                    <select
-                      style={{
-                        width: "100%",
-                        padding: "6px 10px",
-                        borderRadius: 8,
-                        border: "1px solid rgba(44,32,22,0.15)",
-                        fontSize: 12,
-                        fontWeight: 500,
-                        color: "#111827",
-                        outline: "none",
-                        cursor: "pointer",
-                      }}
-                    >
-                      <option>Select option</option>
-                      <option>Pending</option>
-                      <option>Processing</option>
-                      <option>Completed</option>
-                    </select>
-                  </div>
-
-                  <div
-                    style={{
-                      padding: "16px",
-                      borderBottom: "1px solid rgba(44,32,22,0.05)",
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        marginBottom: 10,
-                      }}
-                    >
-                      <h3
-                        style={{
-                          fontSize: 13,
-                          fontWeight: 800,
-                          margin: 0,
-                          color: "#111827",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 6,
-                        }}
-                      >
-                        Labels <Info size={12} color="rgba(44,32,22,0.4)" />
-                      </h3>
-                      <span
-                        style={{
-                          fontSize: 11,
-                          color: "var(--theme-primary)",
-                          fontWeight: 600,
-                          cursor: "pointer",
-                        }}
-                      >
-                        Manage labels
-                      </span>
-                    </div>
-                    <input
-                      placeholder="Add label"
-                      style={{
-                        width: "100%",
-                        padding: "6px 10px",
-                        borderRadius: 8,
-                        border: "1px solid rgba(44,32,22,0.15)",
-                        fontSize: 12,
-                        outline: "none",
-                        marginBottom: 12,
-                      }}
-                    />
-                    <div
-                      style={{
-                        fontSize: 11,
-                        fontWeight: 600,
-                        color: "rgba(44,32,22,0.6)",
-                        marginBottom: 8,
-                      }}
-                    >
-                      Suggested labels
-                    </div>
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 8,
-                      }}
-                    >
-                      <label
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 8,
-                          fontSize: 12,
-                          fontWeight: 500,
-                        }}
-                      >
-                        <input
-                          type="checkbox"
+                        <h3
                           style={{
-                            width: 14,
-                            height: 14,
-                            borderRadius: 4,
-                            border: "1px solid rgba(44,32,22,0.2)",
-                          }}
-                        />
-                        <span
-                          style={{
-                            background: "#dcfce7",
-                            color: "#166534",
-                            padding: "2px 8px",
-                            borderRadius: 4,
+                            fontSize: 13,
+                            fontWeight: 800,
+                            margin: "0 0 12px",
+                            color: "#111827",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
                           }}
                         >
-                          New customer
-                        </span>
-                      </label>
-                      <label
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 8,
-                          fontSize: 12,
-                          fontWeight: 500,
-                        }}
-                      >
-                        <input
-                          type="checkbox"
+                          {inboxViewMode === "dms"
+                            ? "Profile"
+                            : "Instagram profile"}
+                          <Info size={12} color="rgba(44,32,22,0.4)" />
+                        </h3>
+                        <div
                           style={{
-                            width: 14,
-                            height: 14,
-                            borderRadius: 4,
-                            border: "1px solid rgba(44,32,22,0.2)",
-                          }}
-                        />
-                        <span
-                          style={{
-                            background: "#f3f4f6",
-                            color: "#374151",
-                            padding: "2px 8px",
-                            borderRadius: 4,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 10,
+                            marginBottom: 12,
                           }}
                         >
-                          Today's date ({new Date().getMonth() + 1}/
-                          {new Date().getDate()})
-                        </span>
-                      </label>
-                    </div>
-                  </div>
+                          <div
+                            style={{
+                              width: 14,
+                              height: 14,
+                              borderRadius: "50%",
+                              background: "#f0f0f0",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              fontWeight: 700,
+                              color: "#9ca3af",
+                            }}
+                          >
+                            {selectedInboxMsg?.platform === "meta" ||
+                            selectedInboxMsg?.platform === "instagram" ||
+                            selectedComment?.platform === "meta" ||
+                            selectedComment?.platform === "instagram" ? (
+                              <Instagram size={14} color="rgba(44,32,22,0.6)" />
+                            ) : (
+                              <MessageCircle
+                                size={14}
+                                color="rgba(44,32,22,0.6)"
+                              />
+                            )}
+                          </div>
+                          <div
+                            style={{
+                              fontWeight: 600,
+                              fontSize: 12,
+                              color: "rgba(44,32,22,0.6)",
+                            }}
+                          >
+                            @
+                            {(
+                              selectedInboxMsg?.senderName ||
+                              selectedComment?.senderName ||
+                              "user"
+                            )
+                              .toLowerCase()
+                              .replace(/\s+/g, "")}
+                          </div>
+                        </div>
+                        <div
+                          style={{
+                            fontSize: 11,
+                            color: "rgba(44,32,22,0.6)",
+                            fontWeight: 500,
+                            lineHeight: 1.5,
+                            marginBottom: 10,
+                          }}
+                        >
+                          www.yogyagroup.com • FB Page: Belanja Hemat Ya Yogya •
+                          Twitter & Line ID: @info_yogyagroup • TikTok:
+                          yogyagroup #BelanjaHematYaYogya
+                        </div>
+                        <div
+                          style={{
+                            fontSize: 12,
+                            color: "var(--theme-primary)",
+                            fontWeight: 600,
+                            cursor: "pointer",
+                            marginBottom: 10,
+                          }}
+                        >
+                          YOGYA GROUP OFFICIAL
+                        </div>
+                        <div
+                          style={{
+                            fontSize: 12,
+                            color: "var(--theme-primary)",
+                            fontWeight: 600,
+                            cursor: "pointer",
+                          }}
+                        >
+                          https://linktr.ee/YogyaGroup
+                        </div>
+                      </div>
 
-                  <div style={{ padding: "16px" }}>
-                    <h3
-                      style={{
-                        fontSize: 13,
-                        fontWeight: 800,
-                        margin: "0 0 8px",
-                        color: "#111827",
-                      }}
-                    >
-                      Notes
-                    </h3>
-                    <p
-                      style={{
-                        fontSize: 11,
-                        color: "rgba(44,32,22,0.5)",
-                        margin: "0 0 10px",
-                        fontWeight: 500,
-                      }}
-                    >
-                      Keep track of important customer interactions.
-                    </p>
-                    <textarea
-                      placeholder="Add a note..."
-                      rows={3}
-                      style={{
-                        width: "100%",
-                        padding: "6px 10px",
-                        borderRadius: 8,
-                        border: "1px solid rgba(44,32,22,0.15)",
-                        fontSize: 12,
-                        outline: "none",
-                        resize: "none",
-                      }}
-                    />
-                  </div>
+                      <div
+                        style={{
+                          padding: "12px 16px",
+                          borderBottom: "1px solid rgba(44,32,22,0.05)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                        }}
+                      >
+                        <h3
+                          style={{
+                            fontSize: 13,
+                            fontWeight: 800,
+                            margin: 0,
+                            color: "#111827",
+                          }}
+                        >
+                          Activity
+                        </h3>
+                        <span
+                          style={{
+                            fontSize: 10,
+                            background: "rgba(44,32,22,0.05)",
+                            padding: "2px 8px",
+                            borderRadius: 12,
+                            fontWeight: 600,
+                            color: "rgba(44,32,22,0.6)",
+                          }}
+                        >
+                          Recommended
+                        </span>
+                      </div>
+
+                      <div
+                        style={{
+                          padding: "16px",
+                          borderBottom: "1px solid rgba(44,32,22,0.05)",
+                        }}
+                      >
+                        <h3
+                          style={{
+                            fontSize: 13,
+                            fontWeight: 800,
+                            margin: "0 0 10px",
+                            color: "#111827",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
+                          }}
+                        >
+                          Lead stage{" "}
+                          <Info size={12} color="rgba(44,32,22,0.4)" />
+                        </h3>
+                        <button
+                          style={{
+                            width: "100%",
+                            padding: "6px 10px",
+                            borderRadius: 8,
+                            background: "white",
+                            border: "1px solid rgba(44,32,22,0.15)",
+                            color: "#111827",
+                            fontWeight: 600,
+                            fontSize: 12,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            cursor: "pointer",
+                            transition: "all 0.2s",
+                          }}
+                          className="hover-scale"
+                        >
+                          Mark as lead
+                        </button>
+                      </div>
+
+                      <div
+                        style={{
+                          padding: "16px",
+                          borderBottom: "1px solid rgba(44,32,22,0.05)",
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            marginBottom: 10,
+                          }}
+                        >
+                          <h3
+                            style={{
+                              fontSize: 13,
+                              fontWeight: 800,
+                              margin: 0,
+                              color: "#111827",
+                            }}
+                          >
+                            Order status
+                          </h3>
+                          <span
+                            style={{
+                              fontSize: 11,
+                              color: "var(--theme-primary)",
+                              fontWeight: 600,
+                              cursor: "pointer",
+                            }}
+                          >
+                            Clear status
+                          </span>
+                        </div>
+                        <select
+                          style={{
+                            width: "100%",
+                            padding: "6px 10px",
+                            borderRadius: 8,
+                            border: "1px solid rgba(44,32,22,0.15)",
+                            fontSize: 12,
+                            fontWeight: 500,
+                            color: "#111827",
+                            outline: "none",
+                            cursor: "pointer",
+                          }}
+                        >
+                          <option>Select option</option>
+                          <option>Pending</option>
+                          <option>Processing</option>
+                          <option>Completed</option>
+                        </select>
+                      </div>
+
+                      <div
+                        style={{
+                          padding: "16px",
+                          borderBottom: "1px solid rgba(44,32,22,0.05)",
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            marginBottom: 10,
+                          }}
+                        >
+                          <h3
+                            style={{
+                              fontSize: 13,
+                              fontWeight: 800,
+                              margin: 0,
+                              color: "#111827",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 6,
+                            }}
+                          >
+                            Labels <Info size={12} color="rgba(44,32,22,0.4)" />
+                          </h3>
+                          <span
+                            style={{
+                              fontSize: 11,
+                              color: "var(--theme-primary)",
+                              fontWeight: 600,
+                              cursor: "pointer",
+                            }}
+                          >
+                            Manage labels
+                          </span>
+                        </div>
+                        <input
+                          placeholder="Add label"
+                          style={{
+                            width: "100%",
+                            padding: "6px 10px",
+                            borderRadius: 8,
+                            border: "1px solid rgba(44,32,22,0.15)",
+                            fontSize: 12,
+                            outline: "none",
+                            marginBottom: 12,
+                          }}
+                        />
+                        <div
+                          style={{
+                            fontSize: 11,
+                            fontWeight: 600,
+                            color: "rgba(44,32,22,0.6)",
+                            marginBottom: 8,
+                          }}
+                        >
+                          Suggested labels
+                        </div>
+                        <div
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 8,
+                          }}
+                        >
+                          <label
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 8,
+                              fontSize: 12,
+                              fontWeight: 500,
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              style={{
+                                width: 14,
+                                height: 14,
+                                borderRadius: 4,
+                                border: "1px solid rgba(44,32,22,0.2)",
+                              }}
+                            />
+                            <span
+                              style={{
+                                background: "#dcfce7",
+                                color: "#166534",
+                                padding: "2px 8px",
+                                borderRadius: 4,
+                              }}
+                            >
+                              New customer
+                            </span>
+                          </label>
+                          <label
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 8,
+                              fontSize: 12,
+                              fontWeight: 500,
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              style={{
+                                width: 14,
+                                height: 14,
+                                borderRadius: 4,
+                                border: "1px solid rgba(44,32,22,0.2)",
+                              }}
+                            />
+                            <span
+                              style={{
+                                background: "#f3f4f6",
+                                color: "#374151",
+                                padding: "2px 8px",
+                                borderRadius: 4,
+                              }}
+                            >
+                              Today's date ({new Date().getMonth() + 1}/
+                              {new Date().getDate()})
+                            </span>
+                          </label>
+                        </div>
+                      </div>
+
+                      <div style={{ padding: "16px" }}>
+                        <h3
+                          style={{
+                            fontSize: 13,
+                            fontWeight: 800,
+                            margin: "0 0 8px",
+                            color: "#111827",
+                          }}
+                        >
+                          Notes
+                        </h3>
+                        <p
+                          style={{
+                            fontSize: 11,
+                            color: "rgba(44,32,22,0.5)",
+                            margin: "0 0 10px",
+                            fontWeight: 500,
+                          }}
+                        >
+                          Keep track of important customer interactions.
+                        </p>
+                        <textarea
+                          placeholder="Add a note..."
+                          rows={3}
+                          style={{
+                            width: "100%",
+                            padding: "6px 10px",
+                            borderRadius: 8,
+                            border: "1px solid rgba(44,32,22,0.15)",
+                            fontSize: 12,
+                            outline: "none",
+                            resize: "none",
+                          }}
+                        />
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
             </motion.div>
