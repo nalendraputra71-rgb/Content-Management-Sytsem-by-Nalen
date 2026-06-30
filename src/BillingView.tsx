@@ -3,6 +3,7 @@ import { doc, updateDoc, collection, getDocs, setDoc } from "./firebase";
 import { db } from "./firebase";
 import { CARD, B, I } from "./data";
 import { motion, AnimatePresence } from "motion/react";
+import { getAuth } from "firebase/auth";
 
 export function BillingView({ userProfile, onUpdate }: { userProfile: any, activeWorkspace: any, onUpdate: (data: any) => void }) {
   const [modal, setModal] = useState<any>(null);
@@ -89,54 +90,42 @@ export function BillingView({ userProfile, onUpdate }: { userProfile: any, activ
   const handleSimulatePayment = async () => {
     setLoading(true);
     try {
-      setTimeout(async () => {
-        let addMonths = modal.addMonths || 1;
-        const finalPrice = calculateFinalPrice(modal.price);
+      const finalPrice = calculateFinalPrice(modal.price);
+      
+      const auth = getAuth();
+      const currentUser = auth.currentUser;
+      if (!currentUser) throw new Error("Anda belum login");
+      
+      const token = await currentUser.getIdToken();
 
-        const currentActive = profileActiveUntil > new Date() ? profileActiveUntil : new Date();
-        currentActive.setMonth(currentActive.getMonth() + addMonths);
-
-        const uRef = doc(db, "users", userProfile.uid);
-        await updateDoc(uRef, {
-          activeUntil: currentActive.toISOString(),
-          plan: "pro",
-          hasUsedPromo: true
-        });
-
-        // Track transaction
-        await setDoc(doc(collection(db, "transactions")), {
-          userId: userProfile.uid,
-          userEmail: userProfile.email,
+      const response = await fetch('/api/xendit/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
           amount: finalPrice,
-          originalAmount: modal.price,
-          voucherCode: appliedVoucher?.code || null,
-          planName: modal.name,
-          paymentMethod: "Midtrans",
-          timestamp: new Date().toISOString()
-        });
+          plan: modal.name,
+          email: userProfile.email,
+          description: `Pembelian Paket ${modal.name} di Hubify Social`
+        })
+      });
 
-        // Update promo usage count
-        if (appliedVoucher) {
-          const pRef = doc(db, "promos", appliedVoucher.id);
-          await updateDoc(pRef, {
-            usageCount: (appliedVoucher.usageCount || 0) + 1
-          });
-        }
+      const data = await response.json();
+      
+      if (!response.ok) {
+         throw new Error(data.error || "Gagal membuat invoice");
+      }
 
-        onUpdate({
-          ...userProfile,
-          activeUntil: currentActive.toISOString(),
-          plan: "pro",
-          hasUsedPromo: true
-        });
-        
-        setLoading(false);
-        setModal(null);
-        setAppliedVoucher(null);
-        alert(`Simulasi Midtrans Berhasil! Pembayaran Rp ${finalPrice.toLocaleString()} dikonfirmasi.`);
-      }, 1500);
-    } catch(e) {
-      alert("Error memproses pembayaran.");
+      if (data.checkoutUrl) {
+         window.location.href = data.checkoutUrl;
+      } else {
+         throw new Error("Checkout URL tidak ditemukan dari Xendit");
+      }
+
+    } catch(e: any) {
+      alert("Error memproses pembayaran: " + e.message);
       setLoading(false);
     }
   };

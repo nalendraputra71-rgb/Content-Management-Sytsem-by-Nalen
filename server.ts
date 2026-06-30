@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 import fs from "fs";
 import admin from "firebase-admin";
 import { getAuth } from "firebase-admin/auth";
+import { getFirestore } from "firebase-admin/firestore";
 import { rateLimit } from "express-rate-limit";
 
 dotenv.config();
@@ -58,6 +59,123 @@ const apiLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
+
+import { Invoice as XenditInvoice } from 'xendit-node';
+
+// API Route untuk Xendit Checkout
+apiRoutes.post("/xendit/checkout", async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "Akses Ditolak: Token Autentikasi tidak ditemukan." });
+    }
+    const token = authHeader.split("Bearer ")[1];
+    initFirebase();
+    const decodedToken = await getAuth().verifyIdToken(token);
+    const uid = decodedToken.uid;
+
+    const { amount, plan, email, description } = req.body;
+    
+    if (!amount || !plan || !email) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    const apiKey = process.env.XENDIT_SECRET_KEY;
+    if (!apiKey) {
+      return res.status(500).json({ error: "XENDIT_SECRET_KEY is not configured" });
+    }
+
+    const xenditInvoiceClient = new XenditInvoice({ secretKey: apiKey });
+
+    // Format: sub-{uid}-{plan}-{timestamp}
+    const safePlan = plan.replace(/[^a-zA-Z0-9]/g, '');
+    const invoiceData = {
+      externalId: `sub_${uid}_${safePlan}_${Date.now()}`,
+      amount: amount,
+      payerEmail: email,
+      description: description || `Pembayaran langganan ${plan} Hubify Social`,
+      // Gunakan origin dari request atau default
+      successRedirectUrl: req.headers.origin ? `${req.headers.origin}/#/dashboard` : "https://hubifysocial.com/#/dashboard",
+      failureRedirectUrl: req.headers.origin ? `${req.headers.origin}/#/billing` : "https://hubifysocial.com/#/billing",
+      currency: "IDR",
+    };
+
+    const response = await xenditInvoiceClient.createInvoice({ data: invoiceData });
+    
+    return res.json({ checkoutUrl: response.invoiceUrl });
+  } catch (error: any) {
+    console.error("Xendit Checkout Error:", error);
+    return res.status(500).json({ error: error.message || "Failed to create checkout link" });
+  }
+});
+
+// API Route untuk Xendit Webhook
+apiRoutes.post("/xendit/webhook", async (req, res) => {
+  try {
+    // 1. Verifikasi X-CALLBACK-TOKEN dari Xendit (optional tapi sangat disarankan)
+    // Untuk saat ini kita log payload dan verifikasi token jika diset di .env (XENDIT_WEBHOOK_TOKEN)
+    const callbackToken = req.headers['x-callback-token'];
+    if (process.env.XENDIT_WEBHOOK_TOKEN && callbackToken !== process.env.XENDIT_WEBHOOK_TOKEN) {
+      console.warn("Invalid Xendit Webhook Token");
+      return res.status(403).json({ error: "Invalid Callback Token" });
+    }
+
+    const { external_id, status, amount, payer_email } = req.body;
+    console.log("Webhook Xendit diterima:", { external_id, status, amount });
+
+    // Pastikan ini format external_id yang kita buat: sub_{uid}_{plan}_{timestamp}
+    if (external_id && external_id.startsWith("sub_") && status === "PAID") {
+      const parts = external_id.split("_");
+      const uid = parts[1];
+      let plan = parts[2] ? parts[2].toLowerCase() : "pro";
+      if (!uid) {
+         console.warn("UID not found in external_id");
+         return res.status(400).json({ error: "Invalid external_id format" });
+      }
+
+      initFirebase();
+      const userRef = getFirestore().collection("users").doc(uid);
+      const userDoc = await userRef.get();
+
+      if (userDoc.exists) {
+        const userData = userDoc.data();
+        let currentActive = new Date();
+        if (userData?.activeUntil) {
+           const existingDate = new Date(userData.activeUntil);
+           if (existingDate > currentActive) {
+             currentActive = existingDate;
+           }
+        }
+        
+        // Tambahkan 1 bulan (bisa disesuaikan jika paket tahunan)
+        currentActive.setMonth(currentActive.getMonth() + 1);
+
+        await userRef.update({
+          activeUntil: currentActive.toISOString(),
+          plan: plan,
+        });
+        console.log(`Berhasil update plan untuk user ${uid} ke ${plan}`);
+
+        // Catat transaksi di Firestore
+        await getFirestore().collection("transactions").add({
+          userId: uid,
+          userEmail: payer_email || userData?.email || "unknown",
+          amount: amount,
+          planName: plan,
+          paymentMethod: "Xendit",
+          status: "PAID",
+          externalId: external_id,
+          timestamp: new Date().toISOString()
+        });
+      }
+    }
+
+    // Selalu balas 200 OK ke Xendit agar tidak di-retry
+    return res.status(200).json({ received: true });
+  } catch (error: any) {
+    console.error("Xendit Webhook Error:", error);
+    return res.status(500).json({ error: error.message });
+  }});
 
 // API Route untuk Gemini Proxy
 apiRoutes.post("/gemini", apiLimiter, async (req, res) => {
