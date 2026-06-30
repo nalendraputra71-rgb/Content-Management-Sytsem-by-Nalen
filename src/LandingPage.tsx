@@ -1207,6 +1207,7 @@ export function LandingPage() {
               <h4 className="font-bold text-[#0B2A4A] mb-2 uppercase tracking-wider text-xs">Legal</h4>
               <Link to="/privacy" className="text-slate-500 hover:text-blue-600 transition-colors font-medium text-sm">{lang === 'id' ? 'Kebijakan Privasi' : 'Privacy Policy'}</Link>
               <Link to="/terms" className="text-slate-500 hover:text-blue-600 transition-colors font-medium text-sm">{lang === 'id' ? 'Syarat & Ketentuan' : 'Terms of Service'}</Link>
+              <Link to="/refund-policy" className="text-slate-500 hover:text-blue-600 transition-colors font-medium text-sm">{lang === 'id' ? 'Kebijakan Pengembalian' : 'Refund Policy'}</Link>
             </div>
 
           </div>

@@ -95,6 +95,7 @@ const PublicFooter = ({ currentLang, onLangChange }: { currentLang?: 'id' | 'en'
             <h4 className="font-bold text-[#0B2A4A] mb-2 uppercase tracking-wider text-xs">Legal</h4>
             <Link to="/privacy" className="text-slate-500 hover:text-blue-600 transition-colors font-medium text-sm">{currentLang === 'id' ? 'Kebijakan Privasi' : 'Privacy Policy'}</Link>
             <Link to="/terms" className="text-slate-500 hover:text-blue-600 transition-colors font-medium text-sm">{currentLang === 'id' ? 'Syarat & Ketentuan' : 'Terms of Service'}</Link>
+            <Link to="/refund-policy" className="text-slate-500 hover:text-blue-600 transition-colors font-medium text-sm">{currentLang === 'id' ? 'Kebijakan Pengembalian' : 'Refund Policy'}</Link>
           </div>
 
         </div>
@@ -397,6 +398,20 @@ export function FAQ() {
       aEn: "No, Hubify Social is 100% cloud-based. You can access it from any web browser (Chrome, Safari, Edge) on both desktop and mobile devices without any installation." 
     },
     { 
+      id: '3b', category: 'general', 
+      qId: "Bisakah saya mengelola beberapa brand atau klien?", 
+      aId: "Ya, Anda dapat membuat Workspace terpisah untuk brand atau klien yang berbeda guna menjaga konten, aset, dan analitik mereka terisolasi sepenuhnya.",
+      qEn: "Can I manage multiple brands or clients?", 
+      aEn: "Yes, you can create separate Workspaces for different brands or clients to keep their content, assets, and analytics completely isolated." 
+    },
+    { 
+      id: '3c', category: 'general', 
+      qId: "Apa yang terjadi jika postingan gagal diterbitkan?", 
+      aId: "Jika postingan gagal karena kesalahan API atau masalah jaringan, kami akan segera memberi tahu Anda melalui email dan peringatan dalam aplikasi, memungkinkan Anda mencoba lagi atau mengedit postingan dengan mudah.",
+      qEn: "What happens if a post fails to publish?", 
+      aEn: "If a post fails due to an API error or network issue, we will notify you immediately via email and in-app alert, allowing you to easily retry or edit the post." 
+    },
+    { 
       id: '4', category: 'features', 
       qId: "Bagaimana cara kerja AI Copilot?", 
       aId: "AI Copilot kami terintegrasi langsung di dalam editor konten. Cukup masukkan topik atau instruksi singkat, dan AI akan membantu menghasilkan ide konten, menulis caption menarik, menyarankan hashtag relevan, bahkan menerjemahkan teks ke bahasa lain dalam hitungan detik.",
@@ -409,6 +424,41 @@ export function FAQ() {
       aId: "Itu bergantung pada paket yang Anda pilih. Paket dasar memiliki batas wajar per bulan, sedangkan paket Pro atau Enterprise memungkinkan penjadwalan konten hampir tak terbatas.",
       qEn: "Is there a limit to the number of scheduled posts?", 
       aEn: "It depends on the plan you choose. The basic plan has a reasonable monthly limit, while the Pro or Enterprise plans allow for virtually unlimited content scheduling." 
+    },
+    { 
+      id: '5b', category: 'features', 
+      qId: "Apakah mendukung posting otomatis ke Instagram Stories atau Reels?", 
+      aId: "Ya, Hubify Social mendukung posting otomatis untuk postingan feed Instagram, Reels, dan Stories untuk akun bisnis.",
+      qEn: "Does it auto-publish to Instagram Stories or Reels?", 
+      aEn: "Yes, Hubify Social supports auto-publishing for Instagram feed posts, Reels, and Stories for business accounts." 
+    },
+    { 
+      id: '5c', category: 'features', 
+      qId: "Bisakah saya membalas komentar dan pesan dari Hubify?", 
+      aId: "Ya, fitur Inbox Terpadu kami memungkinkan Anda mengelola komentar, DM, dan sebutan dari berbagai platform dalam satu tempat.",
+      qEn: "Can I reply to comments and messages from Hubify?", 
+      aEn: "Yes, our Unified Inbox feature allows you to manage comments, DMs, and mentions across platforms from one place." 
+    },
+    { 
+      id: '5d', category: 'features', 
+      qId: "Bisakah saya menjadwalkan postingan secara massal?", 
+      aId: "Ya, Anda dapat mengunggah file CSV untuk menjadwalkan puluhan postingan sekaligus menggunakan fitur unggah massal kami.",
+      qEn: "Can I schedule posts in bulk?", 
+      aEn: "Yes, you can upload a CSV file to schedule dozens of posts at once using our bulk upload feature." 
+    },
+    { 
+      id: '5e', category: 'features', 
+      qId: "Apakah Hubify Social menyediakan analitik dan pelaporan?", 
+      aId: "Ya, dashboard kami menyediakan analitik komprehensif tentang kinerja postingan, pertumbuhan audiens, dan metrik keterlibatan. Anda juga dapat mengekspor laporan ke PDF atau CSV.",
+      qEn: "Does Hubify Social provide analytics and reporting?", 
+      aEn: "Yes, our dashboard provides comprehensive analytics on post performance, audience growth, and engagement metrics. You can also export reports to PDF or CSV." 
+    },
+    { 
+      id: '5f', category: 'features', 
+      qId: "Bisakah saya menyesuaikan tautan di bio?", 
+      aId: "Ya, Hubify menyediakan fitur 'Link in Bio' yang dapat disesuaikan di mana Anda dapat memamerkan beberapa tautan, produk, dan profil sosial dengan merek Anda sendiri.",
+      qEn: "Can I customize the link in bio?", 
+      aEn: "Yes, Hubify provides a customizable 'Link in Bio' page where you can showcase multiple links, products, and social profiles with your own branding." 
     },
     { 
       id: '6', category: 'features', 
@@ -432,11 +482,39 @@ export function FAQ() {
       aEn: "You can change (upgrade or downgrade) your plan at any time through the Billing Settings menu in the dashboard. Changes will take effect on the next billing cycle." 
     },
     { 
+      id: '8b', category: 'billing', 
+      qId: "Bisakah saya membatalkan langganan kapan saja?", 
+      aId: "Ya, Anda dapat membatalkan langganan Anda kapan saja melalui pengaturan penagihan Anda. Akses Anda akan berlanjut hingga akhir periode tagihan saat ini.",
+      qEn: "Can I cancel my subscription at any time?", 
+      aEn: "Yes, you can cancel your subscription at any time from your billing settings. Your access will continue until the end of your current billing period." 
+    },
+    { 
+      id: '8c', category: 'billing', 
+      qId: "Metode pembayaran apa yang Anda terima?", 
+      aId: "Kami menerima semua kartu kredit utama, transfer bank, dan dompet digital (e-wallet) tertentu tergantung pada wilayah Anda.",
+      qEn: "What payment methods do you accept?", 
+      aEn: "We accept all major credit cards, bank transfers, and select e-wallets depending on your region." 
+    },
+    { 
+      id: '8d', category: 'billing', 
+      qId: "Apakah Anda menawarkan diskon untuk organisasi nirlaba atau pelajar?", 
+      aId: "Ya, kami menawarkan diskon khusus untuk LSM terdaftar dan pelajar. Silakan hubungi tim dukungan kami dengan kredensial Anda untuk mengklaimnya.",
+      qEn: "Do you offer a non-profit or student discount?", 
+      aEn: "Yes, we offer special discounts for registered NGOs and students. Please contact our support team with your credentials to claim it." 
+    },
+    { 
       id: '9', category: 'security', 
       qId: "Apakah data dan akun media sosial saya aman?", 
       aId: "Sangat aman. Kami menggunakan standar enkripsi industri terkemuka (AES-256) untuk melindungi data. Kami tidak pernah menyimpan password media sosial Anda; kami menggunakan token OAuth resmi yang dienkripsi dengan aman.",
       qEn: "Are my data and social media accounts secure?", 
       aEn: "Absolutely secure. We use industry-leading encryption standards (AES-256) to protect data. We never store your social media passwords; we use official OAuth tokens that are securely encrypted." 
+    },
+    { 
+      id: '9b', category: 'security', 
+      qId: "Apakah informasi pembayaran saya aman?", 
+      aId: "Ya, semua pembayaran diproses dengan aman melalui payment gateway yang mematuhi PCI (Payment Card Industry). Kami tidak menyimpan detail kartu kredit Anda di server kami.",
+      qEn: "Is my payment information safe?", 
+      aEn: "Yes, all payments are processed securely through PCI-compliant payment gateways. We do not store your credit card details on our servers." 
     },
     { 
       id: '10', category: 'security', 
@@ -2102,6 +2180,92 @@ export function AboutUs() {
           </div>
         </div>
 
+      </main>
+      <PublicFooter currentLang={lang} onLangChange={handleLangChange} />
+    </div>
+  );
+}
+
+export function RefundPolicy() {
+  useEffect(() => { window.scrollTo(0, 0); }, []);
+  const [lang, setLang] = useState<'id' | 'en'>(() => {
+    return (localStorage.getItem('hubify_locale') as 'id' | 'en') || 'en';
+  });
+
+  const handleLangChange = (l: 'id' | 'en') => {
+    setLang(l);
+    localStorage.setItem('hubify_locale', l);
+  };
+
+  return (
+    <div className="min-h-screen bg-[#FAFAF8] text-[#2C2016] flex flex-col font-sans">
+      <PublicHeader currentLang={lang} onLangChange={handleLangChange} />
+      <main className="flex-1 max-w-4xl mx-auto px-6 py-16 w-full">
+        {lang === 'id' ? (
+          <>
+            <h1 className="text-3xl md:text-5xl font-extrabold text-[#0B2A4A] mb-8">Kebijakan Pengembalian Dana</h1>
+            <div className="prose prose-slate max-w-none text-slate-700 leading-relaxed mb-12 space-y-6">
+              <p className="font-medium text-slate-500">Terakhir Diperbarui: Juni 2026</p>
+              
+              <h2 className="text-2xl font-bold text-[#0B2A4A] mt-8 mb-4">1. Kebijakan Umum</h2>
+              <p>Hubify Social menyediakan layanan perangkat lunak berbasis langganan (SaaS). Kami berkomitmen untuk memberikan layanan terbaik. Sebelum memutuskan berlangganan, kami sarankan Anda memanfaatkan masa uji coba gratis (free trial) yang kami sediakan untuk memastikan layanan kami sesuai dengan kebutuhan Anda.</p>
+
+              <h2 className="text-2xl font-bold text-[#0B2A4A] mt-8 mb-4">2. Ketentuan Pengembalian Dana</h2>
+              <p>Secara umum, semua pembayaran yang telah diproses bersifat final dan tidak dapat dikembalikan (non-refundable). Namun, pengembalian dana dapat dipertimbangkan dalam kondisi berikut:</p>
+              <ul className="list-disc pl-5 space-y-2">
+                <li>Terjadi kesalahan sistem (bug/error) dari pihak Hubify Social yang menyebabkan pengguna tidak dapat mengakses layanan sama sekali selama lebih dari 3 (tiga) hari berturut-turut, dan tim teknis kami gagal memperbaikinya.</li>
+                <li>Terjadi penagihan ganda (double billing) akibat kesalahan pada sistem pembayaran kami atau penyedia layanan pembayaran.</li>
+              </ul>
+              
+              <h2 className="text-2xl font-bold text-[#0B2A4A] mt-8 mb-4">3. Proses Pengajuan Pengembalian Dana</h2>
+              <p>Jika Anda memenuhi syarat di atas, Anda dapat mengajukan permintaan pengembalian dana dalam waktu maksimal 7 (tujuh) hari kalender sejak tanggal transaksi.</p>
+              <p>Langkah-langkah pengajuan:</p>
+              <ol className="list-decimal pl-5 space-y-2">
+                <li>Kirimkan email ke <strong>support@hubifysocial.com</strong> dengan subjek "Permintaan Refund - [Alamat Email Akun Anda]".</li>
+                <li>Sertakan bukti transaksi/invoice, kronologi kejadian, dan bukti pendukung (screenshot/rekaman layar).</li>
+                <li>Tim kami akan meninjau pengajuan Anda dalam waktu 3-5 hari kerja.</li>
+              </ol>
+
+              <h2 className="text-2xl font-bold text-[#0B2A4A] mt-8 mb-4">4. Metode dan Waktu Pengembalian Dana</h2>
+              <p>Jika permohonan pengembalian dana disetujui, dana akan dikembalikan ke metode pembayaran awal yang Anda gunakan. Proses pengembalian dana akan memakan waktu 7 hingga 14 hari kerja, tergantung pada kebijakan bank atau penyedia layanan pembayaran Anda.</p>
+
+              <h2 className="text-2xl font-bold text-[#0B2A4A] mt-8 mb-4">5. Pembatalan Langganan</h2>
+              <p>Anda dapat membatalkan langganan kapan saja melalui menu pengaturan akun Anda. Pembatalan hanya akan menghentikan tagihan untuk siklus berikutnya, dan Anda tetap dapat mengakses layanan hingga akhir periode tagihan yang telah dibayar.</p>
+            </div>
+          </>
+        ) : (
+          <>
+            <h1 className="text-3xl md:text-5xl font-extrabold text-[#0B2A4A] mb-8">Refund Policy</h1>
+            <div className="prose prose-slate max-w-none text-slate-700 leading-relaxed mb-12 space-y-6">
+              <p className="font-medium text-slate-500">Last Updated: June 2026</p>
+              
+              <h2 className="text-2xl font-bold text-[#0B2A4A] mt-8 mb-4">1. General Policy</h2>
+              <p>Hubify Social provides a subscription-based software service (SaaS). We are committed to providing the best service. Before deciding to subscribe, we recommend taking advantage of our free trial to ensure our service meets your needs.</p>
+
+              <h2 className="text-2xl font-bold text-[#0B2A4A] mt-8 mb-4">2. Refund Conditions</h2>
+              <p>In general, all processed payments are final and non-refundable. However, refunds may be considered under the following conditions:</p>
+              <ul className="list-disc pl-5 space-y-2">
+                <li>A system error (bug) on the part of Hubify Social causes the user to be unable to access the service entirely for more than 3 (three) consecutive days, and our technical team fails to resolve it.</li>
+                <li>A double billing occurs due to an error in our payment system or the payment service provider.</li>
+              </ul>
+
+              <h2 className="text-2xl font-bold text-[#0B2A4A] mt-8 mb-4">3. Refund Request Process</h2>
+              <p>If you meet the above conditions, you may submit a refund request within a maximum of 7 (seven) calendar days from the transaction date.</p>
+              <p>Steps to request:</p>
+              <ol className="list-decimal pl-5 space-y-2">
+                <li>Send an email to <strong>support@hubifysocial.com</strong> with the subject "Refund Request - [Your Account Email Address]".</li>
+                <li>Include proof of transaction/invoice, a chronology of the incident, and supporting evidence (screenshots/screen recordings).</li>
+                <li>Our team will review your request within 3-5 business days.</li>
+              </ol>
+
+              <h2 className="text-2xl font-bold text-[#0B2A4A] mt-8 mb-4">4. Refund Method and Timeframe</h2>
+              <p>If the refund request is approved, the funds will be returned to your original payment method. The refund process may take 7 to 14 business days, depending on your bank's or payment service provider's policy.</p>
+
+              <h2 className="text-2xl font-bold text-[#0B2A4A] mt-8 mb-4">5. Subscription Cancellation</h2>
+              <p>You may cancel your subscription at any time through your account settings menu. Cancellation will only stop billing for the next cycle, and you will retain access to the service until the end of your paid billing period.</p>
+            </div>
+          </>
+        )}
       </main>
       <PublicFooter currentLang={lang} onLangChange={handleLangChange} />
     </div>

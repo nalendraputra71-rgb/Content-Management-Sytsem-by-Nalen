@@ -23,13 +23,14 @@ import { AdminPanel } from "./AdminPanel";
 import { ContentModal } from "./ContentModal";
 import { CsvModal } from "./CsvModal";
 import { AuthScreen } from "./AuthScreen";
+import AuthActionScreen from "./AuthActionScreen";
 import { UserProfile } from "./UserProfile";
 import { BillingView } from "./BillingView";
 import { ShareWorkspaceModal } from "./ShareWorkspaceModal";
 import { CreateWorkspaceModal } from "./CreateWorkspaceModal";
 import { DashboardView } from "./DashboardView";
 
-import { TermsOfService, PrivacyPolicy, FAQ, Guides, AboutUs } from "./TermsAndPrivacy";
+import { TermsOfService, PrivacyPolicy, FAQ, Guides, AboutUs, RefundPolicy } from "./TermsAndPrivacy";
 
 import { motion, AnimatePresence } from "motion/react";
 
@@ -417,8 +418,10 @@ export default function App() {
   return (
     <HashRouter>
       <Routes>
+        <Route path="/auth/action" element={<AuthActionScreen />} />
         <Route path="/terms" element={<TermsOfService />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/refund-policy" element={<RefundPolicy />} />
         <Route path="/faq" element={<FAQ />} />
         <Route path="/guides" element={<Guides />} />
         <Route path="/about" element={<AboutUs />} />
