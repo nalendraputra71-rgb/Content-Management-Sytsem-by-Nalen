@@ -4,6 +4,7 @@ import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
 import fs from "fs";
 import admin from "firebase-admin";
+import { cert } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
 import { rateLimit } from "express-rate-limit";
@@ -25,7 +26,7 @@ function initFirebase() {
       if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
         try {
           const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
-          credential = admin.credential.cert(serviceAccount);
+          credential = cert(serviceAccount);
         } catch (e) {
           console.error("Failed to parse FIREBASE_SERVICE_ACCOUNT_KEY:", e);
         }
