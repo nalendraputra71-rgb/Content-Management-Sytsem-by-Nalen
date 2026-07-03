@@ -90,11 +90,12 @@ apiRoutes.post("/xendit/checkout", async (req, res) => {
 
     const { amount, plan, email, description } = req.body;
     
-    if (!amount || !plan || !email) {
-      return res.status(400).json({ error: "Missing required fields" });
+    const numericAmount = Math.floor(Number(amount));
+    if (isNaN(numericAmount) || numericAmount <= 0 || !plan || !email) {
+      return res.status(400).json({ error: "Missing or invalid required fields" });
     }
 
-    const apiKey = process.env.XENDIT_SECRET_KEY;
+    const apiKey = (process.env.XENDIT_SECRET_KEY || "").replace(/[^a-zA-Z0-9_-]/g, "");
     if (!apiKey) {
       return res.status(400).json({ error: "XENDIT_SECRET_KEY is not configured" });
     }
@@ -102,15 +103,17 @@ apiRoutes.post("/xendit/checkout", async (req, res) => {
     const xenditInvoiceClient = new XenditInvoice({ secretKey: apiKey });
 
     // Format: sub-{uid}-{plan}-{timestamp}
-    const safePlan = plan.replace(/[^a-zA-Z0-9]/g, '');
+    const safePlan = String(plan).replace(/[^a-zA-Z0-9]/g, '');
+    const origin = req.headers.origin || "https://hubifysocial.com";
+    const cleanOrigin = origin.replace(/\/+$/, "");
+    
     const invoiceData = {
       externalId: `sub_${uid}_${safePlan}_${Date.now()}`,
-      amount: amount,
+      amount: numericAmount,
       payerEmail: email,
       description: description || `Pembayaran langganan ${plan} Hubify Social`,
-      // Gunakan origin dari request atau default
-      successRedirectUrl: req.headers.origin ? `${req.headers.origin}/#/dashboard` : "https://hubifysocial.com/#/dashboard",
-      failureRedirectUrl: req.headers.origin ? `${req.headers.origin}/#/billing` : "https://hubifysocial.com/#/billing",
+      successRedirectUrl: `${cleanOrigin}/#/dashboard`,
+      failureRedirectUrl: `${cleanOrigin}/#/billing`,
       currency: "IDR",
     };
 
