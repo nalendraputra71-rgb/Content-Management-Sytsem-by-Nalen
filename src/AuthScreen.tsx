@@ -263,7 +263,7 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
                     </div>
                     
                     <button disabled={loading} className="w-full bg-[#1D4D7A] text-white rounded-xl p-3 mt-4 font-bold text-sm hover:bg-[#0B2A4A] transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-[#1D4D7A]/20 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none">
-                      {loading ? "Tunggu bentar..." : mode === "login" ? "Masuk ke Dashboard" : "Daftar Free Trial 30 Hari"}
+                      {loading ? "Tunggu bentar..." : mode === "login" ? "Masuk ke Dashboard" : "Daftar"}
                     </button>
                   </form>
                 )}
