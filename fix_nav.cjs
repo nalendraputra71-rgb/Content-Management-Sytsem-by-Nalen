@@ -1,7 +1,9 @@
 const fs = require('fs');
-let code = fs.readFileSync('src/Nav.tsx', 'utf8');
 
-code = code.replace('import { Flame, motion', 'import { motion');
-code = code.replace('} from "lucide-react";', ', Flame } from "lucide-react";');
+let content = fs.readFileSync('./src/Nav.tsx', 'utf8');
 
-fs.writeFileSync('src/Nav.tsx', code);
+content = content.replace(/padding: open \? "20px 16px" : "20px 8px"/g, 'padding: open ? "20px 16px" : "20px 12px"');
+
+content = content.replace(/padding: open \? "8px 12px" : "8px"/g, 'padding: open ? "8px 12px" : "10px 0",\n                              justifyContent: open ? "flex-start" : "center"');
+
+fs.writeFileSync('./src/Nav.tsx', content);

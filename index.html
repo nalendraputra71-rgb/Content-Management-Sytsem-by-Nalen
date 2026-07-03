@@ -11,16 +11,13 @@
     <title>Hubify Social</title>
     <script>
       window.addEventListener('error', (event) => {
-        const root = document.getElementById('root');
-        if (root && root.innerHTML === '') {
-          root.innerHTML = '<div style="color:red;padding:20px;font-family:sans-serif;"><h3>Application Error</h3><pre>' + event.message + '\\n' + event.filename + ':' + event.lineno + '</pre></div>';
-        }
-      });
-      window.addEventListener('unhandledrejection', (event) => {
-        const root = document.getElementById('root');
-        if (root && root.innerHTML === '') {
-          root.innerHTML = '<div style="color:red;padding:20px;font-family:sans-serif;"><h3>Unhandled Promise Rejection</h3><pre>' + (event.reason && event.reason.message ? event.reason.message : event.reason) + '</pre></div>';
-        }
+        try {
+          fetch('/api/log-error', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: "HTML Uncaught Error", error: event.message, filename: event.filename, lineno: event.lineno })
+          });
+        } catch (e) {}
       });
     </script>
   </head>

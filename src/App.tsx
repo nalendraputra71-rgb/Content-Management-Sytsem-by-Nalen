@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import { HashRouter, Routes, Route, Navigate, useParams, useLocation } from "react-router-dom";
+import { HashRouter, Routes, Route, Navigate, useParams } from "react-router-dom";
 import * as XLSX from "xlsx";
 import { 
   MONTHS, YEARS, DP, DPL, DPIC, DST, DCT, DH, 
@@ -324,16 +324,6 @@ const INTERNATIONAL_OBSERVANCES = [
   { month: 12, day: 11, name: "International Mountain Day" }
 ];
 
-function ScrollToTop() {
-  const { pathname } = useLocation();
-
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [pathname]);
-
-  return null;
-}
-
 export default function App() {
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
@@ -430,7 +420,6 @@ export default function App() {
 
   return (
     <HashRouter>
-      <ScrollToTop />
       <Routes>
         <Route path="/auth/action" element={<AuthActionScreen />} />
         <Route path="/terms" element={<TermsOfService />} />
