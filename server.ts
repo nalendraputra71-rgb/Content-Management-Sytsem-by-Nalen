@@ -46,6 +46,7 @@ const app = express();
 
 app.set('trust proxy', 1 /* number of proxies between user and server */);
 app.use(express.json({ limit: "15mb" })); // Mencegah payload besar yang bisa DOS server, but big enough for chat history
+app.use(express.urlencoded({ extended: true, limit: "1mb" })); // For Meta Data Deletion callbacks and other forms
 
 // Define routes once
 const apiRoutes = express.Router();
@@ -189,6 +190,30 @@ apiRoutes.post("/xendit/webhook", async (req, res) => {
     console.error("Xendit Webhook Error:", error);
     return res.status(500).json({ error: error.message });
   }});
+
+// API Route untuk Facebook Data Deletion Callback
+apiRoutes.post("/meta/data-deletion", async (req, res) => {
+  try {
+    const signedRequest = req.body.signed_request;
+    if (!signedRequest) {
+      return res.status(400).json({ error: "Missing signed_request" });
+    }
+    
+    // NOTE: In production, verify the signed_request using Facebook App Secret.
+    
+    // Generate a mock confirmation code
+    const confirmationCode = Math.random().toString(36).substring(2, 12);
+    
+    // Meta requires returning a URL to track deletion status and a confirmation code
+    return res.status(200).json({
+      url: `https://${req.get('host')}/#/data-deletion-status?code=${confirmationCode}`,
+      confirmation_code: confirmationCode
+    });
+  } catch (error: any) {
+    console.error("Meta Data Deletion Callback Error:", error);
+    return res.status(500).json({ error: error.message });
+  }
+});
 
 // API Route untuk Gemini Proxy
 apiRoutes.post("/gemini", apiLimiter, async (req, res) => {

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import { HashRouter, Routes, Route, Navigate, useParams } from "react-router-dom";
+import { HashRouter, Routes, Route, Navigate, useParams, useLocation } from "react-router-dom";
 import * as XLSX from "xlsx";
 import { 
   MONTHS, YEARS, DP, DPL, DPIC, DST, DCT, DH, 
@@ -29,11 +29,14 @@ import { BillingView } from "./BillingView";
 import { ShareWorkspaceModal } from "./ShareWorkspaceModal";
 import { CreateWorkspaceModal } from "./CreateWorkspaceModal";
 import { DashboardView } from "./DashboardView";
+import { DataDeletionStatus } from "./DataDeletionStatus";
 
 import { TermsOfService, PrivacyPolicy, FAQ, Guides, AboutUs, RefundPolicy } from "./TermsAndPrivacy";
 
 import { motion, AnimatePresence } from "motion/react";
 
+import { PricingPage } from "./PricingPage";
+import { OrderSummary } from "./OrderSummary";
 import { LandingPage } from "./LandingPage";
 import { Calendar, Download, X, CheckCircle2 } from "lucide-react";
 
@@ -321,6 +324,16 @@ const INTERNATIONAL_OBSERVANCES = [
   { month: 12, day: 11, name: "International Mountain Day" }
 ];
 
+function ScrollToTop() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+
+  return null;
+}
+
 export default function App() {
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
@@ -417,6 +430,7 @@ export default function App() {
 
   return (
     <HashRouter>
+      <ScrollToTop />
       <Routes>
         <Route path="/auth/action" element={<AuthActionScreen />} />
         <Route path="/terms" element={<TermsOfService />} />
@@ -425,7 +439,10 @@ export default function App() {
         <Route path="/faq" element={<FAQ />} />
         <Route path="/guides" element={<Guides />} />
         <Route path="/about" element={<AboutUs />} />
-        <Route path="/login" element={(user && profile) ? <Navigate to="/" /> : <AuthScreen currentUser={user && !profile ? user : null} onUserCreated={(u)=>setUser(u)} />} />
+        <Route path="/pricing" element={<PricingPage />} />
+        <Route path="/checkout-preview" element={<OrderSummary user={user} profile={profile} />} />
+        <Route path="/data-deletion-status" element={<DataDeletionStatus />} />
+        <Route path="/login" element={(user && profile) ? <Navigate to={localStorage.getItem('pending_checkout') ? `/checkout-preview?plan=${localStorage.getItem('pending_checkout')}` : "/"} /> : <AuthScreen currentUser={user && !profile ? user : null} onUserCreated={(u)=>setUser(u)} />} />
         <Route path="/profile" element={(user && profile) ? <CMSLayout><UserProfile userProfile={profile} activeWorkspace={null} onUpdate={setProfile} /></CMSLayout> : <Navigate to="/login" />} />
         <Route path="/billing" element={(user && profile) ? <CMSLayout><BillingView userProfile={profile} activeWorkspace={null} onUpdate={setProfile} /></CMSLayout> : <Navigate to="/login" />} />
         <Route path="/*" element={(user && profile) ? <CMSLayout><Dashboard user={user} profile={profile} onUpdateProfile={updateProfileSettings} currentTheme={currentTheme} systemConfig={systemConfig} /></CMSLayout> : <LandingPage />} />

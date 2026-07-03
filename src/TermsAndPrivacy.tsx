@@ -1,6 +1,7 @@
+import { HeaderLogo, SharedFooter } from './SharedFooter';
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Instagram, Twitter, Linkedin, Mail, Heart, ChevronDown, MessageCircle, Sparkles, HelpCircle, CreditCard, Shield, Zap, BookOpen, Users, LayoutDashboard, Calendar, ArrowRight, CheckCircle2, PlayCircle, Plus, BarChart3, Settings, PenTool, Image as ImageIcon, Link2, Download, Globe, Target, TrendingUp, Lock, Server, Coffee } from 'lucide-react';
+import { Instagram, MapPin, Phone, Twitter, Linkedin, Mail, Heart, ChevronDown, MessageCircle, Sparkles, HelpCircle, CreditCard, Shield, Zap, BookOpen, Users, LayoutDashboard, Calendar, ArrowRight, CheckCircle2, PlayCircle, Plus, BarChart3, Settings, PenTool, Image as ImageIcon, Link2, Download, Globe, Target, TrendingUp, Lock, Server, Coffee } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 const PublicHeader = ({ currentLang, onLangChange }: { currentLang?: 'id' | 'en', onLangChange?: (l: 'id' | 'en') => void }) => {
@@ -8,13 +9,7 @@ const PublicHeader = ({ currentLang, onLangChange }: { currentLang?: 'id' | 'en'
   return (
     <header className="sticky top-0 bg-white/80 backdrop-blur-md border-b border-black/5 py-4 w-full z-50">
       <div className="max-w-7xl mx-auto px-6 flex justify-between items-center flex-wrap gap-4">
-        <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
-          <div className="w-8 h-8 rounded-xl overflow-hidden flex items-center justify-center">
-            <img src="/icon.png" alt="Hubify Social" className="w-full h-full object-cover scale-110" onError={(e) => { e.currentTarget.parentElement!.style.display = 'none'; e.currentTarget.parentElement!.nextElementSibling!.style.display = 'flex' }} />
-          </div>
-          <div className="hidden w-8 h-8 rounded-lg bg-gradient-to-tr from-[#1D4D7A] to-[#0B2A4A] items-center justify-center text-white font-bold">H</div>
-          <div className="font-extrabold text-xl tracking-tight text-[#0B2A4A]">Hubify Social</div>
-        </div>
+                <HeaderLogo />
         
         <div className="flex items-center gap-4 flex-wrap">
           <button onClick={() => navigate('/login', { state: { mode: 'login' }})} className="text-sm font-bold text-[#1D4D7A] hover:text-[#0B2A4A] transition-colors">{currentLang === 'en' ? 'Login' : 'Masuk'}</button>
@@ -27,88 +22,7 @@ const PublicHeader = ({ currentLang, onLangChange }: { currentLang?: 'id' | 'en'
 
 const PublicFooter = ({ currentLang, onLangChange }: { currentLang?: 'id' | 'en', onLangChange?: (l: 'id' | 'en') => void }) => {
   return (
-    <footer className="bg-white border-t border-slate-200 pt-20 pb-10 px-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-12 mb-16">
-          
-          {/* Brand & Social */}
-          <div className="md:col-span-5 flex flex-col gap-6">
-            <div className="font-extrabold text-2xl tracking-tight text-[#0B2A4A]">Hubify Social</div>
-            <p className="text-slate-500 text-sm leading-relaxed max-w-sm">
-              {currentLang === 'en' 
-                ? 'Smart social media management platform for creators and businesses. Schedule, analyze, and collaborate in one smart hub.'
-                : 'Platform manajemen media sosial cerdas untuk kreator dan bisnis. Jadwalkan, analisis, dan berkolaborasi dalam satu markas pintar.'}
-            </p>
-            <div className="flex items-center gap-5 text-slate-400 mt-2">
-              <a href="https://instagram.com/hubifysocial" target="_blank" rel="noreferrer" className="p-2 rounded-full bg-slate-50 hover:bg-slate-100 hover:text-blue-600 transition-all">
-                <Instagram size={18} />
-              </a>
-              <a href="https://twitter.com/hubifysocial" target="_blank" rel="noreferrer" className="p-2 rounded-full bg-slate-50 hover:bg-slate-100 hover:text-blue-400 transition-all">
-                <Twitter size={18} />
-              </a>
-              <a href="https://linkedin.com/company/hubifysocial" target="_blank" rel="noreferrer" className="p-2 rounded-full bg-slate-50 hover:bg-slate-100 hover:text-blue-700 transition-all">
-                <Linkedin size={18} />
-              </a>
-              <a href="mailto:support@hubifysocial.com" className="p-2 rounded-full bg-slate-50 hover:bg-slate-100 hover:text-red-500 transition-all">
-                <Mail size={18} />
-              </a>
-            </div>
-            {onLangChange && currentLang && (
-              <div className="flex bg-slate-50 p-1 rounded-full items-center border border-slate-200 w-fit mt-2">
-                <button 
-                  onClick={() => onLangChange('id')} 
-                  className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${currentLang === 'id' ? 'bg-white text-[#0B2A4A] shadow-sm border border-slate-200' : 'text-slate-500 hover:text-[#0B2A4A] bg-transparent'}`}
-                >
-                  ID
-                </button>
-                <button 
-                  onClick={() => onLangChange('en')} 
-                  className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${currentLang === 'en' ? 'bg-white text-[#0B2A4A] shadow-sm border border-slate-200' : 'text-slate-500 hover:text-[#0B2A4A] bg-transparent'}`}
-                >
-                  EN
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Empty space for layout */}
-          <div className="hidden md:block md:col-span-1"></div>
-
-          {/* Links - Company */}
-          <div className="md:col-span-2 flex flex-col gap-4">
-            <h4 className="font-bold text-[#0B2A4A] mb-2 uppercase tracking-wider text-xs">{currentLang === 'en' ? 'Product' : 'Produk'}</h4>
-            <Link to="/" className="text-slate-500 hover:text-blue-600 transition-colors font-medium text-sm">{currentLang === 'en' ? 'Home' : 'Beranda'}</Link>
-            <a href="/#fitur" className="text-slate-500 hover:text-blue-600 transition-colors font-medium text-sm">{currentLang === 'en' ? 'Features' : 'Fitur Unggulan'}</a>
-            <a href="/#harga" className="text-slate-500 hover:text-blue-600 transition-colors font-medium text-sm">{currentLang === 'en' ? 'Pricing' : 'Paket Harga'}</a>
-            <Link to="/guides" className="text-slate-500 hover:text-blue-600 transition-colors font-medium text-sm">{currentLang === 'en' ? 'Guides' : 'Panduan Penggunaan'}</Link>
-            <Link to="/faq" className="text-slate-500 hover:text-blue-600 transition-colors font-medium text-sm">FAQ</Link>
-          </div>
-
-          <div className="md:col-span-2 flex flex-col gap-4">
-            <h4 className="font-bold text-[#0B2A4A] mb-2 uppercase tracking-wider text-xs">{currentLang === 'en' ? 'Company' : 'Perusahaan'}</h4>
-            <Link to="/about" className="text-slate-500 hover:text-blue-600 transition-colors font-medium text-sm">{currentLang === 'en' ? 'About Us' : 'Tentang Kami'}</Link>
-            <a href="mailto:support@hubifysocial.com" className="text-slate-500 hover:text-blue-600 transition-colors font-medium text-sm">{currentLang === 'en' ? 'Contact Us' : 'Hubungi Kami'}</a>
-          </div>
-
-          {/* Links - Legal */}
-          <div className="md:col-span-2 flex flex-col gap-4">
-            <h4 className="font-bold text-[#0B2A4A] mb-2 uppercase tracking-wider text-xs">Legal</h4>
-            <Link to="/privacy" className="text-slate-500 hover:text-blue-600 transition-colors font-medium text-sm">{currentLang === 'id' ? 'Kebijakan Privasi' : 'Privacy Policy'}</Link>
-            <Link to="/terms" className="text-slate-500 hover:text-blue-600 transition-colors font-medium text-sm">{currentLang === 'id' ? 'Syarat & Ketentuan' : 'Terms of Service'}</Link>
-            <Link to="/refund-policy" className="text-slate-500 hover:text-blue-600 transition-colors font-medium text-sm">{currentLang === 'id' ? 'Kebijakan Pengembalian' : 'Refund Policy'}</Link>
-          </div>
-
-        </div>
-
-        {/* Bottom Bar */}
-        <div className="border-t border-slate-100 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="text-slate-400 font-medium text-xs">&copy; {new Date().getFullYear()} PT Harapan Untuk Bangsa. All rights reserved.</div>
-          <div className="flex items-center gap-2 text-slate-400 text-xs font-medium">
-            Made with <Heart size={14} className="text-red-500" /> in Indonesia
-          </div>
-        </div>
-      </div>
-    </footer>
+    <SharedFooter lang={currentLang} setLang={onLangChange!} />
   );
 };
 

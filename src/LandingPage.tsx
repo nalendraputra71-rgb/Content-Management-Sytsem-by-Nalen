@@ -1,6 +1,7 @@
+import { HeaderLogo, SharedFooter } from './SharedFooter';
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Check, Calendar, BarChart2, Zap, Sparkles, LayoutDashboard, Share2, TrendingUp, Users, Clock, Instagram, Twitter, Facebook, CloudRain, CheckCircle, StickyNote, Target, ChevronRight, ChevronDown, Flame, Activity, ArrowLeft, Bell, ChevronUp, PieChart, Search, MessageSquare, LogOut, Cloud, LayoutGrid, Edit2, Eye, Plus, FileText, Menu, Linkedin, Mail, Heart, Home } from 'lucide-react';
+import { Check, Calendar, MapPin, Phone, BarChart2, Zap, Sparkles, LayoutDashboard, Share2, TrendingUp, Users, Clock, Instagram, Twitter, Facebook, CloudRain, CheckCircle, StickyNote, Target, ChevronRight, ChevronDown, Flame, Activity, ArrowLeft, Bell, ChevronUp, PieChart, Search, MessageSquare, LogOut, Cloud, LayoutGrid, Edit2, Eye, Plus, FileText, Menu, Linkedin, Mail, Heart, Home } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 
@@ -14,7 +15,7 @@ const analyticsData = [
   { name: 'Sun', views: 3490, engagement: 4300 },
 ];
 
-const getFaqs = (lang: string) => [
+export const getFaqs = (lang: string) => [
   {
     q: lang === 'id' ? "Apa itu Hubify Social?" : "What is Hubify Social?",
     a: lang === 'id' ? "Hubify Social adalah all-in-one platform untuk manajemen sosial media yang dilengkapi dengan AI untuk membantu kreator dan bisnis merencanakan, membuat, dan menganalisis konten secara lebih efektif." : "Hubify Social is an all-in-one platform for social media management equipped with AI to help creators and businesses plan, create, and analyze content more effectively."
@@ -41,7 +42,7 @@ const getFaqs = (lang: string) => [
   }
 ];
 
-function FAQItem({ faq }: { faq: { q: string, a: string } }) {
+export function FAQItem({ faq }: { faq: { q: string, a: string } }) {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <div className="border border-slate-200 rounded-2xl bg-white overflow-hidden transition-all hover:border-blue-200">
@@ -157,23 +158,17 @@ export function LandingPage() {
       {/* Navigation */}
       <header className={`fixed top-0 w-full z-50 transition-all duration-300 ${scrollY > 20 ? 'bg-white/80 backdrop-blur-md border-b border-black/5 py-4' : 'bg-transparent py-6'}`}>
         <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl overflow-hidden flex items-center justify-center">
-              <img src="/icon.png" alt="Hubify Social" className="w-full h-full object-cover scale-110" onError={(e) => { e.currentTarget.parentElement!.style.display = 'none'; e.currentTarget.parentElement!.nextElementSibling!.style.display = 'flex' }} />
-            </div>
-            <div className="hidden w-8 h-8 rounded-lg bg-gradient-to-tr from-[#1D4D7A] to-[#0B2A4A] items-center justify-center text-white font-bold">H</div>
-            <a href="#" className="font-extrabold text-xl tracking-tight text-[#0B2A4A]">Hubify Social</a>
-          </div>
+                    <HeaderLogo />
           
           <nav className="hidden md:flex gap-8 items-center font-semibold text-sm text-[#1D4D7A]">
             <a href="#fitur" className="hover:text-[#0B2A4A] transition-colors">{lang === 'id' ? 'Fitur' : 'Features'}</a>
             <a href="#analitik" className="hover:text-[#0B2A4A] transition-colors">{lang === 'id' ? 'Analitik' : 'Analytics'}</a>
-            <a href="#harga" className="hover:text-[#0B2A4A] transition-colors">{lang === 'id' ? 'Harga' : 'Pricing'}</a>
+            <Link to="/pricing" className="hover:text-[#0B2A4A] transition-colors">{lang === 'id' ? 'Harga' : 'Pricing'}</Link>
           </nav>
 
           <div className="flex items-center gap-4">
             <button onClick={() => navigate('/login', { state: { mode: 'login' }})} className="hidden sm:block text-sm font-bold text-[#1D4D7A] hover:text-[#0B2A4A] transition-colors">{lang === 'id' ? 'Masuk' : 'Login'}</button>
-            <button onClick={() => navigate('/login', { state: { mode: 'signup' }})} className="bg-[#1D4D7A] text-white text-sm font-bold py-2.5 px-5 rounded-full hover:bg-[#0B2A4A] transition-all transform hover:scale-105 active:scale-95 shadow-lg shadow-[#1D4D7A]/20">{lang === 'id' ? 'Mulai Gratis' : 'Start for Free'}</button>
+            <button onClick={() => navigate('/login', { state: { mode: 'signup' }})} className="bg-[#1D4D7A] text-white text-sm font-bold py-2.5 px-5 rounded-full hover:bg-[#0B2A4A] transition-all transform hover:scale-105 active:scale-95 shadow-lg shadow-[#1D4D7A]/20">{lang === 'id' ? 'Mulai Sekarang' : 'Start Now'}</button>
           </div>
         </div>
       </header>
@@ -1042,75 +1037,6 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* Pricing Section */}
-      <section id="harga" className="py-24 px-6 bg-slate-50">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-extrabold text-[#0B2A4A] mb-4">{lang === 'id' ? 'Mulai Secara Gratis.' : 'Start for Free.'}<br/>{lang === 'id' ? 'Upgrade Saat Tumbuh.' : 'Upgrade As You Grow.'}</h2>
-            <p className="text-lg text-slate-500 max-w-2xl mx-auto">{lang === 'id' ? 'Tanpa komitmen kartu kredit. Semua paket sudah termasuk akses ke fitur dasar Hubify Social.' : 'No credit card required. All plans include access to basic Hubify Social features.'}</p>
-          </div>
-          
-          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto items-stretch">
-            {/* Starter */}
-            <div className="bg-white rounded-3xl p-8 shadow-sm border border-black/5 hover:shadow-xl transition-shadow flex flex-col h-full">
-              <div className="mb-8 mt-2">
-                <div className="text-xl font-bold text-[#0B2A4A] mb-2">Monthly Starter</div>
-                <div className="flex flex-col gap-1 mb-4">
-                  <span className="text-sm font-semibold text-slate-400 line-through decoration-slate-300">Rp 149.000</span>
-                  <div className="flex items-end gap-1">
-                    <span className="text-4xl font-extrabold text-[#0B2A4A]">Rp 69.000</span>
-                    <span className="text-slate-500 pb-1 font-semibold">/bulan</span>
-                  </div>
-                </div>
-                <p className="text-slate-500 text-sm">{lang === 'id' ? 'Sempurna untuk kreator solo yang ingin lebih fleksibel tanpa komitmen jangka panjang.' : 'Perfect for solo creators who want more flexibility without long-term commitment.'}</p>
-              </div>
-              
-              <ul className="space-y-4 mb-8 flex-1">
-                {(lang === 'id' ? ["Akses AI Generator", "Multi-View Calendar", "Integrasi 3 Akun Sosmed", "Analitik Dasar", "Email Support"] : ["AI Generator Access", "Multi-View Calendar", "3 Social Accounts Integration", "Basic Analytics", "Email Support"]).map((f, i) => (
-                  <li key={i} className="flex gap-3 text-slate-700 font-medium items-start">
-                    <Check size={20} className="text-blue-500 shrink-0 mt-0.5" /> <span>{f}</span>
-                  </li>
-                ))}
-              </ul>
-              
-              <button onClick={() => navigate('/login', { state: { mode: 'signup' }})} className="w-full py-4 rounded-xl font-bold bg-[#FAFAFA] text-[#0B2A4A] border border-black/10 hover:bg-slate-100 transition-colors mt-auto">
-                {lang === 'id' ? 'Mulai Trial 30 Hari' : 'Start 30-Day Trial'}
-              </button>
-            </div>
-
-            {/* Premium */}
-            <div className="bg-[#0B2A4A] rounded-3xl p-8 shadow-2xl border border-blue-900 flex flex-col relative h-full">
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-wider shadow-lg">
-                {lang === 'id' ? 'Paling Laris' : 'Best Seller'}
-              </div>
-              <div className="mb-8 mt-2">
-                <div className="text-xl font-bold text-white mb-2">Growth Master</div>
-                <div className="flex flex-col gap-1 mb-4">
-                  <span className="text-sm font-semibold text-blue-300/60 line-through decoration-blue-300/40">Rp 1.788.000</span>
-                  <div className="flex items-end gap-1">
-                    <span className="text-4xl font-extrabold text-white">Rp 849.000</span>
-                    <span className="text-blue-200 pb-1 font-semibold">{lang === 'id' ? '/tahun' : '/year'}</span>
-                  </div>
-                </div>
-                <p className="text-blue-200 text-sm">{lang === 'id' ? 'Hemat lebih dari 20%. Solusi pro untuk agensi & korporat yang mengejar target agresif.' : 'Save over 20%. Pro solution for agencies & corporates chasing aggressive targets.'}</p>
-              </div>
-              
-              <ul className="space-y-4 mb-8 flex-1">
-                {(lang === 'id' ? ["Semua fitur Monthly, PLUS:", "Priority Support 24/7", "Export Report PDF", "Unlimited AI Prompts", "Akses Beta Fitur Baru"] : ["All Monthly features, PLUS:", "24/7 Priority Support", "Export PDF Report", "Unlimited AI Prompts", "Beta Access to New Features"]).map((f, i) => (
-                  <li key={i} className="flex gap-3 text-white font-medium items-start">
-                    <Check size={20} className="text-blue-400 shrink-0 mt-0.5" /> <span>{f}</span>
-                  </li>
-                ))}
-              </ul>
-              
-              <button onClick={() => navigate('/login', { state: { mode: 'signup' }})} className="w-full py-4 rounded-xl font-bold bg-white text-[#0B2A4A] hover:bg-blue-50 transition-colors shadow-lg mt-auto">
-                {lang === 'id' ? 'Ambil Paket Tahunan' : 'Get Annual Plan'}
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* FAQ Section */}
       <section className="py-24 px-6 bg-white">
         <div className="max-w-3xl mx-auto">
@@ -1140,87 +1066,7 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-white border-t border-slate-200 pt-20 pb-10 px-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-12 mb-16">
-            
-            {/* Brand & Social */}
-            <div className="md:col-span-5 flex flex-col gap-6">
-              <div className="font-extrabold text-2xl tracking-tight text-[#0B2A4A]">Hubify Social</div>
-              <p className="text-slate-500 text-sm leading-relaxed max-w-sm">
-                {lang === 'id' 
-                  ? 'Platform manajemen media sosial cerdas untuk kreator dan bisnis. Jadwalkan, analisis, dan berkolaborasi dalam satu markas pintar.' 
-                  : 'Smart social media management platform for creators and businesses. Schedule, analyze, and collaborate in one smart hub.'}
-              </p>
-              <div className="flex items-center gap-5 text-slate-400 mt-2">
-                <a href="https://instagram.com/hubifysocial" target="_blank" rel="noreferrer" className="p-2 rounded-full bg-slate-50 hover:bg-slate-100 hover:text-blue-600 transition-all">
-                  <Instagram size={18} />
-                </a>
-                <a href="https://twitter.com/hubifysocial" target="_blank" rel="noreferrer" className="p-2 rounded-full bg-slate-50 hover:bg-slate-100 hover:text-blue-400 transition-all">
-                  <Twitter size={18} />
-                </a>
-                <a href="https://linkedin.com/company/hubifysocial" target="_blank" rel="noreferrer" className="p-2 rounded-full bg-slate-50 hover:bg-slate-100 hover:text-blue-700 transition-all">
-                  <Linkedin size={18} />
-                </a>
-                <a href="mailto:support@hubifysocial.com" className="p-2 rounded-full bg-slate-50 hover:bg-slate-100 hover:text-red-500 transition-all">
-                  <Mail size={18} />
-                </a>
-              </div>
-              
-              <div className="flex bg-slate-50 p-1 rounded-full items-center border border-slate-200 w-fit mt-2">
-                <button 
-                  onClick={() => handleLangChange('id')} 
-                  className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${lang === 'id' ? 'bg-white text-[#0B2A4A] shadow-sm border border-slate-200' : 'text-slate-500 hover:text-[#0B2A4A] bg-transparent'}`}
-                >
-                  ID
-                </button>
-                <button 
-                  onClick={() => handleLangChange('en')} 
-                  className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${lang === 'en' ? 'bg-white text-[#0B2A4A] shadow-sm border border-slate-200' : 'text-slate-500 hover:text-[#0B2A4A] bg-transparent'}`}
-                >
-                  EN
-                </button>
-              </div>
-            </div>
-
-            {/* Empty space for layout */}
-            <div className="hidden md:block md:col-span-1"></div>
-
-            {/* Links - Company */}
-            <div className="md:col-span-2 flex flex-col gap-4">
-              <h4 className="font-bold text-[#0B2A4A] mb-2 uppercase tracking-wider text-xs">{lang === 'id' ? 'Produk' : 'Product'}</h4>
-              <button onClick={() => { document.getElementById('fitur')?.scrollIntoView({ behavior: 'smooth' }); }} className="text-slate-500 hover:text-blue-600 transition-colors font-medium text-sm text-left">{lang === 'id' ? 'Fitur Unggulan' : 'Features'}</button>
-              <button onClick={() => { document.getElementById('harga')?.scrollIntoView({ behavior: 'smooth' }); }} className="text-slate-500 hover:text-blue-600 transition-colors font-medium text-sm text-left">{lang === 'id' ? 'Paket Harga' : 'Pricing'}</button>
-              <Link to="/guides" className="text-slate-500 hover:text-blue-600 transition-colors font-medium text-sm">{lang === 'id' ? 'Panduan Penggunaan' : 'Guides'}</Link>
-              <Link to="/faq" className="text-slate-500 hover:text-blue-600 transition-colors font-medium text-sm">FAQ</Link>
-            </div>
-
-            <div className="md:col-span-2 flex flex-col gap-4">
-              <h4 className="font-bold text-[#0B2A4A] mb-2 uppercase tracking-wider text-xs">{lang === 'id' ? 'Perusahaan' : 'Company'}</h4>
-              <Link to="/about" className="text-slate-500 hover:text-blue-600 transition-colors font-medium text-sm">{lang === 'id' ? 'Tentang Kami' : 'About Us'}</Link>
-              <a href="mailto:support@hubifysocial.com" className="text-slate-500 hover:text-blue-600 transition-colors font-medium text-sm">{lang === 'id' ? 'Hubungi Kami' : 'Contact Us'}</a>
-            </div>
-
-            {/* Links - Legal */}
-            <div className="md:col-span-2 flex flex-col gap-4">
-              <h4 className="font-bold text-[#0B2A4A] mb-2 uppercase tracking-wider text-xs">Legal</h4>
-              <Link to="/privacy" className="text-slate-500 hover:text-blue-600 transition-colors font-medium text-sm">{lang === 'id' ? 'Kebijakan Privasi' : 'Privacy Policy'}</Link>
-              <Link to="/terms" className="text-slate-500 hover:text-blue-600 transition-colors font-medium text-sm">{lang === 'id' ? 'Syarat & Ketentuan' : 'Terms of Service'}</Link>
-              <Link to="/refund-policy" className="text-slate-500 hover:text-blue-600 transition-colors font-medium text-sm">{lang === 'id' ? 'Kebijakan Pengembalian' : 'Refund Policy'}</Link>
-            </div>
-
-          </div>
-
-          {/* Bottom Bar */}
-          <div className="border-t border-slate-100 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="text-slate-400 font-medium text-xs">&copy; {new Date().getFullYear()} PT Harapan Untuk Bangsa. All rights reserved.</div>
-            <div className="flex items-center gap-2 text-slate-400 text-xs font-medium">
-              Made with <Heart size={14} className="text-red-500" /> in Indonesia
-            </div>
-          </div>
-        </div>
-      </footer>
+      <SharedFooter lang={lang} setLang={setLang} />
 
     </div>
   );
