@@ -1704,9 +1704,9 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme, systemConfig 
         )}
       
       {isUnverified && (
-        <div style={{background:"#FBF5E3", borderBottom:"1px solid rgba(166,124,28,0.1)", padding:"12px 24px", display:"flex", alignItems:"center", gap:12, zIndex:50}}>
+        <div style={{background:"#FBF5E3", borderBottom:"1px solid rgba(166,124,28,0.1)", padding:"12px 24px", display:"flex", alignItems:"center", justifyContent:"center", gap:12, zIndex:50}}>
           <span style={{fontSize:13, fontWeight:700, color:"#A67C12"}}>⚠️ Data Belum Lengkap:</span>
-          <span style={{fontSize:13, color:"rgba(44,32,22,0.6)"}}>Silakan isi nama panggilan terlebih dahulu di awal aplikasi dan verifikasi email Anda untuk dapat menggunakan semua fitur CMS.</span>
+          <span style={{fontSize:13, color:"rgba(44,32,22,0.6)"}}>Isi nama panggilan dan verifikasi email Anda untuk menggunakan fitur Hubify Social.</span>
           <button onClick={() => window.location.hash="/profile"} style={{background:"#A67C12", color:"white", border:"none", padding:"6px 14px", borderRadius:20, fontSize:12, fontWeight:800, cursor:"pointer"}}>Lengkapi Sekarang</button>
         </div>
       )}

@@ -1,10 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Check, Flame, ArrowLeft, Instagram, MapPin, Mail, Phone, Heart } from 'lucide-react';
 import { getFaqs, FAQItem } from './LandingPage';
 
 export function PricingPage() {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   const [lang, setLang] = useState<'id' | 'en'>(() => {
     return (localStorage.getItem('hubify_locale') as 'id' | 'en') || 'en';
   });

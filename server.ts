@@ -96,7 +96,7 @@ apiRoutes.post("/xendit/checkout", async (req, res) => {
 
     const apiKey = process.env.XENDIT_SECRET_KEY;
     if (!apiKey) {
-      return res.status(500).json({ error: "XENDIT_SECRET_KEY is not configured" });
+      return res.status(400).json({ error: "XENDIT_SECRET_KEY is not configured" });
     }
 
     const xenditInvoiceClient = new XenditInvoice({ secretKey: apiKey });
@@ -119,7 +119,7 @@ apiRoutes.post("/xendit/checkout", async (req, res) => {
     return res.json({ checkoutUrl: response.invoiceUrl });
   } catch (error: any) {
     console.error("Xendit Checkout Error:", error);
-    return res.status(500).json({ error: error.message || "Failed to create checkout link" });
+    return res.status(400).json({ error: error.message || "Failed to create checkout link" });
   }
 });
 
@@ -144,7 +144,7 @@ apiRoutes.post("/xendit/webhook", async (req, res) => {
       let plan = parts[2] ? parts[2].toLowerCase() : "pro";
       if (!uid) {
          console.warn("UID not found in external_id");
-         return res.status(400).json({ error: "Invalid external_id format" });
+         return res.status(500).json({ error: "Invalid external_id format" });
       }
 
       initFirebase();
@@ -196,7 +196,7 @@ apiRoutes.post("/meta/data-deletion", async (req, res) => {
   try {
     const signedRequest = req.body.signed_request;
     if (!signedRequest) {
-      return res.status(400).json({ error: "Missing signed_request" });
+      return res.status(500).json({ error: "Missing signed_request" });
     }
     
     // NOTE: In production, verify the signed_request using Facebook App Secret.
@@ -363,7 +363,7 @@ export default app;
 // Only start the server natively if not running on Vercel
 if (!process.env.VERCEL) {
   async function startServer() {
-    const PORT = 3000;
+    const PORT = process.env.PORT || 3000;
 
     // Vite middleware untuk development mode
     if (process.env.NODE_ENV !== "production") {
