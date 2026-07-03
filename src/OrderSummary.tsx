@@ -6,44 +6,87 @@ import { updateProfile } from 'firebase/auth';
 
 export function OrderSummary({ user, profile }: { user: any, profile: any }) {
   const [searchParams] = useSearchParams();
-  const plan = searchParams.get('plan') || 'monthly';
+const plan = searchParams.get('plan') || 'solo';
+  const cycle = searchParams.get('cycle') || 'monthly';
   const navigate = useNavigate();
 
   useEffect(() => {
     if (user) {
       localStorage.removeItem('pending_checkout');
+      localStorage.removeItem('pending_checkout_cycle');
     }
   }, [user]);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const isMonthly = plan === 'monthly';
-  const planName = isMonthly ? 'Monthly Starter' : 'Growth Master';
-  const originalPrice = isMonthly ? 149000 : 1788000;
-  const finalPrice = isMonthly ? 69000 : 849000;
-  const discount = originalPrice - finalPrice;
+  const isAnnual = cycle === 'annual';
 
-  // Features list
-  const features = isMonthly ? [
-    "Integrasi 5 Akun Sosmed", 
-    "Auto-Publishing Terjadwal", 
-    "100x Generate AI / Bulan", 
-    "Analitik & Multi-View Calendar", 
-    "1 GB Penyimpanan Aset"
-  ] : [
-    "Unlimited Akun Sosmed & Tim", 
-    "Kolaborasi & Alur Persetujuan", 
-    "Unlimited AI Generator", 
-    "White-label Export Report", 
-    "Manajemen Komentar & Auto-reply"
-  ];
+  let planName = 'Free Starter';
+  let originalPrice = 0;
+  let finalPrice = 0;
+  let features: string[] = [];
+
+  if (plan === 'free') {
+    planName = 'Free Starter';
+    originalPrice = 0;
+    finalPrice = 0;
+    features = [
+      "1 Workspace", 
+      "3 Akun Sosmed", 
+      "10x Generate AI / Bulan",
+      "Analitik Dasar"
+    ];
+  } else if (plan === 'solo') {
+    planName = 'Solo Creator';
+    originalPrice = isAnnual ? 99000 * 12 : 99000;
+    finalPrice = isAnnual ? 79000 * 12 : 99000;
+    features = [
+      "1 Workspace", 
+      "10 Akun Sosmed", 
+      "100x Generate AI / Bulan",
+      "Auto-Publishing",
+      "Analitik Lanjutan"
+    ];
+  } else if (plan === 'team') {
+    planName = 'Team';
+    originalPrice = isAnnual ? 299000 * 12 : 299000;
+    finalPrice = isAnnual ? 239000 * 12 : 299000;
+    features = [
+      "3 Workspaces", 
+      "30 Akun Sosmed", 
+      "500x Generate AI / Bulan",
+      "Alur Persetujuan Konten",
+      "Kolaborasi 3 Anggota"
+    ];
+  } else if (plan === 'agency') {
+    planName = 'Agency';
+    originalPrice = isAnnual ? 899000 * 12 : 899000;
+    finalPrice = isAnnual ? 749000 * 12 : 899000;
+    features = [
+      "Unlimited Workspaces", 
+      "Unlimited Akun Sosmed", 
+      "Unlimited Generate AI",
+      "White-label Export",
+      "Prioritas Dukungan 24/7"
+    ];
+  }
+
+  const discount = originalPrice - finalPrice;
 
   const handleContinue = async () => {
     if (!user) {
       // Not logged in -> save intent & redirect to login
       localStorage.setItem('pending_checkout', plan);
+      localStorage.setItem('pending_checkout_cycle', cycle);
       navigate('/login', { state: { mode: 'signup' } });
+      return;
+    }
+
+    if (finalPrice === 0) {
+      // Free plan - bypass payment
+      setLoading(true);
+      setTimeout(() => navigate('/'), 1000);
       return;
     }
 
@@ -117,7 +160,7 @@ export function OrderSummary({ user, profile }: { user: any, profile: any }) {
                   <div className="flex items-center justify-between bg-slate-50 p-4 rounded-xl border border-slate-100">
                     <div>
                       <div className="font-bold text-lg text-[#0B2A4A]">{planName}</div>
-                      <div className="text-sm text-slate-500">Berlangganan {isMonthly ? 'Bulanan' : 'Tahunan'}</div>
+                      <div className="text-sm text-slate-500">Berlangganan {!isAnnual ? 'Bulanan' : 'Tahunan'}</div>
                     </div>
                     <div className="text-right">
                       <div className="font-extrabold text-[#0B2A4A]">Rp {finalPrice.toLocaleString('id-ID')}</div>
@@ -143,21 +186,27 @@ export function OrderSummary({ user, profile }: { user: any, profile: any }) {
                   <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">Detail Pembayaran</h3>
                   
                   <div className="space-y-3 text-sm font-medium mb-6">
-                    <div className="flex justify-between text-slate-500">
-                      <span>Harga Normal</span>
-                      <span className="line-through">Rp {originalPrice.toLocaleString('id-ID')}</span>
-                    </div>
-                    <div className="flex justify-between text-emerald-600">
-                      <span>Diskon Spesial</span>
-                      <span>- Rp {discount.toLocaleString('id-ID')}</span>
-                    </div>
-                    <div className="h-px bg-slate-200 my-2"></div>
+                    {discount > 0 && (
+                      <>
+                        <div className="flex justify-between text-slate-500">
+                          <span>Harga Normal</span>
+                          <span className="line-through">Rp {originalPrice.toLocaleString('id-ID')}</span>
+                        </div>
+                        <div className="flex justify-between text-emerald-600">
+                          <span>Diskon Spesial</span>
+                          <span>- Rp {discount.toLocaleString('id-ID')}</span>
+                        </div>
+                        <div className="h-px bg-slate-200 my-2"></div>
+                      </>
+                    )}
                     <div className="flex justify-between text-lg font-extrabold text-[#0B2A4A]">
                       <span>Total Tagihan</span>
-                      <span>Rp {finalPrice.toLocaleString('id-ID')}</span>
+                      <div className="text-right">
+                        <div>Rp {finalPrice.toLocaleString('id-ID')}</div>
+                        <div className="text-xs font-normal text-slate-500 mt-1">Sudah termasuk pajak</div>
+                      </div>
                     </div>
                   </div>
-
                   <button 
                     onClick={handleContinue} 
                     disabled={loading}

@@ -431,7 +431,7 @@ export default function App() {
         <Route path="/pricing" element={<PricingPage />} />
         <Route path="/checkout-preview" element={<OrderSummary user={user} profile={profile} />} />
         <Route path="/data-deletion-status" element={<DataDeletionStatus />} />
-        <Route path="/login" element={(user && profile) ? <Navigate to={localStorage.getItem('pending_checkout') ? `/checkout-preview?plan=${localStorage.getItem('pending_checkout')}` : "/"} /> : <AuthScreen currentUser={user && !profile ? user : null} onUserCreated={(u)=>setUser(u)} />} />
+        <Route path="/login" element={(user && profile) ? <Navigate to={localStorage.getItem('pending_checkout') ? `/checkout-preview?plan=${localStorage.getItem('pending_checkout')}&cycle=${localStorage.getItem('pending_checkout_cycle') || 'monthly'}` : "/"} /> : <AuthScreen currentUser={user && !profile ? user : null} onUserCreated={(u)=>setUser(u)} />} />
         <Route path="/profile" element={(user && profile) ? <CMSLayout><UserProfile userProfile={profile} activeWorkspace={null} onUpdate={setProfile} /></CMSLayout> : <Navigate to="/login" />} />
         <Route path="/billing" element={(user && profile) ? <CMSLayout><BillingView userProfile={profile} activeWorkspace={null} onUpdate={setProfile} /></CMSLayout> : <Navigate to="/login" />} />
         <Route path="/*" element={(user && profile) ? <CMSLayout><Dashboard user={user} profile={profile} onUpdateProfile={updateProfileSettings} currentTheme={currentTheme} systemConfig={systemConfig} /></CMSLayout> : <LandingPage />} />
