@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Check, Flame, ArrowLeft, Instagram, MapPin, Mail, Phone } from 'lucide-react';
+import { Check, Flame, ArrowLeft, Instagram, MapPin, Mail, Phone, Heart } from 'lucide-react';
 import { getFaqs, FAQItem } from './LandingPage';
 
 export function PricingPage() {
@@ -204,7 +204,9 @@ export function PricingPage() {
             <h3 className="text-2xl font-bold text-center text-[#0B2A4A] mb-8">{lang === 'id' ? 'Pertanyaan Seputar Harga' : 'Pricing FAQs'}</h3>
             <div className="space-y-4">
               {getFaqs(lang).map((faq, idx) => (
-                <FAQItem key={idx} faq={faq} />
+                <div key={idx}>
+                  <FAQItem faq={faq} />
+                </div>
               ))}
             </div>
           </div>
