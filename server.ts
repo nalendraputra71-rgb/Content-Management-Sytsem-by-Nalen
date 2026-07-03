@@ -112,8 +112,8 @@ apiRoutes.post("/xendit/checkout", async (req, res) => {
       amount: numericAmount,
       payerEmail: email,
       description: description || `Pembayaran langganan ${plan} Hubify Social`,
-      successRedirectUrl: `${cleanOrigin}/#/dashboard`,
-      failureRedirectUrl: `${cleanOrigin}/#/billing`,
+      successRedirectUrl: `${cleanOrigin}/`,
+      failureRedirectUrl: `${cleanOrigin}/`,
       currency: "IDR",
     };
 
@@ -122,7 +122,13 @@ apiRoutes.post("/xendit/checkout", async (req, res) => {
     return res.json({ checkoutUrl: response.invoiceUrl });
   } catch (error: any) {
     console.error("Xendit Checkout Error:", error);
-    return res.status(400).json({ error: error.message || "Failed to create checkout link" });
+    
+    let errorDetail = error.message;
+    if (error.status && error.response) {
+       errorDetail = `API Error ${error.status}: ${JSON.stringify(error.response)}`;
+    }
+    
+    return res.status(400).json({ error: errorDetail || "Failed to create checkout link" });
   }
 });
 
@@ -366,7 +372,7 @@ export default app;
 // Only start the server natively if not running on Vercel
 if (!process.env.VERCEL) {
   async function startServer() {
-    const PORT = process.env.PORT || 3000;
+    const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
     // Vite middleware untuk development mode
     if (process.env.NODE_ENV !== "production") {
