@@ -1,67 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { Globe, Check, ChevronDown, Flame, ArrowLeft, Instagram, MapPin, Mail, Phone, Heart, Facebook, Linkedin, Twitter } from 'lucide-react';
-import { getFaqs, FAQItem } from './LandingPage';
-import { TiktokIcon, ThreadsIcon } from './components/social-icons';
+import re
 
-export function PricingPage() {
-  const navigate = useNavigate();
+with open("src/PricingPage.tsx", "r") as file:
+    content = file.read()
 
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
+# 1. Add isAnnual state
+content = content.replace(
+    "  const [lang, setLang] = useState<'id' | 'en'>(() => {",
+    "  const [isAnnual, setIsAnnual] = useState(false);\n  const [lang, setLang] = useState<'id' | 'en'>(() => {"
+)
 
-  const [isAnnual, setIsAnnual] = useState(false);
-  const [lang, setLang] = useState<'id' | 'en'>(() => {
-    return (localStorage.getItem('hubify_locale') as 'id' | 'en') || 'en';
-  });
+# 2. Replace Pricing Section Content
+# The pricing section starts at `      {/* Pricing Section */}` and ends right before `          {/* FAQ Section */}`.
+# I will use a regex to replace this whole block.
 
-  const handleLangChange = (l: 'id' | 'en') => {
-    setLang(l);
-    localStorage.setItem('hubify_locale', l);
-  };
-
-  const handlePlanSelect = (planType: 'monthly' | 'annual') => {
-    navigate(`/checkout-preview?plan=${planType}`);
-  };
-
-  return (
-    <div className="font-sans text-slate-900 bg-white min-h-screen overflow-x-hidden flex flex-col">
-      {/* Navbar */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200/50 transition-all duration-300 py-3 px-6">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-                    <div className="flex items-center gap-2 cursor-pointer" onClick={() => window.location.href = '/'}>
-            <div className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center">
-              <img src="/icon.png" alt="Hubify Social" className="w-full h-full object-cover scale-110" onError={(e) => { e.currentTarget.parentElement.style.display = 'none'; e.currentTarget.parentElement.nextElementSibling.style.display = 'flex' }} />
-            </div>
-            <div className="hidden w-10 h-10 rounded-lg bg-gradient-to-tr from-[#1D4D7A] to-[#0B2A4A] flex items-center justify-center text-white font-bold text-xl">H</div>
-            <span className="font-extrabold text-xl tracking-tight text-[#0B2A4A]">Hubify Social</span>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <button onClick={() => navigate('/')} className="text-sm font-semibold text-slate-500 hover:text-[#0B2A4A] transition-colors flex items-center gap-1">
-              <ArrowLeft size={16} /> {lang === 'id' ? 'Kembali' : 'Back'}
-            </button>
-            <div className="bg-slate-100 rounded-full p-1 flex items-center border border-slate-200">
-              <button 
-                onClick={() => handleLangChange('id')} 
-                className={`text-xs font-bold px-3 py-1.5 rounded-full transition-all ${lang === 'id' ? 'bg-white shadow-sm text-[#0B2A4A]' : 'text-slate-500 hover:text-slate-700'}`}
-              >
-                ID
-              </button>
-              <button 
-                onClick={() => handleLangChange('en')} 
-                className={`text-xs font-bold px-3 py-1.5 rounded-full transition-all ${lang === 'en' ? 'bg-white shadow-sm text-[#0B2A4A]' : 'text-slate-500 hover:text-slate-700'}`}
-              >
-                EN
-              </button>
-            </div>
-            <button onClick={() => navigate('/login', { state: { mode: 'login' }})} className="hidden sm:block text-sm font-bold text-[#1D4D7A] hover:text-[#0B2A4A] transition-colors">{lang === 'id' ? 'Masuk' : 'Login'}</button>
-          </div>
-        </div>
-      </header>
-
-      {/* Pricing Section */}
+pricing_block = """      {/* Pricing Section */}
       <section className="pt-32 pb-24 px-6 bg-slate-50 flex-1">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-10">
@@ -292,128 +244,17 @@ export function PricingPage() {
                 </tbody>
               </table>
             </div>
-          </div>
-          {/* FAQ Section */}
-          <div className="max-w-3xl mx-auto">
-            <h3 className="text-2xl font-bold text-center text-[#0B2A4A] mb-8">{lang === 'id' ? 'Pertanyaan Seputar Harga' : 'Pricing FAQs'}</h3>
-            <div className="space-y-4">
-              {getFaqs(lang).map((faq, idx) => (
-                <div key={idx}>
-                  <FAQItem faq={faq} />
-                </div>
-              ))}
-            </div>
-          </div>
+          </div>"""
 
-        </div>
-      </section>
+# Find the section to replace
+start_idx = content.find("      {/* Pricing Section */}")
+end_idx = content.find("          {/* FAQ Section */}")
 
-      {/* Footer */}
-      <footer className="bg-white border-t border-slate-200 pt-12 pb-10 px-6">
-        <div className="max-w-5xl mx-auto">
-          <div className="flex flex-col lg:flex-row lg:justify-between gap-12 lg:gap-8 mb-16">
-            {/* Brand & Social */}
-            <div className="flex flex-col gap-8 lg:w-1/3">
-              <div className="flex items-center gap-2">
-                <div className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center">
-                  <img src="/icon.png" alt="Hubify Social" className="w-full h-full object-cover scale-110" onError={(e) => { e.currentTarget.parentElement.style.display = 'none'; e.currentTarget.parentElement.nextElementSibling.style.display = 'flex' }} />
-                </div>
-                <div className="hidden w-10 h-10 rounded-lg bg-gradient-to-tr from-[#1D4D7A] to-[#0B2A4A] flex items-center justify-center text-white font-bold text-xl">H</div>
-                <span className="font-extrabold text-3xl tracking-tight text-slate-900">Hubify Social</span>
-              </div>
-              
-              <div className="flex items-center gap-4 text-slate-400 mt-4">
-                <a href="https://www.instagram.com/hubify.social/" target="_blank" rel="noreferrer" className="hover:text-slate-900 transition-colors">
-                  <Instagram size={20} />
-                </a>
-                <a href="https://twitter.com/hubifysocial" target="_blank" rel="noreferrer" className="hover:text-slate-900 transition-colors">
-                  <Twitter size={20} />
-                </a>
-                <a href="https://www.facebook.com/hubifysocial" target="_blank" rel="noreferrer" className="hover:text-slate-900 transition-colors">
-                  <Facebook size={20} />
-                </a>
-                <a href="https://www.linkedin.com/company/hubifysocial" target="_blank" rel="noreferrer" className="hover:text-slate-900 transition-colors">
-                  <Linkedin size={20} />
-                </a>
-                <a href="https://www.threads.net/@hubify.social" target="_blank" rel="noreferrer" className="hover:text-slate-900 transition-colors">
-                  <ThreadsIcon size={20} />
-                </a>
-                <a href="https://www.tiktok.com/@hubify.social" target="_blank" rel="noreferrer" className="hover:text-slate-900 transition-colors">
-                  <TiktokIcon size={20} />
-                </a>
-              </div>
-              
-              <div className="relative inline-block w-fit">
-                <select
-                  value={lang}
-                  onChange={(e) => handleLangChange(e.target.value as 'id' | 'en')}
-                  className="appearance-none flex items-center gap-2 py-2 pl-9 pr-8 border border-slate-200 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-all w-fit cursor-pointer outline-none focus:border-slate-300 bg-transparent"
-                >
-                  <option value="id">Bahasa Indonesia</option>
-                  <option value="en">English</option>
-                </select>
-                <Globe size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-700 pointer-events-none" />
-                <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-              </div>
-              <div className="flex flex-col gap-3 mt-4">
-                <div className="flex items-start gap-3 text-sm text-slate-500">
-                   <div className="mt-0.5 shrink-0">
-                     <MapPin size={16} className="text-slate-400" />
-                   </div>
-                   <div>
-                     <p className="font-medium text-slate-700 mb-0.5">Hubify HQ</p>
-                     <p className="leading-relaxed">Gupit, Nguter<br/>Sukoharjo, Jawa Tengah 57571</p>
-                   </div>
-                </div>
-                <div className="flex items-center gap-3 text-sm text-slate-500">
-                   <div className="shrink-0">
-                     <Mail size={16} className="text-slate-400" />
-                   </div>
-                   <a href="mailto:support@hubifysocial.com" className="hover:text-slate-900 transition-colors">support@hubifysocial.com</a>
-                </div>
-                <div className="flex items-center gap-3 text-sm text-slate-500">
-                   <div className="shrink-0">
-                     <Phone size={16} className="text-slate-400" />
-                   </div>
-                   <a href="tel:+6281330242230" className="hover:text-slate-900 transition-colors">+62 813-3024-2230</a>
-                </div>
-              </div>
-            </div>
+if start_idx != -1 and end_idx != -1:
+    new_content = content[:start_idx] + pricing_block + "\n" + content[end_idx:]
+    with open("src/PricingPage.tsx", "w") as file:
+        file.write(new_content)
+    print("Replaced pricing section successfully.")
+else:
+    print("Could not find start or end index")
 
-            {/* Links - Company */}
-            <div className="flex flex-col gap-4">
-              <h4 className="font-medium text-slate-400 mb-4 text-sm">{lang === 'id' ? 'Produk' : 'Product'}</h4>
-              <Link to="/" className="text-slate-500 hover:text-slate-900 transition-colors font-medium text-sm text-left">{lang === 'id' ? 'Beranda' : 'Home'}</Link>
-              <Link to="/#fitur" className="text-slate-500 hover:text-slate-900 transition-colors font-medium text-sm text-left">{lang === 'id' ? 'Fitur Unggulan' : 'Features'}</Link>
-              <Link to="/pricing" className="text-slate-500 hover:text-slate-900 transition-colors font-medium text-sm text-left">{lang === 'id' ? 'Paket Harga' : 'Pricing'}</Link>
-            </div>
-            
-            <div className="flex flex-col gap-4">
-              <h4 className="font-medium text-slate-400 mb-4 text-sm">{lang === 'id' ? 'Perusahaan' : 'Company'}</h4>
-              <Link to="/about" className="text-slate-500 hover:text-slate-900 transition-colors font-medium text-sm">{lang === 'id' ? 'Tentang Kami' : 'About Us'}</Link>
-              <Link to="/terms" className="text-slate-500 hover:text-slate-900 transition-colors font-medium text-sm">{lang === 'id' ? 'Syarat & Ketentuan' : 'Terms of Service'}</Link>
-              <Link to="/privacy" className="text-slate-500 hover:text-slate-900 transition-colors font-medium text-sm">{lang === 'id' ? 'Kebijakan Privasi' : 'Privacy Policy'}</Link>
-              <Link to="/refund-policy" className="text-slate-500 hover:text-slate-900 transition-colors font-medium text-sm">{lang === 'id' ? 'Kebijakan Pengembalian' : 'Refund Policy'}</Link>
-            </div>
-            
-            {/* Links - Legal */}
-            <div className="flex flex-col gap-4">
-              <h4 className="font-medium text-slate-400 mb-4 text-sm">{lang === 'id' ? 'Bantuan' : 'Support'}</h4>
-              <Link to="/faq" className="text-slate-500 hover:text-slate-900 transition-colors font-medium text-sm">FAQ</Link>
-              <Link to="/guides" className="text-slate-500 hover:text-slate-900 transition-colors font-medium text-sm">{lang === 'id' ? 'Panduan' : 'Guides'}</Link>
-              <a href="mailto:support@hubifysocial.com" className="text-slate-500 hover:text-slate-900 transition-colors font-medium text-sm">{lang === 'id' ? 'Hubungi Kami' : 'Contact Us'}</a>
-            </div>
-          </div>
-
-          {/* Bottom Bar */}
-          <div className="border-t border-slate-100 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="text-slate-400 font-medium text-xs">&copy; {new Date().getFullYear()} PT Harapan Untuk Bangsa. All rights reserved.</div>
-            <div className="flex items-center gap-2 text-slate-400 text-xs font-medium">
-              Made with <Heart size={14} className="text-red-500" /> in Indonesia
-            </div>
-          </div>
-        </div>
-      </footer>
-    </div>
-  );
-}

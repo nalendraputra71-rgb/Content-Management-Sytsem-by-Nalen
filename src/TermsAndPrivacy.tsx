@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Instagram, Twitter, Linkedin, Mail, Heart, ChevronDown, MessageCircle, Sparkles, HelpCircle, CreditCard, Shield, Zap, BookOpen, Users, LayoutDashboard, Calendar, ArrowRight, CheckCircle2, PlayCircle, Plus, BarChart3, Settings, PenTool, Image as ImageIcon, Link2, Download, Globe, Target, TrendingUp, Lock, Server, Coffee } from 'lucide-react';
+import { MapPin, Phone, Instagram, Twitter, Linkedin, Facebook, Mail, Heart, ChevronDown, MessageCircle, Sparkles, HelpCircle, CreditCard, Shield, Zap, BookOpen, Users, LayoutDashboard, Calendar, ArrowRight, CheckCircle2, PlayCircle, Plus, BarChart3, Settings, PenTool, Image as ImageIcon, Link2, Download, Globe, Target, TrendingUp, Lock, Server, Coffee } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { TiktokIcon, ThreadsIcon } from './components/social-icons';
 
 const PublicHeader = ({ currentLang, onLangChange }: { currentLang?: 'id' | 'en', onLangChange?: (l: 'id' | 'en') => void }) => {
   const navigate = useNavigate();
@@ -9,10 +10,10 @@ const PublicHeader = ({ currentLang, onLangChange }: { currentLang?: 'id' | 'en'
     <header className="sticky top-0 bg-white/80 backdrop-blur-md border-b border-black/5 py-4 w-full z-50">
       <div className="max-w-7xl mx-auto px-6 flex justify-between items-center flex-wrap gap-4">
                 <div className="flex items-center gap-2 cursor-pointer" onClick={() => window.location.href = '/'}>
-          <div className="w-8 h-8 rounded-xl overflow-hidden flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center">
             <img src="/icon.png" alt="Hubify Social" className="w-full h-full object-cover scale-110" onError={(e) => { e.currentTarget.parentElement.style.display = 'none'; e.currentTarget.parentElement.nextElementSibling.style.display = 'flex' }} />
           </div>
-          <div className="hidden w-8 h-8 rounded-lg bg-gradient-to-tr from-[#1D4D7A] to-[#0B2A4A] items-center justify-center text-white font-bold">H</div>
+          <div className="hidden w-10 h-10 rounded-lg bg-gradient-to-tr from-[#1D4D7A] to-[#0B2A4A] flex items-center justify-center text-white font-bold text-xl">H</div>
           <span className="font-extrabold text-xl tracking-tight text-[#0B2A4A]">Hubify Social</span>
         </div>
         
@@ -27,75 +28,101 @@ const PublicHeader = ({ currentLang, onLangChange }: { currentLang?: 'id' | 'en'
 
 const PublicFooter = ({ currentLang, onLangChange }: { currentLang?: 'id' | 'en', onLangChange?: (l: 'id' | 'en') => void }) => {
   return (
-    <footer className="bg-white border-t border-slate-200 pt-20 pb-10 px-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-12 mb-16">
+    <footer className="bg-white border-t border-slate-200 pt-12 pb-10 px-6">
+        <div className="max-w-5xl mx-auto">
+          <div className="flex flex-col lg:flex-row lg:justify-between gap-12 lg:gap-8 mb-16">
           
           {/* Brand & Social */}
-          <div className="md:col-span-5 flex flex-col gap-6">
-            <div className="font-extrabold text-2xl tracking-tight text-[#0B2A4A]">Hubify Social</div>
-            <p className="text-slate-500 text-sm leading-relaxed max-w-sm">
-              {currentLang === 'en' 
-                ? 'Smart social media management platform for creators and businesses. Schedule, analyze, and collaborate in one smart hub.'
-                : 'Platform manajemen media sosial cerdas untuk kreator dan bisnis. Jadwalkan, analisis, dan berkolaborasi dalam satu markas pintar.'}
-            </p>
-            <div className="flex items-center gap-5 text-slate-400 mt-2">
-              <a href="https://instagram.com/hubifysocial" target="_blank" rel="noreferrer" className="p-2 rounded-full bg-slate-50 hover:bg-slate-100 hover:text-blue-600 transition-all">
-                <Instagram size={18} />
-              </a>
-              <a href="https://twitter.com/hubifysocial" target="_blank" rel="noreferrer" className="p-2 rounded-full bg-slate-50 hover:bg-slate-100 hover:text-blue-400 transition-all">
-                <Twitter size={18} />
-              </a>
-              <a href="https://linkedin.com/company/hubifysocial" target="_blank" rel="noreferrer" className="p-2 rounded-full bg-slate-50 hover:bg-slate-100 hover:text-blue-700 transition-all">
-                <Linkedin size={18} />
-              </a>
-              <a href="mailto:support@hubifysocial.com" className="p-2 rounded-full bg-slate-50 hover:bg-slate-100 hover:text-red-500 transition-all">
-                <Mail size={18} />
-              </a>
+          <div className="flex flex-col gap-8 lg:w-1/3">
+            <div className="flex items-center gap-2">
+              <div className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center">
+                <img src="/icon.png" alt="Hubify Social" className="w-full h-full object-cover scale-110" onError={(e) => { e.currentTarget.parentElement.style.display = 'none'; e.currentTarget.parentElement.nextElementSibling.style.display = 'flex' }} />
+              </div>
+              <div className="hidden w-10 h-10 rounded-lg bg-gradient-to-tr from-[#1D4D7A] to-[#0B2A4A] flex items-center justify-center text-white font-bold text-xl">H</div>
+              <span className="font-extrabold text-3xl tracking-tight text-slate-900">Hubify Social</span>
             </div>
+            <div className="flex items-center gap-4 text-slate-400 mt-4">
+                <a href="https://www.instagram.com/hubify.social/" target="_blank" rel="noreferrer" className="hover:text-slate-900 transition-colors">
+                  <Instagram size={20} />
+                </a>
+                <a href="https://twitter.com/hubifysocial" target="_blank" rel="noreferrer" className="hover:text-slate-900 transition-colors">
+                  <Twitter size={20} />
+                </a>
+                <a href="https://www.facebook.com/hubifysocial" target="_blank" rel="noreferrer" className="hover:text-slate-900 transition-colors">
+                  <Facebook size={20} />
+                </a>
+                <a href="https://www.linkedin.com/company/hubifysocial" target="_blank" rel="noreferrer" className="hover:text-slate-900 transition-colors">
+                  <Linkedin size={20} />
+                </a>
+                <a href="https://www.threads.net/@hubify.social" target="_blank" rel="noreferrer" className="hover:text-slate-900 transition-colors">
+                  <ThreadsIcon size={20} />
+                </a>
+                <a href="https://www.tiktok.com/@hubify.social" target="_blank" rel="noreferrer" className="hover:text-slate-900 transition-colors">
+                  <TiktokIcon size={20} />
+                </a>
+              </div>
             {onLangChange && currentLang && (
-              <div className="flex bg-slate-50 p-1 rounded-full items-center border border-slate-200 w-fit mt-2">
-                <button 
-                  onClick={() => onLangChange('id')} 
-                  className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${currentLang === 'id' ? 'bg-white text-[#0B2A4A] shadow-sm border border-slate-200' : 'text-slate-500 hover:text-[#0B2A4A] bg-transparent'}`}
+              <div className="relative inline-block w-fit">
+                <select
+                  value={currentLang}
+                  onChange={(e) => onLangChange(e.target.value as 'id' | 'en')}
+                  className="appearance-none flex items-center gap-2 py-2 pl-9 pr-8 border border-slate-200 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-all w-fit cursor-pointer outline-none focus:border-slate-300 bg-transparent"
                 >
-                  ID
-                </button>
-                <button 
-                  onClick={() => onLangChange('en')} 
-                  className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${currentLang === 'en' ? 'bg-white text-[#0B2A4A] shadow-sm border border-slate-200' : 'text-slate-500 hover:text-[#0B2A4A] bg-transparent'}`}
-                >
-                  EN
-                </button>
+                  <option value="id">Bahasa Indonesia</option>
+                  <option value="en">English</option>
+                </select>
+                <Globe size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-700 pointer-events-none" />
+                <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
               </div>
             )}
+              <div className="flex flex-col gap-3 mt-4">
+                <div className="flex items-start gap-3 text-sm text-slate-500">
+                   <div className="mt-0.5 shrink-0">
+                     <MapPin size={16} className="text-slate-400" />
+                   </div>
+                   <div>
+                     <p className="font-medium text-slate-700 mb-0.5">Hubify HQ</p>
+                     <p className="leading-relaxed">Gupit, Nguter<br/>Sukoharjo, Jawa Tengah 57571</p>
+                   </div>
+                </div>
+                <div className="flex items-center gap-3 text-sm text-slate-500">
+                   <div className="shrink-0">
+                     <Mail size={16} className="text-slate-400" />
+                   </div>
+                   <a href="mailto:support@hubifysocial.com" className="hover:text-slate-900 transition-colors">support@hubifysocial.com</a>
+                </div>
+                <div className="flex items-center gap-3 text-sm text-slate-500">
+                   <div className="shrink-0">
+                     <Phone size={16} className="text-slate-400" />
+                   </div>
+                   <a href="tel:+6281330242230" className="hover:text-slate-900 transition-colors">+62 813-3024-2230</a>
+                </div>
+              </div>
           </div>
 
-          {/* Empty space for layout */}
-          <div className="hidden md:block md:col-span-1"></div>
 
           {/* Links - Company */}
-          <div className="md:col-span-2 flex flex-col gap-4">
-            <h4 className="font-bold text-[#0B2A4A] mb-2 uppercase tracking-wider text-xs">{currentLang === 'en' ? 'Product' : 'Produk'}</h4>
-            <Link to="/" className="text-slate-500 hover:text-blue-600 transition-colors font-medium text-sm">{currentLang === 'en' ? 'Home' : 'Beranda'}</Link>
-            <a href="/#fitur" className="text-slate-500 hover:text-blue-600 transition-colors font-medium text-sm">{currentLang === 'en' ? 'Features' : 'Fitur Unggulan'}</a>
-            <a href="/#harga" className="text-slate-500 hover:text-blue-600 transition-colors font-medium text-sm">{currentLang === 'en' ? 'Pricing' : 'Paket Harga'}</a>
-            <Link to="/guides" className="text-slate-500 hover:text-blue-600 transition-colors font-medium text-sm">{currentLang === 'en' ? 'Guides' : 'Panduan Penggunaan'}</Link>
-            <Link to="/faq" className="text-slate-500 hover:text-blue-600 transition-colors font-medium text-sm">FAQ</Link>
+          <div className="flex flex-col gap-4">
+            <h4 className="font-medium text-slate-400 mb-4 text-sm">{currentLang === 'en' ? 'Product' : 'Produk'}</h4>
+            <Link to="/" className="text-slate-500 hover:text-slate-900 transition-colors font-medium text-sm">{currentLang === 'en' ? 'Home' : 'Beranda'}</Link>
+            <a href="/#fitur" className="text-slate-500 hover:text-slate-900 transition-colors font-medium text-sm">{currentLang === 'en' ? 'Features' : 'Fitur Unggulan'}</a>
+            <a href="/#harga" className="text-slate-500 hover:text-slate-900 transition-colors font-medium text-sm">{currentLang === 'en' ? 'Pricing' : 'Paket Harga'}</a>
+            <Link to="/guides" className="text-slate-500 hover:text-slate-900 transition-colors font-medium text-sm">{currentLang === 'en' ? 'Guides' : 'Panduan Penggunaan'}</Link>
+            <Link to="/faq" className="text-slate-500 hover:text-slate-900 transition-colors font-medium text-sm">FAQ</Link>
           </div>
 
-          <div className="md:col-span-2 flex flex-col gap-4">
-            <h4 className="font-bold text-[#0B2A4A] mb-2 uppercase tracking-wider text-xs">{currentLang === 'en' ? 'Company' : 'Perusahaan'}</h4>
-            <Link to="/about" className="text-slate-500 hover:text-blue-600 transition-colors font-medium text-sm">{currentLang === 'en' ? 'About Us' : 'Tentang Kami'}</Link>
-            <a href="mailto:support@hubifysocial.com" className="text-slate-500 hover:text-blue-600 transition-colors font-medium text-sm">{currentLang === 'en' ? 'Contact Us' : 'Hubungi Kami'}</a>
+          <div className="flex flex-col gap-4">
+            <h4 className="font-medium text-slate-400 mb-4 text-sm">{currentLang === 'en' ? 'Company' : 'Perusahaan'}</h4>
+            <Link to="/about" className="text-slate-500 hover:text-slate-900 transition-colors font-medium text-sm">{currentLang === 'en' ? 'About Us' : 'Tentang Kami'}</Link>
+            <a href="mailto:support@hubifysocial.com" className="text-slate-500 hover:text-slate-900 transition-colors font-medium text-sm">{currentLang === 'en' ? 'Contact Us' : 'Hubungi Kami'}</a>
           </div>
 
           {/* Links - Legal */}
-          <div className="md:col-span-2 flex flex-col gap-4">
-            <h4 className="font-bold text-[#0B2A4A] mb-2 uppercase tracking-wider text-xs">Legal</h4>
-            <Link to="/privacy" className="text-slate-500 hover:text-blue-600 transition-colors font-medium text-sm">{currentLang === 'id' ? 'Kebijakan Privasi' : 'Privacy Policy'}</Link>
-            <Link to="/terms" className="text-slate-500 hover:text-blue-600 transition-colors font-medium text-sm">{currentLang === 'id' ? 'Syarat & Ketentuan' : 'Terms of Service'}</Link>
-            <Link to="/refund-policy" className="text-slate-500 hover:text-blue-600 transition-colors font-medium text-sm">{currentLang === 'id' ? 'Kebijakan Pengembalian' : 'Refund Policy'}</Link>
+          <div className="flex flex-col gap-4">
+            <h4 className="font-medium text-slate-400 mb-4 text-sm">Legal</h4>
+            <Link to="/privacy" className="text-slate-500 hover:text-slate-900 transition-colors font-medium text-sm">{currentLang === 'id' ? 'Kebijakan Privasi' : 'Privacy Policy'}</Link>
+            <Link to="/terms" className="text-slate-500 hover:text-slate-900 transition-colors font-medium text-sm">{currentLang === 'id' ? 'Syarat & Ketentuan' : 'Terms of Service'}</Link>
+            <Link to="/refund-policy" className="text-slate-500 hover:text-slate-900 transition-colors font-medium text-sm">{currentLang === 'id' ? 'Kebijakan Pengembalian' : 'Refund Policy'}</Link>
           </div>
 
         </div>
@@ -627,7 +654,7 @@ export function FAQ() {
                         onClick={() => setOpenIndex(isOpen ? null : index)}
                         className="w-full text-left px-6 py-6 md:px-8 md:py-7 flex items-start justify-between gap-4 focus:outline-none group"
                       >
-                        <span className={`font-bold text-lg md:text-xl transition-colors mt-0.5 ${isOpen ? 'text-blue-600' : 'text-[#0B2A4A] group-hover:text-blue-600'}`}>
+                        <span className={`font-bold text-lg md:text-xl transition-colors mt-0.5 ${isOpen ? 'text-blue-600' : 'text-[#0B2A4A] group-hover:text-slate-900'}`}>
                           {lang === 'id' ? faq.qId : faq.qEn}
                         </span>
                         <div className={`shrink-0 p-2.5 rounded-full transition-all duration-300 ${isOpen ? 'bg-blue-600 rotate-180 text-white shadow-md' : 'bg-slate-50 text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-500'}`}>
