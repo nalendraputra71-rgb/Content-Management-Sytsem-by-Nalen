@@ -5,9 +5,9 @@ import dotenv from "dotenv";
 import fs from "fs";
 import admin from "firebase-admin";
 import { cert, getApp, getApps } from "firebase-admin/app";
-import { getAuth } from "firebase-admin/auth";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { rateLimit } from "express-rate-limit";
+import crypto from "crypto";
 
 dotenv.config();
 
@@ -46,6 +46,109 @@ function initFirebase() {
       throw new Error("FIREBASE_PROJECT_ID is not set in environment or config.");
     }
   }
+}
+
+// Cache for public keys
+let publicKeysCache: { keys: Record<string, string>; expires: number } | null = null;
+
+async function getGooglePublicKeys(): Promise<Record<string, string>> {
+  if (publicKeysCache && publicKeysCache.expires > Date.now()) {
+    return publicKeysCache.keys;
+  }
+  
+  const res = await fetch("https://www.googleapis.com/identitytoolkit/v3/relyingparty/publicKeys");
+  const keys = await res.json() as Record<string, string>;
+  
+  // Cache for 1 hour or based on cache-control headers
+  const cacheControl = res.headers.get("cache-control") || "";
+  let maxAge = 3600;
+  const match = cacheControl.match(/max-age=(\d+)/);
+  if (match) {
+    maxAge = parseInt(match[1], 10);
+  }
+  
+  publicKeysCache = {
+    keys,
+    expires: Date.now() + maxAge * 1000,
+  };
+  
+  return keys;
+}
+
+interface DecodedToken {
+  uid: string;
+  email?: string;
+  name?: string;
+  picture?: string;
+  [key: string]: any;
+}
+
+async function verifyFirebaseIdToken(token: string): Promise<DecodedToken> {
+  const parts = token.split(".");
+  if (parts.length !== 3) {
+    throw new Error("Invalid token format");
+  }
+
+  const [headerB64, payloadB64, signatureB64] = parts;
+  const header = JSON.parse(Buffer.from(headerB64, "base64url").toString());
+  const payload = JSON.parse(Buffer.from(payloadB64, "base64url").toString());
+
+  // 1. Verify Algorithm
+  if (header.alg !== "RS256") {
+    throw new Error("Invalid signing algorithm");
+  }
+
+  // 2. Verify Expiration and Timestamps
+  const now = Math.floor(Date.now() / 1000);
+  if (payload.exp < now) {
+    throw new Error("Token has expired");
+  }
+  if (payload.iat > now + 300) { // allow 5 min clock skew
+    throw new Error("Token issued in the future");
+  }
+
+  // 3. Verify Audience and Issuer
+  let projectId = process.env.FIREBASE_PROJECT_ID;
+  if (!projectId) {
+    try {
+      const configPath = path.join(process.cwd(), "firebase-applet-config.json");
+      if (fs.existsSync(configPath)) {
+        const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
+        projectId = config.projectId;
+      }
+    } catch (_) {}
+  }
+
+  if (projectId) {
+    if (payload.aud !== projectId) {
+      throw new Error(`Invalid audience: expected ${projectId}, got ${payload.aud}`);
+    }
+  }
+  
+  const expectedIssuer = `https://securetoken.google.com/${projectId || payload.aud}`;
+  if (payload.iss !== expectedIssuer) {
+    throw new Error(`Invalid issuer: expected ${expectedIssuer}, got ${payload.iss}`);
+  }
+
+  // 4. Verify Signature
+  const publicKeys = await getGooglePublicKeys();
+  const cert = publicKeys[header.kid];
+  if (!cert) {
+    throw new Error("Public key not found for kid: " + header.kid);
+  }
+
+  const verifier = crypto.createVerify("RSA-SHA256");
+  verifier.update(`${headerB64}.${payloadB64}`);
+  
+  const isVerified = verifier.verify(cert, signatureB64, "base64url");
+  if (!isVerified) {
+    throw new Error("Signature verification failed");
+  }
+
+  return {
+    uid: payload.sub,
+    ...payload,
+  };
 }
 
 const app = express();
@@ -91,7 +194,7 @@ apiRoutes.post("/xendit/checkout", async (req, res) => {
     }
     const token = authHeader.split("Bearer ")[1];
     initFirebase();
-    const decodedToken = await getAuth().verifyIdToken(token);
+    const decodedToken = await verifyFirebaseIdToken(token);
     const uid = decodedToken.uid;
 
     const { amount, plan, email, description, planId, addMonths, promoId } = req.body;
@@ -565,7 +668,7 @@ let apiKey = "";
       } catch (initErr: any) {
         return res.status(500).json({ error: "Sistem belum dikonfigurasi sepenuhnya. " + initErr.message });
       }
-      await getAuth().verifyIdToken(idToken.trim());
+      await verifyFirebaseIdToken(idToken.trim());
     } catch (error) {
       console.error("Gagal verifikasi token:", error);
       return res.status(401).json({ error: "Akses Ditolak: Token Autentikasi tidak valid atau telah kedaluwarsa." });
