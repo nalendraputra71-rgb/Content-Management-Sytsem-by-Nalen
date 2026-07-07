@@ -4,8 +4,12 @@ import { db } from "./firebase";
 import { CARD, B, I } from "./data";
 import { motion, AnimatePresence } from "motion/react";
 import { getAuth } from "firebase/auth";
+import { useSearchParams } from "react-router-dom";
 
 export function BillingView({ userProfile, onUpdate }: { userProfile: any, activeWorkspace: any, onUpdate: (data: any) => void }) {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const paymentStatus = searchParams.get("payment");
+
   const [modal, setModal] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [plans, setPlans] = useState<any[]>([]);
@@ -14,6 +18,23 @@ export function BillingView({ userProfile, onUpdate }: { userProfile: any, activ
   const [appliedVoucher, setAppliedVoucher] = useState<any>(null);
   const [voucherCodeInput, setVoucherCodeInput] = useState("");
   const [voucherError, setVoucherError] = useState("");
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showFailureModal, setShowFailureModal] = useState(false);
+
+  useEffect(() => {
+    if (paymentStatus === "success") {
+      setShowSuccessModal(true);
+      // Clean query parameters from URL
+      const newParams = new URLSearchParams(window.location.search);
+      newParams.delete("payment");
+      setSearchParams(newParams, { replace: true });
+    } else if (paymentStatus === "failure") {
+      setShowFailureModal(true);
+      const newParams = new URLSearchParams(window.location.search);
+      newParams.delete("payment");
+      setSearchParams(newParams, { replace: true });
+    }
+  }, [paymentStatus, setSearchParams]);
 
   useEffect(() => {
     const loadPlansAndPromos = async () => {
@@ -107,6 +128,9 @@ export function BillingView({ userProfile, onUpdate }: { userProfile: any, activ
         body: JSON.stringify({
           amount: finalPrice,
           plan: modal.name,
+          planId: modal.id,
+          addMonths: modal.addMonths || 1,
+          promoId: appliedVoucher ? appliedVoucher.id : "none",
           email: userProfile.email,
           description: `Pembelian Paket ${modal.name} di Hubify Social`
         })
@@ -337,6 +361,39 @@ export function BillingView({ userProfile, onUpdate }: { userProfile: any, activ
                    <div style={{padding:40, textAlign:"center", color:"#999", fontWeight:600}}>Belum ada voucher promo saat ini.</div>
                  )}
                </div>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* Success Modal */}
+        {showSuccessModal && (
+          <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.6)", backdropFilter:"blur(5px)", zIndex:1200, display:"flex", alignItems:"center", justifyContent:"center", padding:20}}>
+            <motion.div initial={{scale:0.95, y:20}} animate={{scale:1, y:0}} exit={{scale:0.95, y:20}} style={{background:"white", borderRadius:32, padding:"40px", maxWidth:500, width:"100%", textAlign:"center", boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
+              <div style={{width:80, height:80, background:"rgba(76,175,80,0.1)", color:"#4CAF50", borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:40, margin:"0 auto 24px"}}>🎉</div>
+              <h3 style={{fontSize:24, fontWeight:800, color:"#2C2016", marginBottom:12}}>Pembayaran Berhasil!</h3>
+              <p style={{fontSize:15, color:"rgba(44,32,22,0.7)", marginBottom:32, lineHeight:1.6}}>
+                Terima kasih telah berlangganan! Akun Anda telah berhasil diperpanjang/ditingkatkan ke paket premium. 
+                Sistem kami sedang menyinkronkan status akun Anda secara real-time.
+              </p>
+              <button onClick={()=>setShowSuccessModal(false)} style={{background:"var(--theme-text-main, #2C2016)", color:"white", fontWeight:800, padding:"16px 32px", borderRadius:16, border:"none", cursor:"pointer", fontSize:15, width:"100%", boxShadow:"0 8px 20px rgba(0,0,0,0.1)"}}>
+                Mulai Eksplorasi
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* Failure Modal */}
+        {showFailureModal && (
+          <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.6)", backdropFilter:"blur(5px)", zIndex:1200, display:"flex", alignItems:"center", justifyContent:"center", padding:20}}>
+            <motion.div initial={{scale:0.95, y:20}} animate={{scale:1, y:0}} exit={{scale:0.95, y:20}} style={{background:"white", borderRadius:32, padding:"40px", maxWidth:500, width:"100%", textAlign:"center", boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
+              <div style={{width:80, height:80, background:"rgba(156,43,78,0.1)", color:"#9C2B4E", borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:40, margin:"0 auto 24px"}}>❌</div>
+              <h3 style={{fontSize:24, fontWeight:800, color:"#2C2016", marginBottom:12}}>Pembayaran Gagal</h3>
+              <p style={{fontSize:15, color:"rgba(44,32,22,0.7)", marginBottom:32, lineHeight:1.6}}>
+                Maaf, terjadi kendala saat memproses transaksi pembayaran Anda dengan Xendit. Silakan periksa kembali metode pembayaran Anda atau hubungi dukungan teknis kami jika masalah berlanjut.
+              </p>
+              <button onClick={()=>setShowFailureModal(false)} style={{background:"var(--theme-text-main, #2C2016)", color:"white", fontWeight:800, padding:"16px 32px", borderRadius:16, border:"none", cursor:"pointer", fontSize:15, width:"100%", boxShadow:"0 8px 20px rgba(0,0,0,0.1)"}}>
+                Tutup & Coba Lagi
+              </button>
             </motion.div>
           </motion.div>
         )}

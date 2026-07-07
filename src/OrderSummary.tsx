@@ -104,6 +104,9 @@ const plan = searchParams.get('plan') || 'solo';
         body: JSON.stringify({
           amount: finalPrice,
           plan: planName,
+          planId: plan,
+          addMonths: isAnnual ? 12 : 1,
+          promoId: "none",
           email: profile?.email || user.email,
           description: `Pembelian Paket ${planName} di Hubify Social`
         })

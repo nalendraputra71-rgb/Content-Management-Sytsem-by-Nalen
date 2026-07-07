@@ -608,6 +608,26 @@ export function SocialStudioView({
   }, [workspaceId]);
 
   const [connectedPlatforms, setConnectedPlatforms] = useState<string[]>([]);
+  const [connectedAccountsData, setConnectedAccountsData] = useState<Record<string, any>>({});
+  
+  useEffect(() => {
+    // Check for OAuth integration result in URL
+    const hash = window.location.hash;
+    if (hash.includes('integration=')) {
+      const urlParams = new URLSearchParams(hash.split('?')[1]);
+      const status = urlParams.get('integration');
+      const msg = urlParams.get('message');
+      
+      if (status === 'success') {
+        // Platform is already updated via firestore snapshot
+        // We can just clean up the URL
+        window.history.replaceState(null, '', window.location.pathname + '#/social-studio');
+      } else if (status === 'error') {
+        alert("Integrasi Gagal: " + (msg || "Terjadi kesalahan saat menghubungkan akun."));
+        window.history.replaceState(null, '', window.location.pathname + '#/social-studio');
+      }
+    }
+  }, []);
   const [showMultiAccountPopup, setShowMultiAccountPopup] = useState(false);
   const [integrationModal, setIntegrationModal] = useState<{
     isOpen: boolean;
@@ -633,6 +653,11 @@ export function SocialStudioView({
       q,
       (snap) => {
         setConnectedPlatforms(snap.docs.map((d) => d.id));
+        const dataMap: Record<string, any> = {};
+        snap.docs.forEach((d) => {
+          dataMap[d.id] = d.data();
+        });
+        setConnectedAccountsData(dataMap);
       },
       (error) => {
         console.error("Error listening to connectedAccounts:", error);
@@ -643,6 +668,88 @@ export function SocialStudioView({
 
   const [aiReport, setAiReport] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
+
+  const [realPosts, setRealPosts] = useState<any[]>([]);
+  const [realComments, setRealComments] = useState<any[]>([]);
+  const [realInsights, setRealInsights] = useState<any>(null);
+  
+  useEffect(() => {
+    if (!workspaceId) return;
+    
+    const fetchData = async () => {
+      try {
+        let allPosts: any[] = [];
+        let allComments: any[] = [];
+        
+        // Fetch for meta and instagram if connected
+        for (const platform of ['meta', 'instagram']) {
+          if (connectedAccountsData[platform]) {
+            try {
+              const postsRes = await fetch(`/api/meta/data?workspaceId=${workspaceId}&platform=${platform}&type=posts`);
+              if (postsRes.ok) {
+                const postsData = await postsRes.json();
+                if (postsData.data) {
+                  const mappedPosts = postsData.data.map((p: any) => ({
+                    id: p.id,
+                    platform: platform,
+                    content: p.message || p.caption || "No content",
+                    date: new Date(p.created_time || p.timestamp).toLocaleDateString(),
+                    status: "published",
+                    likes: p.likes?.summary?.total_count || p.like_count || 0,
+                    comments: p.comments?.summary?.total_count || p.comments_count || 0,
+                    media: p.media_url || p.attachments?.data?.[0]?.media?.image?.src || "",
+                    author: connectedAccountsData[platform].accountName
+                  }));
+                  allPosts = [...allPosts, ...mappedPosts];
+                }
+              }
+              
+              const commentsRes = await fetch(`/api/meta/data?workspaceId=${workspaceId}&platform=${platform}&type=comments`);
+              if (commentsRes.ok) {
+                const commentsData = await commentsRes.json();
+                if (commentsData.data) {
+                  const commentsList: any[] = [];
+                  commentsData.data.forEach((item: any) => {
+                    if (item.comments && item.comments.data) {
+                      item.comments.data.forEach((c: any) => {
+                        commentsList.push({
+                          id: c.id,
+                          platform: platform,
+                          senderName: c.from?.name || c.username || "Unknown",
+                          content: c.message || c.text || "",
+                          time: new Date(c.created_time || c.timestamp).toLocaleDateString(),
+                          avatar: "https://i.pravatar.cc/150?u=" + (c.from?.id || c.id)
+                        });
+                      });
+                    }
+                  });
+                  allComments = [...allComments, ...commentsList];
+                }
+              }
+
+              const insightsRes = await fetch(`/api/meta/data?workspaceId=${workspaceId}&platform=${platform}&type=insights`);
+              if (insightsRes.ok) {
+                const insightsData = await insightsRes.json();
+                if (insightsData.data && insightsData.data.length > 0) {
+                  setRealInsights((prev: any) => ({ ...prev, [platform]: insightsData.data }));
+                }
+              }
+            } catch (err) {
+              console.error(`Failed to fetch ${platform} data`, err);
+            }
+          }
+        }
+        
+        setRealPosts(allPosts);
+        setRealComments(allComments);
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    
+    fetchData();
+  }, [workspaceId, connectedAccountsData]);
+
 
   const [dashTimeRange, setDashTimeRange] = useState("30 Hari Terakhir");
   const [showCreatePostPopup, setShowCreatePostPopup] = useState(false);
@@ -1482,6 +1589,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
       alert("Workspace ID not found");
       return;
     }
+    // MOCK: only used for non-meta platforms
     const fakeToken = `${id.toUpperCase()}_MOCK_TOKEN_` + Date.now();
     const docRef = doc(db, "workspaces", workspaceId, "connectedAccounts", id);
     setDoc(docRef, {
@@ -1515,6 +1623,30 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
   };
 
   const MOCK_CHART_DATA = React.useMemo(() => {
+    if (realInsights && Object.keys(realInsights).length > 0) {
+      // Just map some basic data from insights for the chart if we have it
+      // Let's create a 14-day array mapping the values if available, or just mock it cleanly
+      const dataToUse = realInsights[analyticsPlatform] || realInsights['meta'] || realInsights['instagram'];
+      if (dataToUse) {
+        // Typically insights have {name: 'page_impressions', values: [{value, end_time}]}
+        // We'll extract the first metric's values for dates.
+        const metric = dataToUse[0];
+        if (metric && metric.values) {
+          return metric.values.map((v: any, i: number) => ({
+             date: new Date(v.end_time).toLocaleDateString(undefined, {month: 'short', day: 'numeric'}),
+             views: v.value || 0,
+             reach: v.value || 0,
+             likes: 0,
+             comments: 0,
+             shares: 0,
+             er: 0,
+             reposts: 0,
+             saves: 0
+          }));
+        }
+      }
+    }
+
     // Generate different seeds based on platform and what is being viewed
     let multiplier = 1;
     if (analyticsPlatform === "instagram") multiplier = 1.5;
@@ -1576,6 +1708,26 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
         thumbnail: images[i % images.length],
       };
     });
+
+    if (realPosts && realPosts.length > 0) {
+      list = realPosts.map((p: any) => ({
+        id: p.id,
+        title: p.content ? p.content.slice(0, 40) + '...' : 'Post',
+        captionSnippet: p.content ? p.content.slice(0, 60) + '...' : '',
+        postTypeLabel: 'Post',
+        accountName: p.author || 'Account',
+        time: p.date ? new Date(p.date).toLocaleString() : '',
+        type: p.platform || 'instagram',
+        views: p.views || 0,
+        reach: p.reach || 0,
+        likes: p.likes || 0,
+        er: p.er || '0.0',
+        comments: p.comments || 0,
+        shares: p.shares || 0,
+        saves: p.saves || 0,
+        thumbnail: p.media || "https://images.unsplash.com/photo-1515347619362-67396c01e523?w=100&h=100&fit=crop"
+      }));
+    }
 
     if (contentPlatform !== "all") {
       list = list.filter((c) => c.type === contentPlatform);
@@ -2612,6 +2764,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
         isOpen={integrationModal.isOpen}
         platformId={integrationModal.platformId}
         onClose={() => setIntegrationModal({ isOpen: false, platformId: null })}
+        workspaceId={workspaceId}
         onSuccess={handleIntegrationSuccess}
       />
 
@@ -2636,6 +2789,11 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                   }
                   ?
                 </h3>
+                {disconnectPrompt.platformId && connectedAccountsData[disconnectPrompt.platformId]?.accountName && (
+                  <p className="text-sm font-semibold text-[#111827]/80 mb-2">
+                    Account: {connectedAccountsData[disconnectPrompt.platformId].accountName}
+                  </p>
+                )}
                 <p className="text-sm text-[#111827]/60 mb-6">
                   Are you sure you want to disconnect this platform? You will
                   need to re-authenticate to connect it again.
@@ -2789,15 +2947,22 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                             </div>
                           )}
                         </div>
-                        <span
-                          className={`text-sm font-semibold transition-colors duration-300 ${
-                            isConn
-                              ? "text-[#111827] group-hover:text-red-600"
-                              : "text-[#111827]/60 group-hover:text-[#111827]/90"
-                          }`}
-                        >
-                          {isConn ? p.name : `Connect ${p.name}`}
-                        </span>
+                        <div className="flex flex-col justify-center">
+                          <span
+                            className={`text-sm font-semibold transition-colors duration-300 ${
+                              isConn
+                                ? "text-[#111827] group-hover:text-red-600"
+                                : "text-[#111827]/60 group-hover:text-[#111827]/90"
+                            }`}
+                          >
+                            {isConn ? (connectedAccountsData[p.id]?.accountName || p.name) : `Connect ${p.name}`}
+                          </span>
+                          {isConn && connectedAccountsData[p.id]?.accountName && (
+                            <span className="text-[10px] text-[#111827]/50 font-medium -mt-0.5 group-hover:text-red-400 transition-colors">
+                              {p.name}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     );
                   })}
@@ -5710,7 +5875,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                     </>
                   ) : (
                     <>
-                      {MOCK_COMMENTS.filter((m) =>
+                      {(realComments.length > 0 ? realComments : MOCK_COMMENTS).filter((m) =>
                         inboxFilter === "all"
                           ? true
                           : m.platform === inboxFilter ||
@@ -5721,7 +5886,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                           Belum ada komentar untuk saat ini.
                         </div>
                       )}
-                      {MOCK_COMMENTS.filter((m) =>
+                      {(realComments.length > 0 ? realComments : MOCK_COMMENTS).filter((m) =>
                         inboxFilter === "all"
                           ? true
                           : m.platform === inboxFilter ||

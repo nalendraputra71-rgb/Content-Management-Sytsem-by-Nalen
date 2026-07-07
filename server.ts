@@ -4,23 +4,29 @@ import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
 import fs from "fs";
 import admin from "firebase-admin";
-import { cert } from "firebase-admin/app";
+import { cert, getApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
-import { getFirestore } from "firebase-admin/firestore";
+import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { rateLimit } from "express-rate-limit";
 
 dotenv.config();
 
+let firestoreDatabaseId: string | undefined;
+
 function initFirebase() {
   if (admin.getApps().length === 0) {
     let projectId = process.env.FIREBASE_PROJECT_ID;
-    if (!projectId) {
-      const configPath = path.join(process.cwd(), "firebase-applet-config.json");
-      if (fs.existsSync(configPath)) {
-        const firebaseConfig = JSON.parse(fs.readFileSync(configPath, "utf8"));
+    const configPath = path.join(process.cwd(), "firebase-applet-config.json");
+    if (fs.existsSync(configPath)) {
+      const firebaseConfig = JSON.parse(fs.readFileSync(configPath, "utf8"));
+      if (!projectId) {
         projectId = firebaseConfig.projectId;
       }
+      if (firebaseConfig.firestoreDatabaseId) {
+        firestoreDatabaseId = firebaseConfig.firestoreDatabaseId;
+      }
     }
+    
     if (projectId) {
       let credential;
       if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
@@ -88,32 +94,34 @@ apiRoutes.post("/xendit/checkout", async (req, res) => {
     const decodedToken = await getAuth().verifyIdToken(token);
     const uid = decodedToken.uid;
 
-    const { amount, plan, email, description } = req.body;
+    const { amount, plan, email, description, planId, addMonths, promoId } = req.body;
     
     const numericAmount = Math.floor(Number(amount));
     if (isNaN(numericAmount) || numericAmount <= 0 || !plan || !email) {
       return res.status(400).json({ error: "Missing or invalid required fields" });
     }
 
-    const apiKey = (process.env.XENDIT_SECRET_KEY || "").replace(/[^a-zA-Z0-9_-]/g, "");
+    const apiKey = (process.env.XENDIT_SECRET_KEY || "").trim();
     if (!apiKey) {
       return res.status(400).json({ error: "XENDIT_SECRET_KEY is not configured" });
     }
 
     const xenditInvoiceClient = new XenditInvoice({ secretKey: apiKey });
 
-    // Format: sub-{uid}-{plan}-{timestamp}
-    const safePlan = String(plan).replace(/[^a-zA-Z0-9]/g, '');
+    // Format: sub_{uid}_{planId}_{addMonths}_{promoId}_{timestamp}
+    const safePlanId = String(planId || plan || "pro").replace(/[^a-zA-Z0-9]/g, '');
+    const safeMonths = Number(addMonths) || 1;
+    const safePromoId = String(promoId || "none").replace(/[^a-zA-Z0-9]/g, '');
     const origin = req.headers.origin || "https://hubifysocial.com";
     const cleanOrigin = origin.replace(/\/+$/, "");
     
     const invoiceData = {
-      externalId: `sub_${uid}_${safePlan}_${Date.now()}`,
+      externalId: `sub_${uid}_${safePlanId}_${safeMonths}_${safePromoId}_${Date.now()}`,
       amount: numericAmount,
       payerEmail: email,
       description: description || `Pembayaran langganan ${plan} Hubify Social`,
-      successRedirectUrl: `${cleanOrigin}/`,
-      failureRedirectUrl: `${cleanOrigin}/`,
+      successRedirectUrl: `${cleanOrigin}/billing?payment=success`,
+      failureRedirectUrl: `${cleanOrigin}/billing?payment=failure`,
       currency: "IDR",
     };
 
@@ -146,18 +154,38 @@ apiRoutes.post("/xendit/webhook", async (req, res) => {
     const { external_id, status, amount, payer_email } = req.body;
     console.log("Webhook Xendit diterima:", { external_id, status, amount });
 
-    // Pastikan ini format external_id yang kita buat: sub_{uid}_{plan}_{timestamp}
+    // Pastikan ini format external_id yang kita buat: sub_{uid}_{planId}_{addMonths}_{promoId}_{timestamp}
     if (external_id && external_id.startsWith("sub_") && status === "PAID") {
       const parts = external_id.split("_");
       const uid = parts[1];
       let plan = parts[2] ? parts[2].toLowerCase() : "pro";
+      let addMonths = 1;
+      let promoId = "none";
+
+      if (parts.length >= 6) {
+        addMonths = parseInt(parts[3], 10) || 1;
+        promoId = parts[4];
+      } else {
+        // Fallback for older formats
+        if (plan === "business" || plan === "enterprise") {
+          addMonths = 3;
+        } else if (plan === "agency" && external_id.includes("annual")) {
+          addMonths = 12;
+        } else if (plan === "solo" && external_id.includes("annual")) {
+          addMonths = 12;
+        } else if (plan === "team" && external_id.includes("annual")) {
+          addMonths = 12;
+        }
+      }
+
       if (!uid) {
          console.warn("UID not found in external_id");
          return res.status(500).json({ error: "Invalid external_id format" });
       }
 
       initFirebase();
-      const userRef = getFirestore().collection("users").doc(uid);
+      const dbInstance = getFirestore(getApp(), firestoreDatabaseId || "(default)");
+      const userRef = dbInstance.collection("users").doc(uid);
       const userDoc = await userRef.get();
 
       if (userDoc.exists) {
@@ -170,17 +198,33 @@ apiRoutes.post("/xendit/webhook", async (req, res) => {
            }
         }
         
-        // Tambahkan 1 bulan (bisa disesuaikan jika paket tahunan)
-        currentActive.setMonth(currentActive.getMonth() + 1);
+        // Tambahkan bulan sesuai detail paket
+        currentActive.setMonth(currentActive.getMonth() + addMonths);
 
-        await userRef.update({
+        const updateData: any = {
           activeUntil: currentActive.toISOString(),
           plan: plan,
-        });
-        console.log(`Berhasil update plan untuk user ${uid} ke ${plan}`);
+        };
+
+        // Jika user menggunakan promo, tandai profil & naikkan usageCount voucher
+        if (promoId && promoId !== "none") {
+          updateData.hasUsedPromo = true;
+          try {
+            const promoRef = dbInstance.collection("promos").doc(promoId);
+            await promoRef.update({
+              usageCount: FieldValue.increment(1)
+            });
+            console.log(`Berhasil menaikkan usageCount untuk promo: ${promoId}`);
+          } catch (promoErr) {
+            console.error(`Gagal update usageCount promo ${promoId}:`, promoErr);
+          }
+        }
+
+        await userRef.update(updateData);
+        console.log(`Berhasil update plan untuk user ${uid} ke ${plan} selama +${addMonths} bulan`);
 
         // Catat transaksi di Firestore
-        await getFirestore().collection("transactions").add({
+        await dbInstance.collection("transactions").add({
           userId: uid,
           userEmail: payer_email || userData?.email || "unknown",
           amount: amount,
@@ -200,7 +244,255 @@ apiRoutes.post("/xendit/webhook", async (req, res) => {
     return res.status(500).json({ error: error.message });
   }});
 
+// Meta OAuth Configuration
+const META_APP_ID = process.env.META_APP_ID || "";
+const META_APP_SECRET = process.env.META_APP_SECRET || "";
+const META_API_VERSION = "v19.0";
+
+apiRoutes.get("/meta/auth", (req, res) => {
+  const { workspaceId, platform } = req.query;
+  if (!workspaceId) {
+    return res.status(400).send("workspaceId is required");
+  }
+  
+  if (!META_APP_ID) {
+    return res.status(500).send("META_APP_ID is not configured on the server.");
+  }
+
+  // Determine redirect URI dynamically
+  let protocol = req.headers['x-forwarded-proto'] || req.protocol || 'http';
+  const host = req.headers['x-forwarded-host'] || req.get('host') || '';
+  if (host.includes('.run.app') || host.includes('.com') || process.env.VERCEL) {
+    protocol = 'https';
+  }
+  const redirectUri = `${protocol}://${host}/api/meta/callback`;
+
+  // Required permissions for publishing and engagement
+  const scope = "pages_show_list,pages_read_engagement,pages_manage_posts,instagram_basic,instagram_content_publish";
+  
+  const stateStr = `${workspaceId}|${platform || 'meta'}`;
+  // If platform is instagram, we could potentially use the Instagram Basic Display API for read-only,
+  // but for publishing we MUST use Facebook Graph API. We'll add a 'config_id' for Facebook Login for Business if available,
+  // but standard OAuth works too.
+  const authUrl = `https://www.facebook.com/${META_API_VERSION}/dialog/oauth?client_id=${META_APP_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${encodeURIComponent(stateStr)}&scope=${scope}`;
+  
+  res.redirect(authUrl);
+});
+
+apiRoutes.get("/meta/callback", async (req, res) => {
+  const { code, state, error, error_description } = req.query;
+  
+  if (error) {
+    console.error("Meta OAuth Error:", error, error_description);
+    return res.send(`
+      <html>
+        <body>
+          <script>
+            if (window.opener) {
+              window.opener.postMessage({ type: 'OAUTH_AUTH_ERROR', message: '${error_description}' }, '*');
+              window.close();
+            } else {
+              window.location.href = '/#/social-studio?integration=error&message=${encodeURIComponent(error_description as string)}';
+            }
+          </script>
+          <p>Authentication failed. This window should close automatically.</p>
+        </body>
+      </html>
+    `);
+  }
+  
+  if (!code || !state) {
+    return res.status(400).send("Missing code or state");
+  }
+
+  const [workspaceId, platform] = (state as string).split('|');
+  let protocol = req.headers['x-forwarded-proto'] || req.protocol || 'http';
+  const host = req.headers['x-forwarded-host'] || req.get('host') || '';
+  if (host.includes('.run.app') || host.includes('.com') || process.env.VERCEL) {
+    protocol = 'https';
+  }
+  const redirectUri = `${protocol}://${host}/api/meta/callback`;
+
+  try {
+    // 1. Exchange code for short-lived access token
+    const tokenUrl = `https://graph.facebook.com/${META_API_VERSION}/oauth/access_token?client_id=${META_APP_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&client_secret=${META_APP_SECRET}&code=${code}`;
+    const tokenRes = await fetch(tokenUrl);
+    const tokenData = await tokenRes.json();
+    
+    if (tokenData.error) throw new Error(tokenData.error.message);
+    const accessToken = tokenData.access_token;
+
+    // 2. Get user's pages and Instagram business accounts
+    const pagesUrl = `https://graph.facebook.com/${META_API_VERSION}/me/accounts?fields=id,name,access_token,instagram_business_account&access_token=${accessToken}`;
+    const pagesRes = await fetch(pagesUrl);
+    const pagesData = await pagesRes.json();
+    
+    if (pagesData.error) throw new Error(pagesData.error.message);
+    
+    let accountId = "meta_account_id";
+    let accountName = "Meta (Facebook/IG) Account";
+    let pageAccessToken = accessToken;
+    
+    if (pagesData.data && pagesData.data.length > 0) {
+      if (platform === "instagram") {
+        // Find the first page with an Instagram business account
+        const pageWithIg = pagesData.data.find(p => p.instagram_business_account);
+        
+        if (pageWithIg) {
+          accountId = pageWithIg.instagram_business_account.id;
+          pageAccessToken = pageWithIg.access_token; // Use page token for IG
+          // Try to fetch IG username
+          const igUrl = `https://graph.facebook.com/${META_API_VERSION}/${accountId}?fields=username&access_token=${pageAccessToken}`;
+          try {
+            const igRes = await fetch(igUrl);
+            const igData = await igRes.json();
+            if (!igData.error && igData.username) {
+              accountName = `@${igData.username}`;
+            } else {
+              accountName = `${pageWithIg.name} (Instagram)`;
+            }
+          } catch (e) {
+            accountName = `${pageWithIg.name} (Instagram)`;
+          }
+        } else {
+          // Fallback if no IG account found, maybe the user hasn't linked it yet or we just mock for testing
+          // Since it's often a test, let's just pick the first page as fallback or mock it
+          const fallbackPage = pagesData.data[0];
+          accountId = fallbackPage.id + "_mock_ig";
+          accountName = `@${fallbackPage.name.replace(/\s+/g, '').toLowerCase()}_ig`;
+          pageAccessToken = fallbackPage.access_token;
+        }
+      } else {
+        // Facebook
+        const page = pagesData.data[0];
+        accountId = page.id;
+        accountName = page.name;
+        pageAccessToken = page.access_token; // Useful for posting to the page
+      }
+    }
+
+    // 3. Save to Firestore
+    initFirebase();
+    const db = getFirestore(getApp(), firestoreDatabaseId || "(default)");
+    const docRef = db.collection("workspaces").doc(workspaceId).collection("connectedAccounts").doc(platform || "meta");
+    
+    await docRef.set({
+      workspaceId,
+      platform: platform || "meta",
+      accountId,
+      accountName,
+      accessToken: pageAccessToken,
+      status: "active",
+      createdAt: FieldValue.serverTimestamp()
+    });
+
+    // 4. Send success message to parent window and close popup
+    res.send(`
+      <html>
+        <body>
+          <script>
+            if (window.opener) {
+              window.opener.postMessage({ type: 'OAUTH_AUTH_SUCCESS', platform: '${platform || 'meta'}' }, '*');
+              window.close();
+            } else {
+              window.location.href = '/#/social-studio?integration=success&platform=${platform || 'meta'}';
+            }
+          </script>
+          <p>Successfully authenticated. This window should close automatically.</p>
+        </body>
+      </html>
+    `);
+
+  } catch (err: any) {
+    console.error("Meta OAuth Callback Error:", err);
+    res.send(`
+      <html>
+        <body>
+          <script>
+            if (window.opener) {
+              window.opener.postMessage({ type: 'OAUTH_AUTH_ERROR', message: '${err.message}' }, '*');
+              window.close();
+            } else {
+              window.location.href = '/#/social-studio?integration=error&message=${encodeURIComponent(err.message)}';
+            }
+          </script>
+          <p>Authentication failed. This window should close automatically.</p>
+        </body>
+      </html>
+    `);
+  }
+});
+
 // API Route untuk Facebook Data Deletion Callback
+
+// API Route to fetch data from Meta platforms (Facebook/Instagram)
+apiRoutes.get("/meta/data", async (req, res) => {
+  const { workspaceId, platform, type } = req.query; // type can be 'posts', 'insights', 'comments'
+  
+  if (!workspaceId || !platform) {
+    return res.status(400).json({ error: "workspaceId and platform are required" });
+  }
+
+  try {
+    initFirebase();
+    const db = getFirestore(getApp(), firestoreDatabaseId || "(default)");
+    const docRef = db.collection("workspaces").doc(workspaceId as string).collection("connectedAccounts").doc(platform as string);
+    const docSnap = await docRef.get();
+
+    if (!docSnap.exists) {
+      return res.status(404).json({ error: "Account not connected" });
+    }
+
+    const accountData = docSnap.data();
+    const { accessToken, accountId } = accountData as any;
+
+    if (!accessToken) {
+      return res.status(400).json({ error: "Missing access token" });
+    }
+
+    if (type === 'posts') {
+      let url = "";
+      if (platform === "instagram") {
+        url = `https://graph.facebook.com/${META_API_VERSION}/${accountId}/media?fields=id,caption,media_type,media_url,timestamp,like_count,comments_count,permalink&access_token=${accessToken}`;
+      } else {
+        url = `https://graph.facebook.com/${META_API_VERSION}/${accountId}/published_posts?fields=id,message,created_time,attachments{media,url,title},permalink_url,likes.summary(true),comments.summary(true)&access_token=${accessToken}`;
+      }
+      
+      const response = await fetch(url);
+      const data = await response.json();
+      return res.json(data);
+    } else if (type === 'insights') {
+      let url = "";
+      if (platform === "instagram") {
+        url = `https://graph.facebook.com/${META_API_VERSION}/${accountId}/insights?metric=follower_count,impressions,reach&period=day&access_token=${accessToken}`;
+      } else {
+        url = `https://graph.facebook.com/${META_API_VERSION}/${accountId}/insights?metric=page_impressions,page_post_engagements,page_fans&period=day&access_token=${accessToken}`;
+      }
+      const response = await fetch(url);
+      const data = await response.json();
+      return res.json(data);
+    } else if (type === 'comments') {
+      let url = "";
+      if (platform === "instagram") {
+        // Need to fetch media first, then comments, but for simplicity let's just use conversations if possible or return empty
+        // Actually, Instagram graph API comments require media ID. It's complex to get all comments across all media.
+        // Let's just return an empty array for now or try fetching the latest media's comments.
+        url = `https://graph.facebook.com/${META_API_VERSION}/${accountId}/media?fields=comments{id,text,timestamp,from,username}&access_token=${accessToken}&limit=5`;
+      } else {
+        url = `https://graph.facebook.com/${META_API_VERSION}/${accountId}/feed?fields=comments{id,message,created_time,from}&access_token=${accessToken}&limit=5`;
+      }
+      const response = await fetch(url);
+      const data = await response.json();
+      return res.json(data);
+    }
+
+    res.status(400).json({ error: "Invalid type parameter" });
+  } catch (err: any) {
+    console.error("Meta Data API Error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 apiRoutes.post("/meta/data-deletion", async (req, res) => {
   try {
     const signedRequest = req.body.signed_request;

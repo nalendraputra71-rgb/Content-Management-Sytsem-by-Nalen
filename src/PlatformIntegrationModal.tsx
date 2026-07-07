@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "motion/react";
 interface PlatformIntegrationModalProps {
   isOpen: boolean;
   platformId: string | null;
+  workspaceId?: string;
   onClose: () => void;
   onSuccess: (platformId: string) => void;
 }
@@ -89,6 +90,7 @@ const PLATFORM_DETAILS: Record<string, any> = {
 export const PlatformIntegrationModal: React.FC<PlatformIntegrationModalProps> = ({
   isOpen,
   platformId,
+  workspaceId,
   onClose,
   onSuccess
 }) => {
@@ -104,12 +106,53 @@ export const PlatformIntegrationModal: React.FC<PlatformIntegrationModalProps> =
     }
   }, [isOpen, platformId]);
 
+  React.useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      // Validate origin is from AI Studio preview, localhost, or production domain
+      const origin = event.origin;
+      if (!origin.endsWith('.run.app') && !origin.includes('localhost') && !origin.includes('hubifysocial.com')) {
+        return;
+      }
+      
+      if (event.data?.type === 'OAUTH_AUTH_SUCCESS' && event.data?.platform === platformId) {
+        setLoading(false);
+        setStep(3); // Go to success step
+      } else if (event.data?.type === 'OAUTH_AUTH_ERROR') {
+        setLoading(false);
+        alert("Integrasi Gagal: " + event.data.message);
+      }
+    };
+    
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [platformId]);
+
   if (!isOpen || !platformId) return null;
 
   const platform = PLATFORM_DETAILS[platformId] || PLATFORM_DETAILS.meta;
 
   const handleContinue = () => {
     if (step === 1) {
+      if (platformId === "meta" || platformId === "instagram") {
+        if (!workspaceId) {
+          alert("Workspace ID required for OAuth.");
+          return;
+        }
+        setLoading(true);
+        // Open OAuth provider in a popup window
+        const authWindow = window.open(
+          `/api/meta/auth?workspaceId=${workspaceId}&platform=${platformId}`,
+          'oauth_popup',
+          'width=600,height=700'
+        );
+        
+        if (!authWindow) {
+          alert("Tolong izinkan popup (pop-ups blocker) untuk menghubungkan akun Anda.");
+          setLoading(false);
+        }
+        return; // Execution waits for postMessage
+      }
+
       setLoading(true);
       setTimeout(() => {
         setLoading(false);
