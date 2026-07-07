@@ -4,7 +4,7 @@ import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
 import fs from "fs";
 import admin from "firebase-admin";
-import { cert, getApp } from "firebase-admin/app";
+import { cert, getApp, getApps } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { rateLimit } from "express-rate-limit";
@@ -14,7 +14,7 @@ dotenv.config();
 let firestoreDatabaseId: string | undefined;
 
 function initFirebase() {
-  if (admin.getApps().length === 0) {
+  if (getApps().length === 0) {
     let projectId = process.env.FIREBASE_PROJECT_ID;
     const configPath = path.join(process.cwd(), "firebase-applet-config.json");
     if (fs.existsSync(configPath)) {
