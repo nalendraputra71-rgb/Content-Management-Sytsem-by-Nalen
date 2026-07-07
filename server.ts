@@ -136,7 +136,32 @@ apiRoutes.post("/xendit/checkout", async (req, res) => {
     
     let errorDetail = error.message;
     if (error.status && error.response) {
-       errorDetail = `API Error ${error.status}: ${JSON.stringify(error.response)}`;
+      try {
+        let responseBody = "";
+        if (typeof error.response.text === "function") {
+          try {
+            responseBody = await error.response.text();
+          } catch (textErr) {
+            responseBody = String(error.response.body || error.response.data || "");
+          }
+        } else if (error.response.body) {
+          responseBody = typeof error.response.body === "object" ? JSON.stringify(error.response.body) : String(error.response.body);
+        } else if (error.response.data) {
+          responseBody = typeof error.response.data === "object" ? JSON.stringify(error.response.data) : String(error.response.data);
+        } else {
+          // Fallback if none of the above are present, filter circular properties
+          const safeObj: any = {};
+          for (const key of Object.keys(error.response)) {
+            if (key !== "request" && key !== "config" && typeof error.response[key] !== "function") {
+              safeObj[key] = error.response[key];
+            }
+          }
+          responseBody = JSON.stringify(safeObj);
+        }
+        errorDetail = `API Error ${error.status}: ${responseBody}`;
+      } catch (innerErr: any) {
+        errorDetail = `API Error ${error.status}: ${error.message} (Fallback: ${innerErr.message})`;
+      }
     }
     
     return res.status(400).json({ error: errorDetail || "Failed to create checkout link" });

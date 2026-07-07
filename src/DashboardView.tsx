@@ -75,7 +75,7 @@ export function DashboardView({ user, profile, activeWorkspace, content, theme, 
   useEffect(() => {
     const fetchTrends = async () => {
       try {
-        const res = await fetch(`/api/trends?geo=${trendGeo}`);
+        const res = await fetch(window.location.origin + `/api/trends?geo=${trendGeo}`);
         if (!res.ok) throw new Error("Failed to fetch RSS");
         const text = await res.text();
         const parser = new DOMParser();

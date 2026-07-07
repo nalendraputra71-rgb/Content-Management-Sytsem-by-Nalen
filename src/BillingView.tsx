@@ -119,7 +119,7 @@ export function BillingView({ userProfile, onUpdate }: { userProfile: any, activ
       
       const token = await currentUser.getIdToken();
 
-      const response = await fetch('/api/xendit/checkout', {
+      const response = await fetch(window.location.origin + '/api/xendit/checkout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

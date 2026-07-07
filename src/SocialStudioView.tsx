@@ -685,7 +685,7 @@ export function SocialStudioView({
         for (const platform of ['meta', 'instagram']) {
           if (connectedAccountsData[platform]) {
             try {
-              const postsRes = await fetch(`/api/meta/data?workspaceId=${workspaceId}&platform=${platform}&type=posts`);
+              const postsRes = await fetch(window.location.origin + `/api/meta/data?workspaceId=${workspaceId}&platform=${platform}&type=posts`);
               if (postsRes.ok) {
                 const postsData = await postsRes.json();
                 if (postsData.data) {
@@ -704,7 +704,7 @@ export function SocialStudioView({
                 }
               }
               
-              const commentsRes = await fetch(`/api/meta/data?workspaceId=${workspaceId}&platform=${platform}&type=comments`);
+              const commentsRes = await fetch(window.location.origin + `/api/meta/data?workspaceId=${workspaceId}&platform=${platform}&type=comments`);
               if (commentsRes.ok) {
                 const commentsData = await commentsRes.json();
                 if (commentsData.data) {
@@ -727,7 +727,7 @@ export function SocialStudioView({
                 }
               }
 
-              const insightsRes = await fetch(`/api/meta/data?workspaceId=${workspaceId}&platform=${platform}&type=insights`);
+               const insightsRes = await fetch(window.location.origin + `/api/meta/data?workspaceId=${workspaceId}&platform=${platform}&type=insights`);
               if (insightsRes.ok) {
                 const insightsData = await insightsRes.json();
                 if (insightsData.data && insightsData.data.length > 0) {
