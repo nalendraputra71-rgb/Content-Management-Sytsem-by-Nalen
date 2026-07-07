@@ -99,7 +99,7 @@ const plan = searchParams.get('plan') || 'solo';
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token.trim().replace(/[\r\n\s]+/g, '')}`
         },
         body: JSON.stringify({
           amount: finalPrice,

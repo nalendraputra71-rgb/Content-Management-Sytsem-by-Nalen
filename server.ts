@@ -101,7 +101,10 @@ apiRoutes.post("/xendit/checkout", async (req, res) => {
       return res.status(400).json({ error: "Missing or invalid required fields" });
     }
 
-    const apiKey = (process.env.XENDIT_SECRET_KEY || "").trim();
+    let apiKey = process.env.XENDIT_SECRET_KEY || "";
+    // Clean key: remove non-ASCII (including non-breaking spaces, BOM, special quotes), trim, and remove surrounding quotes
+    apiKey = apiKey.replace(/[^\x20-\x7E]/g, "").trim().replace(/^["']|["']$/g, "");
+    
     if (!apiKey) {
       return res.status(400).json({ error: "XENDIT_SECRET_KEY is not configured" });
     }
@@ -120,8 +123,8 @@ apiRoutes.post("/xendit/checkout", async (req, res) => {
       amount: numericAmount,
       payerEmail: email,
       description: description || `Pembayaran langganan ${plan} Hubify Social`,
-      successRedirectUrl: `${cleanOrigin}/billing?payment=success`,
-      failureRedirectUrl: `${cleanOrigin}/billing?payment=failure`,
+      successRedirectUrl: `${cleanOrigin}/#/billing?payment=success`,
+      failureRedirectUrl: `${cleanOrigin}/#/billing?payment=failure`,
       currency: "IDR",
     };
 
