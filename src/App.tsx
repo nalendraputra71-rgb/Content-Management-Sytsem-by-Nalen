@@ -1632,6 +1632,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme, systemConfig 
           setTitle(newTitle);
           await updateWsSettings({ title: newTitle });
         }}
+        onQuickAddContent={() => openAdd(new Date().getDate())}
       />
       {["dashboard", "content_planner", "analytics"].includes(tab) && (
         <div style={{ position: "fixed", inset: 0, zIndex: -1, pointerEvents: "none", background: "radial-gradient(circle at 0% 0%, #E3F2FD 0%, transparent 50%), radial-gradient(circle at 100% 100%, #FFF3E0 0%, transparent 50%), radial-gradient(circle at 100% 0%, #F3E5F5 0%, transparent 50%), #FAFAFA" }} />

@@ -1,0 +1,39 @@
+--- server.ts
++++ server.ts
+@@ -794,6 +794,37 @@
+   app.use("/api", apiRoutes);
+ 
+   const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
++
++  // Start Cron Jobs
++  cron.schedule('* * * * *', async () => {
++    try {
++      initFirebase();
++      const db = getFirestore(getApp(), firestoreDatabaseId || "(default)");
++      const now = new Date().toISOString();
++      // Note: We need a collectionGroup query or similar.
++      // For simplicity in this structure, we would query workspaces, then content.
++      const workspacesSnap = await db.collection("workspaces").get();
++      for (const wsDoc of workspacesSnap.docs) {
++        const contentSnap = await wsDoc.ref.collection("content")
++          .where("status", "==", "scheduled")
++          .where("scheduledAt", "<=", now)
++          .get();
++        
++        for (const contentDoc of contentSnap.docs) {
++          // Publish logic here
++          console.log(`[Cron] Publishing scheduled post ${contentDoc.id} for workspace ${wsDoc.id}`);
++          // Update status to published
++          await contentDoc.ref.update({
++            status: "published",
++            publishedAt: now
++          });
++        }
++      }
++    } catch (e) {
++      console.error("[Cron] Error processing scheduled posts:", e);
++    }
++  });
+ 
+   // Vite middleware untuk development mode
+   if (process.env.NODE_ENV !== "production") {

@@ -115,6 +115,14 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["workspaceId", "platform", "type", "content"]
+    },
+    "CommentReplies": {
+      "title": "Comment Replies",
+      "description": "Persisted comments and replies for posts in workspace",
+      "type": "object",
+      "properties": {
+        "postComments": { "type": "array" }
+      }
     }
   },
   "firestore": {
@@ -149,6 +157,10 @@
     "/workspaces/{workspaceId}/inbox/{messageId}": {
       "schema": "SocialMessage",
       "description": "Synced DMs and comments for the unified inbox"
+    },
+    "/workspaces/{workspaceId}/commentReplies/{commentId}": {
+      "schema": "CommentReplies",
+      "description": "Persisted custom comments and replies"
     }
   }
 }

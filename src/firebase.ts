@@ -164,11 +164,11 @@ export async function callAiWithQuota(uid: string, plan: string | undefined, pay
         token = await currentUser.getIdToken();
     }
 
-    const req = await fetch(window.location.origin + "/api/gemini", {
+    const req = await fetch("/api/gemini", {
         method: "POST",
         headers: { 
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${token.trim().replace(/[\r\n\s]+/g, '')}` 
+            "Authorization": `Bearer ${token}` 
         },
         body: JSON.stringify(payload)
     });

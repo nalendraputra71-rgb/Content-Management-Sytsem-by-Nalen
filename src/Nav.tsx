@@ -976,6 +976,7 @@ export function Sidebar({
   onRenameWorkspace,
   onCreateWorkspaceRequest,
   onTitleChange,
+  onQuickAddContent,
 }: any) {
   const navigate = useNavigate();
   const [showViews, setShowViews] = useState(true);
@@ -1603,6 +1604,38 @@ export function Sidebar({
                             </motion.div>
                           )}
                         </AnimatePresence>
+                      </div>
+
+                      {/* Quick Add Pill Button */}
+                      <div style={{ marginBottom: 24, padding: open ? "0 4px" : "0", display: "flex", justifyContent: "center" }}>
+                        <button
+                          onClick={() => {
+                            onQuickAddContent?.();
+                          }}
+                          style={{
+                            width: "100%",
+                            height: 38,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: open ? 8 : 0,
+                            padding: open ? "8px 16px" : "0",
+                            background: "linear-gradient(135deg, #2563EB 0%, #3B82F6 100%)",
+                            border: "none",
+                            color: "#FFFFFF",
+                            fontWeight: 700,
+                            fontSize: 12,
+                            borderRadius: 9999,
+                            cursor: "pointer",
+                            boxShadow: "0 4px 12px rgba(37, 99, 235, 0.2)",
+                            transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+                          }}
+                          className="hover-scale active:scale-95"
+                          title="Tambah Brief Konten Baru"
+                        >
+                          <Plus size={open ? 14 : 18} strokeWidth={3} color="#FFFFFF" />
+                          {open && <span style={{ letterSpacing: "0.2px", color: "#FFFFFF" }}>Tambah Brief</span>}
+                        </button>
                       </div>
 
                       {HUBIVERSE.length > 0 && (
@@ -3200,8 +3233,8 @@ function MultiSelectFilter({
           alignItems: "center",
           justifyContent: "space-between",
           gap: 8,
-          padding: "6px 10px",
-          borderRadius: 10,
+          padding: "6px 14px",
+          borderRadius: 9999,
           border: "1px solid rgba(44,32,22,0.1)",
           background: "white",
           fontSize: 12,
@@ -3616,8 +3649,8 @@ export function FilterBar({
         backdropFilter: "none",
         WebkitBackdropFilter: "none",
         border: "1px solid rgba(0,0,0,0.03)",
-        borderRadius: 24,
-        padding: "16px 24px",
+        borderRadius: 999,
+        padding: "12px 32px",
         display: "flex",
         gap: 16,
         alignItems: "flex-end",
@@ -3654,7 +3687,7 @@ export function FilterBar({
                 fontWeight: 750,
                 color: "rgba(0,0,0,0.4)",
                 textTransform: "uppercase",
-                paddingLeft: 4,
+                paddingLeft: 10,
               }}
             >
               {l as string}
@@ -3697,7 +3730,7 @@ export function FilterBar({
             fontSize: 11,
             padding: "0 12px",
             height: 32,
-            borderRadius: 16,
+            borderRadius: 999,
           }}
         >
           📦 Arsip
@@ -3720,6 +3753,7 @@ export function FilterBar({
           alignItems: "center",
           gap: 6,
           marginBottom: 1,
+          borderRadius: 999,
         }}
       >
         <Download size={14} style={{ opacity: 0.6 }} /> Export
@@ -3739,6 +3773,7 @@ export function FilterBar({
           alignItems: "center",
           gap: 6,
           marginBottom: 1,
+          borderRadius: 999,
         }}
       >
         <Plus size={14} style={{ opacity: 0.6 }} /> Import

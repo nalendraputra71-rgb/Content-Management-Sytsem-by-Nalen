@@ -95,11 +95,11 @@ const plan = searchParams.get('plan') || 'solo';
     setError('');
     try {
       const token = await user.getIdToken();
-      const response = await fetch(window.location.origin + '/api/xendit/checkout', {
+      const response = await fetch('/api/xendit/checkout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token.trim().replace(/[\r\n\s]+/g, '')}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           amount: finalPrice,

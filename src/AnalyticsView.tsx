@@ -3,7 +3,7 @@ import { auth, callAiWithQuota } from "./firebase";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid, Cell, PieChart as RPieChart, Pie } from "recharts";
 import Markdown from "react-markdown";
 import { motion, AnimatePresence } from "motion/react";
-import { ChevronDown, ChevronLeft, ChevronRight, TrendingUp, Sparkles, PieChart, Users, BarChart2, Activity, Calendar, Zap, AlertCircle, ArrowUpRight, ArrowDownRight, Clock, Target, Star } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, TrendingUp, Sparkles, PieChart, Users, BarChart2, Activity, Calendar, Zap, AlertCircle, ArrowUpRight, ArrowDownRight, Clock, Target, Star, Settings, Check, RotateCcw, SlidersHorizontal } from "lucide-react";
 
 const CustomLegend = ({ payload }: any) => {
   return (
@@ -138,19 +138,19 @@ function PlatformFilterPopover({ platformFilter, setPlatformFilter, platforms }:
 
   return (
     <div ref={ref} className="relative">
-      <button onClick={() => setOpen(!open)} className="flex items-center gap-2 bg-white border hover:bg-white/70 px-3 py-1.5 rounded-lg border border-black/10 shadow-sm cursor-pointer hover:bg-gray-50 transition-colors">
-        <PieChart size={16} className="text-gray-500" />
-        <span className="text-sm font-semibold text-gray-800">{activeLabel}</span>
-        <ChevronDown size={14} className="text-gray-500 ml-1" />
+      <button onClick={() => setOpen(!open)} className="flex items-center gap-2 bg-white border hover:bg-white/70 px-4.5 py-2 rounded-full border-black/10 shadow-sm cursor-pointer hover:bg-gray-50 transition-colors text-xs font-bold">
+        <PieChart size={15} className="text-gray-500" />
+        <span className="text-gray-800">{activeLabel}</span>
+        <ChevronDown size={13} className="text-gray-500 ml-0.5" />
       </button>
 
       <AnimatePresence>
         {open && (
           <motion.div 
             initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }} transition={{ duration: 0.15 }}
-            className="absolute top-full left-0 mt-2 bg-white rounded-2xl shadow-xl border border-black/10 z-[9999] overflow-hidden flex flex-col w-max min-w-[160px] text-left max-h-[350px] overflow-y-auto"
+            className="absolute top-full left-0 mt-2 bg-white rounded-2xl shadow-xl border border-black/10 z-[9999] overflow-hidden flex flex-col w-max min-w-[170px] text-left max-h-[350px] overflow-y-auto py-2"
           >
-             <label className="flex items-center gap-2.5 px-3 py-2 hover:bg-gray-50 cursor-pointer">
+             <label className="flex items-center gap-2.5 px-4.5 py-2.5 hover:bg-gray-50 cursor-pointer">
                <div className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center bg-white ${platformFilter === "all" ? 'border-blue-500' : 'border-gray-300'}`}>
                  {platformFilter === "all" && <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>}
                </div>
@@ -160,7 +160,7 @@ function PlatformFilterPopover({ platformFilter, setPlatformFilter, platforms }:
              {platforms?.map((p: any) => {
                const val = typeof p === 'string' ? p : p.name;
                return (
-                 <label key={val} className="flex items-center gap-2.5 px-3 py-2 hover:bg-gray-50 cursor-pointer border-t border-gray-100">
+                 <label key={val} className="flex items-center gap-2.5 px-4.5 py-2.5 hover:bg-gray-50 cursor-pointer border-t border-gray-100">
                    <div className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center bg-white ${platformFilter === val ? 'border-blue-500' : 'border-gray-300'}`}>
                      {platformFilter === val && <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>}
                    </div>
@@ -354,18 +354,18 @@ function DateFilterPopover({ dateFilt, setDateFilt, customS, setCustomS, customE
 
   return (
     <div ref={ref} className="relative">
-      <button onClick={() => { setTempFilt(dateFilt); setTempS(customS); setTempE(customE); setOpen(!open); }} className="flex items-center gap-2 bg-white border hover:bg-white/70 px-3 py-1.5 rounded-lg border border-black/10 shadow-sm cursor-pointer hover:bg-gray-50 transition-colors">
-        <Calendar size={16} className="text-gray-500" />
-        <span className="text-sm font-semibold text-gray-800">{activeLabel}</span>
-        <ChevronDown size={14} className="text-gray-500 ml-1" />
+      <button onClick={() => { setTempFilt(dateFilt); setTempS(customS); setTempE(customE); setOpen(!open); }} className="flex items-center gap-2 bg-white border hover:bg-white/70 px-4.5 py-2 rounded-full border-black/10 shadow-sm cursor-pointer hover:bg-gray-50 transition-colors text-xs font-bold">
+        <Calendar size={15} className="text-gray-500" />
+        <span className="text-gray-800">{activeLabel}</span>
+        <ChevronDown size={13} className="text-gray-500 ml-0.5" />
       </button>
 
       {open && (
         <div className="absolute top-full left-0 mt-2 bg-white rounded-2xl shadow-xl border border-black/10 z-[9999] overflow-hidden flex flex-col md:flex-row w-max text-left">
           {/* Left Sidebar */}
-          <div className="w-40 bg-gray-50 border-r border-black/5 p-2 flex flex-col gap-1 overflow-y-auto max-h-[350px]">
+          <div className="w-44 bg-gray-50 border-r border-black/5 py-4 px-2.5 flex flex-col gap-1 overflow-y-auto max-h-[350px]">
              {OPTIONS.map(o => (
-               <label key={o.id} className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md hover:bg-gray-100 cursor-pointer">
+               <label key={o.id} className="flex items-center gap-2.5 px-3.5 py-2 rounded-md hover:bg-gray-100 cursor-pointer">
                  <div className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center bg-white ${tempFilt === o.id ? 'border-blue-500' : 'border-gray-300'}`}>
                    {tempFilt === o.id && <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>}
                  </div>
@@ -376,7 +376,7 @@ function DateFilterPopover({ dateFilt, setDateFilt, customS, setCustomS, customE
           </div>
 
           {/* Right Area */}
-          <div className="flex flex-col p-4 max-w-lg bg-transparent">
+          <div className="flex flex-col p-6 max-w-lg bg-transparent">
              {/* Calendars */}
              <div className="flex gap-4 relative justify-center">
                <button onClick={() => setNavDate(new Date(navDate.getFullYear(), navDate.getMonth()-1, 1))} className="absolute -left-1 top-0 p-1 hover:bg-gray-100 rounded-full"><ChevronLeft size={16}/></button>
@@ -410,13 +410,37 @@ function DateFilterPopover({ dateFilt, setDateFilt, customS, setCustomS, customE
   )
 }
 
+const METRICS_META: Record<string, { label: string; desc: string; category: "organic" | "ads"; color: string }> = {
+  // Organic/General
+  views: { label: "Views (Tayangan)", desc: "Total tayangan konten di feed / timeline", category: "organic", color: "#2C2016" },
+  reach: { label: "Reach (Jangkauan)", desc: "Jumlah akun unik yang melihat konten", category: "organic", color: "#3B82F6" },
+  likes: { label: "Likes (Suka)", desc: "Jumlah interaksi suka pada konten", category: "organic", color: "#9C2B4E" },
+  comments: { label: "Comments (Komentar)", desc: "Jumlah komentar di postingan", category: "organic", color: "#2B4C7E" },
+  reposts: { label: "Reposts (Bagikan Ulang)", desc: "Jumlah postingan dibagikan ulang / retweet", category: "organic", color: "#A67C1C" },
+  shares: { label: "Shares (Share Link)", desc: "Jumlah share link ke platform lain", category: "organic", color: "#2D7A5E" },
+  saves: { label: "Saves (Simpan)", desc: "Jumlah user yang menyimpan konten", category: "organic", color: "#723680" },
+  profileVisits: { label: "Profile Visits", desc: "Kunjungan ke halaman profil Anda", category: "organic", color: "#059669" },
+  bioLinkTaps: { label: "Bio Link Taps", desc: "Ketukan pada link website di bio", category: "organic", color: "#2563EB" },
+  follows: { label: "Follows", desc: "Jumlah pengikut baru dari konten ini", category: "organic", color: "#D97706" },
+
+  // Ads Specific
+  clicks: { label: "Clicks (Klik Iklan)", desc: "Total klik pada link/tombol iklan", category: "ads", color: "#3B82F6" },
+  conversions: { label: "Conversions (Konversi)", desc: "Tindakan berharga seperti pembelian/registrasi", category: "ads", color: "#10B981" },
+  msgConvStarted: { label: "Messages Started", desc: "Jumlah percakapan pesan baru yang dimulai", category: "ads", color: "#8B5CF6" },
+  threeSecPlays: { label: "3-Sec Video Plays", desc: "Pemutaran video minimal selama 3 detik", category: "ads", color: "#F59E0B" },
+  spendBudget: { label: "Spend Budget", desc: "Total anggaran iklan yang telah dibelanjakan", category: "ads", color: "#EF4444" },
+  dailyBudget: { label: "Daily Budget", desc: "Anggaran harian yang disiapkan", category: "ads", color: "#F97316" },
+  duration: { label: "Duration (Days)", desc: "Lama penayangan kampanye iklan", category: "ads", color: "#6366F1" },
+  cprProfileVisit: { label: "CPR Profile Visit", desc: "Biaya per Kunjungan Profil (Cost Per Result)", category: "ads", color: "#EC4899" },
+};
+
 export function AnalyticsView({content,pillars,platforms,contentTypes,pics,statuses,openEdit,isRestricted}: any) {
   const [dateFilt,setDateFilt] = useState("28d"); 
   const [customS,setCustomS] = useState("");
   const [customE,setCustomE] = useState("");
   const [adsFilter,setAdsFilter] = useState("organic"); 
   const [platformFilter, setPlatformFilter] = useState("all");
-  const [activeMetrics,setActiveMetrics] = useState(["reach","likes","comments"]);
+  const [activeMetrics,setActiveMetrics] = useState(["views", "reach", "likes", "comments"]);
   const [topSort,setTopSort] = useState("engagement");
   const [topPlatform,setTopPlatform] = useState("All");
   const [platformMetric, setPlatformMetric] = useState("engagement");
@@ -441,7 +465,39 @@ export function AnalyticsView({content,pillars,platforms,contentTypes,pics,statu
     setAiInsight("");
   }, [dateFilt, customS, customE, adsFilter, platformFilter]);
 
-  const toggleMetric = (k:string) => setActiveMetrics(m=>m.includes(k)?m.filter(x=>x!==k):[...m,k]);
+  const [isMetricSettingOpen, setIsMetricSettingOpen] = useState(false);
+  const [tempSelectedMetrics, setTempSelectedMetrics] = useState<string[]>(["views", "reach", "likes", "comments"]);
+  const metricSettingRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (metricSettingRef.current && !metricSettingRef.current.contains(event.target as Node)) {
+        setIsMetricSettingOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const openMetricSetting = () => {
+    setTempSelectedMetrics([...activeMetrics]);
+    setIsMetricSettingOpen(true);
+  };
+
+  const toggleTempMetric = (k: string) => {
+    setTempSelectedMetrics(prev =>
+      prev.includes(k) ? prev.filter(x => x !== k) : [...prev, k]
+    );
+  };
+
+  const applyMetrics = () => {
+    setActiveMetrics([...tempSelectedMetrics]);
+    setIsMetricSettingOpen(false);
+  };
+
+  const resetToDefaultMetrics = () => {
+    setTempSelectedMetrics(["views", "reach", "likes", "comments"]);
+  };
 
   // Handle Quick Filters & Custom via date logic 
   const isDateMatch = (c:any, isPrev:boolean=false) => {
@@ -657,7 +713,7 @@ export function AnalyticsView({content,pillars,platforms,contentTypes,pics,statu
     return labels.map(({ label, filter }) => {
       const d = content.filter((c:any) => filter(c) && (adsFilter === "all" || ((adsFilter === "ads") === c.isAds)) && (platformFilter === "all" || String(c.platform).split(',').map(s=>s.trim()).includes(platformFilter)));
       const row: any = { name: label };
-      ["views", "reach", "likes", "comments", "shares", "reposts", "saves", "clicks", "conversions"].forEach(k => {
+      Object.keys(METRICS_META).forEach(k => {
         row[`${k}_org`] = d.filter((c: any) => !c.isAds).reduce((s: any, c: any) => s + (c.metrics?.[k] || 0), 0);
         row[`${k}_ads`] = d.filter((c: any) => c.isAds).reduce((s: any, c: any) => s + (c.adsMetrics?.[k] || 0), 0);
         row[k] = row[`${k}_org`] + row[`${k}_ads`];
@@ -867,15 +923,15 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
   const MCard = ({label,val,sub, colorTheme="glass", pctStr, icon: Icon}: any) => {
     const isGlass = colorTheme === "glass";
     
-    // Deep dark colors with a subtle tint for a premium, highlighted look
+    // Light-mode modern SaaS themed cards with soft tints, clean borders and high contrast text
     const themeStyles: Record<string, {bg: string, border: string, text: string, subText: string, iconBg: string, iconColor: string}> = {
-      glass: { bg: "bg-white", border: "border-gray-100", text: "text-gray-900", subText: "text-gray-500", iconBg: "bg-gray-100", iconColor: "text-gray-700" },
-      blue: { bg: "bg-blue-950", border: "border-blue-900/50", text: "text-white", subText: "text-blue-300", iconBg: "bg-blue-900/50", iconColor: "text-blue-400" },
-      amber: { bg: "bg-amber-950", border: "border-amber-900/50", text: "text-white", subText: "text-amber-300", iconBg: "bg-amber-900/50", iconColor: "text-amber-400" },
-      purple: { bg: "bg-purple-950", border: "border-purple-900/50", text: "text-white", subText: "text-purple-300", iconBg: "bg-purple-900/50", iconColor: "text-purple-400" },
-      emerald: { bg: "bg-emerald-950", border: "border-emerald-900/50", text: "text-white", subText: "text-emerald-300", iconBg: "bg-emerald-900/50", iconColor: "text-emerald-400" },
-      rose: { bg: "bg-rose-950", border: "border-rose-900/50", text: "text-white", subText: "text-rose-300", iconBg: "bg-rose-900/50", iconColor: "text-rose-400" },
-      cyan: { bg: "bg-cyan-950", border: "border-cyan-900/50", text: "text-white", subText: "text-cyan-300", iconBg: "bg-cyan-900/50", iconColor: "text-cyan-400" }
+      glass: { bg: "bg-white", border: "border-black/[0.03]", text: "text-gray-900", subText: "text-gray-500", iconBg: "bg-gray-100", iconColor: "text-gray-700" },
+      blue: { bg: "bg-blue-50/40", border: "border-blue-100", text: "text-gray-900", subText: "text-blue-600 font-semibold", iconBg: "bg-blue-100", iconColor: "text-blue-600" },
+      amber: { bg: "bg-amber-50/40", border: "border-amber-100", text: "text-gray-900", subText: "text-amber-700 font-semibold", iconBg: "bg-amber-100", iconColor: "text-amber-700" },
+      purple: { bg: "bg-purple-50/40", border: "border-purple-100", text: "text-gray-900", subText: "text-purple-600 font-semibold", iconBg: "bg-purple-100", iconColor: "text-purple-600" },
+      emerald: { bg: "bg-emerald-50/40", border: "border-emerald-100", text: "text-gray-900", subText: "text-emerald-700 font-semibold", iconBg: "bg-emerald-100", iconColor: "text-emerald-700" },
+      rose: { bg: "bg-rose-50/40", border: "border-rose-100", text: "text-gray-900", subText: "text-rose-600 font-semibold", iconBg: "bg-rose-100", iconColor: "text-rose-600" },
+      cyan: { bg: "bg-cyan-50/40", border: "border-cyan-100", text: "text-gray-900", subText: "text-cyan-700 font-semibold", iconBg: "bg-cyan-100", iconColor: "text-cyan-700" }
     };
     
     const theme = themeStyles[colorTheme] || themeStyles.glass;
@@ -889,68 +945,57 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
         </div>
         {pctStr && (
           <div className="flex flex-col items-end shrink-0">
-            <div className={`text-[10px] font-bold px-1.5 py-1 rounded-lg whitespace-nowrap flex items-center gap-0.5 ${pctStr.startsWith('+') ? (isGlass ? 'text-emerald-600 bg-emerald-50' : 'text-emerald-400 bg-emerald-400/10') : pctStr.startsWith('-') ? (isGlass ? 'text-red-500 bg-red-50' : 'text-red-400 bg-red-400/10') : (isGlass ? 'text-gray-500 bg-gray-100' : 'text-gray-400 bg-white/10')}`}>
+            <div className={`text-[10px] font-bold px-1.5 py-1 rounded-lg whitespace-nowrap flex items-center gap-0.5 ${pctStr.startsWith('+') ? 'text-emerald-600 bg-emerald-50' : pctStr.startsWith('-') ? 'text-red-500 bg-red-50' : 'text-gray-500 bg-gray-100'}`}>
               {pctStr.startsWith('+') ? <ArrowUpRight size={10}/> : pctStr.startsWith('-') ? <ArrowDownRight size={10}/> : null}
               {pctStr}
             </div>
-            {getPeriodText() && <div className={`text-[9px] mt-1 font-semibold whitespace-nowrap ${theme.subText}`}>{getPeriodText()}</div>}
+            {getPeriodText() && <div className="text-[9px] mt-1 font-semibold whitespace-nowrap text-gray-400">{getPeriodText()}</div>}
           </div>
         )}
       </div>
       <div className="min-w-0">
-        <div className={`text-2xl font-bold leading-tight tracking-tight whitespace-nowrap overflow-hidden text-ellipsis ${theme.text}`} title={String(val)}>{val}</div>
-        {sub && <div className={`text-[11px] mt-1.5 font-medium leading-snug ${theme.subText}`}>{sub}</div>}
+        <div className={`text-2xl font-extrabold leading-tight tracking-tight whitespace-nowrap overflow-hidden text-ellipsis ${theme.text}`} title={String(val)}>{val}</div>
+        {sub && <div className="text-[11px] mt-1.5 font-medium leading-snug text-gray-500">{sub}</div>}
       </div>
     </motion.div>
   )};
 
   return (
-    <div style={{padding:"0 24px 24px",display:"flex",flexDirection:"column",gap:20,width:"100%", background: "transparent", minHeight: "100vh", position: "relative"}}>
-      <div ref={topAnchorRef} style={{position: "absolute", top: 0, left: 0, height: 1, width: "100%"}} />
+    <div className="px-6 pb-6 flex flex-col gap-5 w-full bg-[#FAFAFA] min-h-screen relative font-sans">
+      <div ref={topAnchorRef} className="absolute top-0 left-0 h-[1px] w-full" />
       
       {/* Header */}
-      <div style={{paddingTop: 24, paddingBottom: 8, display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 16}}>
+      <div className="pt-6 pb-2 flex justify-between items-end flex-wrap gap-4">
          <div>
-           <h1 style={{fontSize: 24, fontWeight: 800, margin: 0, color: "#111827", letterSpacing: "-0.5px", display:"flex", alignItems:"center", gap: 8}}>Analytics <Sparkles size={20} color="var(--theme-primary)" /></h1>
-           <p style={{fontSize: 14, color: "rgba(0,0,0,0.5)", margin: "4px 0 0"} }>Pantau dan optimalkan performa konten secara menyeluruh.</p>
+           <h1 className="text-2xl font-extrabold m-0 text-gray-900 tracking-tight flex items-center gap-2">
+             Analytics <Sparkles size={20} className="text-blue-600" />
+           </h1>
+           <p className="text-sm text-gray-500 mt-1">Pantau dan optimalkan performa konten secara menyeluruh dengan data real-time.</p>
          </div>
-         <button onClick={() => window.print()} className="hover-scale btn-hover" style={{...B(false), padding: "8px 16px", borderRadius: 16, height: 40, fontSize: 13, background: "rgba(255,255,255,0.6)", backdropFilter: "none", WebkitBackdropFilter: "none", color: "#111827", border: "1px solid rgba(255,255,255,0.8)", boxShadow: "0 2px 8px rgba(0,0,0,0.05)", display: "flex", alignItems: "center", gap: 8}}>
+         <button onClick={() => window.print()} className="hover-scale btn-hover px-4 py-2 rounded-xl h-10 text-[13px] font-bold bg-white border border-black/[0.04] text-gray-900 shadow-sm flex items-center gap-2 cursor-pointer transition-all">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
             Cetak Laporan PDF
          </button>
       </div>
 
       {/* Filters (Sticky) */}
-      <div className="flex items-center justify-start gap-4 flex-wrap mb-2" style={{
-        position: "sticky",
-        top: 16,
-        zIndex: 50,
-        background: "rgba(255,255,255,0.95)",
-        backdropFilter: "none",
-        WebkitBackdropFilter: "none",
-        transform: "translateZ(0)",
-        willChange: "transform",
-        border: "1px solid rgba(255,255,255,0.8)",
-        borderRadius: 20,
-        padding: "12px 20px",
-        boxShadow: "0 8px 32px rgba(0,0,0,0.04)"
-      }}>
-        <div className="flex gap-3 items-center">
+      <div className="sticky top-4 z-50 flex items-center justify-start gap-4 flex-wrap mb-2 bg-white/90 backdrop-blur-md border border-black/[0.03] rounded-full pl-8 pr-6 py-3.5 shadow-sm">
+        <div className="flex gap-4 items-center flex-wrap">
           <PlatformFilterPopover 
             platformFilter={platformFilter} 
             setPlatformFilter={setPlatformFilter} 
             platforms={platforms} 
           />
 
-          <div className="w-px h-6 bg-black/10 shrink-0"/>
+          <div className="w-px h-6 bg-black/[0.06] shrink-0"/>
 
-          <div className="flex gap-1 bg-white p-1 rounded-xl border border-white/60 shadow-sm">
+          <div className="flex gap-0.5 bg-black/[0.03] p-1 rounded-full border border-black/[0.01]">
             {[["all","Semua Data"],["organic","Organic"],["ads","Ads Only"]].map(([k,l])=>(
-              <button key={k} onClick={()=>setAdsFilter(k)} className={`text-sm font-semibold px-3 py-1.5 rounded-lg border-none cursor-pointer transition-colors ${adsFilter===k ? "bg-white text-gray-900 shadow-sm" : "bg-transparent text-gray-500 hover:bg-white/40"}`}>{l}</button>
+              <button key={k} onClick={()=>setAdsFilter(k)} className={`text-xs font-bold px-4 py-1.5 rounded-full border-none cursor-pointer transition-colors ${adsFilter===k ? "bg-white text-gray-900 shadow-sm" : "bg-transparent text-gray-500 hover:text-gray-900"}`}>{l}</button>
             ))}
           </div>
 
-          <div className="w-px h-6 bg-black/10 shrink-0"/>
+          <div className="w-px h-6 bg-black/[0.06] shrink-0"/>
 
           <DateFilterPopover 
             dateFilt={dateFilt} setDateFilt={setDateFilt}
@@ -988,43 +1033,55 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
         <div className={`flex flex-col gap-6 ${isRestricted ? "blur-[8px] pointer-events-none select-none" : ""}`}>
           
           {/* Executive Summary Block */}
-          <div className="bg-white text-gray-900 p-3.5 rounded-xl border border-gray-100 flex flex-col shadow-sm">
-            <div className="flex justify-between items-start mb-2.5">
+          <div className="bg-white rounded-2xl border border-black/[0.03] p-6 flex flex-col shadow-sm transition-shadow hover:shadow-md">
+            <div className="flex justify-between items-start mb-4">
               <div className="flex items-center gap-2">
-                <div className="bg-blue-50 p-1 rounded-md text-blue-600"><GeminiIcon size={14} /></div>
-                <h4 className="text-[14px] font-bold m-0 text-gray-900 tracking-tight">Executive Summary</h4>
+                <div className="bg-blue-50 p-2 rounded-lg text-blue-600"><GeminiIcon size={16} /></div>
+                <h4 className="text-[15px] font-extrabold m-0 text-gray-900 tracking-tight">Ringkasan Eksekutif & Insight AI</h4>
               </div>
             </div>
             
-            <ul className="text-[12px] leading-relaxed m-0 pl-4 mb-3 text-gray-600">
-              <li><strong className="text-gray-900">Total Konten:</strong> {total} (Dipublikasikan: {pub}) dalam periode terpilih.</li>
-              <li><strong className="text-gray-900">Jangkauan & Impresi:</strong> Total views mencapai <strong className="text-blue-600">{fmt(tV)}</strong> impresi dengan ukuran audiens (reach) sekitar <strong className="text-blue-600">{fmt(tR)}</strong>.</li>
-              <li><strong className="text-gray-900">Tingkat Interaksi:</strong> Menghasilkan <strong className="text-emerald-600">{fmt(tE)} engagement</strong> (ER: {er}%).</li>
-              {adsFilter!=="organic" && tClicks>0 && <li><strong className="text-gray-900">Return Konversi Iklan:</strong> {fmt(tClicks)} clicks & {fmt(tConv)} conversions.</li>}
-            </ul>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4 border-b border-black/[0.03] pb-4">
+              <div className="bg-black/[0.01] p-3.5 rounded-xl border border-black/[0.02]">
+                <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">Total Konten</div>
+                <div className="text-lg font-extrabold text-gray-900">{total} <span className="text-xs font-normal text-gray-500">({pub} Published)</span></div>
+              </div>
+              <div className="bg-black/[0.01] p-3.5 rounded-xl border border-black/[0.02]">
+                <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">Total Views & Impresi</div>
+                <div className="text-lg font-extrabold text-gray-900 text-blue-600">{fmt(tV)} <span className="text-xs font-normal text-gray-500">Views</span></div>
+              </div>
+              <div className="bg-black/[0.01] p-3.5 rounded-xl border border-black/[0.02]">
+                <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">Total Reach</div>
+                <div className="text-lg font-extrabold text-gray-900 text-purple-600">{fmt(tR)} <span className="text-xs font-normal text-gray-500">Reach</span></div>
+              </div>
+              <div className="bg-black/[0.01] p-3.5 rounded-xl border border-black/[0.02]">
+                <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">Total Engagement</div>
+                <div className="text-lg font-extrabold text-emerald-600">{fmt(tE)} <span className="text-xs font-normal text-gray-500">(ER: {er}%)</span></div>
+              </div>
+            </div>
 
-            <div className="mt-auto border-t border-gray-100 pt-3">
+            <div className="mt-2">
               {aiInsight ? (
-                <div className="bg-blue-50/50 p-3 rounded-lg border border-blue-100/50">
+                <div className="bg-blue-50/30 p-4 rounded-xl border border-blue-100">
                   <div 
-                    className="flex justify-between items-center cursor-pointer"
+                    className="flex justify-between items-center cursor-pointer select-none"
                     onClick={() => setShowAiInsight(!showAiInsight)}
                   >
-                    <div className="text-[12px] font-bold text-blue-700 flex items-center gap-2">
-                      ✨ Insight & Rekomendasi AI
+                    <div className="text-xs font-bold text-blue-700 flex items-center gap-2">
+                      ✨ Insight & Rekomendasi Pintar AI
                     </div>
-                    <ChevronDown size={16} className="text-blue-700 transition-all duration-300" style={{transform: showAiInsight ? "rotate(180deg)" : "none"}} />
+                    <ChevronDown size={16} className="text-blue-700 transition-transform duration-300" style={{transform: showAiInsight ? "rotate(180deg)" : "none"}} />
                   </div>
                   {showAiInsight && (
-                    <div className="text-[12px] leading-relaxed text-gray-700 mt-2.5 markdown-body">
+                    <div className="text-[13px] leading-relaxed text-gray-700 mt-3 markdown-body">
                       <Markdown>{aiInsight}</Markdown>
                     </div>
                   )}
                 </div>
               ) : (
-                <button onClick={fetchAiInsight} disabled={aiLoading} className="hover-scale w-full bg-gray-900 text-white border-none py-2.5 px-4 rounded-lg font-bold text-[12px] cursor-pointer flex items-center justify-center gap-2 shadow-[0_2px_8px_rgba(0,0,0,0.1)] disabled:cursor-wait">
+                <button onClick={fetchAiInsight} disabled={aiLoading} className="hover-scale w-full bg-gray-900 hover:bg-black text-white border-none py-3 px-5 rounded-xl font-bold text-xs cursor-pointer flex items-center justify-center gap-2 shadow-sm disabled:cursor-wait transition-colors">
                   <GeminiIcon size={14} />
-                  {aiLoading ? <LoadingDots /> : "Generate AI Insights"}
+                  {aiLoading ? <LoadingDots /> : "Generate AI Insights & Rekomendasi"}
                 </button>
               )}
             </div>
@@ -1033,16 +1090,16 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
           {/* Distribution Row */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6" style={{ minWidth: 0 }}>
             {/* Performance by Platform */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex flex-col min-w-0 transition-shadow hover:shadow-md">
+            <div className="bg-white rounded-2xl border border-black/[0.03] shadow-sm p-5 flex flex-col min-w-0 transition-shadow hover:shadow-md">
               <div className="flex justify-between items-start mb-5 gap-3 flex-wrap">
                 <div className="flex items-center gap-2">
-                  <div className="bg-amber-100 p-1.5 rounded-lg text-amber-600"><PieChart size={18} /></div>
-                  <h4 className="font-bold text-gray-900 text-[15px] m-0 tracking-tight">Distribusi Platform</h4>
+                  <div className="bg-amber-50 p-2 rounded-lg text-amber-600"><PieChart size={18} /></div>
+                  <h4 className="font-extrabold text-gray-900 text-[15px] m-0 tracking-tight">Distribusi Platform</h4>
                 </div>
                 <div className="flex gap-2 items-center flex-wrap">
-                  <div className="flex bg-gray-100 rounded-lg p-0.5">
-                    <button onClick={()=>setPlatformChartType("doughnut")} className={`border-none rounded-md px-2.5 py-1 text-[11px] font-bold cursor-pointer transition-all ${platformChartType==="doughnut" ? "bg-white text-gray-900 shadow-sm" : "bg-transparent text-gray-500 hover:text-gray-700"}`}>Doughnut</button>
-                    <button onClick={()=>setPlatformChartType("bar")} className={`border-none rounded-md px-2.5 py-1 text-[11px] font-bold cursor-pointer transition-all ${platformChartType==="bar" ? "bg-white text-gray-900 shadow-sm" : "bg-transparent text-gray-500 hover:text-gray-700"}`}>Bar</button>
+                  <div className="flex bg-black/[0.03] rounded-lg p-0.5 border border-black/[0.01]">
+                    <button onClick={()=>setPlatformChartType("doughnut")} className={`border-none rounded-md px-3 py-1.5 text-[10px] font-bold cursor-pointer transition-all ${platformChartType==="doughnut" ? "bg-white text-gray-900 shadow-sm" : "bg-transparent text-gray-500 hover:text-gray-900"}`}>Doughnut</button>
+                    <button onClick={()=>setPlatformChartType("bar")} className={`border-none rounded-md px-3 py-1.5 text-[10px] font-bold cursor-pointer transition-all ${platformChartType==="bar" ? "bg-white text-gray-900 shadow-sm" : "bg-transparent text-gray-500 hover:text-gray-900"}`}>Bar</button>
                   </div>
                   <CustomDropdown 
                     value={platformMetric} 
@@ -1059,7 +1116,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
               <ResponsiveContainer width="100%" height={320} style={{marginTop: "auto"}} debounce={300}>
                 {platformChartType === "doughnut" ? (
                   <RPieChart>
-                    <Tooltip cursor={{fill:"rgba(0,0,0,0.03)"}} contentStyle={{borderRadius:12,fontSize:12,border:"1px solid rgba(0,0,0,0.08)",boxShadow:"0 10px 30px rgba(0,0,0,0.08)"}} itemStyle={{color:"#111827",fontWeight:700}} formatter={(v:any)=>[fmt(v)]}/>
+                    <Tooltip cursor={{fill:"rgba(0,0,0,0.02)"}} contentStyle={{borderRadius:12,fontSize:12,border:"1px solid rgba(0,0,0,0.04)",boxShadow:"0 10px 30px rgba(0,0,0,0.04)"}} itemStyle={{color:"#111827",fontWeight:700}} formatter={(v:any)=>[fmt(v)]}/>
                     <Legend content={<CustomLegend />} />
                     <Pie
                       data={platformData}
@@ -1067,20 +1124,20 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                       nameKey="name"
                       cx="50%"
                       cy="50%"
-                      innerRadius={60}
-                      outerRadius={105}
-                      paddingAngle={5}
+                      innerRadius={65}
+                      outerRadius={100}
+                      paddingAngle={4}
                     >
                       {platformData.map((entry:any, index:number) => <Cell key={`cell-${index}`} fill={entry.color || ["#F59E0B", "#10B981", "#3B82F6", "#8B5CF6"][index % 4]} />)}
                     </Pie>
                   </RPieChart>
                 ) : (
                   <BarChart data={platformData} margin={{top:10,right:0,left:0,bottom:0}}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.04)"/>
-                    <XAxis dataKey="name" tick={{fontSize:11,fill:"rgba(0,0,0,0.5)"}} tickLine={false} axisLine={false} dy={10}/>
-                    <YAxis tick={{fontSize:11,fill:"rgba(0,0,0,0.5)"}} tickLine={false} axisLine={false} tickFormatter={fmt} width={45}/>
-                    <Tooltip cursor={{fill:"rgba(0,0,0,0.03)"}} contentStyle={{borderRadius:12,fontSize:12,border:"1px solid rgba(0,0,0,0.08)",boxShadow:"0 10px 30px rgba(0,0,0,0.08)"}} itemStyle={{color:"#111827",fontWeight:700}} labelStyle={{color:"rgba(0,0,0,0.5)",marginBottom:4}} formatter={(v:any)=>[fmt(v)]}/>
-                    <Bar dataKey="value" radius={[6,6,0,0]} barSize={40}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.03)"/>
+                    <XAxis dataKey="name" tick={{fontSize:11,fill:"rgba(0,0,0,0.4)"}} tickLine={false} axisLine={false} dy={10}/>
+                    <YAxis tick={{fontSize:11,fill:"rgba(0,0,0,0.4)"}} tickLine={false} axisLine={false} tickFormatter={fmt} width={45}/>
+                    <Tooltip cursor={{fill:"rgba(0,0,0,0.02)"}} contentStyle={{borderRadius:12,fontSize:12,border:"1px solid rgba(0,0,0,0.04)",boxShadow:"0 10px 30px rgba(0,0,0,0.04)"}} itemStyle={{color:"#111827",fontWeight:700}} labelStyle={{color:"rgba(0,0,0,0.4)",marginBottom:4}} formatter={(v:any)=>[fmt(v)]}/>
+                    <Bar dataKey="value" radius={[6,6,0,0]} barSize={36}>
                       {platformData.map((entry:any, index:number) => <Cell key={`cell-${index}`} fill={entry.color || ["#F59E0B", "#10B981", "#3B82F6", "#8B5CF6"][index % 4]} />)}
                     </Bar>
                   </BarChart>
@@ -1089,21 +1146,21 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
             </div>
             
             {/* PIC Workload */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex flex-col min-w-0 transition-shadow hover:shadow-md">
+            <div className="bg-white rounded-2xl border border-black/[0.03] shadow-sm p-5 flex flex-col min-w-0 transition-shadow hover:shadow-md">
               <div className="flex items-center gap-2.5 mb-5 justify-between flex-wrap">
                 <div className="flex items-center gap-2">
-                  <div className="bg-indigo-100 p-1.5 rounded-lg text-indigo-600"><Users size={18} /></div>
-                  <h4 className="font-bold text-gray-900 text-[15px] m-0 tracking-tight">Distribusi Konten PIC</h4>
+                  <div className="bg-indigo-50 p-2 rounded-lg text-indigo-600"><Users size={18} /></div>
+                  <h4 className="font-extrabold text-gray-900 text-[15px] m-0 tracking-tight">Distribusi Konten PIC</h4>
                 </div>
-                <div className="flex bg-gray-100 rounded-lg p-0.5">
-                  <button onClick={()=>setPicChartType("doughnut")} className={`border-none rounded-md px-2.5 py-1 text-[11px] font-bold cursor-pointer transition-all ${picChartType==="doughnut" ? "bg-white text-gray-900 shadow-sm" : "bg-transparent text-gray-500 hover:text-gray-700"}`}>Doughnut</button>
-                  <button onClick={()=>setPicChartType("bar")} className={`border-none rounded-md px-2.5 py-1 text-[11px] font-bold cursor-pointer transition-all ${picChartType==="bar" ? "bg-white text-gray-900 shadow-sm" : "bg-transparent text-gray-500 hover:text-gray-700"}`}>Bar</button>
+                <div className="flex bg-black/[0.03] rounded-lg p-0.5 border border-black/[0.01]">
+                  <button onClick={()=>setPicChartType("doughnut")} className={`border-none rounded-md px-3 py-1.5 text-[10px] font-bold cursor-pointer transition-all ${picChartType==="doughnut" ? "bg-white text-gray-900 shadow-sm" : "bg-transparent text-gray-500 hover:text-gray-900"}`}>Doughnut</button>
+                  <button onClick={()=>setPicChartType("bar")} className={`border-none rounded-md px-3 py-1.5 text-[10px] font-bold cursor-pointer transition-all ${picChartType==="bar" ? "bg-white text-gray-900 shadow-sm" : "bg-transparent text-gray-500 hover:text-gray-900"}`}>Bar</button>
                 </div>
               </div>
               <ResponsiveContainer width="100%" height={320} style={{marginTop: "auto"}} debounce={300}>
                 {picChartType === "doughnut" ? (
                   <RPieChart>
-                    <Tooltip cursor={{fill:"rgba(0,0,0,0.03)"}} contentStyle={{borderRadius:12,fontSize:12,border:"1px solid rgba(0,0,0,0.08)",boxShadow:"0 10px 30px rgba(0,0,0,0.08)"}} itemStyle={{color:"#111827",fontWeight:700}} formatter={(v:any)=>[fmt(v)]}/>
+                    <Tooltip cursor={{fill:"rgba(0,0,0,0.02)"}} contentStyle={{borderRadius:12,fontSize:12,border:"1px solid rgba(0,0,0,0.04)",boxShadow:"0 10px 30px rgba(0,0,0,0.04)"}} itemStyle={{color:"#111827",fontWeight:700}} formatter={(v:any)=>[fmt(v)]}/>
                     <Legend content={<CustomLegend />} />
                     <Pie
                       data={picData}
@@ -1111,20 +1168,20 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                       nameKey="name"
                       cx="50%"
                       cy="50%"
-                      innerRadius={60}
-                      outerRadius={105}
-                      paddingAngle={5}
+                      innerRadius={65}
+                      outerRadius={100}
+                      paddingAngle={4}
                     >
                       {picData.map((entry:any, index:number) => <Cell key={`cell-${index}`} fill={entry.color || ["#8B5CF6", "#3B82F6", "#10B981", "#F59E0B", "#EC4899", "#6366F1"][index % 6]} />)}
                     </Pie>
                   </RPieChart>
                 ) : (
                   <BarChart data={picData} margin={{top:10,right:0,left:0,bottom:0}}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.04)"/>
-                    <XAxis dataKey="name" tick={{fontSize:11,fill:"rgba(0,0,0,0.5)"}} tickLine={false} axisLine={false} dy={10}/>
-                    <YAxis tick={{fontSize:11,fill:"rgba(0,0,0,0.5)"}} tickLine={false} axisLine={false} tickFormatter={fmt} width={45}/>
-                    <Tooltip cursor={{fill:"rgba(0,0,0,0.03)"}} contentStyle={{borderRadius:12,fontSize:12,border:"1px solid rgba(0,0,0,0.08)",boxShadow:"0 10px 30px rgba(0,0,0,0.08)"}} itemStyle={{color:"#111827",fontWeight:700}} labelStyle={{color:"rgba(0,0,0,0.5)",marginBottom:4}} formatter={(v:any)=>[fmt(v)]}/>
-                    <Bar dataKey="total" radius={[6,6,0,0]} barSize={40}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.03)"/>
+                    <XAxis dataKey="name" tick={{fontSize:11,fill:"rgba(0,0,0,0.4)"}} tickLine={false} axisLine={false} dy={10}/>
+                    <YAxis tick={{fontSize:11,fill:"rgba(0,0,0,0.4)"}} tickLine={false} axisLine={false} tickFormatter={fmt} width={45}/>
+                    <Tooltip cursor={{fill:"rgba(0,0,0,0.02)"}} contentStyle={{borderRadius:12,fontSize:12,border:"1px solid rgba(0,0,0,0.04)",boxShadow:"0 10px 30px rgba(0,0,0,0.04)"}} itemStyle={{color:"#111827",fontWeight:700}} labelStyle={{color:"rgba(0,0,0,0.4)",marginBottom:4}} formatter={(v:any)=>[fmt(v)]}/>
+                    <Bar dataKey="total" radius={[6,6,0,0]} barSize={36}>
                       {picData.map((entry:any, index:number) => <Cell key={`cell-${index}`} fill={entry.color || ["#8B5CF6", "#3B82F6", "#10B981", "#F59E0B", "#EC4899", "#6366F1"][index % 6]} />)}
                     </Bar>
                   </BarChart>
@@ -1133,11 +1190,11 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
             </div>
 
             {/* Performance by Pillar */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex flex-col min-w-0 transition-shadow hover:shadow-md">
+            <div className="bg-white rounded-2xl border border-black/[0.03] shadow-sm p-5 flex flex-col min-w-0 transition-shadow hover:shadow-md">
               <div className="flex justify-between items-start mb-5 gap-3 flex-wrap">
                 <div className="flex items-center gap-2">
-                  <div className="bg-green-100 p-1.5 rounded-lg text-green-600"><PieChart size={18} /></div>
-                  <h4 className="font-bold text-gray-900 text-[15px] m-0 tracking-tight">Distribusi Pilar Konten</h4>
+                  <div className="bg-emerald-50 p-2 rounded-lg text-emerald-600"><PieChart size={18} /></div>
+                  <h4 className="font-extrabold text-gray-900 text-[15px] m-0 tracking-tight">Distribusi Pilar Konten</h4>
                 </div>
                 <div className="flex gap-2 items-center flex-wrap">
                   <CustomDropdown 
@@ -1155,7 +1212,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
               </div>
               <ResponsiveContainer width="100%" height={320} style={{marginTop: "auto"}} debounce={300}>
                   <RPieChart>
-                    <Tooltip cursor={{fill:"rgba(0,0,0,0.03)"}} contentStyle={{borderRadius:12,fontSize:12,border:"1px solid rgba(0,0,0,0.08)",boxShadow:"0 10px 30px rgba(0,0,0,0.08)"}} itemStyle={{color:"#111827",fontWeight:700}} formatter={(v:any)=>[fmt(v)]}/>
+                    <Tooltip cursor={{fill:"rgba(0,0,0,0.02)"}} contentStyle={{borderRadius:12,fontSize:12,border:"1px solid rgba(0,0,0,0.04)",boxShadow:"0 10px 30px rgba(0,0,0,0.04)"}} itemStyle={{color:"#111827",fontWeight:700}} formatter={(v:any)=>[fmt(v)]}/>
                     <Legend content={<CustomLegend />} />
                     <Pie
                       data={pillarData}
@@ -1163,9 +1220,9 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                       nameKey="name"
                       cx="50%"
                       cy="50%"
-                      innerRadius={60}
-                      outerRadius={105}
-                      paddingAngle={5}
+                      innerRadius={65}
+                      outerRadius={100}
+                      paddingAngle={4}
                     >
                       {pillarData.map((entry:any, index:number) => <Cell key={`cell-${index}`} fill={entry.color || ["#10B981", "#3B82F6", "#F59E0B", "#8B5CF6", "#EC4899", "#6366F1"][index % 6]} />)}
                     </Pie>
@@ -1174,11 +1231,11 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
             </div>
 
             {/* Performance by Content Type */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex flex-col min-w-0 transition-shadow hover:shadow-md">
+            <div className="bg-white rounded-2xl border border-black/[0.03] shadow-sm p-5 flex flex-col min-w-0 transition-shadow hover:shadow-md">
               <div className="flex justify-between items-start mb-5 gap-3 flex-wrap">
                 <div className="flex items-center gap-2">
-                  <div className="bg-pink-100 p-1.5 rounded-lg text-pink-600"><PieChart size={18} /></div>
-                  <h4 className="font-bold text-gray-900 text-[15px] m-0 tracking-tight">Tipe Konten</h4>
+                  <div className="bg-pink-50 p-2 rounded-lg text-pink-600"><PieChart size={18} /></div>
+                  <h4 className="font-extrabold text-gray-900 text-[15px] m-0 tracking-tight">Tipe Konten</h4>
                 </div>
                 <div className="flex gap-2 items-center flex-wrap">
                   <CustomDropdown 
@@ -1196,64 +1253,233 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
               </div>
               <ResponsiveContainer width="100%" height={320} style={{marginTop: "auto"}} debounce={300}>
                   <BarChart data={typeData} margin={{top:10,right:0,left:0,bottom:0}}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.04)"/>
-                    <XAxis dataKey="name" tick={{fontSize:11,fill:"rgba(0,0,0,0.5)"}} tickLine={false} axisLine={false} dy={10}/>
-                    <YAxis tick={{fontSize:11,fill:"rgba(0,0,0,0.5)"}} tickLine={false} axisLine={false} tickFormatter={fmt} width={45}/>
-                    <Tooltip cursor={{fill:"rgba(0,0,0,0.03)"}} contentStyle={{borderRadius:12,fontSize:12,border:"1px solid rgba(0,0,0,0.08)",boxShadow:"0 10px 30px rgba(0,0,0,0.08)"}} itemStyle={{color:"#111827",fontWeight:700}} labelStyle={{color:"rgba(0,0,0,0.5)",marginBottom:4}} formatter={(v:any)=>[fmt(v)]}/>
-                    <Bar dataKey="value" radius={[6,6,0,0]} barSize={40}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.03)"/>
+                    <XAxis dataKey="name" tick={{fontSize:11,fill:"rgba(0,0,0,0.4)"}} tickLine={false} axisLine={false} dy={10}/>
+                    <YAxis tick={{fontSize:11,fill:"rgba(0,0,0,0.4)"}} tickLine={false} axisLine={false} tickFormatter={fmt} width={45}/>
+                    <Tooltip cursor={{fill:"rgba(0,0,0,0.02)"}} contentStyle={{borderRadius:12,fontSize:12,border:"1px solid rgba(0,0,0,0.04)",boxShadow:"0 10px 30px rgba(0,0,0,0.04)"}} itemStyle={{color:"#111827",fontWeight:700}} labelStyle={{color:"rgba(0,0,0,0.4)",marginBottom:4}} formatter={(v:any)=>[fmt(v)]}/>
+                    <Bar dataKey="value" radius={[6,6,0,0]} barSize={36}>
                       {typeData.map((entry:any, index:number) => <Cell key={`cell-${index}`} fill={entry.color || ["#DB2777", "#EC4899", "#F472B6", "#FBCFE8"][index % 4]} />)}
                     </Bar>
                   </BarChart>
               </ResponsiveContainer>
             </div>
-
-          </div>
-
-          {/* Trends Charts List */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex flex-col min-w-0 transition-shadow hover:shadow-md">
+          </div>          {/* Trends Charts List */}
+          <div className="bg-white rounded-2xl border border-black/[0.03] shadow-sm p-6 flex flex-col min-w-0 transition-shadow hover:shadow-md">
             <div className="flex justify-between items-center mb-5 flex-wrap gap-3">
               <div className="flex items-center gap-2">
-                <div className="bg-gray-100 p-1.5 rounded-lg text-gray-900"><TrendingUp size={18} /></div>
-                <h4 className="font-bold text-gray-900 text-[15px] m-0 tracking-tight">Tren Pertumbuhan</h4>
+                <div className="bg-blue-50 p-2 rounded-lg text-blue-600"><TrendingUp size={18} /></div>
+                <h4 className="font-extrabold text-gray-900 text-[15px] m-0 tracking-tight">Tren Pertumbuhan</h4>
+              </div>
+
+              {/* Metric Selection Popover */}
+              <div className="relative" ref={metricSettingRef}>
+                <button 
+                  onClick={openMetricSetting} 
+                  className="flex items-center gap-2 bg-white hover:bg-gray-50 border border-black/10 px-3 py-1.5 rounded-lg shadow-sm cursor-pointer transition-colors text-xs font-bold text-gray-800"
+                >
+                  <SlidersHorizontal size={14} className="text-gray-500" />
+                  <span>Pilih Metrik</span>
+                  <span className="bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded-full text-[10px] font-extrabold">
+                    {activeMetrics.length}
+                  </span>
+                </button>
+
+                <AnimatePresence>
+                  {isMetricSettingOpen && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 5 }} 
+                      animate={{ opacity: 1, y: 0 }} 
+                      exit={{ opacity: 0, y: 5 }} 
+                      transition={{ duration: 0.15 }}
+                      className="absolute top-full right-0 mt-2 bg-white rounded-2xl shadow-xl border border-black/10 z-[100] w-[340px] md:w-[480px] overflow-hidden flex flex-col text-left"
+                    >
+                      {/* Header */}
+                      <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                        <div>
+                          <h5 className="font-extrabold text-gray-900 text-sm tracking-tight">Tampilan Metrik</h5>
+                          <p className="text-[10px] text-gray-400 font-medium">Pilih metrik yang ingin ditampilkan pada grafik</p>
+                        </div>
+                        <button 
+                          onClick={resetToDefaultMetrics} 
+                          className="text-[10px] font-extrabold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer"
+                          title="Reset ke default (engagement dasar)"
+                        >
+                          <RotateCcw size={12} />
+                          <span>Reset Default</span>
+                        </button>
+                      </div>
+
+                      {/* Content */}
+                      <div className="p-4 max-h-[380px] overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Organic Category */}
+                        <div>
+                          <div className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                            Metrik Organik
+                          </div>
+                          <div className="space-y-1">
+                            {Object.entries(METRICS_META)
+                              .filter(([_, meta]) => meta.category === "organic")
+                              .map(([key, meta]) => {
+                                const isChecked = tempSelectedMetrics.includes(key);
+                                return (
+                                  <label 
+                                    key={key} 
+                                    className={`flex items-start gap-2.5 p-2 rounded-xl hover:bg-black/[0.02] cursor-pointer transition-colors ${isChecked ? 'bg-black/[0.01]' : ''}`}
+                                  >
+                                    <input 
+                                      type="checkbox" 
+                                      checked={isChecked} 
+                                      onChange={() => toggleTempMetric(key)} 
+                                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 mt-0.5"
+                                    />
+                                    <div className="min-w-0">
+                                      <div className="flex items-center gap-1.5">
+                                        <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: meta.color }} />
+                                        <span className="text-xs font-bold text-gray-800">{meta.label.split(" (")[0]}</span>
+                                      </div>
+                                      <p className="text-[9px] text-gray-400 mt-0.5 leading-tight">{meta.desc}</p>
+                                    </div>
+                                  </label>
+                                );
+                              })}
+                          </div>
+                        </div>
+
+                        {/* Ads Category */}
+                        <div>
+                          <div className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                            Metrik Ads (Iklan)
+                          </div>
+                          <div className="space-y-1">
+                            {Object.entries(METRICS_META)
+                              .filter(([_, meta]) => meta.category === "ads")
+                              .map(([key, meta]) => {
+                                const isChecked = tempSelectedMetrics.includes(key);
+                                return (
+                                  <label 
+                                    key={key} 
+                                    className={`flex items-start gap-2.5 p-2 rounded-xl hover:bg-black/[0.02] cursor-pointer transition-colors ${isChecked ? 'bg-black/[0.01]' : ''}`}
+                                  >
+                                    <input 
+                                      type="checkbox" 
+                                      checked={isChecked} 
+                                      onChange={() => toggleTempMetric(key)} 
+                                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 mt-0.5"
+                                    />
+                                    <div className="min-w-0">
+                                      <div className="flex items-center gap-1.5">
+                                        <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: meta.color }} />
+                                        <span className="text-xs font-bold text-gray-800">{meta.label.split(" (")[0]}</span>
+                                      </div>
+                                      <p className="text-[9px] text-gray-400 mt-0.5 leading-tight">{meta.desc}</p>
+                                    </div>
+                                  </label>
+                                );
+                              })}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Footer */}
+                      <div className="p-3 border-t border-gray-100 flex justify-end gap-2 bg-gray-50/50">
+                        <button 
+                          onClick={() => setIsMetricSettingOpen(false)} 
+                          className="px-3 py-1.5 rounded-lg text-xs font-bold text-gray-500 hover:bg-black/[0.03] transition-colors cursor-pointer"
+                        >
+                          Batal
+                        </button>
+                        <button 
+                          onClick={applyMetrics} 
+                          className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-xs font-bold text-white shadow-sm transition-colors cursor-pointer flex items-center gap-1"
+                        >
+                          <Check size={12} />
+                          <span>Terapkan</span>
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
-            <div className="grid gap-5 grid-cols-1 lg:grid-cols-2">
-              {["views","reach","likes","comments","shares","saves","clicks"].map(k=>(
-                <div key={k} style={{background: "#F9FAFB", padding: "20px", borderRadius: "16px", border: "1px solid rgba(0,0,0,0.04)"}}>
-                  <div style={{fontSize: 14, fontWeight: 800, textTransform: "capitalize", color: "#111827", marginBottom: 16, display: "flex", alignItems: "center", gap: 8}}>
-                     <div style={{width: 10, height: 10, borderRadius: "50%", background: MC[k] || "#3B82F6"}} />
-                     {k}
+
+            {/* Active Metrics Badges (Single horizontal scrollable clean row) */}
+            {activeMetrics.length > 0 && (
+              <div className="flex flex-nowrap overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden gap-1.5 mb-5 p-2.5 bg-black/[0.01] rounded-full border border-black/[0.02] items-center">
+                <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider shrink-0 mr-1.5">Aktif:</span>
+                {activeMetrics.map(k => (
+                  <div key={k} className="px-2.5 py-1 bg-white border border-black/[0.04] rounded-full text-[11px] font-bold text-gray-700 flex items-center gap-1.5 shadow-sm shrink-0">
+                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: METRICS_META[k]?.color || "#3B82F6" }} />
+                    <span>{METRICS_META[k]?.label?.split(" (")[0] || k}</span>
+                    <button 
+                      onClick={() => setActiveMetrics(prev => prev.filter(x => x !== k))}
+                      className="text-gray-400 hover:text-gray-900 ml-1 cursor-pointer font-black text-[10px] leading-none"
+                      title="Sembunyikan metrik ini"
+                    >
+                      ×
+                    </button>
                   </div>
-                  <ResponsiveContainer width="100%" height={320} debounce={300}>
-                    {adsFilter==="all" ? (
-                       <BarChart data={lineData} margin={{top:0,right:10,left:0,bottom:0}}>
-                         <XAxis dataKey="name" tick={{fontSize:11,fill:"rgba(0,0,0,0.4)"}} axisLine={false} tickLine={false} dy={10}/>
-                         <YAxis tick={{fontSize:11,fill:"rgba(0,0,0,0.4)"}} axisLine={false} tickLine={false} tickFormatter={fmt} width={55}/>
-                         <Tooltip cursor={{fill:"rgba(0,0,0,0.04)"}} contentStyle={{borderRadius:12,fontSize:12,border:"1px solid rgba(0,0,0,0.05)",boxShadow:"0 4px 12px rgba(0,0,0,0.05)"}} labelStyle={{marginBottom:6,color:"rgba(0,0,0,0.5)"}} />
-                         <Bar dataKey={`${k}_org`} stackId={k} name={`Org`} fill={MC[k]||"#3B82F6"} radius={[0,0,4,4]} barSize={16}/>
-                         <Bar dataKey={`${k}_ads`} stackId={k} name={`Ads`} fill={(MC[k]||"#3B82F6")+"66"} radius={[4,4,0,0]} barSize={16}/>
-                       </BarChart>
-                    ) : (
-                      <LineChart data={lineData} margin={{top:5,right:10,left:0,bottom:0}}>
-                        <XAxis dataKey="name" tick={{fontSize:11,fill:"rgba(0,0,0,0.4)"}} axisLine={false} tickLine={false} dy={10}/>
-                        <YAxis tick={{fontSize:11,fill:"rgba(0,0,0,0.4)"}} axisLine={false} tickLine={false} tickFormatter={fmt} width={55}/>
-                        <Tooltip contentStyle={{borderRadius:12,fontSize:12,border:"1px solid rgba(0,0,0,0.05)",boxShadow:"0 4px 12px rgba(0,0,0,0.05)"}} labelStyle={{marginBottom:6,color:"rgba(0,0,0,0.5)"}} />
-                        <Line type="monotone" dataKey={k} stroke={MC[k]||"#3B82F6"} strokeWidth={3} dot={{r:0}} activeDot={{r:5, strokeWidth:0}} name={k} />
-                      </LineChart>
-                    )}
-                  </ResponsiveContainer>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
+
+            {activeMetrics.length === 0 ? (
+              <div className="py-12 text-center text-gray-400 bg-black/[0.01] rounded-2xl border border-dashed border-black/[0.06] flex flex-col items-center justify-center">
+                <TrendingUp size={36} className="text-gray-300 mb-2 animate-bounce" />
+                <p className="text-sm font-semibold">Tidak ada metrik terpilih.</p>
+                <p className="text-xs text-gray-400 mt-1 mb-4">Pilih metrik melalui tombol 'Pilih Metrik' di atas untuk menampilkan grafik.</p>
+                <button 
+                  onClick={openMetricSetting} 
+                  className="px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-xl hover:bg-blue-700 shadow-sm transition-colors cursor-pointer"
+                >
+                  Pilih Metrik
+                </button>
+              </div>
+            ) : (
+              <div className="grid gap-5 grid-cols-1 lg:grid-cols-2">
+                {activeMetrics.map(k=>(
+                  <div key={k} className="bg-black/[0.01] p-5 rounded-2xl border border-black/[0.02] flex flex-col justify-between">
+                    <div className="mb-4">
+                      <div className="text-sm font-extrabold text-gray-900 mb-1 flex items-center gap-2">
+                         <div className="w-2.5 h-2.5 rounded-full" style={{ background: METRICS_META[k]?.color || MC[k] || "#3B82F6" }} />
+                         {METRICS_META[k]?.label || k}
+                      </div>
+                      {METRICS_META[k]?.desc && <div className="text-[11px] text-gray-400 font-medium">{METRICS_META[k]?.desc}</div>}
+                    </div>
+                    <ResponsiveContainer width="100%" height={320} debounce={300}>
+                      {adsFilter==="all" ? (
+                         <BarChart data={lineData} margin={{top:0,right:10,left:0,bottom:0}}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.02)"/>
+                            <XAxis dataKey="name" tick={{fontSize:11,fill:"rgba(0,0,0,0.4)"}} axisLine={false} tickLine={false} dy={10}/>
+                            <YAxis tick={{fontSize:11,fill:"rgba(0,0,0,0.4)"}} axisLine={false} tickLine={false} tickFormatter={fmt} width={55}/>
+                            <Tooltip cursor={{fill:"rgba(0,0,0,0.02)"}} contentStyle={{borderRadius:12,fontSize:12,border:"1px solid rgba(0,0,0,0.04)",boxShadow:"0 10px 30px rgba(0,0,0,0.04)"}} labelStyle={{marginBottom:6,color:"rgba(0,0,0,0.4)"}} />
+                            <Bar dataKey={`${k}_org`} stackId={k} name={`Organik`} fill={METRICS_META[k]?.color || MC[k] || "#3B82F6"} radius={[0,0,4,4]} barSize={16}/>
+                            <Bar dataKey={`${k}_ads`} stackId={k} name={`Ads`} fill={(METRICS_META[k]?.color || MC[k] || "#3B82F6")+"66"} radius={[4,4,0,0]} barSize={16}/>
+                         </BarChart>
+                      ) : (
+                        <LineChart data={lineData} margin={{top:5,right:10,left:0,bottom:0}}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.02)"/>
+                          <XAxis dataKey="name" tick={{fontSize:11,fill:"rgba(0,0,0,0.4)"}} axisLine={false} tickLine={false} dy={10}/>
+                          <YAxis tick={{fontSize:11,fill:"rgba(0,0,0,0.4)"}} axisLine={false} tickLine={false} tickFormatter={fmt} width={55}/>
+                          <Tooltip contentStyle={{borderRadius:12,fontSize:12,border:"1px solid rgba(0,0,0,0.04)",boxShadow:"0 10px 30px rgba(0,0,0,0.04)"}} labelStyle={{marginBottom:6,color:"rgba(0,0,0,0.4)"}} />
+                          <Line type="monotone" dataKey={k} stroke={METRICS_META[k]?.color || MC[k] || "#3B82F6"} strokeWidth={3} dot={{r:0}} activeDot={{r:5, strokeWidth:0}} name={METRICS_META[k]?.label || k} />
+                        </LineChart>
+                      )}
+                    </ResponsiveContainer>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
           
           {/* Heatmap (Full Width) */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 min-w-0 transition-shadow hover:shadow-md overflow-hidden w-full">
+          <div className="bg-white rounded-2xl border border-black/[0.03] shadow-sm p-6 min-w-0 transition-shadow hover:shadow-md overflow-hidden w-full">
             <div className="w-full">
               <div className="flex items-center gap-2.5 mb-5 justify-between flex-wrap">
                 <div className="flex items-center gap-2">
-                  <div className="bg-red-100 p-1.5 rounded-lg text-red-600"><Clock size={18} /></div>
-                  <h4 className="font-bold text-gray-900 text-[15px] m-0 tracking-tight">Heatmap Aktivitas (Best Time)</h4>
+                  <div className="bg-red-50 p-2 rounded-lg text-red-600"><Clock size={18} /></div>
+                  <h4 className="font-extrabold text-gray-900 text-[15px] m-0 tracking-tight">Heatmap Aktivitas (Best Time)</h4>
                 </div>
                 <CustomDropdown 
                   value={heatmapMetric} 
@@ -1266,17 +1492,17 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                   style={{ width: 170 }} 
                 />
               </div>
-              <div style={{display:"flex",gap:"1%",marginBottom:8}}>
-                <div style={{width:24}}/>
-                {Array.from({length:24}).map((_,i)=><div key={`h${i}`} style={{flex:1,textAlign:"center",fontSize:9,color:"rgba(0,0,0,0.5)", fontWeight:700}}>{i}</div>)}
+              <div className="flex gap-[1%] mb-2">
+                <div className="w-6 shrink-0"/>
+                {Array.from({length:24}).map((_,i)=><div key={`h${i}`} className="flex-1 text-center text-[9px] text-gray-400 font-bold">{i}</div>)}
               </div>
               {heatmap.map((row,di) => {
                 const rowMax = Math.max(...row, 1);
                 return (
-                  <div key={di} style={{display:"flex",gap:"1%",marginBottom:4,alignItems:"center"}}>
-                    <div style={{width:24,fontSize:10,fontWeight:700, color:"#111827"}}>{DAYS_S[di]}</div>
+                  <div key={di} className="flex gap-[1%] mb-1.5 items-center">
+                    <div className="w-6 text-[10px] font-bold text-gray-900 shrink-0">{DAYS_S[di]}</div>
                     {row.map((val,hi) => (
-                      <div key={hi} title={`${DAYS_ID[di]} Jam ${hi} - ${fmt(val)} ${heatmapMetric==="engagement"?"Eng":heatmapMetric==="reach"?"Reach":"Views"}`} style={{flex:1,height:28,borderRadius:4,background:val===0?'#F3F4F6':(heatmapMetric==="engagement"?`#3B82F6`:`#8B5CF6`) , opacity: val===0 ? 1 : Math.max(0.15, val/rowMax), transition: "all 0.2s"}}/>
+                      <div key={hi} title={`${DAYS_ID[di]} Jam ${hi} - ${fmt(val)} ${heatmapMetric==="engagement"?"Eng":heatmapMetric==="reach"?"Reach":"Views"}`} className="flex-1 h-7 rounded-sm transition-all duration-200" style={{background:val===0?'#F3F4F6':(heatmapMetric==="engagement"?`#3B82F6`:`#8B5CF6`) , opacity: val===0 ? 1 : Math.max(0.15, val/rowMax)}}/>
                     ))}
                   </div>
                 );
@@ -1284,18 +1510,18 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
             </div>
           </div>
 
-          <div className="flex gap-4 items-center bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4 flex-wrap mt-2 min-w-0">
-            <div className="flex gap-3 items-center">
-              <div className="text-[13px] font-bold text-gray-500 uppercase tracking-wider">Urutkan:</div>
-              <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
+          <div className="flex gap-4 items-center bg-white rounded-2xl border border-black/[0.03] shadow-sm px-5 py-4 flex-wrap mt-2 min-w-0">
+            <div className="flex gap-3 items-center flex-wrap">
+              <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Urutkan:</div>
+              <div className="flex gap-0.5 bg-black/[0.03] p-1 rounded-xl border border-black/[0.01]">
                 {[["engagement","Interaksi"],["reach","Jangkauan"],["views","Tayangan"]].map(([k,l])=>(
-                  <button key={k} onClick={()=>setTopSort(k)} className={`px-3.5 py-1.5 rounded-md border-none font-semibold text-[13px] cursor-pointer transition-all ${topSort===k ? "bg-white text-gray-900 shadow-sm" : "bg-transparent text-gray-500 hover:text-gray-700"}`}>{l}</button>
+                  <button key={k} onClick={()=>setTopSort(k)} className={`px-4 py-2 rounded-lg border-none font-bold text-xs cursor-pointer transition-all ${topSort===k ? "bg-white text-gray-900 shadow-sm" : "bg-transparent text-gray-500 hover:text-gray-900"}`}>{l}</button>
                 ))}
               </div>
             </div>
-            <div className="hidden sm:block w-px h-7 bg-black/10 shrink-0"/>
-            <div className="flex gap-3 items-center">
-              <div className="text-[13px] font-bold text-gray-500 uppercase tracking-wider">Platform:</div>
+            <div className="hidden sm:block w-px h-7 bg-black/[0.06] shrink-0"/>
+            <div className="flex gap-3 items-center flex-wrap">
+              <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Platform:</div>
               <CustomDropdown 
                 value={topPlatform} 
                 onChange={setTopPlatform} 

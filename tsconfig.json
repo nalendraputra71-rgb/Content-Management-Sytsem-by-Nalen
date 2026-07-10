@@ -22,5 +22,10 @@
     },
     "allowImportingTsExtensions": true,
     "noEmit": true
-  }
+  },
+  "exclude": [
+    "patch_*.cjs",
+    "dist",
+    "node_modules"
+  ]
 }

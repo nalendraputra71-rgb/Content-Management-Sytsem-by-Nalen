@@ -200,6 +200,10 @@ service cloud.firestore {
         allow read, write: if isSignedIn();
       }
 
+      match /commentReplies/{commentId} {
+        allow read, write: if isSignedIn();
+      }
+
       match /todos/{todoId} {
         allow read, write: if isSignedIn();
       }

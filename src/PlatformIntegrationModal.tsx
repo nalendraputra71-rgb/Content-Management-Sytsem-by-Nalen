@@ -131,7 +131,7 @@ export const PlatformIntegrationModal: React.FC<PlatformIntegrationModalProps> =
 
   const platform = PLATFORM_DETAILS[platformId] || PLATFORM_DETAILS.meta;
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (step === 1) {
       if (platformId === "meta" || platformId === "instagram") {
         if (!workspaceId) {
@@ -228,6 +228,8 @@ export const PlatformIntegrationModal: React.FC<PlatformIntegrationModalProps> =
                     <p>
                       Hubify's <a href="https://www.hubifysocial.com/#/privacy" target="_blank" rel="noopener noreferrer" className="text-[var(--theme-primary)] hover:underline">Privacy Policy</a> and <a href="https://www.hubifysocial.com/#/terms" target="_blank" rel="noopener noreferrer" className="text-[var(--theme-primary)] hover:underline">Terms of Service</a>
                     </p>
+                    
+                    
                   </div>
                 </div>
               </motion.div>
