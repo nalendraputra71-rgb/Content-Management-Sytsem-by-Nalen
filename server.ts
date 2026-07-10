@@ -19,13 +19,25 @@ function initFirebase() {
     let projectId = process.env.FIREBASE_PROJECT_ID;
     const configPath = path.join(process.cwd(), "firebase-applet-config.json");
     if (fs.existsSync(configPath)) {
-      const firebaseConfig = JSON.parse(fs.readFileSync(configPath, "utf8"));
-      if (!projectId) {
-        projectId = firebaseConfig.projectId;
+      try {
+        const firebaseConfig = JSON.parse(fs.readFileSync(configPath, "utf8"));
+        if (!projectId) {
+          projectId = firebaseConfig.projectId;
+        }
+        if (firebaseConfig.firestoreDatabaseId) {
+          firestoreDatabaseId = firebaseConfig.firestoreDatabaseId;
+        }
+      } catch (e) {
+        console.error("Failed to parse firebase-applet-config.json:", e);
       }
-      if (firebaseConfig.firestoreDatabaseId) {
-        firestoreDatabaseId = firebaseConfig.firestoreDatabaseId;
-      }
+    }
+    
+    // Fallback values for Vercel deployment where the config file is not bundled
+    if (!projectId) {
+      projectId = "gen-lang-client-0335789025";
+    }
+    if (!firestoreDatabaseId) {
+      firestoreDatabaseId = "ai-studio-5bedb408-30a3-4e2a-885f-effd203a7138";
     }
     
     if (projectId) {
@@ -37,12 +49,14 @@ function initFirebase() {
         } catch (e) {
           console.error("Failed to parse FIREBASE_SERVICE_ACCOUNT_KEY:", e);
         }
+      } else if (process.env.VERCEL) {
+        console.warn("WARNING: Running on Vercel without FIREBASE_SERVICE_ACCOUNT_KEY. Firebase operations might fail.");
       }
       admin.initializeApp({ 
         projectId,
         ...(credential ? { credential } : {})
       });
-      console.log("Firebase Admin initialized lazily with projectId:", projectId);
+      console.log("Firebase Admin initialized lazily with projectId:", projectId, "databaseId:", firestoreDatabaseId);
     } else {
       throw new Error("FIREBASE_PROJECT_ID is not set in environment or config.");
     }
