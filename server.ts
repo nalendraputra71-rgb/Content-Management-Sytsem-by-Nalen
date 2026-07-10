@@ -46,17 +46,29 @@ function initFirebase() {
         try {
           const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
           credential = cert(serviceAccount);
+          if (serviceAccount.project_id) {
+            projectId = serviceAccount.project_id;
+          }
         } catch (e) {
           console.error("Failed to parse FIREBASE_SERVICE_ACCOUNT_KEY:", e);
         }
       } else if (process.env.VERCEL) {
         console.warn("WARNING: Running on Vercel without FIREBASE_SERVICE_ACCOUNT_KEY. Firebase operations might fail.");
       }
-      admin.initializeApp({ 
-        projectId,
-        ...(credential ? { credential } : {})
-      });
-      console.log("Firebase Admin initialized lazily with projectId:", projectId, "databaseId:", firestoreDatabaseId);
+      
+      try {
+        admin.initializeApp({ 
+          projectId,
+          ...(credential ? { credential } : {})
+        });
+        console.log("Firebase Admin initialized lazily with projectId:", projectId, "databaseId:", firestoreDatabaseId);
+      } catch (e: any) {
+        console.error("Error calling admin.initializeApp:", e);
+        // If it's already initialized, we can ignore this error
+        if (!e.message || !e.message.includes("already exists")) {
+          throw e;
+        }
+      }
     } else {
       throw new Error("FIREBASE_PROJECT_ID is not set in environment or config.");
     }
