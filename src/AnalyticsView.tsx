@@ -1053,7 +1053,7 @@ export function AnalyticsView({
     let rangeLabel = `${fmtDateString(finalStartDate)} - ${fmtDateString(finalEndDate)}`;
 
     const filteredBase = content.filter((c: any) => {
-      let cdt = new Date(c.year, c.month - 1, c.day);
+      let cdt = new Date(c.year, c.month, c.day);
       let isMatch = cdt >= finalStartDate && cdt <= finalEndDate;
 
       if (!isMatch) return false;
@@ -1113,11 +1113,11 @@ export function AnalyticsView({
     activeMetrics.forEach(m => metricTotals[m] = 0);
 
     filteredBase.forEach((c: any) => {
-      const dateKey = `${String(c.day).padStart(2, '0')}/${String(c.month).padStart(2, '0')}`;
+      const dateKey = `${String(c.day).padStart(2, '0')}/${String(c.month + 1).padStart(2, '0')}`;
       if (!groupedTimeline[dateKey]) {
         const dayData: any = {
           date: dateKey,
-          timestamp: new Date(c.year, c.month - 1, c.day).getTime(),
+          timestamp: new Date(c.year, c.month, c.day).getTime(),
         };
         activeMetrics.forEach(m => dayData[m] = 0);
         groupedTimeline[dateKey] = dayData;
@@ -1232,7 +1232,7 @@ export function AnalyticsView({
 
   // Handle Quick Filters & Custom via date logic 
   const isDateMatch = (c:any, isPrev:boolean=false) => {
-    let cdt = new Date(c.year, c.month-1, c.day);
+    let cdt = new Date(c.year, c.month, c.day);
     const now = new Date();
     now.setHours(0,0,0,0);
     
@@ -1411,7 +1411,7 @@ export function AnalyticsView({
           const dt = new Date(sDate.getTime() + i * 86400000);
           labels.push({
             label: days <= 35 ? `${dt.getDate()} ${MS[dt.getMonth()]}` : `${dt.getDate()}/${dt.getMonth() + 1}`,
-            filter: (c: any) => c.day === dt.getDate() && c.month === dt.getMonth() + 1 && c.year === dt.getFullYear()
+            filter: (c: any) => c.day === dt.getDate() && c.month === dt.getMonth() && c.year === dt.getFullYear()
           });
        }
     } else if (days <= 366) {
@@ -1423,7 +1423,7 @@ export function AnalyticsView({
           labels.push({
             label: `${wStart.getDate()} ${MS[wStart.getMonth()]} - ${wEnd.getDate()} ${MS[wEnd.getMonth()]}`,
             filter: (c: any) => {
-              const d = new Date(c.year, c.month-1, c.day);
+              const d = new Date(c.year, c.month, c.day);
               // Normalize times
               d.setHours(0,0,0,0);
               return d.getTime() >= wStart.getTime() && d.getTime() <= wEnd.getTime();
@@ -1438,7 +1438,7 @@ export function AnalyticsView({
           const y = curr.getFullYear();
           labels.push({
             label: `${MS[m - 1]} ${y % 100}`,
-            filter: (c: any) => c.month === m && c.year === y
+            filter: (c: any) => c.month === m - 1 && c.year === y
           });
           curr.setMonth(curr.getMonth() + 1);
        }
@@ -1463,7 +1463,7 @@ export function AnalyticsView({
   const heatmap = useMemo(() => {
     let m = Array(7).fill(0).map(() => Array(24).fill(0));
     base.filter((c:any)=>c.status==="Published").forEach((c:any) => {
-      let cd = new Date(c.year, c.month-1, c.day).getDay();
+      let cd = new Date(c.year, c.month, c.day).getDay();
       let h = c.uploadHour || 9;
       if (h>=0 && h<24) {
         if (heatmapMetric === "engagement") m[cd][h] += getEng(c);

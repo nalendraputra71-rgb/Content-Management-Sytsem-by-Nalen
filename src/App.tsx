@@ -1670,7 +1670,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme, systemConfig 
         onQuickAddContent={() => openAdd(new Date().getDate())}
       />
       {["dashboard", "content_planner", "analytics", "analytics-overview", "analytics-content", "analytics-trends", "analytics-activity"].includes(tab) && (
-        <div style={{ position: "fixed", inset: 0, zIndex: -1, pointerEvents: "none", background: "radial-gradient(circle at 0% 0%, #E3F2FD 0.1%, transparent 50%), radial-gradient(circle at 100% 100%, #FFF3E0 0.1%, transparent 50%), radial-gradient(circle at 100% 0%, #F3E5F5 0.1%, transparent 50%), #FAFAFA", borderRadius: "16px", margin: "8px 8px 8px 0" }} />
+        <div style={{ position: "fixed", inset: 0, zIndex: -1, pointerEvents: "none", background: "radial-gradient(circle at 0% 0%, #E3F2FD 0.1%, transparent 50%), radial-gradient(circle at 100% 100%, #FFF3E0 0.1%, transparent 50%), radial-gradient(circle at 100% 0%, #F3E5F5 0.1%, transparent 50%), #FAFAFA", borderRadius: "28px", margin: "8px 8px 8px 0" }} />
       )}
       <div style={{
         flex: 1,
@@ -1679,7 +1679,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme, systemConfig 
         flexDirection: "column",
         height: "calc(100vh - 16px)",
         margin: "8px 8px 8px 0",
-        borderRadius: "16px",
+        borderRadius: "28px",
         background: "#FFFFFF",
         boxShadow: "0 10px 30px rgba(0, 0, 0, 0.03)",
         border: "1px solid rgba(0, 0, 0, 0.04)",

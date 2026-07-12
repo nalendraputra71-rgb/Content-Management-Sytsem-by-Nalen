@@ -225,9 +225,31 @@ export function MonthView({year,month,monthContent,filtered,openEdit,openAdd,sho
                         <div style={{fontSize:8,color:"rgba(55,53,47,0.6)",marginTop:2,fontWeight:500,display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
                           {item.contentType && (
                             <div style={{display:"flex",alignItems:"center",gap:2}}>
-                              <span style={{color: gpc(contentTypes || [], item.contentType), fontWeight: 700}}>
-                                {String(item.contentType).split(' ').filter(Boolean).slice(0, 2).map((w: string) => w.charAt(0)).join('').toUpperCase()}
-                              </span>
+                              {(() => {
+                                const bg = gpc(contentTypes || [], item.contentType);
+                                const hex = bg.startsWith('#') ? (bg.length === 4 ? '#' + bg[1] + bg[1] + bg[2] + bg[2] + bg[3] + bg[3] : bg) : '#F1F1EF';
+                                const r = parseInt(hex.slice(1, 3), 16) || 0;
+                                const g = parseInt(hex.slice(3, 5), 16) || 0;
+                                const b = parseInt(hex.slice(5, 7), 16) || 0;
+                                const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+                                const tc = yiq >= 128 ? "#1F2937" : "#fff";
+                                return (
+                                  <span style={{
+                                    backgroundColor: bg,
+                                    color: tc,
+                                    fontWeight: 800,
+                                    fontSize: 6.5,
+                                    width: 13,
+                                    height: 13,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    borderRadius: "50%"
+                                  }}>
+                                    {String(item.contentType).split(' ').filter(Boolean).slice(0, 2).map((w: string) => w.charAt(0)).join('').toUpperCase()}
+                                  </span>
+                                );
+                              })()}
                             </div>
                           )}
                           {item.pic && (
