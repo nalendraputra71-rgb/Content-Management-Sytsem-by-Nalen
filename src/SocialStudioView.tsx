@@ -1,18 +1,5 @@
 import { PlatformPreview } from "./components/PlatformPreview";
-import {
-  collection,
-  query,
-  orderBy,
-  onSnapshot,
-  addDoc,
-  serverTimestamp,
-  doc,
-  setDoc,
-  updateDoc,
-  increment,
-  deleteDoc,
-} from "firebase/firestore";
-import { db, callAiWithQuota, handleFirestoreError } from "./firebase";
+import { db, callAiWithQuota, handleFirestoreError, collection, onSnapshot, addDoc, serverTimestamp, setDoc, doc, updateDoc, deleteDoc } from "./firebase";
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -78,6 +65,8 @@ import {
   AlertTriangle,
   Info,
   Video,
+  AtSign,
+  Music,
 } from "lucide-react";
 import Markdown from "react-markdown";
 import { PlatformIntegrationModal } from "./PlatformIntegrationModal";
@@ -135,12 +124,41 @@ function SimulatedStreamMarkdown({
   return <Markdown>{displayedContent}</Markdown>;
 }
 
+function getPlatformIcon(platformIdentifier: string, size = 16) {
+  const name = String(platformIdentifier || "").trim().toLowerCase();
+  if (name.includes("instagram") || name === "ig") {
+    return <Instagram size={size} color="#E1306C" />;
+  }
+  if (name.includes("tiktok") || name === "tt") {
+    return <Music size={size} color="#000000" />;
+  }
+  if (name.includes("facebook") || name === "fb" || name === "meta") {
+    return <Facebook size={size} color="#1877F2" />;
+  }
+  if (name.includes("threads")) {
+    return <AtSign size={size} color="#111111" />;
+  }
+  if (name === "x" || name.includes("twitter")) {
+    return <span style={{ fontWeight: 900, fontSize: size, fontFamily: "sans-serif", color: "#111111", display: "inline-flex", alignItems: "center", justifyContent: "center", width: size, height: size, lineHeight: 1 }}>𝕏</span>;
+  }
+  if (name.includes("linkedin")) {
+    return <Linkedin size={size} color="#0077B5" />;
+  }
+  if (name.includes("youtube") || name === "yt") {
+    return <Youtube size={size} color="#FF0000" />;
+  }
+  if (name.includes("semua") || name === "all" || name.includes("globe")) {
+    return <Globe size={size} color="#888888" />;
+  }
+  return <Globe size={size} color="#2D5A86" />;
+}
+
 function CustomDropdown({
   value,
   options,
   onChange,
   renderOption,
-  pill = false,
+  pill = true,
 }: {
   value: string;
   options: any[];
@@ -181,7 +199,7 @@ function CustomDropdown({
           justifyContent: "space-between",
           gap: 12,
           padding: pill ? "10px 20px" : "10px 16px",
-          borderRadius: pill ? 9999 : 12,
+          borderRadius: pill ? "9999px" : "12px",
           border: "1px solid rgba(44,32,22,0.1)",
           background: "white",
           fontSize: 13,
@@ -190,7 +208,24 @@ function CustomDropdown({
           color: "#2C2016",
         }}
       >
-        <span>{displayLabel}</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {getPlatformIcon(displayLabel) ? (
+            <span style={{ display: "flex", alignItems: "center" }}>
+              {getPlatformIcon(displayLabel, 16)}
+            </span>
+          ) : getPlatformIcon(value) ? (
+            <span style={{ display: "flex", alignItems: "center" }}>
+              {getPlatformIcon(value, 16)}
+            </span>
+          ) : activeOption && typeof activeOption !== "string" && activeOption.icon ? (
+            <span style={{ display: "flex", alignItems: "center", color: activeOption.color || "inherit" }}>
+              {React.isValidElement(activeOption.icon)
+                ? React.cloneElement(activeOption.icon as any, { size: 16 })
+                : activeOption.icon}
+            </span>
+          ) : null}
+          <span>{displayLabel}</span>
+        </div>
         <ChevronDown
           size={16}
           color="rgba(44,32,22,0.4)"
@@ -256,9 +291,22 @@ function CustomDropdown({
                 >
                   {renderOption
                     ? renderOption(o)
-                    : typeof o === "string"
-                      ? o
-                      : o.label || o.name}
+                    : (
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        {getPlatformIcon(typeof o === "string" ? o : o.label || o.name || o.id) ? (
+                          <span style={{ display: "flex", alignItems: "center" }}>
+                            {getPlatformIcon(typeof o === "string" ? o : o.label || o.name || o.id, 16)}
+                          </span>
+                        ) : (typeof o !== "string" && o.icon) ? (
+                          <span style={{ display: "flex", alignItems: "center", color: o.color || "inherit" }}>
+                            {React.isValidElement(o.icon)
+                              ? React.cloneElement(o.icon as any, { size: 16 })
+                              : o.icon}
+                          </span>
+                        ) : null}
+                        <span>{typeof o === "string" ? o : o.label || o.name}</span>
+                      </div>
+                    )}
                 </div>
               );
             })}
@@ -296,17 +344,6 @@ const PLATFORMS = [
     color: "#888",
   },
   {
-    id: "meta",
-    name: "Facebook",
-    icon: <Facebook size={18} />,
-    color: "#1877F2",
-    contentTypes: [
-      { id: "feed", label: "Post" },
-      { id: "reel", label: "Reels" },
-      { id: "story", label: "Story" },
-    ],
-  },
-  {
     id: "instagram",
     name: "Instagram",
     icon: <Instagram size={18} />,
@@ -320,19 +357,7 @@ const PLATFORMS = [
   {
     id: "tiktok",
     name: "TikTok",
-    icon: (
-      <div
-        style={{
-          fontWeight: 800,
-          fontSize: 12,
-          display: "flex",
-          alignItems: "center",
-          height: "100%",
-        }}
-      >
-        TT
-      </div>
-    ),
+    icon: <Music size={18} />,
     color: "#000000",
     contentTypes: [
       { id: "video", label: "Video" },
@@ -340,23 +365,32 @@ const PLATFORMS = [
     ],
   },
   {
+    id: "meta",
+    name: "Facebook",
+    icon: <Facebook size={18} />,
+    color: "#1877F2",
+    contentTypes: [
+      { id: "feed", label: "Post" },
+      { id: "reel", label: "Reels" },
+      { id: "story", label: "Story" },
+    ],
+  },
+  {
     id: "threads",
     name: "Threads",
-    icon: (
-      <div
-        style={{
-          fontWeight: 800,
-          fontSize: 12,
-          display: "flex",
-          alignItems: "center",
-          height: "100%",
-        }}
-      >
-        @
-      </div>
-    ),
+    icon: <AtSign size={18} />,
     color: "#000000",
     contentTypes: [{ id: "thread", label: "Thread" }],
+  },
+  {
+    id: "x",
+    name: "X",
+    icon: <span style={{ fontWeight: 900, fontSize: 15, fontFamily: "sans-serif" }}>𝕏</span>,
+    color: "#000000",
+    contentTypes: [
+      { id: "post", label: "Post" },
+      { id: "thread", label: "Thread" },
+    ],
   },
   {
     id: "linkedin",
@@ -414,6 +448,8 @@ export function SocialStudioView({
   const [aiReport, setAiReport] = useState("");
   const [analyticsMetric, setAnalyticsMetric] = useState("reach");
   const [analyticsPlatform, setAnalyticsPlatform] = useState("all");
+  const [audiencePlatform, setAudiencePlatform] = useState("all");
+  const [dashboardPlatform, setDashboardPlatform] = useState("all");
   const [analyticsTimeRange, setAnalyticsTimeRange] = useState("30d");
   const [animatingMessageIndex, setAnimatingMessageIndex] = useState(-1);
   const [calendarPosts, setCalendarPosts] = useState<any[]>([]);
@@ -461,25 +497,20 @@ export function SocialStudioView({
       body: JSON.stringify({ workspaceId })
     }).catch(console.error);
     
-    // Dynamically load firebase to avoid static import errors if not needed everywhere
-    import('./firebase').then(({ db }) => {
-      import('firebase/firestore').then(({ collection, onSnapshot }) => {
-        const accountsRef = collection(db, "workspaces", workspaceId, "connectedAccounts");
-        const unsubscribe = onSnapshot(accountsRef, (snapshot) => {
-          const accounts: Record<string, any> = {};
-          const platforms: string[] = [];
-          snapshot.forEach((doc) => {
-            accounts[doc.id] = doc.data();
-            platforms.push(doc.id);
-          });
-          setConnectedAccountsData(accounts);
-          setConnectedPlatforms(platforms);
-        }, (err) => {
-          console.error("Failed to subscribe to connectedAccounts", err);
-        });
-        return unsubscribe;
+    const accountsRef = collection(db, "workspaces", workspaceId, "connectedAccounts");
+    const unsubscribe = onSnapshot(accountsRef, (snapshot) => {
+      const accounts: Record<string, any> = {};
+      const platforms: string[] = [];
+      snapshot.forEach((doc) => {
+        accounts[doc.id] = doc.data();
+        platforms.push(doc.id);
       });
+      setConnectedAccountsData(accounts);
+      setConnectedPlatforms(platforms);
+    }, (err) => {
+      console.error("Failed to subscribe to connectedAccounts", err);
     });
+    return () => unsubscribe();
   }, [workspaceId]);
 
   useEffect(() => {
@@ -748,7 +779,7 @@ ${configStr}
 
 Data Platform Real-Time:
 Anda saat ini terhubung langsung dengan data referensi user dari platform Hubify.
-Data Source yang terbuka untuk Anda analisis saat ini adalah: ${dataSource === "all" ? "Semua Platform (Social Management & Social Studio)" : dataSource === "social_management" ? "Hanya Tab Social Management (Content Planner dsb)" : "Hanya Tab Social Studio (Real-time Analytics, Inbox, Kompetitor)"}.
+Data Source yang terbuka untuk Anda analisis saat ini adalah: ${dataSource === "all" ? "Semua Platform (Social Management & Social Studio)" : dataSource === "social_management" ? "Hanya Tab Social Management (Calendar dsb)" : "Hanya Tab Social Studio (Real-time Analytics, Inbox, Kompetitor)"}.
 Data User:
 ${strContext}
 
@@ -1211,6 +1242,20 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
   const CalendarMock = () => {
     const days = Array.from({ length: 31 }).map((_, i) => i + 1);
 
+    const realCalendarPosts = (content || []).map((c: any) => {
+      let day = 1;
+      if (c.publishDate) {
+        const parts = c.publishDate.split("-");
+        if (parts.length === 3) day = parseInt(parts[2], 10);
+      }
+      return {
+        ...c,
+        day,
+        type: Array.isArray(c.platform) ? c.platform[0] : (c.platform || "ig"),
+      };
+    });
+    const mergedPosts = [...calendarPosts, ...realCalendarPosts];
+
     return (
       <div
         style={{
@@ -1245,7 +1290,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
           />
         ))}
         {days.map((d) => {
-          const posts = calendarPosts.filter((p: any) => p.day === d);
+          const posts = mergedPosts.filter((p: any) => p.day === d);
           return (
             <div
               key={d}
@@ -1267,56 +1312,74 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                   gap: 6,
                 }}
               >
-                {posts.map((p: any, i) => (
-                  <motion.div
-                    whileHover={{ scale: 1.02 }}
-                    key={i}
-                    onClick={() => setSelectedContent(p)}
-                    style={{
-                      background:
-                        p.type === "ig"
-                          ? "#F8EAF0"
-                          : p.type === "tt"
-                            ? "#f0f0f0"
-                            : "#EBF3FC",
-                      color:
-                        p.type === "ig"
-                          ? "#E4405F"
-                          : p.type === "tt"
-                            ? "#000"
-                            : "#1877F2",
-                      padding: "6px 8px",
-                      borderRadius: 6,
-                      fontSize: 10,
-                      fontWeight: 700,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 6,
-                      cursor: "pointer",
-                    }}
-                  >
-                    {p.type === "ig" && <Instagram size={12} />}
-                    {p.type === "fb" && <Facebook size={12} />}
-                    {p.type === "tt" && (
-                      <span style={{ fontSize: 10, fontWeight: 900 }}>TT</span>
-                    )}
-                    <div
+                {posts.map((p: any, i) => {
+                  const pType = String(p.type || "").trim().toLowerCase();
+                  let blockColor = "#2D5A86";
+                  let blockBg = "#F0F4F8";
+                  
+                  if (pType === "ig" || pType === "instagram") {
+                    blockColor = "#E1306C";
+                    blockBg = "#FDF0F5";
+                  } else if (pType === "fb" || pType === "facebook" || pType === "meta") {
+                    blockColor = "#1877F2";
+                    blockBg = "#EBF3FC";
+                  } else if (pType === "tt" || pType === "tiktok") {
+                    blockColor = "#000000";
+                    blockBg = "#F1F1F1";
+                  } else if (pType === "li" || pType === "linkedin") {
+                    blockColor = "#0077B5";
+                    blockBg = "#E6F0F8";
+                  } else if (pType === "yt" || pType === "youtube") {
+                    blockColor = "#FF0000";
+                    blockBg = "#FFF0F0";
+                  } else if (pType === "x" || pType === "twitter" || pType === "threads") {
+                    blockColor = "#111111";
+                    blockBg = "#F3F3F3";
+                  }
+
+                  return (
+                    <motion.div
+                      whileHover={{ scale: 1.02 }}
+                      key={i}
+                      onClick={() => {
+                        if (onOpenModal) {
+                          onOpenModal(p);
+                        } else {
+                          setSelectedContent(p);
+                        }
+                      }}
                       style={{
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                        flex: 1,
+                        background: blockBg,
+                        color: blockColor,
+                        padding: "6px 8px",
+                        borderRadius: 6,
+                        fontSize: 10,
+                        fontWeight: 700,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                        cursor: "pointer",
                       }}
                     >
-                      {p.title}
-                    </div>
-                    {p.time && (
-                      <div style={{ fontSize: 9, opacity: 0.7, flexShrink: 0 }}>
-                        {p.time}
+                      {getPlatformIcon(p.type, 12)}
+                      <div
+                        style={{
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                          flex: 1,
+                        }}
+                      >
+                        {p.title}
                       </div>
-                    )}
-                  </motion.div>
-                ))}
+                      {p.time && (
+                        <div style={{ fontSize: 9, opacity: 0.7, flexShrink: 0 }}>
+                          {p.time}
+                        </div>
+                      )}
+                    </motion.div>
+                  );
+                })}
               </div>
             </div>
           );
@@ -2263,6 +2326,12 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                 </h2>
                 <div className="flex flex-wrap gap-3 w-full md:w-auto">
                   <CustomDropdown
+                    value={dashboardPlatform}
+                    options={PLATFORMS}
+                    onChange={setDashboardPlatform}
+                    pill
+                  />
+                  <CustomDropdown
                     value={dashTimeRange}
                     options={DASHBOARD_TIME_RANGES}
                     onChange={setDashTimeRange}
@@ -2461,23 +2530,13 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                     value={analyticsPlatform}
                     options={PLATFORMS}
                     onChange={setAnalyticsPlatform}
-                    renderOption={(o) => (
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 8,
-                          fontWeight: 700,
-                        }}
-                      >
-                        {o.icon} <span>{o.name}</span>
-                      </div>
-                    )}
+                    pill={true}
                   />
                   <CustomDropdown
                     value={analyticsTimeRange}
                     options={DASHBOARD_TIME_RANGES}
                     onChange={setAnalyticsTimeRange}
+                    pill={true}
                   />
                 </div>
               </div>
@@ -2770,6 +2829,11 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                     <h3 style={{ fontSize: 18, fontWeight: 800, margin: 0 }}>
                       Data Audiens
                     </h3>
+                    <CustomDropdown
+                      value={audiencePlatform}
+                      options={PLATFORMS}
+                      onChange={setAudiencePlatform}
+                    />
                   </div>
                   <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
                     <div style={{ flex: 1, minWidth: 200 }}>
@@ -2978,14 +3042,14 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               name="Perempuan"
                               fill="var(--theme-primary)"
                               radius={[0, 4, 4, 0]}
-                              barSize={12}
+                              maxBarSize={16}
                             />
                             <Bar
                               dataKey="l"
                               name="Laki-laki"
                               fill="#2C2016"
                               radius={[0, 4, 4, 0]}
-                              barSize={12}
+                              maxBarSize={16}
                             />
                           </BarChart>
                         </ResponsiveContainer>
@@ -3251,6 +3315,11 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                 }}
               >
                 <div style={{ display: "flex", gap: 12 }}>
+                  <CustomDropdown
+                    value={contentPlatform}
+                    options={PLATFORMS}
+                    onChange={setContentPlatform}
+                  />
                   <CustomDropdown
                     value={"Post type"}
                     options={[{ id: "Post type", label: "Post type" }]}
@@ -3885,7 +3954,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                   <button
                     onClick={() => {
                       alert(
-                        "Fitur AI Content Planner sedang menjalankan mockup auto-assign.",
+                        "Fitur AI Calendar sedang menjalankan mockup auto-assign.",
                       );
                       setCalendarPosts([
                         ...calendarPosts,
@@ -3923,18 +3992,6 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                     value={contentPlatform}
                     options={PLATFORMS}
                     onChange={setContentPlatform}
-                    renderOption={(o: any) => (
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 8,
-                          fontWeight: 700,
-                        }}
-                      >
-                        {o.icon} <span>{o.name}</span>
-                      </div>
-                    )}
                   />
                   <div
                     style={{
@@ -4030,10 +4087,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                 </div>
                 <CustomDropdown
                   value={contentPlatform}
-                  options={[
-                    { id: "ig", label: "Instagram" },
-                    { id: "tt", label: "TikTok" },
-                  ]}
+                  options={PLATFORMS}
                   onChange={setContentPlatform}
                 />
               </div>

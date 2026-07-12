@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from "motion/react";
 import { useState, useEffect, useRef } from "react";
+import { db, collection, query, where, onSnapshot, doc, updateDoc, addDoc } from "./firebase";
 import {
   Calendar,
   Layout,
@@ -38,6 +39,9 @@ import {
   Download,
   Sparkles,
   Home,
+  Layers,
+  TrendingUp,
+  Printer,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { eng, fmt, YEARS, B, I, TAB, MONTHS, CustomDropdown } from "./data";
@@ -47,6 +51,7 @@ import {
   NotificationPanel,
 } from "./NotificationSystem";
 import { MenuToggle } from "./MenuToggle";
+import { ColorPickerSelect } from "./components/ColorPickerSelect";
 
 export function Header({ profile }: any) {
   const [time, setTime] = useState(new Date());
@@ -398,37 +403,31 @@ function ChatSupportPanel({
   const [allTickets, setAllTickets] = useState<any[]>([]);
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
   const [initialLoading, setInitialLoading] = useState(true);
-
   useEffect(() => {
     let unsub: any;
-    import("./firebase").then(
-      ({ db, collection, query, where, onSnapshot }) => {
-        const q = query(
-          collection(db, "tickets"),
-          where("userId", "==", userId),
+    const q = query(
+      collection(db, "tickets"),
+      where("userId", "==", userId),
+    );
+    unsub = onSnapshot(
+      q,
+      (snap) => {
+        const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        list.sort(
+          (a: any, b: any) =>
+            new Date(b.updatedAt).getTime() -
+            new Date(a.updatedAt).getTime(),
         );
-        unsub = onSnapshot(
-          q,
-          (snap) => {
-            const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-            list.sort(
-              (a: any, b: any) =>
-                new Date(b.updatedAt).getTime() -
-                new Date(a.updatedAt).getTime(),
-            );
-            setAllTickets(list);
-            setInitialLoading(false);
-
-            // Sync selected ticket if it's updated in thread view
-            if (selectedTicket) {
-              const current = list.find((t) => t.id === selectedTicket.id);
-              if (current) setSelectedTicket(current);
-            }
-          },
-          (err) => {
-            console.warn("Tickets onSnapshot error:", err);
-          },
-        );
+        setAllTickets(list);
+        setInitialLoading(false);
+        // Sync selected ticket if it's updated in thread view
+        if (selectedTicket) {
+          const current = list.find((t) => t.id === selectedTicket.id);
+          if (current) setSelectedTicket(current);
+        }
+      },
+      (err) => {
+        console.warn("Tickets onSnapshot error:", err);
       },
     );
     return () => {
@@ -441,7 +440,7 @@ function ChatSupportPanel({
     const text = el.value;
     if (!text || !selectedTicket) return;
     try {
-      const { doc, updateDoc, db } = await import("./firebase");
+      
       await updateDoc(doc(db, "tickets", selectedTicket.id), {
         messages: [
           ...(selectedTicket.messages || []),
@@ -459,7 +458,7 @@ function ChatSupportPanel({
     if (!ticketMsg) return;
     setLoading(true);
     try {
-      const { collection, addDoc, db } = await import("./firebase");
+      
       await addDoc(collection(db, "tickets"), {
         userId,
         userEmail,
@@ -1082,7 +1081,7 @@ export function Sidebar({
     if (id.startsWith("ticket_")) {
       const dbId = id.replace("ticket_", "");
       try {
-        const { doc, updateDoc, db } = await import("./firebase");
+        
         await updateDoc(doc(db, "tickets", dbId), { readByUser: true });
         // Also open chat support so they can reply
         setShowNotifPanel(false);
@@ -1116,27 +1115,23 @@ export function Sidebar({
         onInviteAction={handleInviteAction}
       />
       <motion.div
-        onMouseEnter={() => {
-          setOpen(true);
-        }}
-        onMouseLeave={() => {
-          if (tab === "social-hub-ai") setOpen(false);
-        }}
         initial={false}
         animate={{ width: open ? 230 : 64 }}
         transition={{ duration: 0.3, ease: "easeOut" }}
         style={{
-          background: "var(--theme-sidebar)",
+          background: "transparent",
           color: "#FAFAFA",
           display: "flex",
           flexDirection: "column",
-          borderRight: "1px solid rgba(255,255,255,0.05)",
+          borderRadius: "0px",
           height: "100vh",
+          margin: "0px",
           position: "sticky",
-          top: 0,
+          top: "0px",
           zIndex: 200,
           overflow: "visible",
           whiteSpace: "nowrap",
+          boxShadow: "none",
         }}
       >
         <div
@@ -1241,32 +1236,31 @@ export function Sidebar({
             </div>
 
             {/* Overlapping toggle button */}
-            {open && (
-              <button
-                onClick={() => setOpen(false)}
-                className="hover-scale btn-hover"
-                style={{
-                  position: "absolute",
-                  right: -12,
-                  top: 32,
-                  width: 24,
-                  height: 24,
-                  borderRadius: "50%",
-                  background: "var(--theme-primary)",
-                  color: "white",
-                  border: "2px solid var(--theme-sidebar)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  cursor: "pointer",
-                  padding: 0,
-                  zIndex: 300,
-                  transition: "all 0.3s ease",
-                }}
-              >
-                <ChevronLeft size={14} />
-              </button>
-            )}
+            <button
+              onClick={() => setOpen(!open)}
+              className="hover-scale btn-hover shadow-md"
+              style={{
+                position: "absolute",
+                right: -12,
+                top: 32,
+                width: 24,
+                height: 24,
+                borderRadius: "50%",
+                background: "var(--theme-primary)",
+                color: "white",
+                border: "2px solid var(--theme-sidebar)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                padding: 0,
+                zIndex: 300,
+                transition: "all 0.3s ease",
+              }}
+              title={open ? "Sembunyikan Sidebar" : "Tampilkan Sidebar"}
+            >
+              {open ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
+            </button>
             {open && (
               <div style={{ position: "absolute", right: 28 }}>
                 <button
@@ -1954,23 +1948,24 @@ export function Sidebar({
                                           flex: 1,
                                         }}
                                       >
-                                        Content Planner
+                                        Calendar
                                       </motion.span>
                                     )}
                                   </AnimatePresence>
                                 </button>
                               )}
+                              {/* 1. Overview */}
                               <button
                                 className="hover-scale"
                                 onClick={() => {
-                                  setTab("analytics");
+                                  setTab("analytics-overview");
                                   if (!open) setOpen(true);
                                 }}
                                 style={{
                                   width: "100%",
                                   textAlign: "left",
                                   background:
-                                    tab === "analytics"
+                                    tab === "analytics-overview" || tab === "analytics"
                                       ? "rgba(255,255,255,0.1)"
                                       : "transparent",
                                   border: "none",
@@ -1979,7 +1974,7 @@ export function Sidebar({
                                     ? "flex-start"
                                     : "center",
                                   color:
-                                    tab === "analytics"
+                                    tab === "analytics-overview" || tab === "analytics"
                                       ? "white"
                                       : "rgba(255,255,255,0.7)",
                                   borderRadius: 12,
@@ -2001,7 +1996,7 @@ export function Sidebar({
                                     flexShrink: 0,
                                   }}
                                 >
-                                  <PieChart size={18} />
+                                  <Activity size={18} />
                                 </div>
                                 <AnimatePresence>
                                   {open && (
@@ -2015,11 +2010,198 @@ export function Sidebar({
                                         flex: 1,
                                       }}
                                     >
-                                      Analitik
+                                      Overview
                                     </motion.span>
                                   )}
                                 </AnimatePresence>
                               </button>
+
+                              {/* 2. Kinerja Konten */}
+                              <button
+                                className="hover-scale"
+                                onClick={() => {
+                                  setTab("analytics-content");
+                                  if (!open) setOpen(true);
+                                }}
+                                style={{
+                                  width: "100%",
+                                  textAlign: "left",
+                                  background:
+                                    tab === "analytics-content"
+                                      ? "rgba(255,255,255,0.1)"
+                                      : "transparent",
+                                  border: "none",
+                                  padding: open ? "8px 12px" : "10px 0",
+                                  justifyContent: open
+                                    ? "flex-start"
+                                    : "center",
+                                  color:
+                                    tab === "analytics-content"
+                                      ? "white"
+                                      : "rgba(255,255,255,0.7)",
+                                  borderRadius: 12,
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: open ? 12 : 0,
+                                  fontSize: 12,
+                                  fontWeight: 700,
+                                  cursor: "pointer",
+                                  transition: "all 0.3s ease",
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    width: 32,
+                                    display: "flex",
+                                    justifyContent: "center",
+                                    alignItems: "center",
+                                    flexShrink: 0,
+                                  }}
+                                >
+                                  <Layers size={18} />
+                                </div>
+                                <AnimatePresence>
+                                  {open && (
+                                    <motion.span
+                                      initial={{ opacity: 0, width: 0 }}
+                                      animate={{ opacity: 1, width: "auto" }}
+                                      exit={{ opacity: 0, width: 0 }}
+                                      style={{
+                                        overflow: "hidden",
+                                        whiteSpace: "nowrap",
+                                        flex: 1,
+                                      }}
+                                    >
+                                      Content
+                                    </motion.span>
+                                  )}
+                                </AnimatePresence>
+                              </button>
+
+                              {/* 3. Tren & Pertumbuhan */}
+                              <button
+                                className="hover-scale"
+                                onClick={() => {
+                                  setTab("analytics-trends");
+                                  if (!open) setOpen(true);
+                                }}
+                                style={{
+                                  width: "100%",
+                                  textAlign: "left",
+                                  background:
+                                    tab === "analytics-trends"
+                                      ? "rgba(255,255,255,0.1)"
+                                      : "transparent",
+                                  border: "none",
+                                  padding: open ? "8px 12px" : "10px 0",
+                                  justifyContent: open
+                                    ? "flex-start"
+                                    : "center",
+                                  color:
+                                    tab === "analytics-trends"
+                                      ? "white"
+                                      : "rgba(255,255,255,0.7)",
+                                  borderRadius: 12,
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: open ? 12 : 0,
+                                  fontSize: 12,
+                                  fontWeight: 700,
+                                  cursor: "pointer",
+                                  transition: "all 0.3s ease",
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    width: 32,
+                                    display: "flex",
+                                    justifyContent: "center",
+                                    alignItems: "center",
+                                    flexShrink: 0,
+                                  }}
+                                >
+                                  <TrendingUp size={18} />
+                                </div>
+                                <AnimatePresence>
+                                  {open && (
+                                    <motion.span
+                                      initial={{ opacity: 0, width: 0 }}
+                                      animate={{ opacity: 1, width: "auto" }}
+                                      exit={{ opacity: 0, width: 0 }}
+                                      style={{
+                                        overflow: "hidden",
+                                        whiteSpace: "nowrap",
+                                        flex: 1,
+                                      }}
+                                    >
+                                      Trends
+                                    </motion.span>
+                                  )}
+                                </AnimatePresence>
+                              </button>
+
+                              {/* 4. Waktu Aktivitas */}
+                              <button
+                                className="hover-scale"
+                                onClick={() => {
+                                  setTab("analytics-activity");
+                                  if (!open) setOpen(true);
+                                }}
+                                style={{
+                                  width: "100%",
+                                  textAlign: "left",
+                                  background:
+                                    tab === "analytics-activity"
+                                      ? "rgba(255,255,255,0.1)"
+                                      : "transparent",
+                                  border: "none",
+                                  padding: open ? "8px 12px" : "10px 0",
+                                  justifyContent: open
+                                    ? "flex-start"
+                                    : "center",
+                                  color:
+                                    tab === "analytics-activity"
+                                      ? "white"
+                                      : "rgba(255,255,255,0.7)",
+                                  borderRadius: 12,
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: open ? 12 : 0,
+                                  fontSize: 12,
+                                  fontWeight: 700,
+                                  cursor: "pointer",
+                                  transition: "all 0.3s ease",
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    width: 32,
+                                    display: "flex",
+                                    justifyContent: "center",
+                                    alignItems: "center",
+                                    flexShrink: 0,
+                                  }}
+                                >
+                                  <Users size={18} />
+                                </div>
+                                <AnimatePresence>
+                                  {open && (
+                                    <motion.span
+                                      initial={{ opacity: 0, width: 0 }}
+                                      animate={{ opacity: 1, width: "auto" }}
+                                      exit={{ opacity: 0, width: 0 }}
+                                      style={{
+                                        overflow: "hidden",
+                                        whiteSpace: "nowrap",
+                                        flex: 1,
+                                      }}
+                                    >
+                                      Audience
+                                    </motion.span>
+                                  )}
+                                </AnimatePresence>
+                              </button>
+
                             </motion.div>
                           )}
                         </AnimatePresence>
@@ -3372,51 +3554,18 @@ function MultiSelectFilter({
                         onClick={(e) => e.stopPropagation()}
                       >
                         {!isStr && (
-                          <div
-                            style={{
-                              position: "relative",
-                              width: 22,
-                              height: 22,
-                              borderRadius: "50%",
-                              border: "1px solid #E5E7EB",
-                              overflow: "hidden",
-                              cursor: "pointer",
-                              flexShrink: 0,
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              background: color || "#2C2016",
-                            }}
-                          >
-                            <input
-                              type="color"
-                              value={color || "#2C2016"}
-                              onChange={(e) => {
+                          <div style={{ marginRight: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <ColorPickerSelect 
+                              value={color || "#2C2016"} 
+                              onChange={(val) => {
                                 const newOpts = [...localOptions];
                                 newOpts[i] = {
                                   ...newOpts[i],
-                                  color: e.target.value,
+                                  color: val,
                                 };
                                 setLocalOptions(newOpts);
                               }}
-                              style={{
-                                position: "absolute",
-                                opacity: 0,
-                                width: "100%",
-                                height: "100%",
-                                cursor: "pointer",
-                              }}
-                              onClick={(e) => e.stopPropagation()}
-                            />
-                            <div
-                              style={{
-                                width: 10,
-                                height: 10,
-                                borderRadius: "50%",
-                                background: "white",
-                                opacity: 0.7,
-                                pointerEvents: "none",
-                              }}
+                              size={22}
                             />
                           </div>
                         )}

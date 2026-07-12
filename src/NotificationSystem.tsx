@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Bell, CalendarClock, PartyPopper, X, ChevronDown, ChevronUp, Archive, Trash2, HelpCircle, CheckCheck } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { db, collection, query, onSnapshot, orderBy, where, collectionGroup, doc, updateDoc, deleteDoc } from "./firebase";
 
 export function useNotifications(userProfile: any) {
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -88,7 +89,7 @@ export function useNotifications(userProfile: any) {
     
     let initialGlobalLoaded = false;
 
-    import("./firebase").then(({ db, collection, query, onSnapshot, orderBy, where, collectionGroup }) => {
+    
       unsubGlobal = onSnapshot(query(collection(db, "global_notifications"), orderBy("createdAt", "desc")), (snap) => {
         if (!isMounted) return;
         
@@ -271,7 +272,6 @@ export function useNotifications(userProfile: any) {
          // Attach to window so we can clean it up
          (window as any)._unsubPersonal = unsubPersonal;
       }
-    });
 
     // Ensure state receives the local notifs first
     setNotifications(prev => applyFilters([...prev.filter(p => p.id !== "pro_active" && p.id !== "welcome" && p.id !== "expired" && p.id !== "expiring_soon"), ...notifs]));
@@ -287,7 +287,7 @@ export function useNotifications(userProfile: any) {
 
   const handleInviteAction = async (workspaceId: string, memberId: string, action: 'accept'|'reject') => {
       try {
-          const { doc, updateDoc, deleteDoc, db } = await import("./firebase");
+          
           const ref = doc(db, "workspaces", workspaceId, "members", memberId);
           if (action === "accept") {
               await updateDoc(ref, { status: "active" });

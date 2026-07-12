@@ -1,8 +1,35 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid } from "recharts";
 import * as XLSX from "xlsx";
 import { motion, AnimatePresence } from "motion/react";
-import { ChevronDown, Pencil, Plus, Trash2 } from "lucide-react";
+import { ChevronDown, Pencil, Plus, Trash2, Instagram, Facebook, Linkedin, AtSign, Music, Globe, Save } from "lucide-react";
+import { ColorPickerSelect } from "./components/ColorPickerSelect";
+
+export function getPlatformIcon(platformName: string, size = 16) {
+  const name = String(platformName || "").trim().toLowerCase();
+  if (name.includes("instagram") || name === "ig") {
+    return <Instagram size={size} color="#E1306C" />;
+  }
+  if (name.includes("tiktok") || name === "tt") {
+    return <Music size={size} color="#000000" />;
+  }
+  if (name.includes("facebook") || name === "fb" || name === "meta") {
+    return <Facebook size={size} color="#1877F2" />;
+  }
+  if (name.includes("threads")) {
+    return <AtSign size={size} color="#111111" />;
+  }
+  if (name === "x" || name.includes("twitter")) {
+    return <span style={{ fontWeight: 900, fontSize: size, fontFamily: "sans-serif", color: "#111111", display: "inline-flex", alignItems: "center", justifyContent: "center", width: size, height: size, lineHeight: 1 }}>𝕏</span>;
+  }
+  if (name.includes("linkedin")) {
+    return <Linkedin size={size} color="#0077B5" />;
+  }
+  if (name.includes("semua") || name === "all") {
+    return <Globe size={size} color="#888888" />;
+  }
+  return null;
+}
 
 export const htmlToPlainText = (html: any) => {
   if (!html || typeof html !== 'string') return "";
@@ -59,10 +86,10 @@ export function CustomDropdown({ value, options = [], onChange, dark = false, st
     rawOpts.forEach((opt, i) => {
         const orig = originalOptionsMap[i];
         if (orig) {
-            const oldName = typeof orig === 'string' ? orig : orig.name;
-            const newName = typeof opt === 'string' ? opt : opt.name;
-            if (oldName && newName && oldName !== newName) {
-                renames[oldName] = newName;
+            const oldId = typeof orig === 'string' ? orig : orig.id || orig.name;
+            const newId = typeof opt === 'string' ? opt : opt.id || opt.name;
+            if (oldId && newId && oldId !== newId) {
+                renames[oldId] = newId;
             }
         }
     });
@@ -151,7 +178,13 @@ export function CustomDropdown({ value, options = [], onChange, dark = false, st
         }}
       >
         <div style={{display: "flex", alignItems: "center", gap: 8, overflow: "hidden", flex: 1}} title={typeof displayLabel === 'string' ? displayLabel : ''}>
-           {activeColor && !dark && <div style={{width:8, height:8, borderRadius:"50%", background:activeColor, flexShrink:0}}/>}
+           {getPlatformIcon(displayLabel) ? (
+             <span style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
+               {getPlatformIcon(displayLabel, 16)}
+             </span>
+           ) : (
+             activeColor && !dark && <div style={{width:8, height:8, borderRadius:"50%", background:activeColor, flexShrink:0}}/>
+           )}
            <span style={{whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", lineHeight: "1.4"}}>{prefix}{displayLabel}</span>
          </div>
          <ChevronDown size={14} style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'all 0.2s', opacity: 0.6, flexShrink: 0 }} />
@@ -169,7 +202,7 @@ export function CustomDropdown({ value, options = [], onChange, dark = false, st
                 onMouseDown={(e) => e.stopPropagation()}
               >
                 <div style={{fontSize: 11, fontWeight: 800, color: "#4B5563", textTransform: "uppercase", letterSpacing: 0.8, paddingBottom: 6, borderBottom: "1px solid #F3F4F6", display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4}}>
-                  <span>Edit Opsi (Autosave)</span>
+                  <span>Edit Opsi</span>
                 </div>
                 <div style={{display: "flex", flexDirection: "column", gap: 6, maxHeight: "250px", overflowY: "auto", paddingRight: 2}}>
 
@@ -181,19 +214,16 @@ export function CustomDropdown({ value, options = [], onChange, dark = false, st
                     return (
                       <div key={i} style={{display: "flex", alignItems: "center", gap: 6}} onClick={(e) => e.stopPropagation()}>
                         {!isStr && (
-                          <div style={{position: "relative", width: 22, height: 22, borderRadius: "50%", border: "1px solid #E5E7EB", overflow: "hidden", cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: color || "#2C2016"}}>
-                            <input 
-                              type="color" 
+                          <div style={{ marginRight: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <ColorPickerSelect 
                               value={color || "#2C2016"} 
-                              onChange={(e) => {
+                              onChange={(val) => {
                                 const newOpts = [...localOptions];
-                                newOpts[i] = { ...newOpts[i], color: e.target.value };
+                                newOpts[i] = { ...newOpts[i], color: val };
                                 setLocalOptions(newOpts);
                               }}
-                              style={{position: "absolute", opacity: 0, width: "100%", height: "100%", cursor: "pointer"}}
-                              onClick={(e) => e.stopPropagation()}
+                              size={22}
                             />
-                            <div style={{width: 10, height: 10, borderRadius: "50%", background: "white", opacity: 0.7, pointerEvents: "none"}} />
                           </div>
                         )}
                         <input 
@@ -201,7 +231,10 @@ export function CustomDropdown({ value, options = [], onChange, dark = false, st
                           onChange={(e) => {
                             const newOpts = [...localOptions];
                             if (isStr) newOpts[i] = e.target.value;
-                            else newOpts[i] = { ...newOpts[i], name: e.target.value, id: e.target.value };
+                            else {
+                              newOpts[i] = { ...newOpts[i], name: e.target.value, id: e.target.value };
+                              if (newOpts[i].label) newOpts[i].label = e.target.value;
+                            }
                             setLocalOptions(newOpts);
                           }}
                           placeholder="Nama opsi..."
@@ -277,10 +310,21 @@ export function CustomDropdown({ value, options = [], onChange, dark = false, st
                 >
                   <Plus size={12}/> Tambah Opsi
                 </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSaveEdit();
+                  }}
+                  style={{display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "8px", background: "var(--theme-primary)", border: "none", borderRadius: 8, fontSize: 11, fontWeight: 700, color: "#FFFFFF", cursor: "pointer", marginTop: 4, transition: "all 0.2s"}}
+                  onMouseEnter={(e) => e.currentTarget.style.opacity = "0.9"}
+                  onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
+                >
+                  <Save size={12}/> Simpan
+                </button>
               </div>
             ) : (
               <>
-                {options.map((o, i) => {
+                {localOptions.map((o, i) => {
                   const val = typeof o === 'string' ? o : o.id || o.name || o;
                   const isSelected = multiple ? valuesArray.includes(val) : val === value;
                   const label = typeof o === 'string' ? o : o.label || o.name || o;
@@ -322,7 +366,13 @@ export function CustomDropdown({ value, options = [], onChange, dark = false, st
                           <svg width="14" height="14" viewBox="0 0 12 12" fill="none"><path d="M10 3L4.5 8.5L2 6" stroke={color || "var(--theme-primary)"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                         </div>
                       )}
-                      {color && <div style={{width:10, height:10, borderRadius:"50%", background:color, flexShrink: 0}}/>}
+                      {getPlatformIcon(label) ? (
+                        <span style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
+                          {getPlatformIcon(label, 16)}
+                        </span>
+                      ) : (
+                        color && <div style={{width:10, height:10, borderRadius:"50%", background:color, flexShrink: 0}}/>
+                      )}
                       <span style={{flex: 1, wordBreak: "break-word"}}>{prefix}{label}</span>
                     </div>
                   );
@@ -384,10 +434,12 @@ export const DP = [
   {name:"Pillar 3", color:"#2D7A5E",light:"#E5F4EE"}
 ];
 export const DPL = [
-  {name:"Feed",   color:"#2C2016"},
-  {name:"Reels",  color:"#3B82F6"},
-  {name:"Stories",color:"#A67C1C"},
-  {name:"TikTok", color:"#2D7A5E"},
+  {name:"Instagram", color:"#E1306C"},
+  {name:"TikTok",    color:"#000000"},
+  {name:"Facebook",  color:"#1877F2"},
+  {name:"Threads",   color:"#111111"},
+  {name:"X",         color:"#111111"},
+  {name:"LinkedIn",  color:"#0077B5"},
 ];
 export const DPIC = [
   {name: "PIC 1", color: "#2B4C7E"},

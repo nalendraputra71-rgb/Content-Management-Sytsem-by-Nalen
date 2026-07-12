@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import { auth, callAiWithQuota } from "./firebase";
+import { auth, callAiWithQuota, db } from "./firebase";
+import { doc, updateDoc, onSnapshot, collection, query, where, getDocs, limit } from "firebase/firestore";
 import { motion, AnimatePresence } from "motion/react";
 import Markdown from "react-markdown";
 import remarkBreaks from "remark-breaks";
@@ -72,12 +73,18 @@ import {
   Check,
   AlertTriangle,
   PanelRight,
+  Globe,
+  Send,
   Maximize2,
   Link2,
   UserPlus,
   MessageSquare,
   PlayCircle,
-  Wallet
+  Wallet,
+  Search,
+  AtSign,
+  X,
+  UserCheck
 } from "lucide-react";
 
 const getMetricIcon = (k: string, color?: string, size = 14) => {
@@ -180,6 +187,315 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
   const [editingFieldRight, setEditingFieldRight] = useState<string | null>(null);
   const activeFieldRef = useRef<HTMLDivElement | null>(null);
 
+  // Inline comment states
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
+  const [showResolvedInSection, setShowResolvedInSection] = useState<Record<string, boolean>>({});
+
+  // Real-time snapshot listener for editor's comments sync
+  useEffect(() => {
+    if (!d.id || !d.workspaceId) return;
+    const docRef = doc(db, "workspaces", d.workspaceId, "content", d.id);
+    const unsubscribe = onSnapshot(docRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (data.comments) {
+          setD((prev: any) => {
+            if (JSON.stringify(prev.comments) !== JSON.stringify(data.comments)) {
+              return { ...prev, comments: data.comments };
+            }
+            return prev;
+          });
+        }
+      }
+    }, (err) => {
+      console.error("Error listening to real-time comments:", err);
+    });
+    return () => unsubscribe();
+  }, [d.id, d.workspaceId]);
+
+  const handleAddSectionComment = async (sectionId: string, commentText: string) => {
+    if (!commentText.trim() || !d.id || !d.workspaceId) return;
+
+    try {
+      const authorName = auth.currentUser?.displayName || "Kreator";
+      const updatedComments = [
+        ...(d.comments || []),
+        {
+          id: Math.random().toString(36).substring(2, 9),
+          name: authorName,
+          content: commentText.trim(),
+          createdAt: new Date().toISOString(),
+          sectionId,
+          resolved: false
+        }
+      ];
+
+      set("comments", updatedComments);
+      const docRef = doc(db, "workspaces", d.workspaceId, "content", d.id);
+      await updateDoc(docRef, { comments: updatedComments });
+    } catch (err: any) {
+      console.error("Failed to add section comment in editor:", err);
+    }
+  };
+
+  const handleResolveComment = async (commentId: string) => {
+    if (!d.id || !d.workspaceId) return;
+    try {
+      const updatedComments = (d.comments || []).map((c: any) => 
+        c.id === commentId ? { ...c, resolved: true } : c
+      );
+
+      set("comments", updatedComments);
+      const docRef = doc(db, "workspaces", d.workspaceId, "content", d.id);
+      await updateDoc(docRef, { comments: updatedComments });
+    } catch (err: any) {
+      console.error("Failed to resolve comment in editor:", err);
+    }
+  };
+
+  const handleReopenComment = async (commentId: string) => {
+    if (!d.id || !d.workspaceId) return;
+    try {
+      const updatedComments = (d.comments || []).map((c: any) => 
+        c.id === commentId ? { ...c, resolved: false } : c
+      );
+
+      set("comments", updatedComments);
+      const docRef = doc(db, "workspaces", d.workspaceId, "content", d.id);
+      await updateDoc(docRef, { comments: updatedComments });
+    } catch (err: any) {
+      console.error("Failed to reopen comment in editor:", err);
+    }
+  };
+
+  const renderSectionCommentBadge = (sectionKey: string) => {
+    const commentsList = d.comments || [];
+    const count = commentsList.filter((c: any) => c.sectionId === sectionKey && !c.resolved).length;
+    if (count === 0) return null;
+    const isOpen = !!openSections[sectionKey];
+
+    return (
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpenSections(prev => ({ ...prev, [sectionKey]: !prev[sectionKey] }));
+        }}
+        style={{
+          marginLeft: "auto",
+          display: "flex",
+          alignItems: "center",
+          gap: "6px",
+          padding: "4px 10px",
+          borderRadius: "10px",
+          fontSize: "10px",
+          fontWeight: 800,
+          border: count > 0 ? "1px solid rgba(217, 119, 6, 0.3)" : "1px solid rgba(0, 0, 0, 0.05)",
+          background: count > 0 ? "#FFFBEB" : isOpen ? "#EFF6FF" : "rgba(0,0,0,0.02)",
+          color: count > 0 ? "#D97706" : isOpen ? "#2563EB" : "#9CA3AF",
+          cursor: "pointer",
+          textTransform: "uppercase",
+          transition: "all 0.2s"
+        }}
+        title={`${count} komentar aktif.`}
+      >
+        <MessageSquare size={11} />
+        <span>{count > 0 ? `${count} Komen` : "Komen"}</span>
+      </button>
+    );
+  };
+
+  const renderInlineCommentThread = (sectionKey: string) => {
+    const commentsList = d.comments || [];
+    const sectionComments = commentsList.filter((c: any) => c.sectionId === sectionKey);
+    if (sectionComments.length === 0) return null;
+    const unresolvedComments = sectionComments.filter((c: any) => !c.resolved);
+    const resolvedComments = sectionComments.filter((c: any) => c.resolved);
+    const isOpen = !!openSections[sectionKey];
+    const showResolved = !!showResolvedInSection[sectionKey];
+
+    return (
+      <div style={{ marginTop: "14px", borderTop: "1px dashed rgba(0,0,0,0.06)", paddingTop: "12px" }}>
+        {/* Toggle bar */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
+          <span style={{ fontSize: "10px", fontWeight: 800, color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.05em", display: "flex", alignItems: "center", gap: "4px" }}>
+            <MessageSquare size={12} style={{ color: "#2563EB" }} />
+            Komentar Bagian Ini ({unresolvedComments.length})
+          </span>
+          <button
+            type="button"
+            onClick={() => setOpenSections(prev => ({ ...prev, [sectionKey]: !prev[sectionKey] }))}
+            style={{
+              background: "none",
+              border: "none",
+              fontSize: "10px",
+              fontWeight: 800,
+              color: "#2563EB",
+              cursor: "pointer",
+              textTransform: "uppercase"
+            }}
+          >
+            {isOpen ? "Sembunyikan" : "Tampilkan"}
+          </button>
+        </div>
+
+        <AnimatePresence>
+          {isOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              style={{ overflow: "hidden", display: "flex", flexDirection: "column", gap: "8px" }}
+            >
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                {unresolvedComments.length === 0 && resolvedComments.length === 0 ? (
+                  <p style={{ fontSize: "11px", color: "#9CA3AF", fontStyle: "italic", textAlign: "center", padding: "12px", background: "rgba(0,0,0,0.01)", borderRadius: "12px", border: "1px dashed rgba(0,0,0,0.05)" }}>
+                    Belum ada komentar di bagian ini.
+                  </p>
+                ) : (
+                  unresolvedComments.map((comment: any) => (
+                    <div key={comment.id} style={{ position: "relative", padding: "10px 12px", borderRadius: "12px", background: "rgba(0,0,0,0.02)", border: "1px solid rgba(0,0,0,0.02)", display: "flex", flexDirection: "column", gap: "4px" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span style={{ fontSize: "11px", fontWeight: 800, color: "#111827" }}>{comment.name}</span>
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                          <span style={{ fontSize: "9px", color: "#9CA3AF", fontWeight: 700 }}>
+                            {comment.createdAt ? new Date(comment.createdAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) : ""}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleResolveComment(comment.id)}
+                            style={{
+                              background: "rgba(16, 185, 129, 0.1)",
+                              border: "none",
+                              color: "#10B981",
+                              width: "18px",
+                              height: "18px",
+                              borderRadius: "50%",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              cursor: "pointer",
+                              transition: "all 0.2s"
+                            }}
+                            title="Selesaikan Komentar (Resolve)"
+                          >
+                            <Check size={10} style={{ strokeWidth: 3 }} />
+                          </button>
+                        </div>
+                      </div>
+                      <p style={{ fontSize: "11px", color: "#4B5563", margin: 0, lineHeight: 1.4, whiteSpace: "pre-wrap" }}>{comment.content}</p>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Resolved comments collapsible list */}
+              {resolvedComments.length > 0 && (
+                <div style={{ borderTop: "1px solid rgba(0,0,0,0.04)", paddingTop: "8px" }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowResolvedInSection(prev => ({ ...prev, [sectionKey]: !prev[sectionKey] }))}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      fontSize: "9px",
+                      fontWeight: 800,
+                      color: "#9CA3AF",
+                      cursor: "pointer",
+                      textTransform: "uppercase"
+                    }}
+                  >
+                    {showResolved ? "Sembunyikan" : "Tampilkan"} {resolvedComments.length} komentar diselesaikan
+                  </button>
+
+                  {showResolved && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "6px", paddingLeft: "8px", borderLeft: "2px solid rgba(0,0,0,0.04)" }}>
+                      {resolvedComments.map((comment: any) => (
+                        <div key={comment.id} style={{ opacity: 0.6, padding: "8px 10px", borderRadius: "10px", background: "rgba(0,0,0,0.01)", border: "1px solid rgba(0,0,0,0.01)", display: "flex", flexDirection: "column", gap: "2px" }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <span style={{ fontSize: "11px", fontWeight: 800, color: "#9CA3AF", textDecoration: "line-through" }}>{comment.name}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleReopenComment(comment.id)}
+                              style={{
+                                background: "none",
+                                border: "none",
+                                fontSize: "9px",
+                                fontWeight: 800,
+                                color: "#2563EB",
+                                cursor: "pointer"
+                              }}
+                            >
+                              Buka Kembali
+                            </button>
+                          </div>
+                          <p style={{ fontSize: "11px", color: "#9CA3AF", margin: 0, textDecoration: "line-through", whiteSpace: "pre-wrap" }}>{comment.content}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Reply field */}
+              <div style={{ display: "flex", gap: "6px", marginTop: "4px" }}>
+                <textarea
+                  rows={1}
+                  required
+                  placeholder="Ketik balasan Anda (Enter untuk kirim)..."
+                  id={`reply-${sectionKey}`}
+                  style={{
+                    flex: 1,
+                    background: "rgba(0,0,0,0.03)",
+                    border: "none",
+                    outline: "none",
+                    borderRadius: "10px",
+                    padding: "8px 12px",
+                    fontSize: "11px",
+                    fontWeight: 500,
+                    resize: "none"
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      const val = (e.target as HTMLTextAreaElement).value;
+                      if (val.trim()) {
+                        handleAddSectionComment(sectionKey, val);
+                        (e.target as HTMLTextAreaElement).value = "";
+                      }
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const txtEl = document.getElementById(`reply-${sectionKey}`) as HTMLTextAreaElement;
+                    if (txtEl && txtEl.value.trim()) {
+                      handleAddSectionComment(sectionKey, txtEl.value);
+                      txtEl.value = "";
+                    }
+                  }}
+                  style={{
+                    background: "#2563EB",
+                    color: "#FFFFFF",
+                    border: "none",
+                    borderRadius: "10px",
+                    padding: "0 12px",
+                    fontSize: "11px",
+                    fontWeight: 700,
+                    cursor: "pointer"
+                  }}
+                >
+                  Kirim
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    );
+  };
+
   const [isReady, setIsReady] = useState(false);
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -188,11 +504,17 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
     return () => clearTimeout(timer);
   }, []);
 
+  const [showShareDropdown, setShowShareDropdown] = useState(false);
+  const shareDropdownRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (activeFieldRef.current && !activeFieldRef.current.contains(event.target as Node)) {
         setEditingFieldLeft(null);
         setEditingFieldRight(null);
+      }
+      if (shareDropdownRef.current && !shareDropdownRef.current.contains(event.target as Node)) {
+        setShowShareDropdown(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -201,6 +523,12 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
 
   const [copiedBrief, setCopiedBrief] = useState(false);
   const [copiedCaption, setCopiedCaption] = useState(false);
+  const [copiedSharedLink, setCopiedSharedLink] = useState(false);
+  const [shareTab, setShareTab] = useState<"public" | "users">("public");
+  const [shareSearch, setShareSearch] = useState("");
+  const [shareSearchLoading, setShareSearchLoading] = useState(false);
+  const [shareSearchError, setShareSearchError] = useState("");
+  const [shareSearchSuccess, setShareSearchSuccess] = useState<any>(null);
   const [layoutMode, setLayoutMode] = useState<"center" | "drawer">(() => {
     return (localStorage.getItem("contentModalLayout") as "center" | "drawer") || "center";
   });
@@ -409,6 +737,90 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
     return name?.trim()?.toLowerCase() === d.status?.trim()?.toLowerCase();
   }) || statuses?.[0];
   const activeStatusColor = (activeStatusOption && typeof activeStatusOption !== 'string') ? activeStatusOption.color || "#A67C1C" : "#A67C1C";
+
+  const handleShareSearch = async () => {
+    const qStr = shareSearch.trim().toLowerCase();
+    if (!qStr) return;
+    setShareSearchLoading(true);
+    setShareSearchError("");
+    setShareSearchSuccess(null);
+
+    try {
+      const uRef = collection(db, "users");
+      let snap;
+
+      if (qStr.includes("@") && !qStr.startsWith("@")) {
+        // Search by email
+        const q = query(uRef, where("email", "==", qStr), limit(1));
+        snap = await getDocs(q);
+      } else {
+        // Search by username
+        const cleanUsername = qStr.replace("@", "");
+        const q = query(uRef, where("username", "==", cleanUsername), limit(1));
+        snap = await getDocs(q);
+      }
+
+      if (snap && !snap.empty) {
+        const found = { ...snap.docs[0].data(), uid: snap.docs[0].id } as any;
+        setShareSearchSuccess(found);
+      } else {
+        setShareSearchError("Pengguna tidak ditemukan. Pastikan username atau email benar.");
+      }
+    } catch (err: any) {
+      console.error("Error searching shared user:", err);
+      setShareSearchError("Gagal mencari pengguna: " + err.message);
+    } finally {
+      setShareSearchLoading(false);
+    }
+  };
+
+  const handleAddSharedUser = (userToShare: any) => {
+    isDirty.current = true;
+    const currentShared = d.sharedUsers || [];
+    
+    // Check if already shared
+    if (currentShared.some((u: any) => u.uid === userToShare.uid)) {
+      setShareSearchError("Pengguna ini sudah memiliki akses.");
+      return;
+    }
+
+    const newUser = {
+      uid: userToShare.uid,
+      email: userToShare.email,
+      username: userToShare.username || "",
+      fullName: userToShare.fullName || userToShare.nickname || ""
+    };
+
+    const nextShared = [...currentShared, newUser];
+    const nextSharedUids = nextShared.map((u: any) => u.uid);
+
+    const next = { 
+      ...dRef.current, 
+      sharedUsers: nextShared,
+      sharedUids: nextSharedUids,
+      ownerEmail: auth.currentUser?.email || "",
+      ownerName: auth.currentUser?.displayName || auth.currentUser?.email?.split('@')[0] || ""
+    };
+    dRef.current = next;
+    setD(next);
+    setShareSearch("");
+    setShareSearchSuccess(null);
+  };
+
+  const handleRemoveSharedUser = (uid: string) => {
+    isDirty.current = true;
+    const currentShared = d.sharedUsers || [];
+    const nextShared = currentShared.filter((u: any) => u.uid !== uid);
+    const nextSharedUids = nextShared.map((u: any) => u.uid);
+
+    const next = { 
+      ...dRef.current, 
+      sharedUsers: nextShared,
+      sharedUids: nextSharedUids
+    };
+    dRef.current = next;
+    setD(next);
+  };
 
   const titleRef = useRef<HTMLTextAreaElement>(null);
   const objectiveRef = useRef<HTMLTextAreaElement>(null);
@@ -871,7 +1283,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                     </div>
                     {editingFieldLeft === "platform" ? (
                       <div ref={activeFieldRef} style={{flex: 1}}>
-                        <CustomDropdown alignRight={true} dark={false} value={d.platform} options={platforms} prefix="" onChange={(v)=>{set("platform", v);}} initiallyOpen={true} onClose={() => setEditingFieldLeft(null)} onUpdateOptions={(opts, renames) => onSettingUpdate && onSettingUpdate({platforms: opts, ...(renames && Object.keys(renames).length > 0 ? { renames: { platforms: renames } } : {})})} 
+                        <CustomDropdown alignRight={true} dark={false} value={d.platform} options={platforms} prefix="" onChange={(v)=>{set("platform", v);}} initiallyOpen={true} onClose={() => setEditingFieldLeft(null)} 
                           style={{ padding: "4px 8px", fontSize: 12, fontWeight: 600, background: "transparent", color: "#4b5563", border: "1px solid rgba(44,32,22,0.15)", borderRadius: 6, boxShadow: "none" }} />
                       </div>
                     ) : (
@@ -952,6 +1364,8 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                       </div>
                     )}
                  </div>
+
+
 
               </div>
           </div>
@@ -1074,10 +1488,14 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                 {/* Objective Block */}
                 {editingFieldRight === "objective" ? (
                   <div ref={activeFieldRef} style={{ background: "#ffffff", border: "1px solid rgba(44, 32, 22, 0.08)", borderRadius: 16, padding: "16px 20px", boxShadow: "0 8px 32px rgba(0, 0, 0, 0.04)" }}>
-                    <label style={{ fontSize: 12, fontWeight: 600, color: "rgba(44,32,22,0.6)", display: "flex", alignItems: "center", gap: 6, margin: 0, marginBottom: 8 }}>
-                      <Target size={14} /> Objective
-                    </label>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: "rgba(44,32,22,0.6)", display: "flex", alignItems: "center", gap: 6, margin: 0 }}>
+                        <Target size={14} /> Objective
+                      </label>
+                      {renderSectionCommentBadge("objective")}
+                    </div>
                     <RichTextEditor inputRef={objectiveRef} value={d.objective} onChange={(val)=>set("objective",val)} minRows={2} placeholder="Tujuan atau target output dari konten ini..."/>
+                    {renderInlineCommentThread("objective")}
                   </div>
                 ) : (
                   <div 
@@ -1087,20 +1505,26 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                   >
                     <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(44,32,22,0.4)", textTransform: "uppercase", marginBottom: 6, letterSpacing: "0.5px", display: "flex", alignItems: "center", gap: 6 }}>
                       <Target size={14} /> Objective
+                      {renderSectionCommentBadge("objective")}
                     </div>
                     <div style={{ fontSize: 13, color: "#2C2016", lineHeight: 1.5, background: "rgba(44,32,22,0.02)", padding: "12px 16px", borderRadius: 10 }}>
                       {d.objective ? <div className="tiptap-prose" dangerouslySetInnerHTML={{ __html: d.objective }} /> : <span style={{ color: "rgba(44,32,22,0.4)", fontStyle: "italic" }}>Tidak ada spesifikasi objective khusus. Klik di sini untuk mengedit.</span>}
                     </div>
+                    {renderInlineCommentThread("objective")}
                   </div>
                 )}
 
                 {/* Hook Block */}
                 {editingFieldRight === "hook" ? (
                   <div ref={activeFieldRef} style={{ background: "#ffffff", border: "1px solid rgba(44, 32, 22, 0.08)", borderRadius: 16, padding: "16px 20px", boxShadow: "0 8px 32px rgba(0, 0, 0, 0.04)" }}>
-                    <label style={{ fontSize: 12, fontWeight: 600, color: "rgba(44,32,22,0.6)", display: "flex", alignItems: "center", gap: 6, margin: 0, marginBottom: 8 }}>
-                      <AlertCircle size={14} /> Hook
-                    </label>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: "rgba(44,32,22,0.6)", display: "flex", alignItems: "center", gap: 6, margin: 0 }}>
+                        <AlertCircle size={14} /> Hook
+                      </label>
+                      {renderSectionCommentBadge("hook")}
+                    </div>
                     <RichTextEditor value={d.hook || ""} onChange={(val)=>set("hook",val)} minRows={2} placeholder="Skenario pembuka konten yang bisa mengundang atensi dalam 3 detik pertama..."/>
+                    {renderInlineCommentThread("hook")}
                   </div>
                 ) : (
                   <div 
@@ -1110,10 +1534,12 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                   >
                     <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(44,32,22,0.4)", textTransform: "uppercase", marginBottom: 6, letterSpacing: "0.5px", display: "flex", alignItems: "center", gap: 6 }}>
                       <AlertCircle size={14} /> Hook
+                      {renderSectionCommentBadge("hook")}
                     </div>
                     <div style={{ fontSize: 13, color: "#2C2016", lineHeight: 1.5, background: "rgba(44,32,22,0.02)", padding: "12px 16px", borderRadius: 10 }}>
                       {d.hook ? <div className="tiptap-prose" dangerouslySetInnerHTML={{ __html: d.hook }} /> : <span style={{ color: "rgba(44,32,22,0.4)", fontStyle: "italic" }}>Skenario / teks hook belum diisi. Klik di sini untuk mengedit.</span>}
                     </div>
+                    {renderInlineCommentThread("hook")}
                   </div>
                 )}
 
@@ -1124,15 +1550,19 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                         <label style={{ fontSize: 12, fontWeight: 600, color: "rgba(44,32,22,0.6)", display: "flex", alignItems: "center", gap: 6, margin: 0 }}>
                           <FileText size={14} /> Brief
                         </label>
-                        <button onClick={analyzeContent} disabled={aiLoading} 
-                          style={{...B(false), fontSize:10, padding:"4px 10px", borderRadius: 8, background:"#f3f4f6", color:"#1f2937", border:"1px solid #d1d5db", display:"flex", alignItems:"center", gap:4}}>
-                          <GeminiIcon size={12} />
-                          {aiLoading ? <LoadingDots /> : "Analyze with Gemini"}
-                        </button>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <button onClick={analyzeContent} disabled={aiLoading} 
+                            style={{...B(false), fontSize:10, padding:"4px 10px", borderRadius: 8, background:"#f3f4f6", color:"#1f2937", border:"1px solid #d1d5db", display:"flex", alignItems:"center", gap:4}}>
+                            <GeminiIcon size={12} />
+                            {aiLoading ? <LoadingDots /> : "Analyze with Gemini"}
+                          </button>
+                          {renderSectionCommentBadge("brief")}
+                        </div>
                     </div>
                     <div style={{display: "flex", flexDirection: "column", minHeight: 120}}>
                       <RichTextEditor style={{width: "100%"}} inputRef={briefRef} value={d.briefCopywriting} onChange={(val)=>set("briefCopywriting",val)} minRows={6} placeholder="Arah konten, tone of voice, call to action, poin kata kunci utama..."/>
                     </div>
+                    {renderInlineCommentThread("brief")}
                   </div>
                 ) : (
                   <div 
@@ -1143,6 +1573,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                       <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(44,32,22,0.4)", textTransform: "uppercase", display: "flex", alignItems: "center", gap: 6, letterSpacing: "0.5px" }}>
                         <FileText size={14} /> Brief
+                        {renderSectionCommentBadge("brief")}
                       </span>
                       {d.briefCopywriting && (
                         <button onClick={(e) => { e.stopPropagation(); if (copiedBrief) return; navigator.clipboard.writeText(htmlToPlainText(d.briefCopywriting)); setCopiedBrief(true); setTimeout(() => setCopiedBrief(false), 2000); }} style={{ background: copiedBrief ? "rgba(46,125,50,0.1)" : "rgba(59,130,246,0.08)", border: "none", color: copiedBrief ? "#2E7D32" : "#3B82F6", padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 750, cursor: copiedBrief ? "default" : "pointer", display: "flex", alignItems: "center", transition: "all 0.3s ease" }}>
@@ -1153,16 +1584,21 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                     <div style={{ fontSize: 13, color: "#2C2016", lineHeight: 1.5, background: "#FCFAF7", padding: "12px 16px", borderRadius: 10, border: "1px solid rgba(44, 32, 22, 0.03)" }}>
                       {d.briefCopywriting ? <div className="tiptap-prose" dangerouslySetInnerHTML={{ __html: d.briefCopywriting }} /> : <span style={{ color: "rgba(44,32,22,0.4)", fontStyle: "italic" }}>Belum ada brief konten. Klik di sini untuk mengedit.</span>}
                     </div>
+                    {renderInlineCommentThread("brief")}
                   </div>
                 )}
 
                 {/* CTA Block */}
                 {editingFieldRight === "cta" ? (
                   <div ref={activeFieldRef} style={{ background: "#ffffff", border: "1px solid rgba(44, 32, 22, 0.08)", borderRadius: 16, padding: "16px 20px", boxShadow: "0 8px 32px rgba(0, 0, 0, 0.04)" }}>
-                    <label style={{ fontSize: 12, fontWeight: 600, color: "rgba(44,32,22,0.6)", display: "flex", alignItems: "center", gap: 6, margin: 0, marginBottom: 8 }}>
-                      <Megaphone size={14} /> Call to Action (CTA)
-                    </label>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: "rgba(44,32,22,0.6)", display: "flex", alignItems: "center", gap: 6, margin: 0 }}>
+                        <Megaphone size={14} /> Call to Action (CTA)
+                      </label>
+                      {renderSectionCommentBadge("cta")}
+                    </div>
                     <RichTextEditor value={d.cta || ""} onChange={(val)=>set("cta",val)} minRows={2} placeholder="Ajak audiens melakukan sesuatu (Contoh: Klik link di bio, komen, dll)..."/>
+                    {renderInlineCommentThread("cta")}
                   </div>
                 ) : (
                   <div 
@@ -1172,10 +1608,12 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                   >
                     <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(44,32,22,0.4)", textTransform: "uppercase", marginBottom: 6, letterSpacing: "0.5px", display: "flex", alignItems: "center", gap: 6 }}>
                       <Megaphone size={14} /> Call to Action (CTA)
+                      {renderSectionCommentBadge("cta")}
                     </div>
                     <div style={{ fontSize: 13, color: "#2C2016", lineHeight: 1.5, background: "rgba(44,32,22,0.02)", padding: "12px 16px", borderRadius: 10 }}>
                       {d.cta ? <div className="tiptap-prose" dangerouslySetInnerHTML={{ __html: d.cta }} /> : <span style={{ color: "rgba(44,32,22,0.4)", fontStyle: "italic" }}>Call to Action belum diisi. Klik di sini untuk mengedit.</span>}
                     </div>
+                    {renderInlineCommentThread("cta")}
                   </div>
                 )}
 
@@ -1186,15 +1624,19 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                         <label style={{ fontSize: 12, fontWeight: 600, color: "rgba(44,32,22,0.6)", display: "flex", alignItems: "center", gap: 6, margin: 0 }}>
                           <PenTool size={14} /> Caption
                         </label>
-                        <button onClick={generateCaption} disabled={captionLoading} 
-                          style={{...B(false), fontSize:10, padding:"4px 10px", borderRadius: 8, background:"#f3f4f6", color:"#1f2937", border:"1px solid #d1d5db", display:"flex", alignItems:"center", gap:4}}>
-                          <GeminiIcon size={12} />
-                          {captionLoading ? <LoadingDots /> : "Generate Caption"}
-                        </button>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <button onClick={generateCaption} disabled={captionLoading} 
+                            style={{...B(false), fontSize:10, padding:"4px 10px", borderRadius: 8, background:"#f3f4f6", color:"#1f2937", border:"1px solid #d1d5db", display:"flex", alignItems:"center", gap:4}}>
+                            <GeminiIcon size={12} />
+                            {captionLoading ? <LoadingDots /> : "Generate Caption"}
+                          </button>
+                          {renderSectionCommentBadge("caption")}
+                        </div>
                     </div>
                     <div style={{display: "flex", flexDirection: "column", minHeight: 150}}>
                       <RichTextEditor style={{width: "100%"}} inputRef={captionRef} value={d.caption} onChange={(val)=>set("caption",val)} minRows={8} placeholder="Salinan caption social media yang sudah siap diposting..."/>
                     </div>
+                    {renderInlineCommentThread("caption")}
                   </div>
                 ) : (
                   <div 
@@ -1205,6 +1647,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                       <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(44,32,22,0.4)", textTransform: "uppercase", display: "flex", alignItems: "center", gap: 6, letterSpacing: "0.5px" }}>
                         <PenTool size={14} /> Caption
+                        {renderSectionCommentBadge("caption")}
                       </span>
                       {d.caption && (
                         <button onClick={(e) => { e.stopPropagation(); if (copiedCaption) return; navigator.clipboard.writeText(htmlToPlainText(d.caption)); setCopiedCaption(true); setTimeout(() => setCopiedCaption(false), 2000); }} style={{ background: copiedCaption ? "rgba(46,125,50,0.1)" : "rgba(59,130,246,0.08)", border: "none", color: copiedCaption ? "#2E7D32" : "#3B82F6", padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 750, cursor: copiedCaption ? "default" : "pointer", display: "flex", alignItems: "center", transition: "all 0.3s ease" }}>
@@ -1215,6 +1658,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
                     <div style={{ fontSize: 13, color: "#2C2016", lineHeight: 1.5, background: "#FAFDFB", padding: "12px 16px", borderRadius: 10, border: "1px solid rgba(44, 32, 22, 0.03)" }}>
                       {d.caption ? <div className="tiptap-prose" dangerouslySetInnerHTML={{ __html: d.caption }} /> : <span style={{ color: "rgba(44,32,22,0.4)", fontStyle: "italic" }}>Belum ada salinan caption. Klik di sini untuk mengedit.</span>}
                     </div>
+                    {renderInlineCommentThread("caption")}
                   </div>
                 )}
               </div>
@@ -1529,7 +1973,6 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
 
         <div style={{display:"flex", gap:10, justifyContent:"space-between", alignItems:"center", padding: "10px 20px", borderTop: "1px solid rgba(44,32,22,0.08)", background: "white", borderRadius: "0 0 24px 24px", zIndex: 10, flexShrink: 0}}>
           <div style={{display:"flex", gap:10, alignItems:"center"}}>
-            <button onClick={handleClose} className="hover-scale" style={{...B(false), background:"transparent", border:"1px solid rgba(44,32,22,0.2)", color:"#2C2016", padding:"5px 12px", fontSize:11, fontWeight:700}}>Tutup</button>
             {isSaving && (
               <span style={{ fontSize: 10, color: "#3B82F6", fontWeight: 700, display: "flex", alignItems: "center" }} className="animate-pulse">
                 Menyimpan...
@@ -1538,14 +1981,382 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
           </div>
           <div style={{display:"flex", gap:8}}>
             {onDuplicate && (
-              <button onClick={()=>onDuplicate(d)} className="hover-scale" style={{...B(false), background:"rgba(44,32,22,0.05)", border:"1.5px solid rgba(44,32,22,0.1)", color:"#2C2016", padding:"5px 10px", fontSize:11, fontWeight:700}}><Copy size={12} style={{marginRight: 4}} /> Duplikasi</button>
+              <button onClick={()=>onDuplicate(d)} title="Duplikasi" className="hover-scale" style={{...B(false), background:"rgba(44,32,22,0.05)", border:"1.5px solid rgba(44,32,22,0.1)", color:"#2C2016", padding:"6px", display: "flex", alignItems: "center", justifyContent: "center"}}><Copy size={14} /></button>
             )}
             {d.archived ? (
-              <button onClick={()=>onRestore(d.id)} className="hover-scale" style={{...B(false), background:"#E8F5E9", border:"1.5px solid #2E7D32", color:"#2E7D32", padding:"5px 10px", fontSize:11, fontWeight:700}}><RefreshCcw size={12} style={{marginRight: 4}} /> Tampilkan Lagi</button>
+              <button onClick={()=>onRestore(d.id)} title="Tampilkan Lagi" className="hover-scale" style={{...B(false), background:"#E8F5E9", border:"1.5px solid #2E7D32", color:"#2E7D32", padding:"6px", display: "flex", alignItems: "center", justifyContent: "center"}}><RefreshCcw size={14} /></button>
             ) : (
-              canArchive && <button onClick={()=>onArchive(d.id)} className="hover-scale" style={{...B(false), background:"rgba(255, 255, 255, 0.85)", backdropFilter:"blur(32px)", WebkitBackdropFilter:"blur(32px)", border:"1px solid rgba(0,0,0,0.1)", color:"#666", padding:"5px 10px", fontSize:11, fontWeight:700}}><Archive size={12} style={{marginRight: 4}} /> Arsipkan</button>
+              canArchive && <button onClick={()=>onArchive(d.id)} title="Arsipkan" className="hover-scale" style={{...B(false), background:"rgba(255, 255, 255, 0.85)", backdropFilter:"blur(32px)", WebkitBackdropFilter:"blur(32px)", border:"1px solid rgba(0,0,0,0.1)", color:"#666", padding:"6px", display: "flex", alignItems: "center", justifyContent: "center"}}><Archive size={14} /></button>
             )}
-            {canDelete && <button onClick={()=>onDelete(d.id)} className="hover-scale" style={{...B(false), background:"#FDF5F8", border:"1.5px solid #9C2B4E", color:"#9C2B4E", padding:"5px 10px", fontSize:11, fontWeight:700}}><Trash size={12} style={{marginRight: 4}} /> Hapus</button>}
+            {canDelete && <button onClick={()=>onDelete(d.id)} title="Hapus" className="hover-scale" style={{...B(false), background:"#FDF5F8", border:"1.5px solid #9C2B4E", color:"#9C2B4E", padding:"6px", display: "flex", alignItems: "center", justifyContent: "center"}}><Trash size={14} /></button>}
+            
+            {/* Dropdown Container for Sharing (Google Docs style) */}
+            <div ref={shareDropdownRef} style={{ position: "relative" }}>
+              <button
+                type="button"
+                onClick={() => setShowShareDropdown(!showShareDropdown)}
+                className="hover-scale"
+                style={{
+                  ...B(false),
+                  background: showShareDropdown ? "#2563eb" : "rgba(37, 99, 235, 0.08)",
+                  border: "1px solid rgba(37, 99, 235, 0.2)",
+                  color: showShareDropdown ? "#FFFFFF" : "#2563eb",
+                  padding: "5px 14px",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  display: "flex",
+                  alignItems: "center"
+                }}
+              >
+                <Send size={13} style={{ marginRight: 4 }} />
+                Bagikan
+              </button>
+
+              <AnimatePresence>
+                {showShareDropdown && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    style={{
+                      position: "absolute",
+                      bottom: "100%",
+                      right: 0,
+                      marginBottom: 10,
+                      width: 340,
+                      background: "#FFFFFF",
+                      borderRadius: 20,
+                      boxShadow: "0 20px 45px rgba(0,0,0,0.12), 0 1px 3px rgba(0,0,0,0.05)",
+                      border: "1px solid rgba(0,0,0,0.06)",
+                      padding: 20,
+                      zIndex: 150,
+                      textAlign: "left"
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#111827", fontSize: 13, fontWeight: 700, marginBottom: 12 }}>
+                      <Globe size={15} className="text-blue-600" /> Pengaturan Berbagi
+                    </div>
+
+                    {/* Segmented Tab Control */}
+                    <div style={{ display: "flex", gap: 4, background: "rgba(0,0,0,0.04)", padding: 2, borderRadius: 8, marginBottom: 16 }}>
+                      <button
+                        type="button"
+                        onClick={() => setShareTab("public")}
+                        style={{
+                          flex: 1,
+                          padding: "6px 0",
+                          fontSize: 11,
+                          fontWeight: 700,
+                          borderRadius: 6,
+                          border: "none",
+                          background: shareTab === "public" ? "#FFFFFF" : "transparent",
+                          color: shareTab === "public" ? "#2563eb" : "#4b5563",
+                          boxShadow: shareTab === "public" ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
+                          cursor: "pointer",
+                          transition: "all 0.15s"
+                        }}
+                      >
+                        Tautan Publik
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShareTab("users")}
+                        style={{
+                          flex: 1,
+                          padding: "6px 0",
+                          fontSize: 11,
+                          fontWeight: 700,
+                          borderRadius: 6,
+                          border: "none",
+                          background: shareTab === "users" ? "#FFFFFF" : "transparent",
+                          color: shareTab === "users" ? "#2563eb" : "#4b5563",
+                          boxShadow: shareTab === "users" ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
+                          cursor: "pointer",
+                          transition: "all 0.15s"
+                        }}
+                      >
+                        Kirim ke Pengguna
+                      </button>
+                    </div>
+
+                    {!d.id ? (
+                      <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", fontStyle: "italic", lineHeight: 1.4 }}>
+                        Simpan/ketik judul terlebih dahulu untuk mengonfigurasi pengaturan berbagi.
+                      </div>
+                    ) : shareTab === "public" ? (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                        <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", userSelect: "none" }}>
+                          <input
+                            type="checkbox"
+                            checked={!!d.isPublic}
+                            onChange={(e) => {
+                              const isChecked = e.target.checked;
+                              set("isPublic", isChecked);
+                              if (!isChecked) {
+                                set("allowComments", false);
+                              }
+                            }}
+                            style={{ width: 15, height: 15, accentColor: "#2563eb", cursor: "pointer" }}
+                          />
+                          <span style={{ fontSize: 12, fontWeight: 600, color: "#374151" }}>
+                            Aktifkan Link Publik
+                          </span>
+                        </label>
+
+                        {d.isPublic && (
+                          <div style={{ display: "flex", flexDirection: "column", gap: 10, paddingLeft: 4 }}>
+                            <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", userSelect: "none", marginBottom: 4 }}>
+                              <input
+                                type="checkbox"
+                                checked={!!d.allowComments}
+                                onChange={(e) => set("allowComments", e.target.checked)}
+                                style={{ width: 14, height: 14, accentColor: "#2563eb", cursor: "pointer" }}
+                              />
+                              <span style={{ fontSize: 11, fontWeight: 600, color: "#4b5563" }}>
+                                Izinkan Komentar Pengunjung
+                              </span>
+                            </label>
+
+                            <div style={{ display: "flex", gap: 4, alignItems: "center", background: "rgba(0,0,0,0.03)", padding: "4px 8px", borderRadius: 8 }}>
+                              <input
+                                type="text"
+                                readOnly
+                                value={`${window.location.origin}/#/shared-brief/${d.workspaceId}/${d.id}`}
+                                style={{
+                                  background: "transparent",
+                                  border: "none",
+                                  outline: "none",
+                                  fontSize: 10,
+                                  color: "#6b7280",
+                                  width: "100%",
+                                  fontFamily: "monospace"
+                                }}
+                                onClick={(e) => (e.target as HTMLInputElement).select()}
+                              />
+                            </div>
+
+                            <div style={{ display: "flex", gap: 6 }}>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  const shareUrl = `${window.location.origin}/#/shared-brief/${d.workspaceId}/${d.id}`;
+                                  navigator.clipboard.writeText(shareUrl);
+                                  setCopiedSharedLink(true);
+                                  setTimeout(() => setCopiedSharedLink(false), 2000);
+                                }}
+                                style={{
+                                  flex: 1,
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  gap: 4,
+                                  background: "#2563eb",
+                                  color: "#FFFFFF",
+                                  border: "none",
+                                  borderRadius: 8,
+                                  padding: "6px 8px",
+                                  fontSize: "11px",
+                                  fontWeight: 700,
+                                  cursor: "pointer",
+                                  transition: "background 0.2s"
+                                }}
+                              >
+                                {copiedSharedLink ? (
+                                  <>
+                                    <Check size={12} /> Disalin!
+                                  </>
+                                ) : (
+                                  <>
+                                    <Link2 size={12} /> Salin Link
+                                  </>
+                                )}
+                              </button>
+
+                              <a
+                                href={`${window.location.origin}/#/shared-brief/${d.workspaceId}/${d.id}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  gap: 4,
+                                  background: "rgba(0,0,0,0.04)",
+                                  color: "#4b5563",
+                                  border: "none",
+                                  borderRadius: 8,
+                                  padding: "6px 8px",
+                                  fontSize: "11px",
+                                  fontWeight: 700,
+                                  textDecoration: "none",
+                                  cursor: "pointer",
+                                  transition: "background 0.2s"
+                                }}
+                              >
+                                <ExternalLink size={12} /> Buka
+                              </a>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                        {/* Search field for Hubify Users */}
+                        <div>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(0,0,0,0.4)", textTransform: "uppercase", marginBottom: 6 }}>
+                            Masukkan Username atau Email
+                          </div>
+                          <div style={{ display: "flex", gap: 6 }}>
+                            <div style={{ position: "relative", flex: 1 }}>
+                              <Search size={12} style={{ position: "absolute", left: 10, top: 10, color: "rgba(0,0,0,0.3)" }} />
+                              <input
+                                type="text"
+                                value={shareSearch}
+                                onChange={(e) => setShareSearch(e.target.value)}
+                                onKeyDown={(e) => e.key === "Enter" && handleShareSearch()}
+                                placeholder="nama_pengguna atau user@email.com"
+                                style={{
+                                  width: "100%",
+                                  background: "rgba(0,0,0,0.03)",
+                                  border: "none",
+                                  borderRadius: 8,
+                                  padding: "6px 10px 6px 28px",
+                                  fontSize: 12,
+                                  outline: "none"
+                                }}
+                              />
+                            </div>
+                            <button
+                              type="button"
+                              onClick={handleShareSearch}
+                              disabled={shareSearchLoading || !shareSearch.trim()}
+                              style={{
+                                background: "#2563eb",
+                                color: "#FFFFFF",
+                                border: "none",
+                                borderRadius: 8,
+                                padding: "0 12px",
+                                fontSize: 11,
+                                fontWeight: 700,
+                                cursor: "pointer",
+                                opacity: (!shareSearch.trim() || shareSearchLoading) ? 0.6 : 1
+                              }}
+                            >
+                              {shareSearchLoading ? "..." : "Cari"}
+                            </button>
+                          </div>
+                        </div>
+
+                        {shareSearchError && (
+                          <div style={{ fontSize: 11, color: "#e11d48", fontWeight: 500 }}>
+                            {shareSearchError}
+                          </div>
+                        )}
+
+                        {/* Search result user card */}
+                        {shareSearchSuccess && (
+                          <div style={{ background: "rgba(37, 99, 235, 0.04)", border: "1.5px dashed rgba(37, 99, 235, 0.2)", borderRadius: 12, padding: 10, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, overflow: "hidden" }}>
+                              <div style={{ width: 28, height: 28, borderRadius: "50%", background: "#2563eb", color: "#FFFFFF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
+                                {String(shareSearchSuccess.fullName || shareSearchSuccess.nickname || shareSearchSuccess.email || "?").charAt(0).toUpperCase()}
+                              </div>
+                              <div style={{ overflow: "hidden" }}>
+                                <div style={{ fontSize: 11, fontWeight: 700, color: "#111827", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                                  {shareSearchSuccess.fullName || shareSearchSuccess.nickname || shareSearchSuccess.email}
+                                </div>
+                                <div style={{ fontSize: 10, color: "rgba(0,0,0,0.4)" }}>
+                                  @{shareSearchSuccess.username || "user"}
+                                </div>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleAddSharedUser(shareSearchSuccess)}
+                              style={{
+                                background: "#2563eb",
+                                color: "#FFFFFF",
+                                border: "none",
+                                borderRadius: 6,
+                                padding: "4px 8px",
+                                fontSize: 10,
+                                fontWeight: 700,
+                                cursor: "pointer",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 2
+                              }}
+                            >
+                              <UserCheck size={10} /> Bagikan
+                            </button>
+                          </div>
+                        )}
+
+                        {/* List of currently shared users */}
+                        <div style={{ borderTop: "1px solid rgba(0,0,0,0.06)", paddingTop: 10, marginTop: 4 }}>
+                          <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(0,0,0,0.4)", textTransform: "uppercase", marginBottom: 8 }}>
+                            Memiliki Akses Khusus ({(d.sharedUsers || []).length})
+                          </div>
+                          
+                          {(!d.sharedUsers || d.sharedUsers.length === 0) ? (
+                            <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", fontStyle: "italic", textAlign: "center", padding: "8px 0" }}>
+                              Belum ada pengguna Hubify Social yang ditambahkan.
+                            </div>
+                          ) : (
+                            <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 110, overflowY: "auto", paddingRight: 2 }}>
+                              {(d.sharedUsers || []).map((u: any) => (
+                                <div key={u.uid} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(0,0,0,0.02)", borderRadius: 8, padding: "6px 8px" }}>
+                                  <div style={{ display: "flex", alignItems: "center", gap: 6, overflow: "hidden" }}>
+                                    <div style={{ width: 20, height: 20, borderRadius: "50%", background: "#4b5563", color: "#FFFFFF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700 }}>
+                                      {String(u.fullName || u.email || "?").charAt(0).toUpperCase()}
+                                    </div>
+                                    <div style={{ overflow: "hidden" }}>
+                                      <div style={{ fontSize: 10, fontWeight: 600, color: "#374151", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                                        {u.fullName || u.email}
+                                      </div>
+                                      {u.username && (
+                                        <div style={{ fontSize: 8, color: "rgba(0,0,0,0.4)", marginTop: -2 }}>
+                                          @{u.username}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveSharedUser(u.uid)}
+                                    style={{
+                                      background: "none",
+                                      border: "none",
+                                      color: "#e11d48",
+                                      cursor: "pointer",
+                                      padding: 2,
+                                      display: "flex",
+                                      alignItems: "center",
+                                      opacity: 0.7
+                                    }}
+                                    title="Hapus Akses"
+                                    onMouseOver={(e: any) => e.currentTarget.style.opacity = 1}
+                                    onMouseOut={(e: any) => e.currentTarget.style.opacity = 0.7}
+                                  >
+                                    <X size={12} />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Helper instructions */}
+                        <div style={{ fontSize: 9, color: "rgba(0,0,0,0.4)", lineHeight: 1.3, borderTop: "1px solid rgba(0,0,0,0.06)", paddingTop: 8 }}>
+                          💡 Pengguna yang terdaftar di Hubify Social di atas akan dapat mengakses & memberikan komentar pada brief ini via link khusus.
+                        </div>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
             <button onClick={async () => {
               isDirty.current = false;
               const newD = { ...dRef.current, manuallySaved: true };
@@ -1553,7 +2364,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
               dRef.current = newD;
               await onSave(newD, true);
               onClose();
-            }} className="hover-scale" style={{...B(false), background:"#3B82F6", border:"none", color:"white", padding:"5px 14px", fontSize:12, fontWeight:700}}>Simpan Brief Konten</button>
+            }} className="hover-scale" style={{...B(false), background:"#3B82F6", border:"none", color:"white", padding:"5px 14px", fontSize:12, fontWeight:700}}>Simpan</button>
           </div>
         </div>
       </motion.div>

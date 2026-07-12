@@ -19,25 +19,13 @@ function initFirebase() {
     let projectId = process.env.FIREBASE_PROJECT_ID;
     const configPath = path.join(process.cwd(), "firebase-applet-config.json");
     if (fs.existsSync(configPath)) {
-      try {
-        const firebaseConfig = JSON.parse(fs.readFileSync(configPath, "utf8"));
-        if (!projectId) {
-          projectId = firebaseConfig.projectId;
-        }
-        if (firebaseConfig.firestoreDatabaseId) {
-          firestoreDatabaseId = firebaseConfig.firestoreDatabaseId;
-        }
-      } catch (e) {
-        console.error("Failed to parse firebase-applet-config.json:", e);
+      const firebaseConfig = JSON.parse(fs.readFileSync(configPath, "utf8"));
+      if (!projectId) {
+        projectId = firebaseConfig.projectId;
       }
-    }
-    
-    // Fallback values for Vercel deployment where the config file is not bundled
-    if (!projectId) {
-      projectId = "gen-lang-client-0335789025";
-    }
-    if (!firestoreDatabaseId) {
-      firestoreDatabaseId = "ai-studio-5bedb408-30a3-4e2a-885f-effd203a7138";
+      if (firebaseConfig.firestoreDatabaseId) {
+        firestoreDatabaseId = firebaseConfig.firestoreDatabaseId;
+      }
     }
     
     if (projectId) {
@@ -46,29 +34,15 @@ function initFirebase() {
         try {
           const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
           credential = cert(serviceAccount);
-          if (serviceAccount.project_id) {
-            projectId = serviceAccount.project_id;
-          }
         } catch (e) {
           console.error("Failed to parse FIREBASE_SERVICE_ACCOUNT_KEY:", e);
         }
-      } else if (process.env.VERCEL) {
-        console.warn("WARNING: Running on Vercel without FIREBASE_SERVICE_ACCOUNT_KEY. Firebase operations might fail.");
       }
-      
-      try {
-        admin.initializeApp({ 
-          projectId,
-          ...(credential ? { credential } : {})
-        });
-        console.log("Firebase Admin initialized lazily with projectId:", projectId, "databaseId:", firestoreDatabaseId);
-      } catch (e: any) {
-        console.error("Error calling admin.initializeApp:", e);
-        // If it's already initialized, we can ignore this error
-        if (!e.message || !e.message.includes("already exists")) {
-          throw e;
-        }
-      }
+      admin.initializeApp({ 
+        projectId,
+        ...(credential ? { credential } : {})
+      });
+      console.log("Firebase Admin initialized lazily with projectId:", projectId);
     } else {
       throw new Error("FIREBASE_PROJECT_ID is not set in environment or config.");
     }
@@ -139,9 +113,7 @@ apiRoutes.post("/xendit/checkout", async (req, res) => {
     const safePlanId = String(planId || plan || "pro").replace(/[^a-zA-Z0-9]/g, '');
     const safeMonths = Number(addMonths) || 1;
     const safePromoId = String(promoId || "none").replace(/[^a-zA-Z0-9]/g, '');
-    const proto = req.headers["x-forwarded-proto"] || "https";
-    const host = req.headers.host;
-    const origin = req.headers.origin || (host ? `${proto}://${host}` : "https://hubifysocial.com");
+    const origin = req.headers.origin || "https://hubifysocial.com";
     const cleanOrigin = origin.replace(/\/+$/, "");
     
     const invoiceData = {

@@ -11,12 +11,12 @@ import {
   Users, Eye, MessageSquare, Share2, 
   GripVertical, Layout, Edit3, Save, 
   Calendar, RotateCcw, Target, Sparkles,
-  ArrowRight, Settings, User as UserIcon, X, Maximize2, Move, Trash2, Pencil,
+  ArrowRight, Settings, User as UserIcon, X, Maximize2, Move, Trash2, Pencil, Search, Copy, Check,
   Heart, Bookmark, Activity, Award, Zap, ChevronDown, MousePointerClick, Repeat
 } from "lucide-react";
 import { 
   doc, setDoc, updateDoc, onSnapshot, 
-  collection, query, where, orderBy, getDocs, addDoc, deleteDoc, serverTimestamp 
+  collection, collectionGroup, query, where, orderBy, getDocs, addDoc, deleteDoc, serverTimestamp 
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { B, CARD, TRANS, I, SS, gss, TAB } from "./data";
@@ -57,7 +57,7 @@ const DEFAULT_LAYOUT: LayoutItem[] = [
   { id: "w-shortcut", type: "shortcut", w: 3, h: 1 },
 ];
 
-export function DashboardView({ user, profile, activeWorkspace, content, theme, setTab, sidebarOpen, setSidebarOpen }: any) {
+export function DashboardView({ user, profile, activeWorkspace, content, theme, setTab, sidebarOpen, setSidebarOpen, openEdit, openAdd }: any) {
   const [isEditing, setIsEditing] = useState(false);
   const [layout, setLayout] = useState<LayoutItem[]>(DEFAULT_LAYOUT);
   const navigate = useNavigate();
@@ -70,6 +70,8 @@ export function DashboardView({ user, profile, activeWorkspace, content, theme, 
   const [trends, setTrends] = useState<string[]>(["Cara viral hari ini", "Content strategy", "Trending audio", "Tips FYP TikTok"]);
   const [trendGeo, setTrendGeo] = useState<string>("ID");
   const [loading, setLoading] = useState(true);
+  const [sharedBriefs, setSharedBriefs] = useState<any[]>([]);
+  const [sharedLoading, setSharedLoading] = useState(true);
 
   // Trends API
   useEffect(() => {
@@ -161,6 +163,43 @@ export function DashboardView({ user, profile, activeWorkspace, content, theme, 
     });
     return unsub;
   }, [activeWorkspace?.id]);
+
+  // Sync Shared with Me Content Briefs
+  useEffect(() => {
+    if (!user?.uid) {
+      setSharedLoading(false);
+      return;
+    }
+    setSharedLoading(true);
+    
+    const q = query(
+      collectionGroup(db, "content"),
+      where("sharedUids", "array-contains", user.uid)
+    );
+
+    const unsub = onSnapshot(q, (snap) => {
+      const briefs = snap.docs.map(docSnap => {
+        const data = docSnap.data();
+        return {
+          id: docSnap.id,
+          ...data
+        };
+      });
+      // Sort in-memory to avoid compound index requirements
+      briefs.sort((a: any, b: any) => {
+        const tA = a.updatedAt?.toMillis ? a.updatedAt.toMillis() : (a.updatedAt || 0);
+        const tB = b.updatedAt?.toMillis ? b.updatedAt.toMillis() : (b.updatedAt || 0);
+        return tB - tA;
+      });
+      setSharedBriefs(briefs);
+      setSharedLoading(false);
+    }, (error) => {
+      console.warn("Error loading shared briefs:", error);
+      setSharedLoading(false);
+    });
+
+    return unsub;
+  }, [user?.uid]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -372,11 +411,154 @@ export function DashboardView({ user, profile, activeWorkspace, content, theme, 
                 onResize={updateItemSize}
                 setTab={setTab}
                 navigate={navigate}
+                openEdit={openEdit}
               />
             ))}
           </SortableContext>
         </div>
       </DndContext>
+
+      {/* Space: Shared With Me */}
+      <div style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(37, 99, 235, 0.08)", width: 36, height: 36, borderRadius: 10, flexShrink: 0 }}>
+            <Share2 size={18} color="var(--theme-primary)" />
+          </div>
+          <div>
+            <h2 style={{ fontSize: 20, fontWeight: 800, color: "#111827", margin: 0, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Shared With Me</h2>
+            <p style={{ fontSize: 12, color: "rgba(0,0,0,0.5)", margin: 0 }}>Brief konten kreatif yang dibagikan khusus untuk Anda oleh rekan kreator Hubify</p>
+          </div>
+        </div>
+
+        {sharedLoading ? (
+          <div style={{ padding: "40px", textAlign: "center", color: "rgba(0,0,0,0.3)", fontSize: 13 }}>
+            Memuat brief bersama...
+          </div>
+        ) : sharedBriefs.length === 0 ? (
+          <div style={{
+            background: "rgba(0,0,0,0.02)",
+            borderRadius: 20,
+            border: "1.5px dashed rgba(0,0,0,0.08)",
+            padding: "36px 24px",
+            textAlign: "center",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 8
+          }}>
+            <div style={{ fontSize: 24 }}>📂</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "#111827" }}>Belum ada brief yang dibagikan kepada Anda</div>
+            <div style={{ fontSize: 12, color: "rgba(0,0,0,0.4)", maxWidth: 440 }}>
+              Jika rekan tim Anda membagikan draft brief konten kreatif mereka dengan email atau username Anda, brief tersebut akan otomatis muncul di sini.
+            </div>
+          </div>
+        ) : (
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+            gap: 20
+          }}>
+            {sharedBriefs.map((b: any) => {
+              const shareUrl = `${window.location.origin}/#/shared-brief/${b.workspaceId}/${b.id}`;
+              const platformColors: any = {
+                instagram: { bg: "#fdf2f8", text: "#db2777", label: "Instagram" },
+                tiktok: { bg: "#f3f4f6", text: "#111827", label: "TikTok" },
+                youtube: { bg: "#fef2f2", text: "#dc2626", label: "YouTube" },
+                facebook: { bg: "#eff6ff", text: "#1d4ed8", label: "Facebook" }
+              };
+              const platConfig = platformColors[String(b.platform).toLowerCase()] || { bg: "rgba(0,0,0,0.04)", text: "#4b5563", label: String(b.platform) };
+
+              return (
+                <motion.a
+                  key={b.id}
+                  href={shareUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  whileHover={{ y: -4, boxShadow: "0 12px 30px rgba(0,0,0,0.06)" }}
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    background: "#FFFFFF",
+                    borderRadius: 16,
+                    border: "1px solid rgba(0,0,0,0.05)",
+                    padding: 20,
+                    textDecoration: "none",
+                    color: "inherit",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.02)",
+                    transition: "border-color 0.2s",
+                    cursor: "pointer"
+                  }}
+                  onMouseOver={(e: any) => e.currentTarget.style.borderColor = "var(--theme-primary)"}
+                  onMouseOut={(e: any) => e.currentTarget.style.borderColor = "rgba(0,0,0,0.05)"}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                    <span style={{
+                      background: platConfig.bg,
+                      color: platConfig.text,
+                      fontSize: 10,
+                      fontWeight: 800,
+                      padding: "4px 10px",
+                      borderRadius: 100,
+                      textTransform: "uppercase"
+                    }}>
+                      {platConfig.label}
+                    </span>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: b.status === "Approved" ? "#16a34a" : "#ca8a04" }}>
+                      ● {b.status || "Draft"}
+                    </span>
+                  </div>
+
+                  <h3 style={{ fontSize: 15, fontWeight: 800, color: "#111827", margin: "0 0 6px 0", lineHeight: 1.3 }}>
+                    {b.title || "Brief Tanpa Judul"}
+                  </h3>
+                  
+                  <p style={{
+                    fontSize: 12,
+                    color: "rgba(0,0,0,0.5)",
+                    margin: "0 0 16px 0",
+                    lineHeight: 1.4,
+                    display: "-webkit-box",
+                    WebkitLineClamp: 3,
+                    WebkitBoxOrient: "vertical",
+                    overflow: "hidden",
+                    flex: 1
+                  }}>
+                    {b.objective || "Tidak ada deskripsi singkat."}
+                  </p>
+
+                  <div style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    borderTop: "1px solid rgba(0,0,0,0.04)",
+                    paddingTop: 12,
+                    marginTop: "auto"
+                  }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, overflow: "hidden", marginRight: 8 }}>
+                      <div style={{ width: 22, height: 22, borderRadius: "50%", background: "rgba(37, 99, 235, 0.1)", color: "#2563eb", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 800, flexShrink: 0 }}>
+                        {String(b.ownerName || b.ownerEmail || "?").charAt(0).toUpperCase()}
+                      </div>
+                      <div style={{ overflow: "hidden" }}>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: "#374151", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                          {b.ownerName || "Rekan Kreator"}
+                        </div>
+                        <div style={{ fontSize: 8, color: "rgba(0,0,0,0.4)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginTop: -1 }}>
+                          {b.ownerEmail || "@pengirim"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ display: "flex", alignItems: "center", gap: 4, color: "var(--theme-primary)", fontSize: 11, fontWeight: 800 }}>
+                      <span>Buka</span>
+                      <ArrowRight size={12} />
+                    </div>
+                  </div>
+                </motion.a>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -389,6 +571,7 @@ function GreetingSection({ profile, theme, trends = ["Cara viral di TikTok hari 
     const t = setInterval(() => setHour(new Date().getHours()), 60000);
     return () => clearInterval(t);
   }, []);
+
   let greeting = "Selamat Malam";
   let greetingIcon = "🌙";
   if (hour >= 5 && hour < 11) {
@@ -407,7 +590,7 @@ function GreetingSection({ profile, theme, trends = ["Cara viral di TikTok hari 
   useEffect(() => {
     const i = setInterval(() => setTrendIndex(x => (x + 1) % trends.length), 4000);
     return () => clearInterval(i);
-  }, []);
+  }, [trends]);
 
   return (
     <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} style={{ display: "flex", flexDirection: "column", gap: 16, flex: 1, maxWidth: 800 }}>
@@ -624,7 +807,7 @@ function MetricsRow({ content, config, updateConfig, theme }: any) {
 
       {showGoals && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ background: "rgba(255,255,255,0.65)", backdropFilter: "none", WebkitBackdropFilter: "none", transform:"translateZ(0)", willChange:"transform", padding: 32, borderRadius: 24, border: "1px solid rgba(255,255,255,0.7)", width: 800, maxHeight: "90vh", overflowY: "auto" }}>
+          <div style={{ background: "#FFFFFF", padding: 32, borderRadius: 24, border: "1px solid rgba(0,0,0,0.05)", width: 800, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 30px 60px rgba(0,0,0,0.15)" }}>
              <h3 style={{ fontSize: 20, fontWeight: 800, marginBottom: 24 }}>Kustomisasi Goal Bulanan</h3>
              
              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -815,7 +998,7 @@ function DashboardWidget({ item, isEditing, onResize, ...props }: any) {
 
 // --- SPECIFIC WIDGETS REDESIGNED ---
 
-function TodoWidget({ todos, activeWorkspace, user, content, theme }: any) {
+function TodoWidget({ todos, activeWorkspace, user, content, theme, openEdit }: any) {
   const [tab, setTab] = useState<"active" | "history">("active");
   const [addingTodo, setAddingTodo] = useState(false);
   const [newTodo, setNewTodo] = useState("");
@@ -827,6 +1010,16 @@ function TodoWidget({ todos, activeWorkspace, user, content, theme }: any) {
 
   const todayStr = new Date().toISOString().split("T")[0];
   const tomorrowStr = new Date(Date.now() + 86400000).toISOString().split("T")[0];
+
+  const handleOpenBrief = (todo: any) => {
+    if (openEdit) {
+      const contentId = todo.id.replace("content-", "");
+      const item = content.find((c: any) => String(c.id) === contentId);
+      if (item) {
+        openEdit(item);
+      }
+    }
+  };
 
   const automatedContent = useMemo(() => {
     return content.map((c: any) => ({
@@ -897,10 +1090,10 @@ function TodoWidget({ todos, activeWorkspace, user, content, theme }: any) {
       const contentId = todo.id.replace("content-", "");
       const newStatus = todo.completed ? "In Review" : "Published";
       
-      const { doc: fDoc, updateDoc } = await import("./firebase");
-      const { db } = await import("./firebase");
       
-      await updateDoc(fDoc(db, "workspaces", activeWorkspace.id, "content", contentId), {
+      
+      
+      await updateDoc(doc(db, "workspaces", activeWorkspace.id, "content", contentId), {
         status: newStatus
       });
       return;
@@ -976,7 +1169,7 @@ function TodoWidget({ todos, activeWorkspace, user, content, theme }: any) {
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
                   <AnimatePresence>
-                    {activeLate.map(t => <TodoItem key={t.id} todo={t} onToggle={toggleTodo} onDelete={deleteTodo} onRename={renameTodo} theme={theme} />)}
+                    {activeLate.map(t => <TodoItem key={t.id} todo={t} onToggle={toggleTodo} onDelete={deleteTodo} onRename={renameTodo} theme={theme} onOpenBrief={handleOpenBrief} />)}
                   </AnimatePresence>
                 </div>
               </div>
@@ -992,8 +1185,8 @@ function TodoWidget({ todos, activeWorkspace, user, content, theme }: any) {
               <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
                 <AnimatePresence>
                   {activeToday.length === 0 && completedToday.length === 0 && <div style={{ fontSize: "clamp(11px, 4cqw, 14px)", color: "rgba(0,0,0,0.3)", textAlign: "center", padding: 12 }}>Kosong</div>}
-                  {activeToday.map(t => <TodoItem key={t.id} todo={t} onToggle={toggleTodo} onDelete={deleteTodo} onRename={renameTodo} theme={theme} />)}
-                  {completedToday.map(t => <TodoItem key={t.id} todo={t} onToggle={toggleTodo} onDelete={deleteTodo} onRename={renameTodo} theme={theme} />)}
+                  {activeToday.map(t => <TodoItem key={t.id} todo={t} onToggle={toggleTodo} onDelete={deleteTodo} onRename={renameTodo} theme={theme} onOpenBrief={handleOpenBrief} />)}
+                  {completedToday.map(t => <TodoItem key={t.id} todo={t} onToggle={toggleTodo} onDelete={deleteTodo} onRename={renameTodo} theme={theme} onOpenBrief={handleOpenBrief} />)}
                 </AnimatePresence>
               </div>
             </div>
@@ -1008,8 +1201,8 @@ function TodoWidget({ todos, activeWorkspace, user, content, theme }: any) {
               <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
                 <AnimatePresence>
                   {activeTomorrow.length === 0 && completedTomorrow.length === 0 && <div style={{ fontSize: "clamp(11px, 4cqw, 14px)", color: "rgba(0,0,0,0.3)", textAlign: "center", padding: 12 }}>Kosong</div>}
-                  {activeTomorrow.map(t => <TodoItem key={t.id} todo={t} onToggle={toggleTodo} onDelete={deleteTodo} onRename={renameTodo} theme={theme} />)}
-                  {completedTomorrow.map(t => <TodoItem key={t.id} todo={t} onToggle={toggleTodo} onDelete={deleteTodo} onRename={renameTodo} theme={theme} />)}
+                  {activeTomorrow.map(t => <TodoItem key={t.id} todo={t} onToggle={toggleTodo} onDelete={deleteTodo} onRename={renameTodo} theme={theme} onOpenBrief={handleOpenBrief} />)}
+                  {completedTomorrow.map(t => <TodoItem key={t.id} todo={t} onToggle={toggleTodo} onDelete={deleteTodo} onRename={renameTodo} theme={theme} onOpenBrief={handleOpenBrief} />)}
                 </AnimatePresence>
               </div>
             </div>
@@ -1030,7 +1223,7 @@ function TodoWidget({ todos, activeWorkspace, user, content, theme }: any) {
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                <AnimatePresence>
                  {completedTodos.map(t => (
-                   <TodoItem key={t.id} todo={t} onToggle={toggleTodo} onDelete={deleteTodo} onRename={renameTodo} theme={theme} disableAnimation />
+                   <TodoItem key={t.id} todo={t} onToggle={toggleTodo} onDelete={deleteTodo} onRename={renameTodo} theme={theme} onOpenBrief={handleOpenBrief} disableAnimation />
                  ))}
                </AnimatePresence>
             </div>
@@ -1041,7 +1234,7 @@ function TodoWidget({ todos, activeWorkspace, user, content, theme }: any) {
   );
 }
 
-function TodoItem({ todo, onToggle, onRename, onDelete, theme, disableAnimation }: any) {
+function TodoItem({ todo, onToggle, onRename, onDelete, theme, disableAnimation, onOpenBrief }: any) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(todo.text);
 
@@ -1094,8 +1287,26 @@ function TodoItem({ todo, onToggle, onRename, onDelete, theme, disableAnimation 
            />
         ) : (
           <div 
-            onClick={() => { if(!todo.isAutomated) setIsEditing(true); }}
-            style={{ fontSize: "clamp(11px, 4.5cqw, 14px)", fontWeight: 600, color: "#2C2016", textDecoration: todo.completed ? "line-through" : "none", wordBreak: "break-word", whiteSpace: "normal", overflow: "visible", cursor: todo.isAutomated ? "default" : "text", lineHeight: 1.4 }}
+            onClick={() => { 
+              if (todo.isAutomated && onOpenBrief) {
+                onOpenBrief(todo);
+              } else if (!todo.isAutomated) {
+                setIsEditing(true); 
+              }
+            }}
+            style={{ 
+              fontSize: "clamp(11px, 4.5cqw, 14px)", 
+              fontWeight: 600, 
+              color: "#2C2016", 
+              textDecoration: todo.completed ? "line-through" : "none", 
+              wordBreak: "break-word", 
+              whiteSpace: "normal", 
+              overflow: "visible", 
+              cursor: todo.isAutomated ? "pointer" : "text", 
+              lineHeight: 1.4 
+            }}
+            className={todo.isAutomated ? "hover:text-[var(--theme-primary)] hover:underline transition-all" : ""}
+            title={todo.isAutomated ? "Klik untuk membuka brief konten" : "Klik untuk mengubah nama tugas"}
           >
             {todo.text}
           </div>
@@ -1260,7 +1471,7 @@ function StickyNotesModal({ notes, updateConfig, onClose, theme }: any) {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.6)", zIndex: 99999, display: "flex", alignItems: "center", justifyContent: "center", padding: 24, backdropFilter: "none" }}>
-       <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} style={{ background: "rgba(255,255,255,0.65)", backdropFilter: "none", WebkitBackdropFilter: "none", transform:"translateZ(0)", willChange:"transform", border: "1px solid rgba(255,255,255,0.7)", width: "100%", maxWidth: 1000, height: "80vh", borderRadius: 32, padding: 32, display: "flex", flexDirection: "column", boxShadow: "0 30px 60px rgba(0,0,0,0.15)" }}>
+       <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.05)", width: "100%", maxWidth: 1000, height: "80vh", borderRadius: 32, padding: 32, display: "flex", flexDirection: "column", boxShadow: "0 30px 60px rgba(0,0,0,0.15)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
             <div>
               <h2 style={{ fontSize: 28, fontWeight: 900, marginBottom: 4 }}>Sticky Notes</h2>

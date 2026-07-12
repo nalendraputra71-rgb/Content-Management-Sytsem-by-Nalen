@@ -185,10 +185,20 @@ service cloud.firestore {
 
       // ─── CONTENT ───────────────────────────────────────────────────────────
       match /content/{contentId} {
-        allow read: if isMember(wsId) || isAdmin() || get(/databases/$(database)/documents/workspaces/$(wsId)).data.publicLinkEnabled == true;
+        allow read: if isMember(wsId) || isAdmin() || 
+                    get(/databases/$(database)/documents/workspaces/$(wsId)).data.publicLinkEnabled == true || 
+                    (resource != null && (
+                      resource.data.get('isPublic', false) == true || 
+                      (resource.data.get('sharedUids', []) is list && request.auth.uid in resource.data.get('sharedUids', []))
+                    ));
         allow create: if (isEditor(wsId) || isAdmin()) && incoming().workspaceId == wsId && (incoming().userId == request.auth.uid || isAdmin());
         allow delete: if isEditor(wsId) || isAdmin();
-        allow update: if isEditor(wsId) || isAdmin();
+        allow update: if isEditor(wsId) || isAdmin() || (
+          resource != null && 
+          resource.data.get('isPublic', false) == true && 
+          resource.data.get('allowComments', false) == true && 
+          incoming().diff(existing()).affectedKeys().hasOnly(['comments'])
+        );
       }
 
       // ─── CONNECTED ACCOUNTS & INBOX ───────────────────────────────────────

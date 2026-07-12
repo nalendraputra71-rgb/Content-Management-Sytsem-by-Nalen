@@ -318,7 +318,7 @@ export function LandingPage() {
                         <LayoutDashboard size={16}/> Dashboard
                       </div>
                       <div className="flex items-center gap-3 px-3 py-2 rounded-xl font-medium text-white/70">
-                        <Calendar size={16}/> Content Planner
+                        <Calendar size={16}/> Calendar
                       </div>
                       <div className="flex items-center gap-3 px-3 py-2 rounded-xl font-medium text-white/70">
                         <PieChart size={16}/> Analitik
@@ -635,7 +635,7 @@ export function LandingPage() {
                       </div>
                       <div className="flex items-center gap-3 px-2 py-2 rounded-lg text-white bg-white/10 cursor-pointer">
                         <Calendar className="w-4 h-4 text-blue-400" />
-                        <span className="text-sm font-bold">Content Planner</span>
+                        <span className="text-sm font-bold">Calendar</span>
                       </div>
                       <div className="flex items-center gap-3 px-2 py-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-white/5 cursor-pointer transition-colors">
                         <PieChart className="w-4 h-4" />

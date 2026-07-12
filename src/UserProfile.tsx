@@ -3,7 +3,7 @@ import {
   auth,
   db,
   signOut,
-  updatePassword,
+  updatePassword, updateProfile, EmailAuthProvider, reauthenticateWithCredential, sendEmailVerification,
   doc,
   getDoc,
   updateDoc,
@@ -261,7 +261,7 @@ export function UserProfile({
         try {
           const uRef = doc(db, "users", userProfile.uid);
           await updateDoc(uRef, { avatar: base64 });
-          const { updateProfile } = await import("./firebase");
+          
           if (auth.currentUser)
             await updateProfile(auth.currentUser, { photoURL: base64 });
           onUpdate({ ...userProfile, avatar: base64 });
@@ -292,12 +292,8 @@ export function UserProfile({
     setLoading(true);
     try {
       if (hasPasswordProvider && auth.currentUser && auth.currentUser.email) {
-        const credential = await import("./firebase").then((m) =>
-          m.EmailAuthProvider.credential(auth.currentUser!.email!, oldPass),
-        );
-        await import("./firebase").then((m) =>
-          m.reauthenticateWithCredential(auth.currentUser!, credential),
-        );
+        const credential = EmailAuthProvider.credential(auth.currentUser!.email!, oldPass);
+        await reauthenticateWithCredential(auth.currentUser!, credential);
       }
       if (auth.currentUser) await updatePassword(auth.currentUser, newPass);
       setMessage({ text: "Password berhasil disimpan", type: "success" });
@@ -321,7 +317,7 @@ export function UserProfile({
     if (auth.currentUser && !auth.currentUser.emailVerified) {
       setLoading(true);
       try {
-        const { sendEmailVerification } = await import("./firebase");
+        
         await sendEmailVerification(auth.currentUser);
         setEmailStatusMsg(
           "Email verifikasi telah dikirim. Silakan cek inbox Anda.",

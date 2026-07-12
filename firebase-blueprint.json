@@ -53,7 +53,9 @@
         "pillar": { "type": "string" },
         "platform": { "type": "string" },
         "status": { "type": "string" },
-        "metrics": { "type": "object" }
+        "metrics": { "type": "object" },
+        "isPublic": { "type": "boolean" },
+        "allowComments": { "type": "boolean" }
       },
       "required": ["workspaceId", "userId", "title"]
     },

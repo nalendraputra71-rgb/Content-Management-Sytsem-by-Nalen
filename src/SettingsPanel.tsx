@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { I, B, CARD, THEMES } from "./data";
+import { ColorPickerSelect } from "./components/ColorPickerSelect";
 import { 
   Save, 
   CheckCircle2, 
@@ -54,49 +55,6 @@ export const HOLIDAY_API_OPTIONS = [
   { id: "jp", name: "Japan (JP Holidays)", country: "JP", color: "#7C3AED" },
   { id: "gb", name: "United Kingdom (UK Holidays)", country: "GB", color: "#0891B2" },
 ];
-
-const PRESET_COLORS = ["#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#EC4899", "#2C2016", "#F97316"];
-
-function ColorPickerSelect({ value, onChange }: { value: string, onChange: (val: string) => void }) {
-  const [open, setOpen] = useState(false);
-  
-  return (
-    <div style={{ position: "relative", flexShrink: 0 }}>
-      <div 
-        onClick={() => setOpen(!open)}
-        style={{ width: 28, height: 28, borderRadius: 8, background: value, cursor: "pointer", border: "2px solid white", boxShadow: "0 2px 6px rgba(0,0,0,0.1)" }} 
-      />
-      {open && (
-        <div style={{ position: "absolute", top: 32, left: 0, zIndex: 100, background: "white", padding: 12, borderRadius: 16, boxShadow: "0 10px 40px rgba(0,0,0,0.1)", border: "1px solid rgba(0,0,0,0.05)", display: "flex", flexDirection: "column", gap: 12, width: 220 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-             <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(44,32,22,0.5)" }}>Warna Preset</div>
-             <button onClick={() => setOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, color: "rgba(44,32,22,0.4)" }}><X size={14} /></button>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
-            {PRESET_COLORS.map(c => (
-              <div 
-                key={c}
-                onClick={() => { onChange(c); setOpen(false); }}
-                style={{ width: 28, height: 28, borderRadius: 8, background: c, cursor: "pointer", border: value === c ? "2px solid #2C2016" : "2px solid transparent", display: "flex", alignItems: "center", justifyContent: "center" }}
-              >
-                {value === c && <CheckCircle2 size={14} color="white" />}
-              </div>
-            ))}
-          </div>
-          <div style={{ height: 1, background: "rgba(0,0,0,0.05)" }} />
-          <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(44,32,22,0.5)" }}>Warna Bebas</div>
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <div style={{ width: 28, height: 28, borderRadius: 8, overflow: "hidden", border: "1px solid rgba(0,0,0,0.1)", flexShrink: 0 }}>
-               <input type="color" value={value} onChange={(e) => onChange(e.target.value)} style={{ width: "200%", height: "200%", transform: "translate(-25%, -25%)", border: "none", cursor: "pointer" }} />
-            </div>
-            <input value={value} onChange={(e) => onChange(e.target.value)} style={{ flex: 1, fontSize: 12, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 6, padding: "4px 8px" }} />
-          </div>
-        </div>
-      )}
-      {open && <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 99 }} onClick={() => setOpen(false)} />}
-    </div>
-  );
-}
 
 export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, profile, onUpdateProfile, onDirty, onLeave, onDelete, isOwner }: any) {
   const [section, setSection] = useState("visual");
@@ -180,7 +138,6 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
   const sections = [
     ["visual", "Tema Visual"],
     ["pillars", "Content Pillars"],
-    ["platforms", "Platforms"],
     ["contentTypes", "Tipe Konten"],
     ["pics", "Team PIC"],
     ["statuses", "Status Workflow"],

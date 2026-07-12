@@ -73,7 +73,8 @@ export {
   limit,
   orderBy,
   runTransaction,
-  serverTimestamp
+  serverTimestamp,
+  increment
 };
 
 // Error handler helper

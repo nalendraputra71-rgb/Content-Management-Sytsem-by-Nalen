@@ -30,6 +30,8 @@ import { ShareWorkspaceModal } from "./ShareWorkspaceModal";
 import { CreateWorkspaceModal } from "./CreateWorkspaceModal";
 import { DashboardView } from "./DashboardView";
 import { DataDeletionStatus } from "./DataDeletionStatus";
+import { PublicBriefView } from "./PublicBriefView";
+import { ColorPickerSelect } from "./components/ColorPickerSelect";
 
 import { TermsOfService, PrivacyPolicy, FAQ, Guides, AboutUs, RefundPolicy } from "./TermsAndPrivacy";
 
@@ -431,6 +433,7 @@ export default function App() {
         <Route path="/pricing" element={<PricingPage />} />
         <Route path="/checkout-preview" element={<OrderSummary user={user} profile={profile} />} />
         <Route path="/data-deletion-status" element={<DataDeletionStatus />} />
+        <Route path="/shared-brief/:workspaceId/:contentId" element={<PublicBriefView />} />
         <Route path="/login" element={(user && profile) ? <Navigate to={localStorage.getItem('pending_checkout') ? `/checkout-preview?plan=${localStorage.getItem('pending_checkout')}&cycle=${localStorage.getItem('pending_checkout_cycle') || 'monthly'}` : "/"} /> : <AuthScreen currentUser={user && !profile ? user : null} onUserCreated={(u)=>setUser(u)} />} />
         <Route path="/profile" element={(user && profile) ? <CMSLayout><UserProfile userProfile={profile} activeWorkspace={null} onUpdate={setProfile} /></CMSLayout> : <Navigate to="/login" />} />
         <Route path="/billing" element={(user && profile) ? <CMSLayout><BillingView userProfile={profile} activeWorkspace={null} onUpdate={setProfile} /></CMSLayout> : <Navigate to="/login" />} />
@@ -582,9 +585,7 @@ function QuickAddEventModal({ workspace, onClose, onSaveSettings }: any) {
           <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
             <div>
               <label style={{ fontSize: 12, fontWeight: 700, marginBottom: 6, display: "block", color: "var(--theme-primary)" }}>Warna Event</label>
-              <div style={{ width: 44, height: 44, borderRadius: 12, overflow: "hidden", border: "2px solid rgba(0,0,0,0.05)", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", flexShrink: 0 }}>
-                <input type="color" value={color} onChange={(e) => setColor(e.target.value)} style={{ width: "200%", height: "200%", transform: "translate(-25%, -25%)", border: "none", cursor: "pointer", background: "none" }} />
-              </div>
+              <ColorPickerSelect value={color} onChange={(val) => setColor(val)} size={44} />
             </div>
             <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, cursor: "pointer", color: "#2C2016", fontWeight: 600, marginTop: 18 }}>
               <input type="checkbox" checked={monthly} onChange={e => setMonthly(e.target.checked)} style={{ width: 18, height: 18, accentColor: "var(--theme-primary)" }} />
@@ -1095,7 +1096,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme, systemConfig 
             
             // Real-time synchronization for all settings categories
             if (data.settings.pillars) setPillars(data.settings.pillars);
-            if (data.settings.platforms) setPlatforms(data.settings.platforms);
+            setPlatforms(DPL);
             if (data.settings.contentTypes) setContentTypes(data.settings.contentTypes);
             if (data.settings.pics) setPics(data.settings.pics);
             if (data.settings.statuses) setStatuses(data.settings.statuses);
@@ -1342,10 +1343,10 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme, systemConfig 
   };
 
   const openEdit = (item:any) => setModal({mode:"edit",data:{...item,metrics:{...item.metrics}}});
-  const openAdd  = (day:any) => {
+  const openAdd  = (day:any, prefilled?: any) => {
     if (isRestricted) return alert("Akses Terbatas: Fitur ini dikunci pada masa uji coba yang telah habis.");
     if (isUnverified) return alert("Akses Terbatas: Silakan lengkapi nama panggilan dan verifikasi email Anda terlebih dahulu.");
-    setModal({mode:"add",data:emptyItem(year,month,day,pillars,platforms,pics,statuses,contentTypes)});
+    setModal({mode:"add",data:{...emptyItem(year,month,day,pillars,platforms,pics,statuses,contentTypes), ...prefilled}});
   };
   const deleteItem = async (id:string, force:boolean = false) => { 
     if(!workspace || !id || isRestricted) return;
@@ -1553,6 +1554,40 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme, systemConfig 
   const handleBulkImport = async (items: any[]) => {
     if (!workspace) return;
     try {
+      const newPillars = [...pillars];
+      const newPics = [...pics];
+      const newStatuses = [...statuses];
+      const newContentTypes = [...contentTypes];
+
+      let hasNewOptions = false;
+
+      const addOptionIfNew = (list: any[], valStr: string, isMultiple: boolean = false) => {
+        const names = isMultiple ? valStr.split(',').map((s: string) => s.trim()).filter(Boolean) : [valStr.trim()].filter(Boolean);
+        for (const name of names) {
+            const exists = list.some((opt: any) => (opt.name || opt).toLowerCase() === name.toLowerCase());
+            if (!exists) {
+                list.push({ name, id: name, color: "#3B82F6" }); // Default color
+                hasNewOptions = true;
+            }
+        }
+      };
+
+      items.forEach(item => {
+        if (item.pillar) addOptionIfNew(newPillars, item.pillar);
+        if (item.pic) addOptionIfNew(newPics, item.pic, true);
+        if (item.status) addOptionIfNew(newStatuses, item.status);
+        if (item.contentType) addOptionIfNew(newContentTypes, item.contentType);
+      });
+
+      if (hasNewOptions) {
+          await updateWsSettings({
+              pillars: newPillars,
+              pics: newPics,
+              statuses: newStatuses,
+              contentTypes: newContentTypes
+          });
+      }
+
       const CHUNK_SIZE = 450;
       for (let i = 0; i < items.length; i += CHUNK_SIZE) {
         const chunk = items.slice(i, i + CHUNK_SIZE);
@@ -1612,7 +1647,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme, systemConfig 
   }
 
   return (
-    <div style={{display:"flex", height:"100vh", overflow:"hidden", background:"var(--theme-bg, #FAFAFA)"}}>
+    <div style={{display:"flex", height:"100vh", overflow:"hidden", background:"var(--theme-sidebar)"}}>
       <Sidebar 
         systemConfig={systemConfig}
         open={sidebarOpen} setOpen={setSidebarOpen} tab={tab} setTab={handleTabChange} 
@@ -1634,10 +1669,23 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme, systemConfig 
         }}
         onQuickAddContent={() => openAdd(new Date().getDate())}
       />
-      {["dashboard", "content_planner", "analytics"].includes(tab) && (
-        <div style={{ position: "fixed", inset: 0, zIndex: -1, pointerEvents: "none", background: "radial-gradient(circle at 0% 0%, #E3F2FD 0%, transparent 50%), radial-gradient(circle at 100% 100%, #FFF3E0 0%, transparent 50%), radial-gradient(circle at 100% 0%, #F3E5F5 0%, transparent 50%), #FAFAFA" }} />
+      {["dashboard", "content_planner", "analytics", "analytics-overview", "analytics-content", "analytics-trends", "analytics-activity"].includes(tab) && (
+        <div style={{ position: "fixed", inset: 0, zIndex: -1, pointerEvents: "none", background: "radial-gradient(circle at 0% 0%, #E3F2FD 0.1%, transparent 50%), radial-gradient(circle at 100% 100%, #FFF3E0 0.1%, transparent 50%), radial-gradient(circle at 100% 0%, #F3E5F5 0.1%, transparent 50%), #FAFAFA", borderRadius: "16px", margin: "8px 8px 8px 0" }} />
       )}
-      <div style={{flex:1, minWidth:0, display:"flex", flexDirection:"column", height:"100vh", overflow: ["social-hub-ai", "soc_hub", "admin"].includes(tab) ? "hidden" : "auto", position:"relative", background: "transparent"}}>
+      <div style={{
+        flex: 1,
+        minWidth: 0,
+        display: "flex",
+        flexDirection: "column",
+        height: "calc(100vh - 16px)",
+        margin: "8px 8px 8px 0",
+        borderRadius: "16px",
+        background: "#FFFFFF",
+        boxShadow: "0 10px 30px rgba(0, 0, 0, 0.03)",
+        border: "1px solid rgba(0, 0, 0, 0.04)",
+        overflow: ["social-hub-ai", "soc_hub", "admin"].includes(tab) ? "hidden" : "auto",
+        position: "relative"
+      }}>
         <AnimatePresence>
           {systemConfig?.bannerActive && systemConfig?.bannerMessage && !bannerDismissed && (
             <motion.div 
@@ -1744,13 +1792,28 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme, systemConfig 
         <AnimatePresence mode="wait">
           <motion.div key={tab + "-" + contentTab} initial={{ opacity: 0, y: 5, scale: 0.99 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -5, scale: 0.99 }} transition={{ duration: 0.15, ease: "easeOut" }} style={{ flex: (tab.startsWith("social") || ["soc_hub", "admin"].includes(tab)) ? 1 : "none", minHeight: 0, display: "flex", flexDirection: "column" }}>
 
-            {tab==="dashboard"&&<DashboardView user={user} profile={profile} activeWorkspace={workspace} content={filtered} theme={currentTheme} setTab={setTab} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} year={year} month={month} />}
-            {tab==="content_planner"&&contentTab==="month"&&<MonthView year={year} month={month} monthContent={monthContent} filtered={filtered} openEdit={openEdit} openAdd={openAdd} showHolidays={showHolidays} holidays={combinedHolidays} customEvents={workspace?.settings?.customEvents || []} pillars={pillars} platforms={platforms} isRestricted={isRestricted} showArchived={showArchived} contentTypes={contentTypes} moveItemDate={moveItemDate} />}
+            {tab==="dashboard"&&<DashboardView user={user} profile={profile} activeWorkspace={workspace} content={filtered} theme={currentTheme} setTab={setTab} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} year={year} month={month} openEdit={openEdit} openAdd={openAdd} />}
+            {tab==="content_planner"&&contentTab==="month"&&<MonthView year={year} month={month} monthContent={monthContent} filtered={filtered} openEdit={openEdit} openAdd={openAdd} showHolidays={showHolidays} holidays={combinedHolidays} customEvents={workspace?.settings?.customEvents || []} pillars={pillars} platforms={platforms} pics={pics} isRestricted={isRestricted} showArchived={showArchived} contentTypes={contentTypes} moveItemDate={moveItemDate} />}
             {tab==="content_planner"&&contentTab==="board"&&<BoardView year={year} month={month} content={content} filtered={filtered} openEdit={openEdit} openAdd={openAdd} statuses={statuses} pillars={pillars} platforms={platforms} search={search} isRestricted={isRestricted} showArchived={showArchived} />}
             {tab==="content_planner"&&contentTab==="timeline"&&<TimelineView year={year} month={month} content={content} filtered={filtered} openEdit={openEdit} openAdd={openAdd} pillars={pillars} platforms={platforms} showHolidays={showHolidays} holidays={combinedHolidays} isRestricted={isRestricted} showArchived={showArchived} />}
             {tab==="content_planner"&&contentTab==="table"&&<TableView filtered={filtered} openEdit={openEdit} archiveItem={archiveItem} unarchiveItem={unarchiveItem} deleteItem={deleteItem} pillars={pillars} platforms={platforms} showArchived={showArchived} search={search} bulkIds={bulkIds} setBulkIds={setBulkIds} onBulk={handleBulkActions} isRestricted={isRestricted}/>}
             {tab.startsWith("social")&&<SocialStudioView tab={tab} workspaceId={workspace?.id} content={content} workspace={workspace} user={user} profile={profile} onOpenModal={(data:any) => setModal({mode: "add", data: {...emptyItem(year,month,new Date().getDate(),pillars,platforms,pics,statuses,contentTypes), ...data}})}/> }
-            {tab==="analytics"&&<AnalyticsView content={content} pillars={pillars} platforms={platforms} contentTypes={contentTypes} pics={pics} statuses={statuses} openEdit={openEdit} isRestricted={isRestricted}/>}
+            {(tab === "analytics" || tab.startsWith("analytics-")) && (
+              <AnalyticsView
+                content={content}
+                pillars={pillars}
+                platforms={platforms}
+                contentTypes={contentTypes}
+                pics={pics}
+                statuses={statuses}
+                openEdit={openEdit}
+                isRestricted={isRestricted}
+                activeSubTab={tab.split("-")[1] || "overview"}
+                setActiveSubTab={(newSubTab: string) => {
+                  setTab(`analytics-${newSubTab}`);
+                }}
+              />
+            )}
             {tab==="soc_hub"&&<SocHubView user={user} profile={profile} />}
             {tab==="settings"&&<SettingsPanel 
               initialSettings={{pillars, platforms, contentTypes, pics, statuses, holidays, holidayApis, customEvents: workspace?.settings?.customEvents || [], showHolidays: workspace?.settings?.showHolidays ?? true}} 

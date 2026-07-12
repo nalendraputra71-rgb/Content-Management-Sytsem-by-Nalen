@@ -1,13 +1,33 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Clock } from "lucide-react";
+import { Clock, Instagram, Facebook, Youtube, Linkedin, Music, Globe } from "lucide-react";
 import { 
   MONTHS, MS, DAYS_S, MK, MC,
   eng, fmt, fmtD, fmtT, getMin, gps, gpc, gss,
   I, B, CARD, PBadge, SBadge, PiBadge, getDynamicEvents, htmlToPlainText 
 } from "./data";
 
-export function MonthView({year,month,monthContent,filtered,openEdit,openAdd,showHolidays,holidays,customEvents,pillars,platforms,showArchived,contentTypes,moveItemDate}: any) {
+function getPlatformIcon(platformIdentifier: string, size = 12, color?: string) {
+  const name = String(platformIdentifier || "").trim().toLowerCase();
+  if (name.includes("instagram") || name === "ig") {
+    return <Instagram size={size} color={color || "#E1306C"} />;
+  }
+  if (name.includes("tiktok") || name === "tt") {
+    return <Music size={size} color={color || "#000000"} />;
+  }
+  if (name.includes("facebook") || name === "fb") {
+    return <Facebook size={size} color={color || "#1877F2"} />;
+  }
+  if (name.includes("linkedin") || name === "li") {
+    return <Linkedin size={size} color={color || "#0077B5"} />;
+  }
+  if (name.includes("youtube") || name === "yt") {
+    return <Youtube size={size} color={color || "#FF0000"} />;
+  }
+  return <Globe size={size} color={color || "#2D5A86"} />;
+}
+
+export function MonthView({year,month,monthContent,filtered,openEdit,openAdd,showHolidays,holidays,customEvents,pillars,platforms,pics,showArchived,contentTypes,moveItemDate}: any) {
   const [dragOverDate, setDragOverDate] = useState<number | null>(null);
   
   const dim = new Date(year,month,0).getDate();
@@ -172,13 +192,8 @@ export function MonthView({year,month,monthContent,filtered,openEdit,openAdd,sho
                 <AnimatePresence>
                   {items.map((item:any)=>{
                     const ps = item.archived ? { color: "#7A7976", light: "#EBEAE6" } : gps(pillars, String(item.pillar).split(',')[0].trim());
-                    const ctName = String(item.contentType || "").split(',')[0].trim();
-                    const ctChar = ctName ? ctName.charAt(0).toUpperCase() : (item.platform ? (String(item.platform).split(',')[0].trim().charAt(0).toUpperCase() || "T") : "T");
-                    const ctBg = item.archived 
-                      ? "#9E9D9A" 
-                      : (ctName 
-                          ? gpc(contentTypes || [], ctName) 
-                          : gpc(platforms, String(item.platform || "").split(',')[0].trim()));
+                    const platformName = String(item.platform || "").split(',')[0].trim();
+                    const platformColor = item.archived ? "#7A7976" : gpc(platforms, platformName);
                     return (
                       <motion.button 
                         layout
@@ -201,12 +216,32 @@ export function MonthView({year,month,monthContent,filtered,openEdit,openAdd,sho
                         }}
                       >
                         <div style={{display:"flex",alignItems:"flex-start",gap:3}}>
-                          <span style={{background:ctBg,color:"white",fontSize:9,fontWeight:600,padding:"0px 3px",borderRadius:2,flexShrink:0,marginTop:1}}>{ctChar}</span>
+                          <span style={{flexShrink:0,marginTop:1,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                            {getPlatformIcon(platformName, 12, platformColor)}
+                          </span>
                           {item.isAds&&<span style={{fontSize:9,flexShrink:0,marginTop:1}}>💰</span>}
-                          <span style={{fontSize:10,color:ps.color,fontWeight:500,lineHeight:1.2,display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden"}}>{item.title||"Untitled"}{item.archived ? " 📦" : ""}</span>
+                          <span style={{fontSize:10,color:platformColor,fontWeight:500,lineHeight:1.2,display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden"}}>{item.title||"Untitled"}{item.archived ? " 📦" : ""}</span>
                         </div>
-                        <div style={{fontSize:8,color:"rgba(55,53,47,0.6)",marginTop:2,fontWeight:500,display:"flex",alignItems:"center",gap:3}}>
-                           <Clock size={8} /> {fmtT(item.uploadHour, item.uploadMinute, item.timeFormat)}
+                        <div style={{fontSize:8,color:"rgba(55,53,47,0.6)",marginTop:2,fontWeight:500,display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
+                          {item.contentType && (
+                            <div style={{display:"flex",alignItems:"center",gap:2}}>
+                              <span style={{color: gpc(contentTypes || [], item.contentType), fontWeight: 700}}>
+                                {String(item.contentType).split(' ').filter(Boolean).slice(0, 2).map((w: string) => w.charAt(0)).join('').toUpperCase()}
+                              </span>
+                            </div>
+                          )}
+                          {item.pic && (
+                            <div style={{display:"flex",alignItems:"center",gap:2}}>
+                              {item.contentType && <span>•</span>}
+                              <span style={{color: gpc(pics || [], item.pic), fontWeight: 700}}>
+                                {item.pic}
+                              </span>
+                            </div>
+                          )}
+                          <div style={{display:"flex",alignItems:"center",gap:3}}>
+                             {(item.contentType || item.pic) && <span>•</span>}
+                             <Clock size={8} /> {fmtT(item.uploadHour, item.uploadMinute, item.timeFormat)}
+                          </div>
                         </div>
                       </motion.button>
                     );
@@ -262,9 +297,14 @@ export function WeekView({year,month,content,filtered,openEdit,openAdd,pillars,p
                 {items.map((item:any)=>{
                   const firstPillar = String(item.pillar).split(',')[0].trim();
                   const ps = item.archived ? { color: "#7A7976", light: "#EBEAE6" } : gps(pillars, firstPillar);
+                  const platformName = String(item.platform || "").split(',')[0].trim();
+                  const platformColor = item.archived ? "#7A7976" : gpc(platforms, platformName);
                   return (
                     <button key={item.id} onClick={()=>openEdit(item)} style={{background:ps.light,border:"none",borderRadius:"4px",padding:"6px 8px",textAlign:"left",cursor:"pointer",width:"100%",marginBottom:4, transition: "background 0.2s"}}>
-                      <div style={{fontSize:11,color:ps.color,fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{item.title || "Untitled"}{item.archived ? " 📦" : ""}</div>
+                      <div style={{fontSize:11,color:platformColor,fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:4}}>
+                        {getPlatformIcon(platformName, 10, platformColor)}
+                        <span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{item.title || "Untitled"}{item.archived ? " 📦" : ""}</span>
+                      </div>
                       <div style={{fontSize:10,color:"rgba(55,53,47,0.6)",marginTop:2,fontWeight:400}}>{fmtT(item.uploadHour,item.uploadMinute,item.timeFormat)} · {String(item.platform).split(',')[0].trim()} {String(item.platform).includes(',')?'+':''} {item.isAds?"💰":""}</div>
                     </button>
                   );

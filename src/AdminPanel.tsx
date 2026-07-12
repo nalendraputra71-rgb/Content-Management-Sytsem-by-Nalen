@@ -306,143 +306,154 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
   const filteredUsers = users.filter((u:any) => (u.email || "").toLowerCase().includes(searchEmail.toLowerCase()));
 
   return (
-    <div style={{flex:1, width:"100%", display:"flex", flexDirection:"column", minHeight:0, background:"#FAF7F2", overflow:"hidden"}}>
+    <div style={{flex:1, width:"100%", display:"flex", flexDirection:"column", minHeight:0, background:"#FAFAFA", overflow:"hidden"}}>
       {/* Header */}
-      <div style={{background:"#2C2016", padding:"14px 24px", display:"flex", justifyContent:"space-between", alignItems:"center", color:"white", zIndex:10}}>
+      <div style={{background:"#FFFFFF", padding:"16px 28px", display:"flex", justifyContent:"space-between", alignItems:"center", borderBottom:"1px solid rgba(0,0,0,0.05)", zIndex:10}}>
         <div style={{display:"flex", alignItems:"center", gap: 12}}>
-          <div style={{width:40, height:40, background:"rgba(59,130,246,0.2)", borderRadius:12, display:"flex", alignItems:"center", justifyContent:"center"}}>
-            <Shield size={24} color="#3B82F6" />
+          <div style={{width:40, height:40, background:"rgba(59,130,246,0.08)", borderRadius:12, display:"flex", alignItems:"center", justifyContent:"center"}}>
+            <Shield size={22} color="var(--theme-primary)" />
           </div>
           <div>
-            <h1 style={{margin:0, fontSize:16, fontWeight:800, letterSpacing:"-0.5px"}}>Admin Central</h1>
-            <div style={{fontSize:10, color:"rgba(255,255,255,0.5)", fontWeight:600}}>{userProfile?.email}</div>
+            <h1 style={{margin:0, fontSize:16, fontWeight:800, color:"#111827", letterSpacing:"-0.5px"}}>Admin Central</h1>
+            <div style={{fontSize:11, color:"#6B7280", fontWeight:500}}>{userProfile?.email}</div>
           </div>
         </div>
         <div style={{display:"flex", gap:12}}>
-          <div style={{display:"flex", alignItems:"center", gap:8, background:"rgba(255,255,255,0.05)", padding:"6px 12px", borderRadius:20, fontSize:11, border:"1px solid rgba(255,255,255,0.1)"}}>
-             <div style={{width:6, height:6, borderRadius:"50%", background:"#4CAF50", boxShadow:"0 0 8px #4CAF50"}} />
-             Sistem Operasional
+          <div style={{display:"flex", alignItems:"center", gap:8, background:"rgba(16,185,129,0.08)", color:"#10B981", padding:"6px 14px", borderRadius:20, fontSize:11, fontWeight:700}}>
+             <div style={{width:6, height:6, borderRadius:"50%", background:"#10B981", boxShadow:"0 0 8px #10B981"}} />
+             Sistem Operasional Aktif
           </div>
         </div>
       </div>
 
       <div style={{display:"flex", flex:1, overflow:"hidden"}}>
         {/* Sidebar Nav */}
-        <div style={{width: 240, background:"white", borderRight:"1px solid rgba(44,32,22,0.08)", display:"flex", flexDirection:"column", padding: "20px 12px", gap: 4}}>
-          {TABS.map(t => (
-            <button key={t.id} onClick={() => { setActiveTab(t.id); setSelectedUser(null); }} 
-              style={{
-                display:"flex", alignItems:"center", gap:12, padding:"12px 14px", borderRadius:12, fontSize:13, fontWeight:700, cursor:"pointer", 
-                background: activeTab === t.id ? "rgba(var(--theme-primary-rgb), 0.08)" : "transparent", 
-                color: activeTab === t.id ? "var(--theme-primary)" : "rgba(44,32,22,0.5)", 
-                border: "none", textAlign:"left", transition:"all 0.2s"
-              }}
-              className="hover-bg-theme"
-            >
-              {t.ic} {t.lb}
-            </button>
-          ))}
-          <div style={{marginTop:"auto", padding:"12px 14px"}}>
-             <button onClick={onLogout} style={{width:"100%", padding:"10px", borderRadius:10, border:"1px solid #EEE", background:"white", fontSize:12, fontWeight:700, cursor:"pointer", color:"#9C2B4E"}}>Sign Out</button>
+        <div style={{width: 240, background:"#FFFFFF", borderRight:"1px solid rgba(0,0,0,0.05)", display:"flex", flexDirection:"column", padding: "24px 16px", gap: 6}}>
+          {TABS.map(t => {
+            const isSelected = activeTab === t.id;
+            return (
+              <button key={t.id} onClick={() => { setActiveTab(t.id); setSelectedUser(null); }} 
+                style={{
+                  display:"flex", alignItems:"center", gap:12, padding:"12px 14px", borderRadius:12, fontSize:13, fontWeight:700, cursor:"pointer", 
+                  background: isSelected ? "rgba(59,130,246,0.05)" : "transparent", 
+                  color: isSelected ? "var(--theme-primary)" : "#6B7280", 
+                  border: "none", textAlign:"left", transition:"all 0.2s",
+                  position: "relative"
+                }}
+                className="hover-bg-theme"
+              >
+                {isSelected && (
+                  <div style={{position:"absolute", left: 0, top: 12, bottom: 12, width: 3, background:"var(--theme-primary)", borderRadius:"0 4px 4px 0"}} />
+                )}
+                <span style={{color: isSelected ? "var(--theme-primary)" : "#9CA3AF"}}>{t.ic}</span> 
+                {t.lb}
+              </button>
+            );
+          })}
+          <div style={{marginTop:"auto", paddingTop:16, borderTop:"1px solid rgba(0,0,0,0.05)"}}>
+             <button onClick={onLogout} style={{width:"100%", padding:"11px", borderRadius:12, border:"1px solid rgba(0,0,0,0.06)", background:"white", fontSize:12, fontWeight:700, cursor:"pointer", color:"#EF4444", transition:"all 0.2s"}} className="btn-hover">Sign Out</button>
           </div>
         </div>
 
         {/* Content Area */}
-        <div style={{flex:1, padding: 32, overflowY:"auto", paddingBottom: 100}}>
+        <div style={{flex:1, padding: "32px 40px", overflowY:"auto", paddingBottom: 100}}>
           <AnimatePresence mode="wait">
             
             {/* DASHBOARD */}
             {activeTab === "dashboard" && (
               <motion.div key="db" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0}} style={{maxWidth:1000}}>
                  <div style={{marginBottom:32}}>
-                   <h2 style={{fontSize:28, fontWeight:800, color:"#2C2016", margin:0, letterSpacing:"-1px"}}>Ringkasan Sistem</h2>
-                   <p style={{fontSize:14, color:"rgba(44,32,22,0.5)", marginTop:4}}>Pantau pertumbuhan dan performa bisnis secara real-time.</p>
+                   <h2 style={{fontSize:28, fontWeight:800, color:"#111827", margin:0, letterSpacing:"-1px"}}>Ringkasan Sistem</h2>
+                   <p style={{fontSize:14, color:"#6B7280", marginTop:4}}>Pantau pertumbuhan dan performa bisnis secara real-time.</p>
                  </div>
 
-                 <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(240px, 1fr))", gap: 20, marginBottom:32}}>
-                    <div style={CARD({padding:24, borderRadius:20})}>
-                      <div style={{display:"flex", justifyContent:"space-between", marginBottom:16}}>
-                        <div style={{width:40, height:40, background:"rgba(76,175,80,0.1)", borderRadius:12, display:"flex", alignItems:"center", justifyContent:"center"}}>
-                          <Users size={20} color="#4CAF50"/>
+                 <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(240px, 1fr))", gap: 24, marginBottom:32}}>
+                    <div style={{background:"#FFFFFF", borderRadius:20, padding:24, border:"1px solid rgba(0,0,0,0.04)", boxShadow:"0 1px 3px rgba(0,0,0,0.01), 0 10px 30px rgba(0,0,0,0.02)"}}>
+                      <div style={{display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:16}}>
+                        <div style={{width:44, height:44, background:"rgba(16,185,129,0.08)", borderRadius:12, display:"flex", alignItems:"center", justifyContent:"center"}}>
+                          <Users size={20} color="#10B981"/>
                         </div>
-                        <div style={{fontSize:12, color:"#4CAF50", fontWeight:700, background:"rgba(76,175,80,0.1)", padding:"4px 8px", borderRadius:6}}>+12%</div>
+                        <div style={{fontSize:11, color:"#10B981", fontWeight:700, background:"rgba(16,185,129,0.08)", padding:"4px 8px", borderRadius:8}}>+12%</div>
                       </div>
-                      <div style={{fontSize:12, color:"rgba(44,32,22,0.5)", fontWeight:700}}>Total User Terdaftar</div>
-                      <div style={{fontSize:32, fontWeight:800, marginTop:4}}>{users.length}</div>
+                      <div style={{fontSize:12, color:"#6B7280", fontWeight:600, textTransform:"uppercase", letterSpacing:"0.5px"}}>Total User Terdaftar</div>
+                      <div style={{fontSize:32, fontWeight:800, color:"#111827", marginTop:6}}>{users.length}</div>
                     </div>
-                    <div style={CARD({padding:24, borderRadius:20})}>
-                      <div style={{display:"flex", justifyContent:"space-between", marginBottom:16}}>
-                        <div style={{width:40, height:40, background:"rgba(33,150,243,0.1)", borderRadius:12, display:"flex", alignItems:"center", justifyContent:"center"}}>
-                          <Package size={20} color="#2196F3"/>
+                    <div style={{background:"#FFFFFF", borderRadius:20, padding:24, border:"1px solid rgba(0,0,0,0.04)", boxShadow:"0 1px 3px rgba(0,0,0,0.01), 0 10px 30px rgba(0,0,0,0.02)"}}>
+                      <div style={{display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:16}}>
+                        <div style={{width:44, height:44, background:"rgba(59,130,246,0.08)", borderRadius:12, display:"flex", alignItems:"center", justifyContent:"center"}}>
+                          <Package size={20} color="var(--theme-primary)"/>
                         </div>
                       </div>
-                      <div style={{fontSize:12, color:"rgba(44,32,22,0.5)", fontWeight:700}}>User Premium (Pro)</div>
-                      <div style={{fontSize:32, fontWeight:800, marginTop:4}}>{users.filter(u=>u.plan==="pro").length}</div>
+                      <div style={{fontSize:12, color:"#6B7280", fontWeight:600, textTransform:"uppercase", letterSpacing:"0.5px"}}>User Premium (Pro)</div>
+                      <div style={{fontSize:32, fontWeight:800, color:"#111827", marginTop:6}}>{users.filter(u=>u.plan==="pro").length}</div>
                     </div>
-                    <div style={CARD({padding:24, borderRadius:20})}>
-                      <div style={{display:"flex", justifyContent:"space-between", marginBottom:16}}>
-                        <div style={{width:40, height:40, background:"rgba(59,130,246,0.1)", borderRadius:12, display:"flex", alignItems:"center", justifyContent:"center"}}>
-                          <DollarSign size={20} color="#3B82F6"/>
+                    <div style={{background:"#FFFFFF", borderRadius:20, padding:24, border:"1px solid rgba(0,0,0,0.04)", boxShadow:"0 1px 3px rgba(0,0,0,0.01), 0 10px 30px rgba(0,0,0,0.02)"}}>
+                      <div style={{display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:16}}>
+                        <div style={{width:44, height:44, background:"rgba(59,130,246,0.08)", borderRadius:12, display:"flex", alignItems:"center", justifyContent:"center"}}>
+                          <DollarSign size={20} color="var(--theme-primary)"/>
                         </div>
                       </div>
-                      <div style={{fontSize:12, color:"rgba(44,32,22,0.5)", fontWeight:700}}>Total Revenue (Lifetime)</div>
-                      <div style={{fontSize:32, fontWeight:800, marginTop:4}}>{fmtRp(transactions.reduce((acc, t) => acc + (Number(t.amount) || 0), 0))}</div>
+                      <div style={{fontSize:12, color:"#6B7280", fontWeight:600, textTransform:"uppercase", letterSpacing:"0.5px"}}>Total Revenue (Lifetime)</div>
+                      <div style={{fontSize:32, fontWeight:800, color:"#111827", marginTop:6}}>{fmtRp(transactions.reduce((acc, t) => acc + (Number(t.amount) || 0), 0))}</div>
                     </div>
                  </div>
 
-                 <div style={{display:"grid", gridTemplateColumns:"2fr 1fr", gap:20}}>
-                    <div style={CARD({padding:24, borderRadius:20})}>
+                 <div style={{display:"grid", gridTemplateColumns:"2fr 1fr", gap:24}}>
+                    <div style={{background:"#FFFFFF", borderRadius:20, padding:24, border:"1px solid rgba(0,0,0,0.04)", boxShadow:"0 1px 3px rgba(0,0,0,0.01), 0 10px 30px rgba(0,0,0,0.02)"}}>
                        <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20}}>
-                          <h3 style={{fontSize:16, fontWeight:800}}>Tiket Support Terbaru</h3>
+                          <h3 style={{fontSize:16, fontWeight:800, color:"#111827", margin:0}}>Tiket Support Terbaru</h3>
                           <button onClick={()=>setActiveTab("support")} style={{fontSize:12, fontWeight:700, color:"var(--theme-primary)", background:"transparent", border:"none", cursor:"pointer"}}>Lihat Semua</button>
                        </div>
                        <div style={{display:"flex", flexDirection:"column", gap:12}}>
                           {tickets.slice(0, 5).map(t => (
-                            <div key={t.id} style={{display:"flex", alignItems:"center", gap:16, padding:"12px", border:"1px solid #F5F5F5", borderRadius:12}}>
-                               <div style={{width:36, height:36, borderRadius:10, background:"rgba(0,0,0,0.03)", display:"flex", alignItems:"center", justifyContent:"center"}}>
+                            <div key={t.id} style={{display:"flex", alignItems:"center", gap:16, padding:"14px", border:"1px solid rgba(0,0,0,0.04)", background:"rgba(0,0,0,0.01)", borderRadius:14}}>
+                               <div style={{width:36, height:36, borderRadius:10, background:"rgba(59,130,246,0.06)", display:"flex", alignItems:"center", justifyContent:"center", color:"var(--theme-primary)"}}>
                                   <MessageSquare size={16} />
                                </div>
                                <div style={{flex:1}}>
-                                  <div style={{fontSize:13, fontWeight:700}}>{t.subject}</div>
-                                  <div style={{fontSize:11, color:"rgba(0,0,0,0.4)"}}>{t.userEmail}</div>
+                                  <div style={{fontSize:13, fontWeight:700, color:"#111827"}}>{t.subject}</div>
+                                  <div style={{fontSize:11, color:"#6B7280", marginTop:2}}>{t.userEmail}</div>
                                </div>
-                               <div style={{fontSize:11, fontWeight:700, color:"var(--theme-primary)", background:"rgba(var(--theme-primary-rgb), 0.1)", padding:"4px 8px", borderRadius:6}}>{t.status}</div>
+                               <div style={{fontSize:11, fontWeight:700, color:"var(--theme-primary)", background:"rgba(59,130,246,0.08)", padding:"4px 10px", borderRadius:8}}>{t.status}</div>
                             </div>
                           ))}
+                          {tickets.length === 0 && (
+                            <div style={{textAlign:"center", padding:"30px 0", color:"#9CA3AF", fontSize:13, fontWeight:500}}>Tidak ada tiket support baru.</div>
+                          )}
                        </div>
                     </div>
-                    <div style={CARD({padding:24, borderRadius:20})}>
-                       <h3 style={{fontSize:16, fontWeight:800, marginBottom:16}}>Quick Actions & Settings</h3>
+                    <div style={{background:"#FFFFFF", borderRadius:20, padding:24, border:"1px solid rgba(0,0,0,0.04)", boxShadow:"0 1px 3px rgba(0,0,0,0.01), 0 10px 30px rgba(0,0,0,0.02)"}}>
+                       <h3 style={{fontSize:16, fontWeight:800, color:"#111827", margin:0, marginBottom:18}}>Quick Actions</h3>
                        <div style={{display:"flex", flexDirection:"column", gap:16}}>
                           <div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}>
-                             <div style={{fontSize:13, fontWeight:600}}>Maintenance Mode</div>
-                             <button onClick={()=>updateSystemConfig({maintenanceMode: !systemSettings.maintenanceMode})} style={{background:"transparent", border:"none", cursor:"pointer", color: systemSettings.maintenanceMode ? "#9C2B4E" : "#4CAF50"}}>
-                               {systemSettings.maintenanceMode ? <ToggleRight size={32}/> : <ToggleLeft size={32}/>}
+                             <div style={{fontSize:13, fontWeight:700, color:"#374151"}}>Maintenance Mode</div>
+                             <button onClick={()=>updateSystemConfig({maintenanceMode: !systemSettings.maintenanceMode})} style={{background:"transparent", border:"none", cursor:"pointer", color: systemSettings.maintenanceMode ? "#EF4444" : "#9CA3AF", padding:0}}>
+                               {systemSettings.maintenanceMode ? <ToggleRight size={36}/> : <ToggleLeft size={36}/>}
                              </button>
                           </div>
                           <div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}>
-                             <div style={{fontSize:13, fontWeight:600}}>Allow Registration</div>
-                             <button onClick={()=>updateSystemConfig({allowRegistration: !systemSettings.allowRegistration})} style={{background:"transparent", border:"none", cursor:"pointer", color: systemSettings.allowRegistration ? "#4CAF50" : "#CCC"}}>
-                               {systemSettings.allowRegistration ? <ToggleRight size={32}/> : <ToggleLeft size={32}/>}
+                             <div style={{fontSize:13, fontWeight:700, color:"#374151"}}>Pendaftaran Pengguna</div>
+                             <button onClick={()=>updateSystemConfig({allowRegistration: !systemSettings.allowRegistration})} style={{background:"transparent", border:"none", cursor:"pointer", color: systemSettings.allowRegistration ? "var(--theme-primary)" : "#9CA3AF", padding:0}}>
+                               {systemSettings.allowRegistration ? <ToggleRight size={36}/> : <ToggleLeft size={36}/>}
                              </button>
                           </div>
                           
-                          <div style={{borderTop:"1px solid #EEE", margin:"4px 0"}} />
+                          <div style={{borderTop:"1px solid rgba(0,0,0,0.05)", margin:"4px 0"}} />
                           
                           <div style={{display:"flex", flexDirection:"column", gap:12}}>
                             <div style={{display:"flex", gap:12}}>
-                                <button onClick={() => alert("Data user berhasil diekspor ke format Excel (mock).")} style={{flex:1, background:"rgba(33,150,243,0.1)", color:"#2196F3", border:"none", padding:"10px", borderRadius:10, fontSize:12, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:6}}>
-                                  <Download size={14} /> Export Data
+                                <button onClick={() => alert("Data user berhasil diekspor ke format Excel (mock).")} style={{flex:1, background:"#FFFFFF", border:"1px solid rgba(0,0,0,0.08)", color:"#374151", padding:"10px", borderRadius:12, fontSize:12, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:6}} className="btn-hover">
+                                  <Download size={14} /> Export
                                 </button>
-                                <button onClick={() => alert("Sinkronisasi cache server berhasil (mock).")} style={{flex:1, background:"rgba(255,152,0,0.1)", color:"#FF9800", border:"none", padding:"10px", borderRadius:10, fontSize:12, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:6}}>
+                                <button onClick={() => alert("Sinkronisasi cache server berhasil (mock).")} style={{flex:1, background:"#FFFFFF", border:"1px solid rgba(0,0,0,0.08)", color:"#374151", padding:"10px", borderRadius:12, fontSize:12, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:6}} className="btn-hover">
                                   <RefreshCw size={14} /> Sync Cache
                                 </button>
                             </div>
                             <button onClick={() => {
                               const msg = window.prompt("Ketik pesan broadcast ke semua pengguna:");
                               if (msg) alert("Broadcast berhasil dikirim: " + msg);
-                            }} style={{background:"#2C2016", color:"white", border:"none", padding:"10px", borderRadius:10, fontSize:12, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:6}}>
-                              <Send size={14} /> Broadcast Notifikasi Global
+                            }} style={{background:"var(--theme-primary)", color:"white", border:"none", padding:"12px", borderRadius:12, fontSize:12, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:6}} className="btn-hover">
+                              <Send size={14} /> Broadcast Notifikasi
                             </button>
                           </div>
                        </div>
@@ -454,74 +465,80 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
             {/* USERS */}
             {activeTab === "users" && !selectedUser && (
               <motion.div key="users" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0}}>
-                <div style={{display:"flex", justifyContent:"space-between", alignItems:"flex-end", marginBottom:24}}>
+                <div style={{display:"flex", justifyContent:"space-between", alignItems:"flex-end", marginBottom:28}}>
                   <div>
-                    <h2 style={{fontSize:28, fontWeight:800, margin:0, letterSpacing:"-1px"}}>Manajemen User</h2>
-                    <p style={{fontSize:14, color:"rgba(44,32,22,0.5)", marginTop:4}}>Kelola akses, paket, dan data seluruh pengguna sistem.</p>
+                    <h2 style={{fontSize:28, fontWeight:800, color:"#111827", margin:0, letterSpacing:"-1px"}}>Manajemen User</h2>
+                    <p style={{fontSize:14, color:"#6B7280", marginTop:4}}>Kelola akses, paket, dan data seluruh pengguna sistem.</p>
                   </div>
                   <div style={{display:"flex", alignItems:"center", gap:12}}>
-                    <div style={{display:"flex", alignItems:"center", background:"white", padding:"10px 16px", borderRadius:12, border:"1px solid rgba(44,32,22,0.1)", width: 320, boxShadow:"0 2px 4px rgba(0,0,0,0.02)"}}>
-                      <Search size={18} color="rgba(44,32,22,0.4)" style={{marginRight:10}}/>
-                      <input placeholder="Cari email user..." value={searchEmail} onChange={e=>setSearchEmail(e.target.value)} style={{border:"none", outline:"none", flex:1, fontSize:13, background:"transparent", fontWeight:600}} />
+                    <div style={{display:"flex", alignItems:"center", background:"#FFFFFF", padding:"10px 16px", borderRadius:12, border:"1px solid rgba(0,0,0,0.06)", width: 320, boxShadow:"0 1px 3px rgba(0,0,0,0.01)"}}>
+                      <Search size={18} color="#9CA3AF" style={{marginRight:10}}/>
+                      <input placeholder="Cari email user..." value={searchEmail} onChange={e=>setSearchEmail(e.target.value)} style={{border:"none", outline:"none", flex:1, fontSize:13, background:"transparent", color:"#111827", fontWeight:600}} />
                     </div>
-                    <button onClick={() => alert("Fitur Tambah User Manual akan segera tersedia.")} style={{background:"var(--theme-primary)", color:"white", border:"none", padding:"10px 20px", borderRadius:12, fontSize:13, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", gap:8}}>
+                    <button onClick={() => alert("Fitur Tambah User Manual akan segera tersedia.")} style={{background:"var(--theme-primary)", color:"white", border:"none", padding:"12px 20px", borderRadius:12, fontSize:13, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", gap:8}} className="btn-hover">
                       <UserPlus size={16} /> Tambah User
                     </button>
                   </div>
                 </div>
 
-                <div style={CARD({borderRadius:20, overflowX:"auto", border:"1px solid #EEE", padding:0})}>
+                <div style={{background:"#FFFFFF", borderRadius:20, border:"1px solid rgba(0,0,0,0.04)", boxShadow:"0 1px 3px rgba(0,0,0,0.01), 0 10px 30px rgba(0,0,0,0.02)", overflowX:"auto", padding:0}}>
                   <table style={{width:"100%", minWidth: 1000, borderCollapse:"collapse", fontSize:13}}>
-                    <thead style={{background:"#FAFAFA", borderBottom:"1px solid #EEE"}}>
+                    <thead style={{background:"rgba(0,0,0,0.01)", borderBottom:"1px solid rgba(0,0,0,0.05)"}}>
                       <tr>
-                        <th style={{padding:"18px 24px", textAlign:"left", color:"rgba(0,0,0,0.4)", fontWeight:700, fontSize:10, textTransform:"uppercase", letterSpacing:1, width:280}}>Email & Identitas</th>
-                        <th style={{padding:"18px 24px", textAlign:"center", color:"rgba(0,0,0,0.4)", fontWeight:700, fontSize:10, textTransform:"uppercase", letterSpacing:1, width:140}}>Email Verified</th>
-                        <th style={{padding:"18px 24px", textAlign:"center", color:"rgba(0,0,0,0.4)", fontWeight:700, fontSize:10, textTransform:"uppercase", letterSpacing:1, width:120}}>Paket</th>
-                        <th style={{padding:"18px 24px", textAlign:"center", color:"rgba(0,0,0,0.4)", fontWeight:700, fontSize:10, textTransform:"uppercase", letterSpacing:1, width:100}}>Role</th>
-                        <th style={{padding:"18px 24px", textAlign:"center", color:"rgba(0,0,0,0.4)", fontWeight:700, fontSize:10, textTransform:"uppercase", letterSpacing:1, width:120}}>Status</th>
+                        <th style={{padding:"18px 24px", textAlign:"left", color:"#4B5563", fontWeight:700, fontSize:11, textTransform:"uppercase", letterSpacing:"0.5px", width:280}}>Email & Identitas</th>
+                        <th style={{padding:"18px 24px", textAlign:"center", color:"#4B5563", fontWeight:700, fontSize:11, textTransform:"uppercase", letterSpacing:"0.5px", width:140}}>Email Verified</th>
+                        <th style={{padding:"18px 24px", textAlign:"center", color:"#4B5563", fontWeight:700, fontSize:11, textTransform:"uppercase", letterSpacing:"0.5px", width:120}}>Paket</th>
+                        <th style={{padding:"18px 24px", textAlign:"center", color:"#4B5563", fontWeight:700, fontSize:11, textTransform:"uppercase", letterSpacing:"0.5px", width:100}}>Role</th>
+                        <th style={{padding:"18px 24px", textAlign:"center", color:"#4B5563", fontWeight:700, fontSize:11, textTransform:"uppercase", letterSpacing:"0.5px", width:120}}>Status</th>
                         <th style={{padding:"18px 24px", textAlign:"right"}}></th>
                       </tr>
                     </thead>
                     <tbody>
                       {filteredUsers.map((u:any) => (
-                        <tr key={u.id} style={{borderBottom:"1px solid #F5F5F5", verticalAlign:"middle"}} className="hover-bg-light">
+                        <tr key={u.id} style={{borderBottom:"1px solid rgba(0,0,0,0.04)", verticalAlign:"middle"}} className="hover-bg-light">
                           <td style={{padding:"16px 24px"}}>
-                             <div style={{fontWeight:800, color:"#2C2016", fontSize:14}}>{u.email}</div>
-                             <div style={{fontSize:10, color:"#999", marginTop:4, fontFamily:"monospace"}}>UID: {u.id}</div>
+                             <div style={{fontWeight:800, color:"#111827", fontSize:14}}>{u.email}</div>
+                             <div style={{fontSize:10, color:"#9CA3AF", marginTop:4, fontFamily:"monospace"}}>UID: {u.id}</div>
                           </td>
                           <td style={{padding:"16px 24px", textAlign:"center"}}>
-                             <div style={{display:"inline-flex", alignItems:"center", gap:6, padding:"4px 10px", borderRadius:20, background: u.emailVerified ? "#E5F4EE" : "#FFF4E5"}}>
-                               <div style={{width:6, height:6, borderRadius:"50%", background: u.emailVerified ? "#2D7A5E" : "#3B82F6"}} />
-                               <span style={{fontSize:11, fontWeight:800, color: u.emailVerified ? "#2D7A5E" : "#3B82F6"}}>{u.emailVerified ? "Verified" : "Unverified"}</span>
+                             <div style={{display:"inline-flex", alignItems:"center", gap:6, padding:"4px 10px", borderRadius:20, background: u.emailVerified ? "rgba(16,185,129,0.08)" : "rgba(239,68,68,0.08)"}}>
+                               <div style={{width:6, height:6, borderRadius:"50%", background: u.emailVerified ? "#10B981" : "#EF4444"}} />
+                               <span style={{fontSize:11, fontWeight:800, color: u.emailVerified ? "#10B981" : "#EF4444"}}>{u.emailVerified ? "Verified" : "Unverified"}</span>
                              </div>
                           </td>
                           <td style={{padding:"16px 24px", textAlign:"center"}}>
-                             <div style={{display:"inline-flex", alignItems:"center", gap:4, background: u.plan==="vip"?"#FFF8D6":(u.plan==="pro"?"#FDF0EB":"#F5F5F5"), color:u.plan==="vip"?"#FBC02D":(u.plan==="pro"?"#3B82F6":"#666"), padding:"4px 12px", borderRadius:10, fontWeight:900, fontSize:10, border:u.plan==="vip"?"1px solid rgba(251,192,45,0.4)":(u.plan==="pro"?"1px solid rgba(59,130,246,0.2)":"1px solid transparent")}}>
+                             <div style={{
+                               display:"inline-flex", alignItems:"center", gap:4, 
+                               background: u.plan==="vip" ? "rgba(245,158,11,0.08)" : (u.plan==="pro" ? "rgba(59,130,246,0.08)" : "rgba(107,114,128,0.08)"), 
+                               color: u.plan==="vip" ? "#D97706" : (u.plan==="pro" ? "var(--theme-primary)" : "#4B5563"), 
+                               padding:"4px 12px", borderRadius:10, fontWeight:900, fontSize:10, 
+                               border: u.plan==="vip" ? "1px solid rgba(245,158,11,0.15)" : (u.plan==="pro" ? "1px solid rgba(59,130,246,0.15)" : "1px solid rgba(107,114,128,0.15)")
+                             }}>
                                {u.plan==="vip" && <Crown size={12} />}
                                {u.plan ? u.plan.toUpperCase() : "FREE"}
                              </div>
                           </td>
                           <td style={{padding:"16px 24px", textAlign:"center"}}>
-                             <span style={{fontSize:11, fontWeight:700, textTransform:"uppercase", color:"#666"}}>{u.role || "user"}</span>
+                             <span style={{fontSize:11, fontWeight:700, textTransform:"uppercase", color:"#4B5563"}}>{u.role || "user"}</span>
                           </td>
                           <td style={{padding:"16px 24px", textAlign:"center"}}>
                              <div style={{display:"inline-flex", alignItems:"center", gap:6}}>
-                               <div style={{width:8, height:8, borderRadius:"50%", background: u.activeUntil && new Date(u.activeUntil) > new Date() ? "#4CAF50" : "#CCC", border:"2px solid white", boxShadow:"0 0 0 1px #DDD"}} />
-                               <span style={{fontSize:12, fontWeight:600}}>{u.activeUntil && new Date(u.activeUntil) > new Date() ? "Aktif" : "Expired"}</span>
+                               <div style={{width:8, height:8, borderRadius:"50%", background: u.activeUntil && new Date(u.activeUntil) > new Date() ? "#10B981" : "#9CA3AF", border:"2px solid white", boxShadow: u.activeUntil && new Date(u.activeUntil) > new Date() ? "0 0 8px #10B981" : "none"}} />
+                               <span style={{fontSize:12, fontWeight:600, color: u.activeUntil && new Date(u.activeUntil) > new Date() ? "#111827" : "#6B7280"}}>{u.activeUntil && new Date(u.activeUntil) > new Date() ? "Aktif" : "Expired"}</span>
                              </div>
                           </td>
                           <td style={{padding:"16px 24px", textAlign:"right"}}>
-                            <div style={{display:"flex", gap:8, justifyContent:"flex-end"}}>
-                              <button onClick={() => setSelectedUser(u)} style={{background:"#2C2016", border:"none", padding:"8px 16px", borderRadius:10, fontSize:11, fontWeight:800, cursor:"pointer", color:"white"}}>Manage</button>
-                              <button onClick={() => setDeletingItem({id: u.id, type:"users", name: u.email})} style={{background:"white", border:"1px solid rgba(156,43,78,0.2)", color:"#9C2B4E", borderRadius:10, padding:"8px 16px", fontSize:11, fontWeight:800, cursor:"pointer"}}>Delete</button>
-                            </div>
+                             <div style={{display:"flex", gap:8, justifyContent:"flex-end"}}>
+                               <button onClick={() => setSelectedUser(u)} style={{background:"var(--theme-primary)", border:"none", padding:"8px 16px", borderRadius:10, fontSize:11, fontWeight:800, cursor:"pointer", color:"white"}} className="btn-hover">Manage</button>
+                               <button onClick={() => setDeletingItem({id: u.id, type:"users", name: u.email})} style={{background:"white", border:"1px solid rgba(239,68,68,0.15)", color:"#EF4444", borderRadius:10, padding:"8px 16px", fontSize:11, fontWeight:800, cursor:"pointer"}} className="btn-hover">Delete</button>
+                             </div>
                           </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                   {filteredUsers.length === 0 && (
-                    <div style={{padding:60, textAlign:"center", color:"rgba(0,0,0,0.3)", fontWeight:600}}>Tidak ada user ditemukan.</div>
+                    <div style={{padding:60, textAlign:"center", color:"#9CA3AF", fontWeight:600}}>Tidak ada user ditemukan.</div>
                   )}
                 </div>
               </motion.div>
@@ -534,59 +551,59 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                   <X size={18}/> Back to List
                 </button>
                 
-                <div style={{display:"grid", gridTemplateColumns:"1fr 2fr", gap:20}}>
-                   <div style={CARD({padding:24, borderRadius:24})}>
-                      <div style={{width:80, height:80, background:"rgba(var(--theme-primary-rgb), 0.1)", borderRadius:24, display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 16px"}}>
+                <div style={{display:"grid", gridTemplateColumns:"1fr 2fr", gap:24}}>
+                   <div style={{background:"#FFFFFF", borderRadius:24, padding:24, border:"1px solid rgba(0,0,0,0.04)", boxShadow:"0 1px 3px rgba(0,0,0,0.01), 0 10px 30px rgba(0,0,0,0.02)"}}>
+                      <div style={{width:80, height:80, background:"rgba(59,130,246,0.08)", borderRadius:24, display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 16px"}}>
                          <Users size={40} color="var(--theme-primary)"/>
                       </div>
-                      <h3 style={{textAlign:"center", margin:0, fontSize:18, fontWeight:800, wordBreak:"break-all"}}>{selectedUser.email}</h3>
-                      <div style={{textAlign:"center", fontSize:12, color:"rgba(0,0,0,0.4)", marginTop:4}}>Joined: {new Date(selectedUser.createdAt||Date.now()).toLocaleDateString()}</div>
+                      <h3 style={{textAlign:"center", margin:0, fontSize:18, fontWeight:800, color:"#111827", wordBreak:"break-all"}}>{selectedUser.email}</h3>
+                      <div style={{textAlign:"center", fontSize:12, color:"#6B7280", marginTop:4}}>Joined: {new Date(selectedUser.createdAt||Date.now()).toLocaleDateString()}</div>
                       
-                      <div style={{marginTop:24, paddingTop:24, borderTop:"1px solid #F5F5F5"}}>
-                         <div style={{fontSize:11, fontWeight:800, color:"rgba(0,0,0,0.4)", textTransform:"uppercase", marginBottom:12}}>Status Berlangganan</div>
-                         <div style={{background:"#FAFAFA", padding:12, borderRadius:12, border:"1px solid #EEE"}}>
-                            <div style={{display:"flex", justifyContent:"space-between", marginBottom:4}}>
-                               <span style={{fontSize:12, fontWeight:600}}>Plan:</span>
+                      <div style={{marginTop:24, paddingTop:24, borderTop:"1px solid rgba(0,0,0,0.05)"}}>
+                         <div style={{fontSize:11, fontWeight:700, color:"#4B5563", textTransform:"uppercase", marginBottom:12}}>Status Berlangganan</div>
+                         <div style={{background:"rgba(0,0,0,0.01)", padding:14, borderRadius:12, border:"1px solid rgba(0,0,0,0.04)"}}>
+                            <div style={{display:"flex", justifyContent:"space-between", marginBottom:6}}>
+                               <span style={{fontSize:12, fontWeight:600, color:"#4B5563"}}>Plan:</span>
                                <span style={{fontSize:13, fontWeight:800, color:"var(--theme-primary)"}}>{selectedUser.plan || "Free"}</span>
                             </div>
                             <div style={{display:"flex", justifyContent:"space-between"}}>
-                               <span style={{fontSize:12, fontWeight:600}}>Active Until:</span>
-                               <span style={{fontSize:12, fontWeight:700}}>{selectedUser.activeUntil ? new Date(selectedUser.activeUntil).toLocaleDateString() : "-"}</span>
+                               <span style={{fontSize:12, fontWeight:600, color:"#4B5563"}}>Active Until:</span>
+                               <span style={{fontSize:12, fontWeight:700, color:"#111827"}}>{selectedUser.activeUntil ? new Date(selectedUser.activeUntil).toLocaleDateString() : "-"}</span>
                             </div>
                          </div>
                       </div>
                       
-                      <div style={{marginTop:24, paddingTop:24, borderTop:"1px solid #F5F5F5"}}>
-                         <div style={{fontSize:11, fontWeight:800, color:"rgba(0,0,0,0.4)", textTransform:"uppercase", marginBottom:12}}>Keamanan & Akses</div>
-                         <button onClick={()=>handleResetPassword(selectedUser.email)} style={{background:"#F5F5F5", color:"#2C2016", border:"1px solid #DDD", padding:"12px", borderRadius:12, fontSize:12, fontWeight:700, cursor:"pointer", width:"100%", display:"flex", alignItems:"center", justifyContent:"center", gap:8}} className="hover-scale">
+                      <div style={{marginTop:24, paddingTop:24, borderTop:"1px solid rgba(0,0,0,0.05)"}}>
+                         <div style={{fontSize:11, fontWeight:700, color:"#4B5563", textTransform:"uppercase", marginBottom:12}}>Keamanan & Akses</div>
+                         <button onClick={()=>handleResetPassword(selectedUser.email)} style={{background:"#FFFFFF", color:"#374151", border:"1px solid rgba(0,0,0,0.08)", padding:"12px", borderRadius:12, fontSize:12, fontWeight:700, cursor:"pointer", width:"100%", display:"flex", alignItems:"center", justifyContent:"center", gap:8}} className="btn-hover">
                              <CheckCircle size={16} /> Kirim Link Reset Password
                          </button>
                       </div>
                    </div>
 
-                   <div style={{display:"flex", flexDirection:"column", gap:20}}>
-                      <div style={CARD({padding:24, borderRadius:24})}>
-                         <h3 style={{fontSize:16, fontWeight:800, marginBottom:16}}>Ubah Paket Manual</h3>
+                   <div style={{display:"flex", flexDirection:"column", gap:24}}>
+                      <div style={{background:"#FFFFFF", borderRadius:24, padding:24, border:"1px solid rgba(0,0,0,0.04)", boxShadow:"0 1px 3px rgba(0,0,0,0.01), 0 10px 30px rgba(0,0,0,0.02)"}}>
+                         <h3 style={{fontSize:16, fontWeight:800, color:"#111827", marginBottom:16}}>Ubah Paket Manual</h3>
                          <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:12}}>
-                            <button onClick={()=>handleUpdatePlan(selectedUser.id, "pro", 30)} style={{background:"var(--theme-primary)", color:"white", border:"none", padding:12, borderRadius:12, fontWeight:700, cursor:"pointer"}}>Set PRO (30 Hari)</button>
-                            <button onClick={()=>handleUpdatePlan(selectedUser.id, "free", 0)} style={{background:"#F5F5F5", border:"none", padding:12, borderRadius:12, fontWeight:700, cursor:"pointer"}}>Set FREE (Revoke)</button>
+                            <button onClick={()=>handleUpdatePlan(selectedUser.id, "pro", 30)} style={{background:"var(--theme-primary)", color:"white", border:"none", padding:12, borderRadius:12, fontWeight:700, cursor:"pointer"}} className="btn-hover">Set PRO (30 Hari)</button>
+                            <button onClick={()=>handleUpdatePlan(selectedUser.id, "free", 0)} style={{background:"transparent", border:"1px solid rgba(239,68,68,0.15)", color:"#EF4444", padding:12, borderRadius:12, fontWeight:700, cursor:"pointer"}} className="btn-hover">Set FREE (Revoke)</button>
                          </div>
                          
-                         <div style={{marginTop:16, paddingTop:16, borderTop:"1px solid #F5F5F5"}}>
-                            <div style={{fontSize:12, fontWeight:800, marginBottom:12, color:"#6B4E31"}}>Assign VIP (Riset / User Testing)</div>
+                         <div style={{marginTop:18, paddingTop:18, borderTop:"1px solid rgba(0,0,0,0.05)"}}>
+                            <div style={{fontSize:12, fontWeight:700, marginBottom:12, color:"#374151"}}>Assign VIP (Riset / User Testing)</div>
                             <div style={{display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8}}>
-                               <button onClick={()=>handleUpdatePlan(selectedUser.id, "vip", 30)} style={{background:"#2C2016", color:"#FAF7F2", border:"none", padding:10, borderRadius:10, fontSize:10, fontWeight:800, cursor:"pointer"}}>1 Bln</button>
-                               <button onClick={()=>handleUpdatePlan(selectedUser.id, "vip", 90)} style={{background:"#2C2016", color:"#FAF7F2", border:"none", padding:10, borderRadius:10, fontSize:10, fontWeight:800, cursor:"pointer"}}>3 Bln</button>
-                               <button onClick={()=>handleUpdatePlan(selectedUser.id, "vip", 180)} style={{background:"#2C2016", color:"#FAF7F2", border:"none", padding:10, borderRadius:10, fontSize:10, fontWeight:800, cursor:"pointer"}}>6 Bln</button>
+                               <button onClick={()=>handleUpdatePlan(selectedUser.id, "vip", 30)} style={{background:"rgba(59,130,246,0.05)", color:"var(--theme-primary)", border:"none", padding:10, borderRadius:10, fontSize:11, fontWeight:700, cursor:"pointer"}} className="btn-hover">1 Bln</button>
+                               <button onClick={()=>handleUpdatePlan(selectedUser.id, "vip", 90)} style={{background:"rgba(59,130,246,0.05)", color:"var(--theme-primary)", border:"none", padding:10, borderRadius:10, fontSize:11, fontWeight:700, cursor:"pointer"}} className="btn-hover">3 Bln</button>
+                               <button onClick={()=>handleUpdatePlan(selectedUser.id, "vip", 180)} style={{background:"rgba(59,130,246,0.05)", color:"var(--theme-primary)", border:"none", padding:10, borderRadius:10, fontSize:11, fontWeight:700, cursor:"pointer"}} className="btn-hover">6 Bln</button>
                             </div>
                          </div>
                       </div>
 
-                      <div style={CARD({padding:24, borderRadius:24})}>
-                         <h3 style={{fontSize:16, fontWeight:800, marginBottom:16}}>Midtrans History</h3>
+                      <div style={{background:"#FFFFFF", borderRadius:24, padding:24, border:"1px solid rgba(0,0,0,0.04)", boxShadow:"0 1px 3px rgba(0,0,0,0.01), 0 10px 30px rgba(0,0,0,0.02)"}}>
+                         <h3 style={{fontSize:16, fontWeight:800, color:"#111827", marginBottom:16}}>Midtrans History</h3>
                          <div style={{display:"flex", flexDirection:"column", gap:10}}>
                             {/* In a real app, this would be a filtered list of transactions */}
-                            <div style={{padding:12, border:"1px dashed #DDD", borderRadius:12, textAlign:"center", fontSize:12, color:"#999"}}>
+                            <div style={{padding:20, border:"1px dashed rgba(0,0,0,0.08)", borderRadius:14, textAlign:"center", fontSize:12, color:"#9CA3AF", fontWeight:500}}>
                                Belum ada riwayat transaksi Midtrans untuk user ini.
                             </div>
                          </div>
@@ -601,14 +618,14 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
               <motion.div key="finance" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0}}>
                  <div style={{display:"flex", justifyContent:"space-between", alignItems:"flex-end", marginBottom:32}}>
                    <div>
-                     <h2 style={{fontSize:28, fontWeight:800, color:"#2C2016", margin:0, letterSpacing:"-1px"}}>Manajemen Keuangan</h2>
-                     <p style={{fontSize:14, color:"rgba(44,32,22,0.5)", marginTop:4}}>Pantau transaksi, revenue, dan pertumbuhan finansial SaaS.</p>
+                     <h2 style={{fontSize:28, fontWeight:800, color:"#111827", margin:0, letterSpacing:"-1px"}}>Manajemen Keuangan</h2>
+                     <p style={{fontSize:14, color:"#6B7280", marginTop:4}}>Pantau transaksi, revenue, dan pertumbuhan finansial SaaS.</p>
                    </div>
                    <div style={{display:"flex", gap:12}}>
                       <select 
                         value={financeFilter.month} 
                         onChange={e => setFinanceFilter(p => ({...p, month: Number(e.target.value)}))}
-                        style={{padding:"10px 16px", borderRadius:12, border:"1px solid #DDD", fontSize:13, fontWeight:700}}
+                        style={{padding:"10px 16px", borderRadius:12, border:"1px solid rgba(0,0,0,0.06)", background:"#FFFFFF", color:"#374151", fontSize:13, fontWeight:700, outline:"none", boxShadow:"0 1px 2px rgba(0,0,0,0.01)"}}
                       >
                         {Array.from({length:12}, (_, i) => i + 1).map(m => (
                           <option key={m} value={m}>{new Date(2000, m-1).toLocaleString('id-ID', {month:'long'})}</option>
@@ -617,7 +634,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                       <select 
                         value={financeFilter.year} 
                         onChange={e => setFinanceFilter(p => ({...p, year: Number(e.target.value)}))}
-                        style={{padding:"10px 16px", borderRadius:12, border:"1px solid #DDD", fontSize:13, fontWeight:700}}
+                        style={{padding:"10px 16px", borderRadius:12, border:"1px solid rgba(0,0,0,0.06)", background:"#FFFFFF", color:"#374151", fontSize:13, fontWeight:700, outline:"none", boxShadow:"0 1px 2px rgba(0,0,0,0.01)"}}
                       >
                         {[2024, 2025, 2026, 2027].map(y => (
                           <option key={y} value={y}>{y}</option>
@@ -626,20 +643,20 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                    </div>
                  </div>
 
-                 <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(280px, 1fr))", gap: 20, marginBottom:32}}>
+                 <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(280px, 1fr))", gap: 24, marginBottom:32}}>
                     <div style={CARD({padding:24, borderRadius:20})}>
                        <div style={{fontSize:12, color:"rgba(44,32,22,0.5)", fontWeight:700, textTransform:"uppercase"}}>Total Revenue</div>
-                       <div style={{fontSize:36, fontWeight:800, marginTop:8}}>{fmtRp(transactions.reduce((acc, t) => acc + (Number(t.amount) || 0), 0))}</div>
+                       <div style={{fontSize:32, fontWeight:800, color:"#111827", marginTop:8, letterSpacing:"-1px"}}>{fmtRp(transactions.reduce((acc, t) => acc + (Number(t.amount) || 0), 0))}</div>
                        <div style={{fontSize:12, color:"#4CAF50", fontWeight:700, marginTop:8}}>Lifetime Earnings</div>
                     </div>
                     <div style={CARD({padding:24, borderRadius:20})}>
-                       <div style={{fontSize:12, color:"rgba(44,32,22,0.5)", fontWeight:700, textTransform:"uppercase"}}>MRR (Estimated)</div>
-                       <div style={{fontSize:36, fontWeight:800, marginTop:8}}>{fmtRp(users.filter(u=>u.plan==="pro").length * 99000)}</div>
+                       <div style={{fontSize:11, color:"#6B7280", fontWeight:700, textTransform:"uppercase", letterSpacing:"0.5px"}}>MRR (Estimated)</div>
+                       <div style={{fontSize:32, fontWeight:800, color:"#111827", marginTop:8, letterSpacing:"-1px"}}>{fmtRp(users.filter(u=>u.plan==="pro").length * 99000)}</div>
                        <div style={{fontSize:12, color:"#2196F3", fontWeight:700, marginTop:8}}>Monthly Recurring Revenue</div>
                     </div>
                     <div style={CARD({padding:24, borderRadius:20})}>
-                       <div style={{fontSize:12, color:"rgba(44,32,22,0.5)", fontWeight:700, textTransform:"uppercase"}}>Pendapatan Filter Terpilih</div>
-                       <div style={{fontSize:36, fontWeight:800, marginTop:8}}>
+                       <div style={{fontSize:11, color:"#6B7280", fontWeight:700, textTransform:"uppercase", letterSpacing:"0.5px"}}>Pendapatan Periode Filter</div>
+                       <div style={{fontSize:32, fontWeight:800, color:"#111827", marginTop:8, letterSpacing:"-1px"}}>
                          {fmtRp(transactions.filter(t => {
                            const d = new Date(t.timestamp);
                            return d.getMonth() + 1 === financeFilter.month && d.getFullYear() === financeFilter.year;
@@ -650,7 +667,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                  </div>
 
                  <div style={CARD({borderRadius:20, overflow:"hidden", border:"1px solid #EEE"})}>
-                    <div style={{padding:20, borderBottom:"1px solid #EEE", background:"#FAFAFA", display:"flex", justifyContent:"space-between", alignItems:"center"}}>
+                    <div style={{padding:"20px 24px", borderBottom:"1px solid rgba(0,0,0,0.05)", background:"rgba(0,0,0,0.01)", display:"flex", justifyContent:"space-between", alignItems:"center"}}>
                        <h3 style={{fontSize:16, fontWeight:800, margin:0}}>History Transaksi Berdasarkan Filter</h3>
                        <button onClick={() => {
                           const csv = "Date,Email,Plan,Amount,Voucher,Method\n" + transactions.map(t => `${t.timestamp},${t.userEmail},${t.planName},${t.amount},${t.voucherCode || '-'},${t.paymentMethod}`).join("\n");
@@ -663,17 +680,17 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                           document.body.appendChild(a);
                           a.click();
                           document.body.removeChild(a);
-                       }} style={{fontSize:12, fontWeight:700, color:"var(--theme-primary)", background:"white", border:"1px solid #EEE", padding:"8px 16px", borderRadius:10, cursor:"pointer"}}>Ekspor CSV</button>
+                       }} style={{fontSize:12, fontWeight:700, color:"var(--theme-primary)", background:"#FFFFFF", border:"1px solid rgba(0,0,0,0.08)", padding:"8px 16px", borderRadius:10, cursor:"pointer"}} className="btn-hover">Ekspor CSV</button>
                     </div>
                     <table style={{width:"100%", borderCollapse:"collapse", fontSize:13}}>
                         <thead>
-                          <tr style={{background:"#FAFAFA", textAlign:"left"}}>
-                             <th style={{padding:16, fontSize:11, fontWeight:800, color:"#999"}}>TANGGAL & JAM</th>
-                             <th style={{padding:16, fontSize:11, fontWeight:800, color:"#999", minWidth:180}}>PENGGUNA</th>
-                             <th style={{padding:16, fontSize:11, fontWeight:800, color:"#999"}}>PAKET</th>
-                             <th style={{padding:16, fontSize:11, fontWeight:800, color:"#999"}}>VOUCHER</th>
-                             <th style={{padding:16, fontSize:11, fontWeight:800, color:"#999"}}>NOMINAL</th>
-                             <th style={{padding:16, fontSize:11, fontWeight:800, color:"#999"}}>METODE</th>
+                          <tr style={{background:"rgba(0,0,0,0.01)", borderBottom:"1px solid rgba(0,0,0,0.05)", textAlign:"left"}}>
+                             <th style={{padding:"18px 24px", fontSize:11, fontWeight:700, color:"#4B5563", textTransform:"uppercase", letterSpacing:"0.5px"}}>TANGGAL & JAM</th>
+                             <th style={{padding:"18px 24px", fontSize:11, fontWeight:700, color:"#4B5563", textTransform:"uppercase", letterSpacing:"0.5px", minWidth:180}}>PENGGUNA</th>
+                             <th style={{padding:"18px 24px", fontSize:11, fontWeight:700, color:"#4B5563", textTransform:"uppercase", letterSpacing:"0.5px"}}>PAKET</th>
+                             <th style={{padding:"18px 24px", fontSize:11, fontWeight:700, color:"#4B5563", textTransform:"uppercase", letterSpacing:"0.5px"}}>VOUCHER</th>
+                             <th style={{padding:"18px 24px", fontSize:11, fontWeight:700, color:"#4B5563", textTransform:"uppercase", letterSpacing:"0.5px"}}>NOMINAL</th>
+                             <th style={{padding:"18px 24px", fontSize:11, fontWeight:700, color:"#4B5563", textTransform:"uppercase", letterSpacing:"0.5px"}}>METODE</th>
                           </tr>
                        </thead>
                        <tbody>
@@ -684,18 +701,18 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                            })
                            .sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
                            .map(t => (
-                            <tr key={t.id} style={{borderBottom:"1px solid #FAFAFA", verticalAlign:"top"}}>
-                               <td style={{padding:16}}>
+                            <tr key={t.id} style={{borderBottom:"1px solid rgba(0,0,0,0.04)", verticalAlign:"middle"}} className="hover-bg-light">
+                               <td style={{padding:"18px 24px"}}>
                                   <div style={{fontWeight:700}}>{new Date(t.timestamp).toLocaleDateString("id-ID", {dateStyle:"medium"})}</div>
                                   <div style={{fontSize:10, color:"#999"}}>{new Date(t.timestamp).toLocaleTimeString("id-ID", {hour:"2-digit", minute:"2-digit"})}</div>
                                </td>
-                               <td style={{padding:16, fontWeight:700, whiteSpace:"normal", wordBreak:"break-all", maxWidth:200}}>{t.userEmail}</td>
+                               <td style={{padding:"18px 24px", fontWeight:700, color:"#111827", whiteSpace:"normal", wordBreak:"break-all", maxWidth:200}}>{t.userEmail}</td>
                                <td style={{padding:16}}>
-                                  <span style={{fontSize:11, fontWeight:800, background:"rgba(0,0,0,0.05)", padding:"4px 8px", borderRadius:6}}>{t.planName}</span>
+                                  <span style={{fontSize:11, fontWeight:800, background:"rgba(59,130,246,0.08)", color:"var(--theme-primary)", border:"1px solid rgba(59,130,246,0.12)", padding:"4px 8px", borderRadius:6}}>{t.planName}</span>
                                </td>
-                               <td style={{padding:16, color: t.voucherCode ? "#3B82F6" : "#999", fontWeight: t.voucherCode ? 800 : 400}}>{t.voucherCode || "-"}</td>
-                               <td style={{padding:16, fontWeight:800, color:"#4CAF50"}}>{fmtRp(t.amount)}</td>
-                               <td style={{padding:16, fontSize:12, color:"#666"}}>{t.paymentMethod}</td>
+                               <td style={{padding:"18px 24px", color: t.voucherCode ? "#10B981" : "#9CA3AF", fontWeight: t.voucherCode ? 800 : 400, fontSize: 12}}>{t.voucherCode || "-"}</td>
+                               <td style={{padding:"18px 24px", fontWeight:800, color:"#10B981"}}>{fmtRp(t.amount)}</td>
+                               <td style={{padding:"18px 24px", fontSize:12, color:"#4B5563"}}>{t.paymentMethod}</td>
                             </tr>
                           ))}
                        </tbody>
@@ -704,7 +721,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                        const d = new Date(t.timestamp);
                        return d.getMonth() + 1 === financeFilter.month && d.getFullYear() === financeFilter.year;
                     }).length === 0 && (
-                      <div style={{padding:60, textAlign:"center", color:"#999"}}>Tidak ada transaksi pada periode ini.</div>
+                      <div style={{padding:60, textAlign:"center", color:"#9CA3AF", fontWeight:600}}>Tidak ada transaksi pada periode ini.</div>
                     )}
                  </div>
               </motion.div>
@@ -1125,7 +1142,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                        <div style={{display:"flex", flexDirection:"column", gap:16}}>
                           <div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}>
                              <div>
-                                <div style={{fontSize:14, fontWeight:700}}>Menu Content Planner</div>
+                                <div style={{fontSize:14, fontWeight:700}}>Menu Calendar</div>
                                 <div style={{fontSize:12, color:"#999"}}>Tampilkan akses ke fitur perencanaan konten.</div>
                              </div>
                              <button onClick={()=>updateSystemConfig({ "features.contentPlanner": systemSettings?.features?.contentPlanner === false ? true : false })} style={{background:"transparent", border:"none", cursor:"pointer"}}>
@@ -1219,7 +1236,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                     <label style={{display:"block", fontSize:11, fontWeight:800, color:"#999", textTransform:"uppercase", marginBottom:6}}>Fitur Paket (Pilih yang termasuk)</label>
                     <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, maxHeight: 150, overflowY:"auto", padding: 12, border: "1px solid #EEE", borderRadius: 12}}>
                       {[
-                        "Content Planner", 
+                        "Calendar", 
                         "Full AI Analysis", 
                         "Multi-platform Export", 
                         "Advanced Analytics", 
