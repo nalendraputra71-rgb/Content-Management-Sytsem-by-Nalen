@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Clock, Instagram, Facebook, Youtube, Linkedin, Music, Globe } from "lucide-react";
+import { Clock, Instagram, Facebook, Youtube, Linkedin, Music, Globe , ChevronDown } from "lucide-react";
 import { 
   MONTHS, MS, DAYS_S, MK, MC,
   eng, fmt, fmtD, fmtT, getMin, gps, gpc, gss,
@@ -158,7 +158,9 @@ export function MonthView({year,month,monthContent,filtered,openEdit,openAdd,sho
               padding: 12,
               border: dragOverDate === day ? "2px dashed var(--theme-primary)" : isToday ? "2px solid var(--theme-primary)" : "1px solid rgba(0,0,0,0.03)",
               boxShadow: dragOverDate === day ? "inset 0 0 0 1px rgba(0,122,255,0.1)" : isToday ? "0 8px 24px rgba(var(--theme-primary-rgb),0.15)" : "0 2px 12px rgba(0,0,0,0.02)",
-              transition: "all 0.2s"
+              transition: "all 0.2s",
+              position: "relative",
+              overflow: "hidden"
             }}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
                 <div style={{display:"flex",flexDirection:"column",gap:2}}>
@@ -188,7 +190,7 @@ export function MonthView({year,month,monthContent,filtered,openEdit,openAdd,sho
                 ))}
               </div>
 
-              <div style={{display:"flex",flexDirection:"column",gap:2, flex: 1, minHeight: 0, overflowY: "auto", paddingRight: "2px", scrollbarWidth: "thin"}}>
+              <div className="[&::-webkit-scrollbar]:hidden" style={{display:"flex",flexDirection:"column",gap:2, flex: 1, minHeight: 0, overflowY: "auto", msOverflowStyle: "none", scrollbarWidth: "none"}}>
                 <AnimatePresence>
                   {items.map((item:any)=>{
                     const ps = item.archived ? { color: "#7A7976", light: "#EBEAE6" } : gps(pillars, String(item.pillar).split(',')[0].trim());
@@ -271,6 +273,25 @@ export function MonthView({year,month,monthContent,filtered,openEdit,openAdd,sho
                 </AnimatePresence>
                 {items.length===0&&allItems.length>0&&<div style={{fontSize:8,color:"rgba(44,32,22,0.3)",fontStyle:"italic"}}>Disembunyikan filter</div>}
               </div>
+              {items.length > 2 && (
+                <div
+                  style={{
+                    position: "absolute",
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    height: 24,
+                    background: "linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,1) 80%)",
+                    display: "flex",
+                    alignItems: "flex-end",
+                    justifyContent: "center",
+                    paddingBottom: 2,
+                    pointerEvents: "none",
+                  }}
+                >
+                  <ChevronDown size={14} color="rgba(44,32,22,0.4)" style={{ filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.15))" }} />
+                </div>
+              )}
             </div>
           );
         })}

@@ -611,11 +611,11 @@ export function PublicBriefView() {
       </header>
 
       {/* Main split-pane content */}
-      <main className="max-w-6xl mx-auto px-4 mt-8 flex flex-col lg:flex-row gap-8 items-start">
+      <main className="max-w-[1400px] w-full mx-auto px-4 lg:px-6 mt-8 flex flex-col lg:flex-row gap-6 items-start">
         
-        {/* LEFT COLUMN: Properties & Mobile Live Preview */}
-        <div className="w-full lg:w-[380px] shrink-0 flex flex-col gap-6">
-          <div className="bg-white border border-gray-100 rounded-[24px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.01)] flex flex-col gap-6">
+                {/* LEFT COLUMN: Properties */}
+        <div className="w-full lg:w-[280px] xl:w-[320px] shrink-0 flex flex-col gap-6">
+<div className="bg-white border border-gray-100 rounded-[24px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.01)] flex flex-col gap-6">
             
             {/* Title Block */}
             <div className="flex flex-col gap-2">
@@ -759,27 +759,10 @@ export function PublicBriefView() {
 
             </div>
           </div>
-
-          {/* REALISTIC MOBILE LIVE PREVIEW PANEL */}
-          <div className="bg-white border border-gray-100 rounded-[24px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.01)] flex flex-col gap-4">
-            <div className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-              <Eye size={14} className="text-gray-400" /> Live Interactive Preview
-            </div>
-            
-            <div className="py-4 flex justify-center bg-gray-50/50 rounded-2xl border border-gray-100/50">
-              <PlatformPreview
-                platform={brief.platform || "instagram"}
-                contentType={brief.contentType || "feed"}
-                caption={brief.caption || ""}
-                mediaList={previewMediaList}
-                workspaceName={workspaceName}
-              />
-            </div>
-          </div>
         </div>
 
-        {/* RIGHT COLUMN: Tab Navigation and Beautiful Interactive Cards */}
-        <div className="flex-1 w-full flex flex-col gap-6">
+        {/* MIDDLE COLUMN: Tab Navigation and Interactive Cards */}
+<div className="flex-1 w-full flex flex-col gap-6 min-w-0">
           
           {/* Apple-Style Segmented Tab Selection Bar */}
           <div className="bg-white border border-gray-100 rounded-[20px] p-4 shadow-[0_8px_30px_rgb(0,0,0,0.01)]">
@@ -1253,6 +1236,27 @@ export function PublicBriefView() {
 
         </div>
 
+     
+
+        {/* RIGHT COLUMN: Mobile Live Preview */}
+        <div className="w-full lg:w-[320px] xl:w-[360px] shrink-0 flex flex-col gap-6">
+{/* REALISTIC MOBILE LIVE PREVIEW PANEL */}
+          <div className="bg-white border border-gray-100 rounded-[24px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.01)] flex flex-col gap-4">
+            <div className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
+              <Eye size={14} className="text-gray-400" /> Preview
+            </div>
+            
+            <div className="py-4 flex justify-center bg-gray-50/50 rounded-2xl border border-gray-100/50">
+              <PlatformPreview
+                platform={brief.platform || "instagram"}
+                contentType={brief.contentType || "feed"}
+                caption={brief.caption || ""}
+                mediaList={previewMediaList}
+                workspaceName={workspaceName}
+              />
+            </div>
+          </div>
+        </div>
       </main>
     </div>
   );
