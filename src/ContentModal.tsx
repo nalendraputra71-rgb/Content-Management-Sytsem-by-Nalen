@@ -498,7 +498,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
 
   const [isReady, setIsReady] = useState(false);
   useEffect(() => {
-    const timer = window.requestAnimationFrame(() => {
+    const timer = setTimeout(() => {
       setIsReady(true);
     }, 220);
     return () => clearTimeout(timer);
@@ -579,7 +579,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
     if (isNaN(val) || val < minHour || val > maxHour) {
       set("uploadHour", ""); // auto delete
       setHourError(true);
-      window.requestAnimationFrame(() => {
+      setTimeout(() => {
         setHourError(false);
       }, 2500);
     } else {
@@ -604,7 +604,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
     if (isNaN(val) || val < minHour || val > maxHour) {
       set("productionHour", ""); // auto delete
       setProductionHourError(true);
-      window.requestAnimationFrame(() => {
+      setTimeout(() => {
         setProductionHourError(false);
       }, 2500);
     } else {
@@ -644,7 +644,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
     if (isNaN(val) || val < 0 || val > 59) {
       set("uploadMinute", ""); // auto delete
       setMinuteError(true);
-      window.requestAnimationFrame(() => {
+      setTimeout(() => {
         setMinuteError(false);
       }, 2500);
     } else {
@@ -665,7 +665,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
     if (isNaN(val) || val < 0 || val > 59) {
       set("productionMinute", ""); // auto delete
       setProductionMinuteError(true);
-      window.requestAnimationFrame(() => {
+      setTimeout(() => {
         setProductionMinuteError(false);
       }, 2500);
     } else {
@@ -832,7 +832,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
 
   useEffect(() => {
     if (!isReaderMode && focusTarget) {
-      window.requestAnimationFrame(() => {
+      setTimeout(() => {
         if (focusTarget === "title" && titleRef.current) {
           titleRef.current.focus();
           const len = titleRef.current.value.length;
@@ -857,7 +857,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
 
   useEffect(() => {
     if (titleRef.current) {
-      window.requestAnimationFrame(() => {
+      setTimeout(() => {
         if (titleRef.current) {
           titleRef.current.style.height = 'auto';
           titleRef.current.style.height = titleRef.current.scrollHeight + 'px';
