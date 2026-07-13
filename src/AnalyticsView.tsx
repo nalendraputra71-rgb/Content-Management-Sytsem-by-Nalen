@@ -1053,7 +1053,7 @@ export function AnalyticsView({
     let rangeLabel = `${fmtDateString(finalStartDate)} - ${fmtDateString(finalEndDate)}`;
 
     const filteredBase = content.filter((c: any) => {
-      let cdt = new Date(c.year, c.month, c.day);
+      let cdt = new Date(c.year, c.month - 1, c.day);
       let isMatch = cdt >= finalStartDate && cdt <= finalEndDate;
 
       if (!isMatch) return false;
@@ -1117,7 +1117,7 @@ export function AnalyticsView({
       if (!groupedTimeline[dateKey]) {
         const dayData: any = {
           date: dateKey,
-          timestamp: new Date(c.year, c.month, c.day).getTime(),
+          timestamp: new Date(c.year, c.month - 1, c.day).getTime(),
         };
         activeMetrics.forEach(m => dayData[m] = 0);
         groupedTimeline[dateKey] = dayData;
@@ -1232,7 +1232,7 @@ export function AnalyticsView({
 
   // Handle Quick Filters & Custom via date logic 
   const isDateMatch = (c:any, isPrev:boolean=false) => {
-    let cdt = new Date(c.year, c.month, c.day);
+    let cdt = new Date(c.year, c.month - 1, c.day);
     const now = new Date();
     now.setHours(0,0,0,0);
     
@@ -1423,7 +1423,7 @@ export function AnalyticsView({
           labels.push({
             label: `${wStart.getDate()} ${MS[wStart.getMonth()]} - ${wEnd.getDate()} ${MS[wEnd.getMonth()]}`,
             filter: (c: any) => {
-              const d = new Date(c.year, c.month, c.day);
+              const d = new Date(c.year, c.month - 1, c.day);
               // Normalize times
               d.setHours(0,0,0,0);
               return d.getTime() >= wStart.getTime() && d.getTime() <= wEnd.getTime();
@@ -1463,7 +1463,7 @@ export function AnalyticsView({
   const heatmap = useMemo(() => {
     let m = Array(7).fill(0).map(() => Array(24).fill(0));
     base.filter((c:any)=>c.status==="Published").forEach((c:any) => {
-      let cd = new Date(c.year, c.month, c.day).getDay();
+      let cd = new Date(c.year, c.month - 1, c.day).getDay();
       let h = c.uploadHour || 9;
       if (h>=0 && h<24) {
         if (heatmapMetric === "engagement") m[cd][h] += getEng(c);

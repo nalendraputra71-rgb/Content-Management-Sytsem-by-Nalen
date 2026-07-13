@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid } from "recharts";
-import * as XLSX from "xlsx";
 import { motion, AnimatePresence } from "motion/react";
 import { ChevronDown, Pencil, Plus, Trash2, Instagram, Facebook, Linkedin, AtSign, Music, Globe, Save } from "lucide-react";
 import { ColorPickerSelect } from "./components/ColorPickerSelect";

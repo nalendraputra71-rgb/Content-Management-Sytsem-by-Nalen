@@ -498,7 +498,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
 
   const [isReady, setIsReady] = useState(false);
   useEffect(() => {
-    const timer = setTimeout(() => {
+    const timer = window.requestAnimationFrame(() => {
       setIsReady(true);
     }, 220);
     return () => clearTimeout(timer);
@@ -579,7 +579,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
     if (isNaN(val) || val < minHour || val > maxHour) {
       set("uploadHour", ""); // auto delete
       setHourError(true);
-      setTimeout(() => {
+      window.requestAnimationFrame(() => {
         setHourError(false);
       }, 2500);
     } else {
@@ -604,7 +604,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
     if (isNaN(val) || val < minHour || val > maxHour) {
       set("productionHour", ""); // auto delete
       setProductionHourError(true);
-      setTimeout(() => {
+      window.requestAnimationFrame(() => {
         setProductionHourError(false);
       }, 2500);
     } else {
@@ -644,7 +644,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
     if (isNaN(val) || val < 0 || val > 59) {
       set("uploadMinute", ""); // auto delete
       setMinuteError(true);
-      setTimeout(() => {
+      window.requestAnimationFrame(() => {
         setMinuteError(false);
       }, 2500);
     } else {
@@ -665,7 +665,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
     if (isNaN(val) || val < 0 || val > 59) {
       set("productionMinute", ""); // auto delete
       setProductionMinuteError(true);
-      setTimeout(() => {
+      window.requestAnimationFrame(() => {
         setProductionMinuteError(false);
       }, 2500);
     } else {
@@ -832,7 +832,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
 
   useEffect(() => {
     if (!isReaderMode && focusTarget) {
-      setTimeout(() => {
+      window.requestAnimationFrame(() => {
         if (focusTarget === "title" && titleRef.current) {
           titleRef.current.focus();
           const len = titleRef.current.value.length;
@@ -857,12 +857,12 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
 
   useEffect(() => {
     if (titleRef.current) {
-      setTimeout(() => {
+      window.requestAnimationFrame(() => {
         if (titleRef.current) {
           titleRef.current.style.height = 'auto';
           titleRef.current.style.height = titleRef.current.scrollHeight + 'px';
         }
-      }, 0);
+      });
     }
   }, [d.title, modal.open, isReaderMode]);
 
@@ -1468,7 +1468,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
           </div>
 
           {!isReady ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: "20px", width: "100%", opacity: 0.6 }} className="animate-pulse">
+            <div style={{ display: "flex", flexDirection: "column", gap: "20px", width: "100%", height: 504, opacity: 0.6 }} className="animate-pulse">
               {[1, 2, 3].map((n) => (
                 <div key={n} style={{ background: "#ffffff", border: "1px solid rgba(44, 32, 22, 0.06)", borderRadius: 16, padding: "20px", display: "flex", flexDirection: "column", gap: "12px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>

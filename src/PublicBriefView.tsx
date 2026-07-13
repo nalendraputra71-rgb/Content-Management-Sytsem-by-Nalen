@@ -941,11 +941,11 @@ export function PublicBriefView() {
                       <div className="text-[11px] font-extrabold text-gray-400 uppercase tracking-widest mb-4">
                         Aset / Gambar Referensi Utama
                       </div>
-                      <div className="rounded-2xl overflow-hidden border border-gray-100 bg-gray-50 flex justify-center max-h-[420px]">
+                      <div className="rounded-2xl overflow-hidden border border-gray-100 bg-gray-50 flex justify-center aspect-video w-full max-h-[420px]">
                         <img 
                           src={brief.referenceImage} 
                           alt="Referensi Utama" 
-                          className="object-contain max-h-[420px]"
+                          className="w-full h-full object-contain"
                           referrerPolicy="no-referrer"
                         />
                       </div>

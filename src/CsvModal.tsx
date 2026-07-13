@@ -1,5 +1,4 @@
 import { useState, useRef } from "react";
-import * as XLSX from "xlsx";
 import { emptyItem, gid, B, CARD } from "./data";
 import { motion } from "motion/react";
 import { Upload } from "lucide-react";
@@ -48,6 +47,7 @@ export function CsvModal({onClose, onImport, pillars, platforms, contentTypes, p
   ];
 
   const handleDownloadTemplate = () => {
+    import("xlsx").then((XLSX) => {
     const ws = XLSX.utils.aoa_to_sheet(template);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Template");
@@ -58,6 +58,7 @@ export function CsvModal({onClose, onImport, pillars, platforms, contentTypes, p
     a.href = URL.createObjectURL(new Blob([csvWithBom], { type: "text/csv;charset=utf-8;" }));
     a.download = "template.csv";
     a.click();
+    });
   };
 
   const handleFile = (e: any) => {
@@ -68,6 +69,7 @@ export function CsvModal({onClose, onImport, pillars, platforms, contentTypes, p
     reader.onload = (e: any) => {
         try {
             const data = new Uint8Array(e.target.result);
+            import("xlsx").then((XLSX) => {
             // sheet_to_json preserves data but we need to handle potential encoding weirdness
             const workbook = XLSX.read(data, { type: 'array', codepage: 65001 }); // Force UTF-8 detection
             const sheetName = workbook.SheetNames[0];
@@ -170,6 +172,7 @@ export function CsvModal({onClose, onImport, pillars, platforms, contentTypes, p
             
             setDataPreview(parsedData);
             setStep(2);
+                    });
         } catch (err) {
             setErrorMsg("Gagal membaca file. Pastikan format CSV sesuai template.");
         }

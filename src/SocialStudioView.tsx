@@ -7666,10 +7666,13 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                         placeholder="Tanya apapun ke HUB.AI..."
                         value={chatInput}
                         onChange={(e) => {
+                          const target = e.target;
                           setChatInput(e.target.value);
-                          e.target.style.height = "auto";
-                          e.target.style.height =
-                            Math.min(e.target.scrollHeight, 200) + "px";
+                          window.requestAnimationFrame(() => {
+                            target.style.height = "auto";
+                            target.style.height =
+                            Math.min(target.scrollHeight, 200) + "px";
+                          });
                         }}
                         onKeyDown={(e) => {
                           if (e.key === "Enter" && !e.shiftKey) {

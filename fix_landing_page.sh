@@ -1,0 +1,1 @@
+sed -i 's/const handleScroll = () => setScrollY(window.scrollY);/let ticking = false;\n    const handleScroll = () => {\n      if (!ticking) {\n        window.requestAnimationFrame(() => {\n          setScrollY(window.scrollY);\n          ticking = false;\n        });\n        ticking = true;\n      }\n    };/g' src/LandingPage.tsx
