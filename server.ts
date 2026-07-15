@@ -113,7 +113,7 @@ apiRoutes.post("/xendit/checkout", async (req, res) => {
     const safePlanId = String(planId || plan || "pro").replace(/[^a-zA-Z0-9]/g, '');
     const safeMonths = Number(addMonths) || 1;
     const safePromoId = String(promoId || "none").replace(/[^a-zA-Z0-9]/g, '');
-    const origin = req.headers.origin || "https://hubifysocial.com";
+    const origin = req.headers.origin || "https://ais-dev-olxozwjiavip4zo5jfxg4e-864064225498.asia-southeast1.run.app";
     const cleanOrigin = origin.replace(/\/+$/, "");
     
     const invoiceData = {
@@ -121,8 +121,8 @@ apiRoutes.post("/xendit/checkout", async (req, res) => {
       amount: numericAmount,
       payerEmail: email,
       description: description || `Pembayaran langganan ${plan} Hubify Social`,
-      successRedirectUrl: `${cleanOrigin}/billing?payment=success`,
-      failureRedirectUrl: `${cleanOrigin}/billing?payment=failure`,
+      successRedirectUrl: `${cleanOrigin}/#/billing?payment=success`,
+      failureRedirectUrl: `${cleanOrigin}/#/billing?payment=failure`,
       currency: "IDR",
     };
 
@@ -205,6 +205,8 @@ apiRoutes.post("/xendit/webhook", async (req, res) => {
         const updateData: any = {
           activeUntil: currentActive.toISOString(),
           plan: plan,
+          subscriptionStatus: "pro",
+          lastInvoiceId: external_id,
         };
 
         // Jika user menggunakan promo, tandai profil & naikkan usageCount voucher

@@ -351,7 +351,9 @@ export function UserProfile({
           onClick={() => navigate("/")}
           style={{
             ...B(false),
-            border: "none",
+            borderTop: "none",
+            borderRight: "none",
+            borderLeft: "none",
             background: "var(--theme-bg, #FAFAFA)",
             borderBottom: "1px solid rgba(44,32,22,0.1)",
             color: "var(--theme-text-main, #2C2016)",

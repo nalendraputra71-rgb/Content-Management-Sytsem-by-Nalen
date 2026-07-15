@@ -197,21 +197,21 @@ export function CustomDropdown({ value, options = [], onChange, dark = false, st
             {editMode && onUpdateOptions ? (
               <div 
                 style={{display: "flex", flexDirection: "column", gap: 8, padding: "8px 4px", minWidth: 260}}
-                onClick={(e) => e.stopPropagation()}
-                onMouseDown={(e) => e.stopPropagation()}
+                onClick={(e: any) => e.stopPropagation()}
+                onMouseDown={(e: any) => e.stopPropagation()}
               >
                 <div style={{fontSize: 11, fontWeight: 800, color: "#4B5563", textTransform: "uppercase", letterSpacing: 0.8, paddingBottom: 6, borderBottom: "1px solid #F3F4F6", display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4}}>
                   <span>Edit Opsi</span>
                 </div>
                 <div style={{display: "flex", flexDirection: "column", gap: 6, maxHeight: "250px", overflowY: "auto", paddingRight: 2}}>
 
-                  {localOptions.map((o, i) => {
+                  {localOptions.map((o: any, i: number) => {
                     const isStr = typeof o === 'string';
                     const val = isStr ? o : o.id || o.name || o;
                     const label = isStr ? o : o.label || o.name || o;
                     const color = isStr ? null : o.color;
                     return (
-                      <div key={i} style={{display: "flex", alignItems: "center", gap: 6}} onClick={(e) => e.stopPropagation()}>
+                      <div key={i} style={{display: "flex", alignItems: "center", gap: 6}} onClick={(e: any) => e.stopPropagation()}>
                         {!isStr && (
                           <div style={{ marginRight: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <ColorPickerSelect 
@@ -227,7 +227,7 @@ export function CustomDropdown({ value, options = [], onChange, dark = false, st
                         )}
                         <input 
                           value={label}
-                          onChange={(e) => {
+                          onChange={(e: any) => {
                             const newOpts = [...localOptions];
                             if (isStr) newOpts[i] = e.target.value;
                             else {
@@ -251,16 +251,16 @@ export function CustomDropdown({ value, options = [], onChange, dark = false, st
                             boxShadow: "inset 0 1px 2px rgba(0,0,0,0.03)",
                             transition: "all 0.15s"
                           }}
-                          onFocus={(e) => {
+                          onFocus={(e: any) => {
                             e.target.style.borderColor = "#3B82F6";
                             e.target.style.boxShadow = "0 0 0 2px rgba(59, 130, 246, 0.15)";
                           }}
-                          onBlur={(e) => {
+                          onBlur={(e: any) => {
                             e.target.style.borderColor = "#E5E7EB";
                             e.target.style.boxShadow = "none";
                           }}
-                          onClick={(e) => e.stopPropagation()}
-                          onKeyDown={(e) => {
+                          onClick={(e: any) => e.stopPropagation()}
+                          onKeyDown={(e: any) => {
                             e.stopPropagation();
                             if (e.key === "Enter") {
                               e.preventDefault();
@@ -269,9 +269,9 @@ export function CustomDropdown({ value, options = [], onChange, dark = false, st
                           }}
                         />
                         <button 
-                          onClick={(e) => {
+                          onClick={(e: any) => {
                             e.stopPropagation();
-                            const newOpts = localOptions.filter((_, idx) => idx !== i);
+                            const newOpts = localOptions.filter((_: any, idx: number) => idx !== i);
                             setLocalOptions(newOpts);
                           }}
                           style={{
@@ -286,8 +286,8 @@ export function CustomDropdown({ value, options = [], onChange, dark = false, st
                             borderRadius: 6,
                             transition: "all 0.2s"
                           }}
-                          onMouseEnter={(e) => e.currentTarget.style.background = "#FEE2E2"}
-                          onMouseLeave={(e) => e.currentTarget.style.background = "none"}
+                          onMouseEnter={(e: any) => e.currentTarget.style.background = "#FEE2E2"}
+                          onMouseLeave={(e: any) => e.currentTarget.style.background = "none"}
                         >
                           <Trash2 size={13}/>
                         </button>
@@ -296,7 +296,7 @@ export function CustomDropdown({ value, options = [], onChange, dark = false, st
                   })}
                 </div>
                 <button 
-                  onClick={(e) => {
+                  onClick={(e: any) => {
                     e.stopPropagation();
                     const isObj = localOptions.length > 0 && typeof localOptions[0] !== 'string';
                     const newItem = isObj ? {name: "Opsi Baru", id: "Opsi Baru", color: "#3B82F6"} : "Opsi Baru";
@@ -304,26 +304,26 @@ export function CustomDropdown({ value, options = [], onChange, dark = false, st
                     setLocalOptions(newOpts);
                   }}
                   style={{display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "8px", background: "#F3F4F6", border: "none", borderRadius: 8, fontSize: 11, fontWeight: 700, color: "#4B5563", cursor: "pointer", marginTop: 4, transition: "all 0.2s"}}
-                  onMouseEnter={(e) => e.currentTarget.style.background = "#E5E7EB"}
-                  onMouseLeave={(e) => e.currentTarget.style.background = "#F3F4F6"}
+                  onMouseEnter={(e: any) => e.currentTarget.style.background = "#E5E7EB"}
+                  onMouseLeave={(e: any) => e.currentTarget.style.background = "#F3F4F6"}
                 >
                   <Plus size={12}/> Tambah Opsi
                 </button>
                 <button
-                  onClick={(e) => {
+                  onClick={(e: any) => {
                     e.stopPropagation();
                     handleSaveEdit();
                   }}
                   style={{display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "8px", background: "var(--theme-primary)", border: "none", borderRadius: 8, fontSize: 11, fontWeight: 700, color: "#FFFFFF", cursor: "pointer", marginTop: 4, transition: "all 0.2s"}}
-                  onMouseEnter={(e) => e.currentTarget.style.opacity = "0.9"}
-                  onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
+                  onMouseEnter={(e: any) => e.currentTarget.style.opacity = "0.9"}
+                  onMouseLeave={(e: any) => e.currentTarget.style.opacity = "1"}
                 >
                   <Save size={12}/> Simpan
                 </button>
               </div>
             ) : (
               <>
-                {localOptions.map((o, i) => {
+                {localOptions.map((o: any, i: number) => {
                   const val = typeof o === 'string' ? o : o.id || o.name || o;
                   const isSelected = multiple ? valuesArray.includes(val) : val === value;
                   const label = typeof o === 'string' ? o : o.label || o.name || o;
@@ -352,8 +352,8 @@ export function CustomDropdown({ value, options = [], onChange, dark = false, st
                         display: "flex", alignItems: "center", gap: 10,
                         marginBottom: 2
                       }}
-                      onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = "#FAFAFA"; }}
-                      onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = "transparent"; }}
+                      onMouseEnter={(e: any) => { if (!isSelected) e.currentTarget.style.background = "#FAFAFA"; }}
+                      onMouseLeave={(e: any) => { if (!isSelected) e.currentTarget.style.background = "transparent"; }}
                     >
                       {multiple && (
                         <div style={{width: 14, height: 14, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0}}>
@@ -383,13 +383,13 @@ export function CustomDropdown({ value, options = [], onChange, dark = false, st
                 )}
                 {onUpdateOptions && (
                   <div 
-                    onClick={(e) => { e.stopPropagation(); setEditMode(true); }}
+                    onClick={(e: any) => { e.stopPropagation(); setEditMode(true); }}
                     style={{ borderTop: "1px solid rgba(44,32,22,0.1)", marginTop: 4, paddingTop: 4, paddingBottom: 0 }}
                   >
                     <div 
                       style={{ padding: "8px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, color: "rgba(44,32,22,0.5)" }}
-                      onMouseEnter={(e) => e.currentTarget.style.background = "#FAFAFA"}
-                      onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+                      onMouseEnter={(e: any) => e.currentTarget.style.background = "#FAFAFA"}
+                      onMouseLeave={(e: any) => e.currentTarget.style.background = "transparent"}
                     >
                       <Pencil size={12}/> Edit Opsi Dropdown
                     </div>
@@ -632,7 +632,9 @@ export const B = (active:any, color = "var(--theme-primary)") => ({
 });
 
 export const TAB = (active:any) => ({
-  border: "none",
+  borderTop: "none",
+  borderRight: "none",
+  borderLeft: "none",
   borderBottom: `2.5px solid ${active ? "var(--theme-primary)" : "transparent"}`,
   background: "transparent",
   padding: "12px 20px",

@@ -810,7 +810,7 @@ function getAggregatedDemographics(demographicsState: any, platformsList: any[])
 }
 
 export function AnalyticsView({
-  content,
+  content: originalContent,
   pillars,
   platforms,
   contentTypes,
@@ -818,12 +818,58 @@ export function AnalyticsView({
   statuses,
   openEdit,
   isRestricted,
+  isTutorialActive,
   activeSubTab: activeSubTabProp,
   setActiveSubTab: setActiveSubTabProp
 }: any) {
+  const content = useMemo(() => {
+    if (isTutorialActive) {
+      // Generate dummy content for the tutorial. 
+      // Distribute dates over the last 90 days for better trend visualization
+      const dummy = [];
+      const now = new Date();
+      for (let i = 0; i < 90; i++) {
+        const d = new Date(now);
+        d.setDate(d.getDate() - Math.floor(Math.random() * 90));
+        dummy.push({
+          id: 'dummy_' + i,
+          title: 'Dummy Content ' + (i+1),
+          year: d.getFullYear(),
+          month: d.getMonth() + 1,
+          day: d.getDate(),
+          status: 'Published',
+          platform: ['Instagram', 'TikTok', 'Facebook'][Math.floor(Math.random() * 3)],
+          contentType: ['Reels', 'Carousel', 'Single Post', 'Video'][Math.floor(Math.random() * 4)],
+          pic: ['PIC A', 'PIC B', 'PIC C'][Math.floor(Math.random() * 3)],
+          metrics: {
+            views: Math.floor(Math.random() * 10000) + 1000,
+            reach: Math.floor(Math.random() * 8000) + 500,
+            engagement: Math.floor(Math.random() * 500) + 50,
+            likes: Math.floor(Math.random() * 400) + 50,
+            comments: Math.floor(Math.random() * 100) + 5,
+            shares: Math.floor(Math.random() * 50) + 1,
+            saves: Math.floor(Math.random() * 40) + 1,
+          },
+          uploadHour: Math.floor(Math.random() * 24),
+          isAds: Math.random() > 0.8
+        });
+      }
+      return dummy;
+    }
+    return originalContent || [];
+  }, [originalContent, isTutorialActive]);
+
   const [dateFilt,setDateFilt] = useState("tm"); 
   const [customS,setCustomS] = useState("");
   const [customE,setCustomE] = useState("");
+
+  useEffect(() => {
+    if (isTutorialActive) {
+      setDateFilt("90d");
+    } else {
+      setDateFilt("tm");
+    }
+  }, [isTutorialActive]);
   const [adsFilter,setAdsFilter] = useState("organic"); 
   const [platformFilter, setPlatformFilter] = useState("all");
   const [demographics, setDemographics] = useState<any>(() => {
@@ -1768,7 +1814,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
           {activeSubTab === "overview" && (
             <>
               {/* Metrics Row */}
-              <div className="flex flex-wrap gap-4 w-[calc(100%+48px)] -mx-6 px-6 mb-1 pb-2">
+              <div id="analytics-metrics-row" className="flex flex-wrap gap-4 w-[calc(100%+48px)] -mx-6 px-6 mb-1 pb-2" style={{ scrollMarginTop: 100 }}>
                 <div className="flex flex-col flex-1 min-w-[200px]"><MCard label="Total Konten" val={total} sub={`Dipublikasikan: ${pub}`} colorTheme="blue" icon={PieChart} pctStr={calcPct(total, prevTotal)} /></div>
                 <div className="flex flex-col flex-1 min-w-[200px]"><MCard label="Views (Impresi)" val={fmt(tV)} pctStr={calcPct(tV, prevTV)} colorTheme="amber" icon={Activity}/></div>
                 <div className="flex flex-col flex-1 min-w-[200px]"><MCard label="Reach" val={fmt(tR)} pctStr={calcPct(tR, prevTR)} colorTheme="purple" icon={Users}/></div>
@@ -1780,7 +1826,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
               </div>
 
               {/* Executive Summary Block */}
-              <div className="bg-white rounded-2xl border border-black/[0.03] p-6 flex flex-col shadow-sm transition-shadow hover:shadow-md">
+              <div id="analytics-executive-summary" className="bg-white rounded-2xl border border-black/[0.03] p-6 flex flex-col shadow-sm transition-shadow hover:shadow-md">
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex items-center gap-2">
                     <div className="bg-blue-50 p-2 rounded-lg text-blue-600"><GeminiIcon size={16} /></div>
@@ -1965,7 +2011,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
               </div>
 
               {/* Best & Lowest Content Lists */}
-              <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
+              <div id="analytics-content-rankings" className="grid gap-6 grid-cols-1 md:grid-cols-2" style={{ scrollMarginTop: 100 }}>
                 <div>
                   <CDataList 
                     title={`🏆 Top 10 Konten Terbaik${topPlatform!=="All"?" ("+topPlatform+")":""}`} 
@@ -1994,7 +2040,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
               {/* Other distribution metrics */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6" style={{ minWidth: 0 }}>
                 {/* Performance by Content Type */}
-                <div className="bg-white rounded-2xl border border-black/[0.03] shadow-sm p-5 flex flex-col min-w-0 transition-shadow hover:shadow-md">
+                <div id="analytics-content-type-chart" className="bg-white rounded-2xl border border-black/[0.03] shadow-sm p-5 flex flex-col min-w-0 transition-shadow hover:shadow-md">
                   <div className="flex justify-between items-start mb-5 gap-3 flex-wrap">
                     <div className="flex items-center gap-2">
                       <div className="bg-pink-50 p-2 rounded-lg text-pink-600"><PieChart size={18} /></div>
@@ -2076,7 +2122,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
 
           {/* VIEW: TRENDS & GROWTH */}
           {activeSubTab === "trends" && (
-            <div className="bg-white rounded-2xl border border-black/[0.03] shadow-sm p-6 flex flex-col min-w-0 transition-shadow hover:shadow-md">
+            <div id="analytics-trends-chart" className="bg-white rounded-2xl border border-black/[0.03] shadow-sm p-6 flex flex-col min-w-0 transition-shadow hover:shadow-md" style={{ scrollMarginTop: 100 }}>
               <div className="flex justify-between items-center mb-5 flex-wrap gap-3">
                 <div className="flex items-center gap-2">
                   <div className="bg-blue-50 p-2 rounded-lg text-blue-600"><TrendingUp size={18} /></div>
@@ -2350,7 +2396,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
           {activeSubTab === "activity" && (
             <div className="flex flex-col gap-6 w-full">
               {/* Card 1: Heatmap Activity */}
-              <div className="bg-white rounded-2xl border border-black/[0.03] shadow-sm p-6 min-w-0 transition-shadow hover:shadow-md overflow-hidden w-full">
+              <div id="analytics-audience-heatmap" className="bg-white rounded-2xl border border-black/[0.03] shadow-sm p-6 min-w-0 transition-shadow hover:shadow-md overflow-hidden w-full" style={{ scrollMarginTop: 100 }}>
                 <div className="w-full">
                   <div className="flex items-center gap-2.5 mb-5 justify-between flex-wrap">
                     <div className="flex items-center gap-2">

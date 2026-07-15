@@ -1,0 +1,581 @@
+
+--- src/AdminPanel.tsx : 352 ---
+              </button>
+            );
+          })}
+          <div style={{marginTop:"auto", paddingTop:16, borderTop:"1px solid rgba(0,0,0,0.05)"}}>
+             <button onClick={onLogout} style={{width:"100%", padding:"11px", borderRadius:12, border:"1px solid rgba(0,0,0,0.06)", background:"white", fontSize:12, fontWeight:700, cursor:"pointer", color:"#EF4444", transition:"all 0.2s"}} className="btn-hover">Sign Out</button>
+
+--- src/AdminPanel.tsx : 353 ---
+            );
+          })}
+          <div style={{marginTop:"auto", paddingTop:16, borderTop:"1px solid rgba(0,0,0,0.05)"}}>
+             <button onClick={onLogout} style={{width:"100%", padding:"11px", borderRadius:12, border:"1px solid rgba(0,0,0,0.06)", background:"white", fontSize:12, fontWeight:700, cursor:"pointer", color:"#EF4444", transition:"all 0.2s"}} className="btn-hover">Sign Out</button>
+          </div>
+
+--- src/AdminPanel.tsx : 354 ---
+          })}
+          <div style={{marginTop:"auto", paddingTop:16, borderTop:"1px solid rgba(0,0,0,0.05)"}}>
+             <button onClick={onLogout} style={{width:"100%", padding:"11px", borderRadius:12, border:"1px solid rgba(0,0,0,0.06)", background:"white", fontSize:12, fontWeight:700, cursor:"pointer", color:"#EF4444", transition:"all 0.2s"}} className="btn-hover">Sign Out</button>
+          </div>
+        </div>
+
+--- src/AdminPanel.tsx : 355 ---
+          <div style={{marginTop:"auto", paddingTop:16, borderTop:"1px solid rgba(0,0,0,0.05)"}}>
+             <button onClick={onLogout} style={{width:"100%", padding:"11px", borderRadius:12, border:"1px solid rgba(0,0,0,0.06)", background:"white", fontSize:12, fontWeight:700, cursor:"pointer", color:"#EF4444", transition:"all 0.2s"}} className="btn-hover">Sign Out</button>
+          </div>
+        </div>
+
+
+--- src/AdminPanel.tsx : 443 ---
+                          <div style={{borderTop:"1px solid rgba(0,0,0,0.05)", margin:"4px 0"}} />
+                          
+                          <div style={{display:"flex", flexDirection:"column", gap:12}}>
+                            <div style={{display:"flex", gap:12}}>
+                                <button onClick={() => alert("Data user berhasil diekspor ke format Excel (mock).")} style={{flex:1, background:"#FFFFFF", border:"1px solid rgba(0,0,0,0.08)", color:"#374151", padding:"10px", borderRadius:12, fontSize:12, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:6}} className="btn-hover">
+
+--- src/AdminPanel.tsx : 484 ---
+                </div>
+
+                <div style={{background:"#FFFFFF", borderRadius:20, border:"1px solid rgba(0,0,0,0.04)", boxShadow:"0 1px 3px rgba(0,0,0,0.01), 0 10px 30px rgba(0,0,0,0.02)", overflowX:"auto", padding:0}}>
+                  <table style={{width:"100%", minWidth: 1000, borderCollapse:"collapse", fontSize:13}}>
+                    <thead style={{background:"rgba(0,0,0,0.01)", borderBottom:"1px solid rgba(0,0,0,0.05)"}}>
+
+--- src/AdminPanel.tsx : 485 ---
+
+                <div style={{background:"#FFFFFF", borderRadius:20, border:"1px solid rgba(0,0,0,0.04)", boxShadow:"0 1px 3px rgba(0,0,0,0.01), 0 10px 30px rgba(0,0,0,0.02)", overflowX:"auto", padding:0}}>
+                  <table style={{width:"100%", minWidth: 1000, borderCollapse:"collapse", fontSize:13}}>
+                    <thead style={{background:"rgba(0,0,0,0.01)", borderBottom:"1px solid rgba(0,0,0,0.05)"}}>
+                      <tr>
+
+--- src/AdminPanel.tsx : 486 ---
+                <div style={{background:"#FFFFFF", borderRadius:20, border:"1px solid rgba(0,0,0,0.04)", boxShadow:"0 1px 3px rgba(0,0,0,0.01), 0 10px 30px rgba(0,0,0,0.02)", overflowX:"auto", padding:0}}>
+                  <table style={{width:"100%", minWidth: 1000, borderCollapse:"collapse", fontSize:13}}>
+                    <thead style={{background:"rgba(0,0,0,0.01)", borderBottom:"1px solid rgba(0,0,0,0.05)"}}>
+                      <tr>
+                        <th style={{padding:"18px 24px", textAlign:"left", color:"#4B5563", fontWeight:700, fontSize:11, textTransform:"uppercase", letterSpacing:"0.5px", width:280}}>Email & Identitas</th>
+
+--- src/AdminPanel.tsx : 562 ---
+                      <div style={{textAlign:"center", fontSize:12, color:"#6B7280", marginTop:4}}>Joined: {new Date(selectedUser.createdAt||Date.now()).toLocaleDateString()}</div>
+                      
+                      <div style={{marginTop:24, paddingTop:24, borderTop:"1px solid rgba(0,0,0,0.05)"}}>
+                         <div style={{fontSize:11, fontWeight:700, color:"#4B5563", textTransform:"uppercase", marginBottom:12}}>Status Berlangganan</div>
+                         <div style={{background:"rgba(0,0,0,0.01)", padding:14, borderRadius:12, border:"1px solid rgba(0,0,0,0.04)"}}>
+
+--- src/AdminPanel.tsx : 563 ---
+                      
+                      <div style={{marginTop:24, paddingTop:24, borderTop:"1px solid rgba(0,0,0,0.05)"}}>
+                         <div style={{fontSize:11, fontWeight:700, color:"#4B5563", textTransform:"uppercase", marginBottom:12}}>Status Berlangganan</div>
+                         <div style={{background:"rgba(0,0,0,0.01)", padding:14, borderRadius:12, border:"1px solid rgba(0,0,0,0.04)"}}>
+                            <div style={{display:"flex", justifyContent:"space-between", marginBottom:6}}>
+
+--- src/AdminPanel.tsx : 564 ---
+                      <div style={{marginTop:24, paddingTop:24, borderTop:"1px solid rgba(0,0,0,0.05)"}}>
+                         <div style={{fontSize:11, fontWeight:700, color:"#4B5563", textTransform:"uppercase", marginBottom:12}}>Status Berlangganan</div>
+                         <div style={{background:"rgba(0,0,0,0.01)", padding:14, borderRadius:12, border:"1px solid rgba(0,0,0,0.04)"}}>
+                            <div style={{display:"flex", justifyContent:"space-between", marginBottom:6}}>
+                               <span style={{fontSize:12, fontWeight:600, color:"#4B5563"}}>Plan:</span>
+
+--- src/AdminPanel.tsx : 576 ---
+                      </div>
+                      
+                      <div style={{marginTop:24, paddingTop:24, borderTop:"1px solid rgba(0,0,0,0.05)"}}>
+                         <div style={{fontSize:11, fontWeight:700, color:"#4B5563", textTransform:"uppercase", marginBottom:12}}>Keamanan & Akses</div>
+                         <button onClick={()=>handleResetPassword(selectedUser.email)} style={{background:"#FFFFFF", color:"#374151", border:"1px solid rgba(0,0,0,0.08)", padding:"12px", borderRadius:12, fontSize:12, fontWeight:700, cursor:"pointer", width:"100%", display:"flex", alignItems:"center", justifyContent:"center", gap:8}} className="btn-hover">
+
+--- src/AdminPanel.tsx : 577 ---
+                      
+                      <div style={{marginTop:24, paddingTop:24, borderTop:"1px solid rgba(0,0,0,0.05)"}}>
+                         <div style={{fontSize:11, fontWeight:700, color:"#4B5563", textTransform:"uppercase", marginBottom:12}}>Keamanan & Akses</div>
+                         <button onClick={()=>handleResetPassword(selectedUser.email)} style={{background:"#FFFFFF", color:"#374151", border:"1px solid rgba(0,0,0,0.08)", padding:"12px", borderRadius:12, fontSize:12, fontWeight:700, cursor:"pointer", width:"100%", display:"flex", alignItems:"center", justifyContent:"center", gap:8}} className="btn-hover">
+                             <CheckCircle size={16} /> Kirim Link Reset Password
+
+--- src/AdminPanel.tsx : 578 ---
+                      <div style={{marginTop:24, paddingTop:24, borderTop:"1px solid rgba(0,0,0,0.05)"}}>
+                         <div style={{fontSize:11, fontWeight:700, color:"#4B5563", textTransform:"uppercase", marginBottom:12}}>Keamanan & Akses</div>
+                         <button onClick={()=>handleResetPassword(selectedUser.email)} style={{background:"#FFFFFF", color:"#374151", border:"1px solid rgba(0,0,0,0.08)", padding:"12px", borderRadius:12, fontSize:12, fontWeight:700, cursor:"pointer", width:"100%", display:"flex", alignItems:"center", justifyContent:"center", gap:8}} className="btn-hover">
+                             <CheckCircle size={16} /> Kirim Link Reset Password
+                         </button>
+
+--- src/AdminPanel.tsx : 590 ---
+                            <button onClick={()=>handleUpdatePlan(selectedUser.id, "pro", 30)} style={{background:"var(--theme-primary)", color:"white", border:"none", padding:12, borderRadius:12, fontWeight:700, cursor:"pointer"}} className="btn-hover">Set PRO (30 Hari)</button>
+                            <button onClick={()=>handleUpdatePlan(selectedUser.id, "free", 0)} style={{background:"transparent", border:"1px solid rgba(239,68,68,0.15)", color:"#EF4444", padding:12, borderRadius:12, fontWeight:700, cursor:"pointer"}} className="btn-hover">Set FREE (Revoke)</button>
+                         </div>
+                         
+                         <div style={{marginTop:18, paddingTop:18, borderTop:"1px solid rgba(0,0,0,0.05)"}}>
+
+--- src/AdminPanel.tsx : 591 ---
+                            <button onClick={()=>handleUpdatePlan(selectedUser.id, "free", 0)} style={{background:"transparent", border:"1px solid rgba(239,68,68,0.15)", color:"#EF4444", padding:12, borderRadius:12, fontWeight:700, cursor:"pointer"}} className="btn-hover">Set FREE (Revoke)</button>
+                         </div>
+                         
+                         <div style={{marginTop:18, paddingTop:18, borderTop:"1px solid rgba(0,0,0,0.05)"}}>
+                            <div style={{fontSize:12, fontWeight:700, marginBottom:12, color:"#374151"}}>Assign VIP (Riset / User Testing)</div>
+
+--- src/AdminPanel.tsx : 593 ---
+                         
+                         <div style={{marginTop:18, paddingTop:18, borderTop:"1px solid rgba(0,0,0,0.05)"}}>
+                            <div style={{fontSize:12, fontWeight:700, marginBottom:12, color:"#374151"}}>Assign VIP (Riset / User Testing)</div>
+                            <div style={{display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8}}>
+                               <button onClick={()=>handleUpdatePlan(selectedUser.id, "vip", 30)} style={{background:"rgba(59,130,246,0.05)", color:"var(--theme-primary)", border:"none", padding:10, borderRadius:10, fontSize:11, fontWeight:700, cursor:"pointer"}} className="btn-hover">1 Bln</button>
+
+--- src/AdminPanel.tsx : 594 ---
+                         <div style={{marginTop:18, paddingTop:18, borderTop:"1px solid rgba(0,0,0,0.05)"}}>
+                            <div style={{fontSize:12, fontWeight:700, marginBottom:12, color:"#374151"}}>Assign VIP (Riset / User Testing)</div>
+                            <div style={{display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8}}>
+                               <button onClick={()=>handleUpdatePlan(selectedUser.id, "vip", 30)} style={{background:"rgba(59,130,246,0.05)", color:"var(--theme-primary)", border:"none", padding:10, borderRadius:10, fontSize:11, fontWeight:700, cursor:"pointer"}} className="btn-hover">1 Bln</button>
+                               <button onClick={()=>handleUpdatePlan(selectedUser.id, "vip", 90)} style={{background:"rgba(59,130,246,0.05)", color:"var(--theme-primary)", border:"none", padding:10, borderRadius:10, fontSize:11, fontWeight:700, cursor:"pointer"}} className="btn-hover">3 Bln</button>
+
+--- src/AdminPanel.tsx : 668 ---
+                    </div>
+                 </div>
+
+                 <div style={CARD({borderRadius:20, overflow:"hidden", border:"1px solid #EEE"})}>
+                    <div style={{padding:"20px 24px", borderBottom:"1px solid rgba(0,0,0,0.05)", background:"rgba(0,0,0,0.01)", display:"flex", justifyContent:"space-between", alignItems:"center"}}>
+
+--- src/AdminPanel.tsx : 669 ---
+                 </div>
+
+                 <div style={CARD({borderRadius:20, overflow:"hidden", border:"1px solid #EEE"})}>
+                    <div style={{padding:"20px 24px", borderBottom:"1px solid rgba(0,0,0,0.05)", background:"rgba(0,0,0,0.01)", display:"flex", justifyContent:"space-between", alignItems:"center"}}>
+                       <h3 style={{fontSize:16, fontWeight:800, margin:0}}>History Transaksi Berdasarkan Filter</h3>
+
+--- src/AdminPanel.tsx : 670 ---
+
+                 <div style={CARD({borderRadius:20, overflow:"hidden", border:"1px solid #EEE"})}>
+                    <div style={{padding:"20px 24px", borderBottom:"1px solid rgba(0,0,0,0.05)", background:"rgba(0,0,0,0.01)", display:"flex", justifyContent:"space-between", alignItems:"center"}}>
+                       <h3 style={{fontSize:16, fontWeight:800, margin:0}}>History Transaksi Berdasarkan Filter</h3>
+                       <button onClick={() => {
+
+--- src/AdminPanel.tsx : 671 ---
+                 <div style={CARD({borderRadius:20, overflow:"hidden", border:"1px solid #EEE"})}>
+                    <div style={{padding:"20px 24px", borderBottom:"1px solid rgba(0,0,0,0.05)", background:"rgba(0,0,0,0.01)", display:"flex", justifyContent:"space-between", alignItems:"center"}}>
+                       <h3 style={{fontSize:16, fontWeight:800, margin:0}}>History Transaksi Berdasarkan Filter</h3>
+                       <button onClick={() => {
+                          const csv = "Date,Email,Plan,Amount,Voucher,Method\n" + transactions.map(t => `${t.timestamp},${t.userEmail},${t.planName},${t.amount},${t.voucherCode || '-'},${t.paymentMethod}`).join("\n");
+
+--- src/AdminPanel.tsx : 685 ---
+                       }} style={{fontSize:12, fontWeight:700, color:"var(--theme-primary)", background:"#FFFFFF", border:"1px solid rgba(0,0,0,0.08)", padding:"8px 16px", borderRadius:10, cursor:"pointer"}} className="btn-hover">Ekspor CSV</button>
+                    </div>
+                    <table style={{width:"100%", borderCollapse:"collapse", fontSize:13}}>
+                        <thead>
+                          <tr style={{background:"rgba(0,0,0,0.01)", borderBottom:"1px solid rgba(0,0,0,0.05)", textAlign:"left"}}>
+
+--- src/AdminPanel.tsx : 795 ---
+
+                <h3 style={{fontSize:18, fontWeight:800, marginBottom:20}}>Subscription Plans</h3>
+                <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(300px, 1fr))", gap:20, marginBottom:40}}>
+                  {plans.map(p => (
+                    <div key={p.id} style={CARD({padding:24, borderRadius:24, border:"1px solid #EEE", borderTop:`4px solid ${p.popular ? 'var(--theme-primary)' : '#EEE'}`})}>
+
+--- src/AdminPanel.tsx : 796 ---
+                <h3 style={{fontSize:18, fontWeight:800, marginBottom:20}}>Subscription Plans</h3>
+                <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(300px, 1fr))", gap:20, marginBottom:40}}>
+                  {plans.map(p => (
+                    <div key={p.id} style={CARD({padding:24, borderRadius:24, border:"1px solid #EEE", borderTop:`4px solid ${p.popular ? 'var(--theme-primary)' : '#EEE'}`})}>
+                       <div style={{display:"flex", justifyContent:"space-between", alignItems:"flex-start"}}>
+
+--- src/AdminPanel.tsx : 797 ---
+                <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(300px, 1fr))", gap:20, marginBottom:40}}>
+                  {plans.map(p => (
+                    <div key={p.id} style={CARD({padding:24, borderRadius:24, border:"1px solid #EEE", borderTop:`4px solid ${p.popular ? 'var(--theme-primary)' : '#EEE'}`})}>
+                       <div style={{display:"flex", justifyContent:"space-between", alignItems:"flex-start"}}>
+                          <div>
+
+--- src/AdminPanel.tsx : 798 ---
+                  {plans.map(p => (
+                    <div key={p.id} style={CARD({padding:24, borderRadius:24, border:"1px solid #EEE", borderTop:`4px solid ${p.popular ? 'var(--theme-primary)' : '#EEE'}`})}>
+                       <div style={{display:"flex", justifyContent:"space-between", alignItems:"flex-start"}}>
+                          <div>
+                            <div style={{fontSize:18, fontWeight:800}}>{p.name}</div>
+
+--- src/AdminPanel.tsx : 799 ---
+                    <div key={p.id} style={CARD({padding:24, borderRadius:24, border:"1px solid #EEE", borderTop:`4px solid ${p.popular ? 'var(--theme-primary)' : '#EEE'}`})}>
+                       <div style={{display:"flex", justifyContent:"space-between", alignItems:"flex-start"}}>
+                          <div>
+                            <div style={{fontSize:18, fontWeight:800}}>{p.name}</div>
+                            <div style={{fontSize:12, color:"#999", marginTop:4}}>{p.desc}</div>
+
+--- src/AdminPanel.tsx : 905 ---
+
+                    <div style={{flex:1, background:"white", borderRadius:24, border:"1px solid #EEE", display:"flex", flexDirection:"column", overflow:"hidden"}}>
+                        {selectedTicket ? (
+                          <div style={{display:"flex", flexDirection:"column", height:"100%"}}>
+                             <div style={{padding:"20px 24px", borderBottom:"1px solid #F5F5F5", display:"flex", justifyContent:"space-between", alignItems:"center"}}>
+
+--- src/AdminPanel.tsx : 906 ---
+                    <div style={{flex:1, background:"white", borderRadius:24, border:"1px solid #EEE", display:"flex", flexDirection:"column", overflow:"hidden"}}>
+                        {selectedTicket ? (
+                          <div style={{display:"flex", flexDirection:"column", height:"100%"}}>
+                             <div style={{padding:"20px 24px", borderBottom:"1px solid #F5F5F5", display:"flex", justifyContent:"space-between", alignItems:"center"}}>
+                                <div>
+
+--- src/AdminPanel.tsx : 939 ---
+
+                             <div style={{padding:20, background:"white", borderTop:"1px solid #F5F5F5"}}>
+                                <div style={{display:"flex", gap:12}}>
+                                   <textarea id="ticket_reply" placeholder="Tulis balasan support di sini..." 
+                                      style={{flex:1, height:80, padding:16, border:"1px solid #EEE", borderRadius:16, fontSize:13, outline:"none", resize:"none"}} />
+
+--- src/AdminPanel.tsx : 940 ---
+                             <div style={{padding:20, background:"white", borderTop:"1px solid #F5F5F5"}}>
+                                <div style={{display:"flex", gap:12}}>
+                                   <textarea id="ticket_reply" placeholder="Tulis balasan support di sini..." 
+                                      style={{flex:1, height:80, padding:16, border:"1px solid #EEE", borderRadius:16, fontSize:13, outline:"none", resize:"none"}} />
+                                   <button onClick={handleReply} 
+
+--- src/App.tsx : 573 ---
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.4)", backdropFilter: "none" }} />
+      <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0, transition: { duration: 0.15 } }} style={{ position: "relative", zIndex: 1, background: "#FAFAF8", width: "90%", maxWidth: 440, borderRadius: 24, boxShadow: "0 24px 64px rgba(44,32,22,0.3)", overflow: "hidden", display: "flex", flexDirection: "column", maxHeight: "90vh" }}>
+        <div style={{ padding: "20px 24px", borderBottom: "1px solid rgba(0,0,0,0.05)", background: "white", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#2C2016", display: "flex", alignItems: "center", gap: 8 }}><Calendar size={20} /> Tambah Event Kustom</h3>
+          <button onClick={onClose} style={{ background: "rgba(44,32,22,0.05)", border: "none", width: 32, height: 32, borderRadius: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }} className="hover-scale">✕</button>
+
+--- src/App.tsx : 574 ---
+      <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0, transition: { duration: 0.15 } }} style={{ position: "relative", zIndex: 1, background: "#FAFAF8", width: "90%", maxWidth: 440, borderRadius: 24, boxShadow: "0 24px 64px rgba(44,32,22,0.3)", overflow: "hidden", display: "flex", flexDirection: "column", maxHeight: "90vh" }}>
+        <div style={{ padding: "20px 24px", borderBottom: "1px solid rgba(0,0,0,0.05)", background: "white", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#2C2016", display: "flex", alignItems: "center", gap: 8 }}><Calendar size={20} /> Tambah Event Kustom</h3>
+          <button onClick={onClose} style={{ background: "rgba(44,32,22,0.05)", border: "none", width: 32, height: 32, borderRadius: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }} className="hover-scale">✕</button>
+        </div>
+
+--- src/App.tsx : 575 ---
+        <div style={{ padding: "20px 24px", borderBottom: "1px solid rgba(0,0,0,0.05)", background: "white", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#2C2016", display: "flex", alignItems: "center", gap: 8 }}><Calendar size={20} /> Tambah Event Kustom</h3>
+          <button onClick={onClose} style={{ background: "rgba(44,32,22,0.05)", border: "none", width: 32, height: 32, borderRadius: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }} className="hover-scale">✕</button>
+        </div>
+        <div style={{ padding: 24, overflowY: "auto", display: "flex", flexDirection: "column", gap: 16 }}>
+
+--- src/App.tsx : 604 ---
+          </div>
+        </div>
+        <div style={{ padding: "16px 24px", background: "white", borderTop: "1px solid rgba(0,0,0,0.05)", display: "flex", justifyContent: "flex-end", gap: 10 }}>
+          <button onClick={onClose} style={{ ...B(false), fontSize: 13, padding: "10px 20px", height: "auto", borderRadius: 12 }}>Batal</button>
+          <button onClick={handleSave} style={{ ...B(true, "var(--theme-primary)"), fontSize: 13, padding: "10px 24px", height: "auto", borderRadius: 12, color: "white", border: "none", fontWeight: 800 }}>Simpan Event</button>
+
+--- src/App.tsx : 605 ---
+        </div>
+        <div style={{ padding: "16px 24px", background: "white", borderTop: "1px solid rgba(0,0,0,0.05)", display: "flex", justifyContent: "flex-end", gap: 10 }}>
+          <button onClick={onClose} style={{ ...B(false), fontSize: 13, padding: "10px 20px", height: "auto", borderRadius: 12 }}>Batal</button>
+          <button onClick={handleSave} style={{ ...B(true, "var(--theme-primary)"), fontSize: 13, padding: "10px 24px", height: "auto", borderRadius: 12, color: "white", border: "none", fontWeight: 800 }}>Simpan Event</button>
+        </div>
+
+--- src/App.tsx : 606 ---
+        <div style={{ padding: "16px 24px", background: "white", borderTop: "1px solid rgba(0,0,0,0.05)", display: "flex", justifyContent: "flex-end", gap: 10 }}>
+          <button onClick={onClose} style={{ ...B(false), fontSize: 13, padding: "10px 20px", height: "auto", borderRadius: 12 }}>Batal</button>
+          <button onClick={handleSave} style={{ ...B(true, "var(--theme-primary)"), fontSize: 13, padding: "10px 24px", height: "auto", borderRadius: 12, color: "white", border: "none", fontWeight: 800 }}>Simpan Event</button>
+        </div>
+      </motion.div>
+
+--- src/App.tsx : 1772 ---
+      {isUnverified && (
+        <div style={{background:"#FBF5E3", borderBottom:"1px solid rgba(166,124,28,0.1)", padding:"12px 24px", display:"flex", alignItems:"center", justifyContent:"center", gap:12, zIndex:50}}>
+          <span style={{fontSize:13, fontWeight:700, color:"#A67C12"}}>⚠️ Data Belum Lengkap:</span>
+          <span style={{fontSize:13, color:"rgba(44,32,22,0.6)"}}>Isi nama panggilan dan verifikasi email Anda untuk menggunakan fitur Hubify Social.</span>
+          <button onClick={() => window.location.hash="/profile"} style={{background:"#A67C12", color:"white", border:"none", padding:"6px 14px", borderRadius:20, fontSize:12, fontWeight:800, cursor:"pointer"}}>Lengkapi Sekarang</button>
+
+--- src/App.tsx : 1773 ---
+        <div style={{background:"#FBF5E3", borderBottom:"1px solid rgba(166,124,28,0.1)", padding:"12px 24px", display:"flex", alignItems:"center", justifyContent:"center", gap:12, zIndex:50}}>
+          <span style={{fontSize:13, fontWeight:700, color:"#A67C12"}}>⚠️ Data Belum Lengkap:</span>
+          <span style={{fontSize:13, color:"rgba(44,32,22,0.6)"}}>Isi nama panggilan dan verifikasi email Anda untuk menggunakan fitur Hubify Social.</span>
+          <button onClick={() => window.location.hash="/profile"} style={{background:"#A67C12", color:"white", border:"none", padding:"6px 14px", borderRadius:20, fontSize:12, fontWeight:800, cursor:"pointer"}}>Lengkapi Sekarang</button>
+        </div>
+
+--- src/ContentModal.tsx : 450 ---
+
+                  {showResolved && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "6px", paddingLeft: "8px", borderLeft: "2px solid rgba(0,0,0,0.04)" }}>
+                      {resolvedComments.map((comment: any) => (
+                        <div key={comment.id} style={{ opacity: 0.6, padding: "8px 10px", borderRadius: "10px", background: "rgba(0,0,0,0.01)", border: "1px solid rgba(0,0,0,0.01)", display: "flex", flexDirection: "column", gap: "2px" }}>
+
+--- src/ContentModal.tsx : 451 ---
+                  {showResolved && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "6px", paddingLeft: "8px", borderLeft: "2px solid rgba(0,0,0,0.04)" }}>
+                      {resolvedComments.map((comment: any) => (
+                        <div key={comment.id} style={{ opacity: 0.6, padding: "8px 10px", borderRadius: "10px", background: "rgba(0,0,0,0.01)", border: "1px solid rgba(0,0,0,0.01)", display: "flex", flexDirection: "column", gap: "2px" }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+
+--- src/ContentModal.tsx : 452 ---
+                    <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "6px", paddingLeft: "8px", borderLeft: "2px solid rgba(0,0,0,0.04)" }}>
+                      {resolvedComments.map((comment: any) => (
+                        <div key={comment.id} style={{ opacity: 0.6, padding: "8px 10px", borderRadius: "10px", background: "rgba(0,0,0,0.01)", border: "1px solid rgba(0,0,0,0.01)", display: "flex", flexDirection: "column", gap: "2px" }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <span style={{ fontSize: "11px", fontWeight: 800, color: "#9CA3AF", textDecoration: "line-through" }}>{comment.name}</span>
+
+--- src/ContentModal.tsx : 1191 ---
+                  background: isFieldVisible ? "#ffffff" : "rgba(255,255,255,0.4)",
+                  padding: "10px 14px",
+                  borderRadius: 12,
+                  border: isFieldVisible ? "1.5px solid #E2E8F0" : "1.5px solid rgba(44, 32, 22, 0.05)",
+                  borderLeft: isFieldVisible ? "4px solid #3B82F6" : "4px solid #CBD5E1",
+
+--- src/ContentModal.tsx : 1192 ---
+                  padding: "10px 14px",
+                  borderRadius: 12,
+                  border: isFieldVisible ? "1.5px solid #E2E8F0" : "1.5px solid rgba(44, 32, 22, 0.05)",
+                  borderLeft: isFieldVisible ? "4px solid #3B82F6" : "4px solid #CBD5E1",
+                  boxShadow: isFieldVisible ? "0 4px 12px -2px rgba(0,0,0,0.03)" : "none",
+
+--- src/ContentModal.tsx : 1193 ---
+                  borderRadius: 12,
+                  border: isFieldVisible ? "1.5px solid #E2E8F0" : "1.5px solid rgba(44, 32, 22, 0.05)",
+                  borderLeft: isFieldVisible ? "4px solid #3B82F6" : "4px solid #CBD5E1",
+                  boxShadow: isFieldVisible ? "0 4px 12px -2px rgba(0,0,0,0.03)" : "none",
+                  transition: "all 0.2s"
+
+--- src/ContentModal.tsx : 1194 ---
+                  border: isFieldVisible ? "1.5px solid #E2E8F0" : "1.5px solid rgba(44, 32, 22, 0.05)",
+                  borderLeft: isFieldVisible ? "4px solid #3B82F6" : "4px solid #CBD5E1",
+                  boxShadow: isFieldVisible ? "0 4px 12px -2px rgba(0,0,0,0.03)" : "none",
+                  transition: "all 0.2s"
+                }}
+
+--- src/ContentModal.tsx : 1618 ---
+        onClick={e=>e.stopPropagation()} 
+        style={{
+          background: "#ffffff", 
+          border: layoutMode === "drawer" ? "none" : "1px solid rgba(0,0,0,0.08)",
+          borderLeft: layoutMode === "drawer" ? "1px solid rgba(0,0,0,0.08)" : undefined,
+
+--- src/ContentModal.tsx : 1619 ---
+        style={{
+          background: "#ffffff", 
+          border: layoutMode === "drawer" ? "none" : "1px solid rgba(0,0,0,0.08)",
+          borderLeft: layoutMode === "drawer" ? "1px solid rgba(0,0,0,0.08)" : undefined,
+          borderRadius: layoutMode === "drawer" ? "24px 0 0 24px" : "24px",
+
+--- src/ContentModal.tsx : 1620 ---
+          background: "#ffffff", 
+          border: layoutMode === "drawer" ? "none" : "1px solid rgba(0,0,0,0.08)",
+          borderLeft: layoutMode === "drawer" ? "1px solid rgba(0,0,0,0.08)" : undefined,
+          borderRadius: layoutMode === "drawer" ? "24px 0 0 24px" : "24px",
+          maxWidth: "1050px",
+
+--- src/ContentModal.tsx : 1621 ---
+          border: layoutMode === "drawer" ? "none" : "1px solid rgba(0,0,0,0.08)",
+          borderLeft: layoutMode === "drawer" ? "1px solid rgba(0,0,0,0.08)" : undefined,
+          borderRadius: layoutMode === "drawer" ? "24px 0 0 24px" : "24px",
+          maxWidth: "1050px",
+          width:"100%",
+
+--- src/CsvModal.tsx : 222 ---
+                <div style={{background:"rgba(44,32,22,0.02)",border:"1px solid rgba(44,32,22,0.06)",borderRadius:12,maxHeight:240,overflow:"auto",marginBottom:24}}>
+                    <table style={{width:"100%",fontSize:12,borderCollapse:"collapse"}}>
+                        <thead style={{background:"rgba(44,32,22,0.04)",position:"sticky",top:0,backdropFilter:"blur(4px)"}}>
+                            <tr>
+                                <th style={{padding:"10px 12px",textAlign:"left",fontWeight:700,color:"#2C2016",borderBottom:"1px solid rgba(44,32,22,0.06)"}}>Judul</th>
+
+--- src/Nav.tsx : 568 ---
+          style={{
+            flex: 1,
+            padding: 14,
+            border: "none",
+            borderBottom: `3px solid ${view === "form" ? "var(--theme-primary)" : "transparent"}`,
+
+--- src/Nav.tsx : 569 ---
+            flex: 1,
+            padding: 14,
+            border: "none",
+            borderBottom: `3px solid ${view === "form" ? "var(--theme-primary)" : "transparent"}`,
+            background: "white",
+
+--- src/Nav.tsx : 570 ---
+            padding: 14,
+            border: "none",
+            borderBottom: `3px solid ${view === "form" ? "var(--theme-primary)" : "transparent"}`,
+            background: "white",
+            fontSize: 12,
+
+--- src/Nav.tsx : 571 ---
+            border: "none",
+            borderBottom: `3px solid ${view === "form" ? "var(--theme-primary)" : "transparent"}`,
+            background: "white",
+            fontSize: 12,
+            fontWeight: 800,
+
+--- src/Nav.tsx : 584 ---
+          style={{
+            flex: 1,
+            padding: 14,
+            border: "none",
+            borderBottom: `3px solid ${view === "history" ? "var(--theme-primary)" : "transparent"}`,
+
+--- src/Nav.tsx : 585 ---
+            flex: 1,
+            padding: 14,
+            border: "none",
+            borderBottom: `3px solid ${view === "history" ? "var(--theme-primary)" : "transparent"}`,
+            background: "white",
+
+--- src/Nav.tsx : 586 ---
+            padding: 14,
+            border: "none",
+            borderBottom: `3px solid ${view === "history" ? "var(--theme-primary)" : "transparent"}`,
+            background: "white",
+            fontSize: 12,
+
+--- src/Nav.tsx : 587 ---
+            border: "none",
+            borderBottom: `3px solid ${view === "history" ? "var(--theme-primary)" : "transparent"}`,
+            background: "white",
+            fontSize: 12,
+            fontWeight: 800,
+
+--- src/NotificationSystem.tsx : 462 ---
+      </div>
+      
+      {/* Footer Area */}
+      <div style={{padding:"16px", marginTop:"auto", borderTop: "1px solid rgba(255,255,255,0.05)", display:"flex", justifyContent:"center"}}>
+         <button onClick={onContactSupport} style={{display:"flex", alignItems:"center", gap: 8, background:"none", border:"none", color:"rgba(255,255,255,0.6)", fontSize:12, fontWeight:600, cursor:"pointer", transition:"all 0.2s"}} className="hover:text-white" title="Hubungi Kami untuk Saran dan Kendala">
+
+--- src/NotificationSystem.tsx : 463 ---
+      
+      {/* Footer Area */}
+      <div style={{padding:"16px", marginTop:"auto", borderTop: "1px solid rgba(255,255,255,0.05)", display:"flex", justifyContent:"center"}}>
+         <button onClick={onContactSupport} style={{display:"flex", alignItems:"center", gap: 8, background:"none", border:"none", color:"rgba(255,255,255,0.6)", fontSize:12, fontWeight:600, cursor:"pointer", transition:"all 0.2s"}} className="hover:text-white" title="Hubungi Kami untuk Saran dan Kendala">
+            <HelpCircle size={16}/> CS / Saran
+
+--- src/NotificationSystem.tsx : 464 ---
+      {/* Footer Area */}
+      <div style={{padding:"16px", marginTop:"auto", borderTop: "1px solid rgba(255,255,255,0.05)", display:"flex", justifyContent:"center"}}>
+         <button onClick={onContactSupport} style={{display:"flex", alignItems:"center", gap: 8, background:"none", border:"none", color:"rgba(255,255,255,0.6)", fontSize:12, fontWeight:600, cursor:"pointer", transition:"all 0.2s"}} className="hover:text-white" title="Hubungi Kami untuk Saran dan Kendala">
+            <HelpCircle size={16}/> CS / Saran
+         </button>
+
+--- src/NotificationSystem.tsx : 465 ---
+      <div style={{padding:"16px", marginTop:"auto", borderTop: "1px solid rgba(255,255,255,0.05)", display:"flex", justifyContent:"center"}}>
+         <button onClick={onContactSupport} style={{display:"flex", alignItems:"center", gap: 8, background:"none", border:"none", color:"rgba(255,255,255,0.6)", fontSize:12, fontWeight:600, cursor:"pointer", transition:"all 0.2s"}} className="hover:text-white" title="Hubungi Kami untuk Saran dan Kendala">
+            <HelpCircle size={16}/> CS / Saran
+         </button>
+      </div>
+
+--- src/SocHubView.tsx : 896 ---
+                        })}
+                        <div ref={messagesEndRef} />
+                      </div>
+                      <div style={{ padding: 24, borderTop: "1px solid rgba(0,0,0,0.06)" }}>
+                        <div style={{ display: "flex", gap: 12, alignItems: "center", background: "#F9FAFB", padding: "8px 16px", borderRadius: 24, border: "1px solid rgba(0,0,0,0.04)" }}>
+
+--- src/SocHubView.tsx : 897 ---
+                        <div ref={messagesEndRef} />
+                      </div>
+                      <div style={{ padding: 24, borderTop: "1px solid rgba(0,0,0,0.06)" }}>
+                        <div style={{ display: "flex", gap: 12, alignItems: "center", background: "#F9FAFB", padding: "8px 16px", borderRadius: 24, border: "1px solid rgba(0,0,0,0.04)" }}>
+                           <input type="text" placeholder="Tulis pesan..." value={msgContent} onChange={e => setMsgContent(e.target.value)} onKeyDown={e => e.key === "Enter" && sendDM()} style={{ flex: 1, background: "transparent", border: "none", outline: "none", fontSize: 15, padding: "8px 0" }} />
+
+--- src/SocHubView.tsx : 898 ---
+                      </div>
+                      <div style={{ padding: 24, borderTop: "1px solid rgba(0,0,0,0.06)" }}>
+                        <div style={{ display: "flex", gap: 12, alignItems: "center", background: "#F9FAFB", padding: "8px 16px", borderRadius: 24, border: "1px solid rgba(0,0,0,0.04)" }}>
+                           <input type="text" placeholder="Tulis pesan..." value={msgContent} onChange={e => setMsgContent(e.target.value)} onKeyDown={e => e.key === "Enter" && sendDM()} style={{ flex: 1, background: "transparent", border: "none", outline: "none", fontSize: 15, padding: "8px 0" }} />
+                           <button onClick={sendDM} style={{ background: "var(--theme-primary)", color: "white", border: "none", width: 36, height: 36, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><Send size={16} /></button>
+
+--- src/SocHubView.tsx : 899 ---
+                      <div style={{ padding: 24, borderTop: "1px solid rgba(0,0,0,0.06)" }}>
+                        <div style={{ display: "flex", gap: 12, alignItems: "center", background: "#F9FAFB", padding: "8px 16px", borderRadius: 24, border: "1px solid rgba(0,0,0,0.04)" }}>
+                           <input type="text" placeholder="Tulis pesan..." value={msgContent} onChange={e => setMsgContent(e.target.value)} onKeyDown={e => e.key === "Enter" && sendDM()} style={{ flex: 1, background: "transparent", border: "none", outline: "none", fontSize: 15, padding: "8px 0" }} />
+                           <button onClick={sendDM} style={{ background: "var(--theme-primary)", color: "white", border: "none", width: 36, height: 36, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><Send size={16} /></button>
+                        </div>
+
+--- src/UserProfile.tsx : 354 ---
+          style={{
+            ...B(false),
+            border: "none",
+            background: "var(--theme-bg, #FAFAFA)",
+            borderBottom: "1px solid rgba(44,32,22,0.1)",
+
+--- src/UserProfile.tsx : 355 ---
+            ...B(false),
+            border: "none",
+            background: "var(--theme-bg, #FAFAFA)",
+            borderBottom: "1px solid rgba(44,32,22,0.1)",
+            color: "var(--theme-text-main, #2C2016)",
+
+--- src/UserProfile.tsx : 356 ---
+            border: "none",
+            background: "var(--theme-bg, #FAFAFA)",
+            borderBottom: "1px solid rgba(44,32,22,0.1)",
+            color: "var(--theme-text-main, #2C2016)",
+            fontSize: 12,
+
+--- src/Views.tsx : 329 ---
+          const ev = staticEv ? (dynamicEv ? `${staticEv} | ${dynamicEv}` : staticEv) : dynamicEv;
+          const isToday=new Date().toDateString()===day.date.toDateString();
+          return (
+            <div key={day.d+"-"+day.mo} style={{background:"transparent",borderRadius:0,padding:0,border:"none",minHeight:180}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8, borderBottom: "1px solid rgba(55,53,47,0.08)", paddingBottom: 8}}>
+
+--- src/Views.tsx : 330 ---
+          const isToday=new Date().toDateString()===day.date.toDateString();
+          return (
+            <div key={day.d+"-"+day.mo} style={{background:"transparent",borderRadius:0,padding:0,border:"none",minHeight:180}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8, borderBottom: "1px solid rgba(55,53,47,0.08)", paddingBottom: 8}}>
+                <div style={{display:"flex", alignItems:"baseline", gap: 6}}>
+
+--- src/Views.tsx : 331 ---
+          return (
+            <div key={day.d+"-"+day.mo} style={{background:"transparent",borderRadius:0,padding:0,border:"none",minHeight:180}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8, borderBottom: "1px solid rgba(55,53,47,0.08)", paddingBottom: 8}}>
+                <div style={{display:"flex", alignItems:"baseline", gap: 6}}>
+                  <div style={{fontSize:12,fontWeight:600,color:isToday?"#2383e2":"#787774"}}>{DAYS_S[day.dow]}</div>
+
+--- src/Views.tsx : 332 ---
+            <div key={day.d+"-"+day.mo} style={{background:"transparent",borderRadius:0,padding:0,border:"none",minHeight:180}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8, borderBottom: "1px solid rgba(55,53,47,0.08)", paddingBottom: 8}}>
+                <div style={{display:"flex", alignItems:"baseline", gap: 6}}>
+                  <div style={{fontSize:12,fontWeight:600,color:isToday?"#2383e2":"#787774"}}>{DAYS_S[day.dow]}</div>
+                  <div style={{fontSize:18,fontWeight:500,lineHeight:1,color:isToday?"#2383e2":"#37352F"}}>{day.d}</div>
+
+--- src/Views.tsx : 581 ---
+      boxShadow: "0 10px 40px rgba(0,0,0,0.03)",
+      border: "1px solid rgba(0,0,0,0.03)"
+    }}>
+      {bulkIds.length>0 && (
+        <div style={{padding:"8px 16px",background:"rgba(59,130,246,0.05)",borderBottom:"1px solid rgba(59,130,246,0.1)",display:"flex",gap:12,alignItems:"center"}}>
+
+--- src/Views.tsx : 582 ---
+      border: "1px solid rgba(0,0,0,0.03)"
+    }}>
+      {bulkIds.length>0 && (
+        <div style={{padding:"8px 16px",background:"rgba(59,130,246,0.05)",borderBottom:"1px solid rgba(59,130,246,0.1)",display:"flex",gap:12,alignItems:"center"}}>
+          <span style={{fontSize:13,fontWeight:600,color:"#3B82F6"}}>{bulkIds.length} terpilih</span>
+
+--- src/Views.tsx : 584 ---
+      {bulkIds.length>0 && (
+        <div style={{padding:"8px 16px",background:"rgba(59,130,246,0.05)",borderBottom:"1px solid rgba(59,130,246,0.1)",display:"flex",gap:12,alignItems:"center"}}>
+          <span style={{fontSize:13,fontWeight:600,color:"#3B82F6"}}>{bulkIds.length} terpilih</span>
+          <div style={{width:1,height:14,background:"rgba(59,130,246,0.2)"}}/>
+          <button onClick={()=>onBulk("archive")} style={{background:"none",border:"none",color:"#723680",fontSize:13,fontWeight:600,cursor:"pointer"}}>📦 Arsip Massal</button>
+
+--- src/Views.tsx : 585 ---
+        <div style={{padding:"8px 16px",background:"rgba(59,130,246,0.05)",borderBottom:"1px solid rgba(59,130,246,0.1)",display:"flex",gap:12,alignItems:"center"}}>
+          <span style={{fontSize:13,fontWeight:600,color:"#3B82F6"}}>{bulkIds.length} terpilih</span>
+          <div style={{width:1,height:14,background:"rgba(59,130,246,0.2)"}}/>
+          <button onClick={()=>onBulk("archive")} style={{background:"none",border:"none",color:"#723680",fontSize:13,fontWeight:600,cursor:"pointer"}}>📦 Arsip Massal</button>
+          <button onClick={()=>onBulk("restore")} style={{background:"none",border:"none",color:"#2E7D32",fontSize:13,fontWeight:600,cursor:"pointer"}}>🔄 Pulihkan Massal</button>
+
+--- src/data.tsx : 634 ---
+});
+
+export const TAB = (active:any) => ({
+  border: "none",
+  borderBottom: `2.5px solid ${active ? "var(--theme-primary)" : "transparent"}`,
+
+--- src/data.tsx : 635 ---
+
+export const TAB = (active:any) => ({
+  border: "none",
+  borderBottom: `2.5px solid ${active ? "var(--theme-primary)" : "transparent"}`,
+  background: "transparent",
+
+--- src/data.tsx : 636 ---
+export const TAB = (active:any) => ({
+  border: "none",
+  borderBottom: `2.5px solid ${active ? "var(--theme-primary)" : "transparent"}`,
+  background: "transparent",
+  padding: "12px 20px",
+
+--- src/data.tsx : 637 ---
+  border: "none",
+  borderBottom: `2.5px solid ${active ? "var(--theme-primary)" : "transparent"}`,
+  background: "transparent",
+  padding: "12px 20px",
+  fontSize: 13,

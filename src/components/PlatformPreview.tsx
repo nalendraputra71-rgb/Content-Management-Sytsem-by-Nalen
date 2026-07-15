@@ -1,6 +1,31 @@
 import React from 'react';
 import { Heart, MessageCircle, Send, Bookmark, MoreHorizontal, Share2, Repeat2, ChevronLeft, ChevronRight } from 'lucide-react';
 
+const cleanHtmlToPlainText = (html: string): string => {
+  if (!html) return "";
+  let text = html;
+  
+  // Replace HTML breaks/paragraphs with standard newlines
+  text = text.replace(/<br\s*\/?>/gi, "\n");
+  text = text.replace(/<\/p>/gi, "\n");
+  text = text.replace(/<\/h[1-6]>/gi, "\n");
+  text = text.replace(/<\/li>/gi, "\n");
+  
+  // Strip all other HTML tags
+  text = text.replace(/<[^>]+>/g, "");
+  
+  // Decode common HTML entity decoders
+  text = text
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#039;/g, "'");
+
+  return text.trim();
+};
+
 interface PlatformPreviewProps {
   platform: string;
   contentType: string;
@@ -136,6 +161,7 @@ export const PlatformPreview: React.FC<PlatformPreviewProps> = ({
 }) => {
   const avatar = workspaceName?.charAt(0)?.toUpperCase() || 'U';
   const name = workspaceName || 'Workspace';
+  const plainTextCaption = cleanHtmlToPlainText(caption);
 
   // Fallback to first item for single media renders
   const mediaUrl = mediaList && mediaList.length > 0 ? mediaList[0].url : null;
@@ -243,7 +269,7 @@ export const PlatformPreview: React.FC<PlatformPreviewProps> = ({
       {/* Caption */}
       <div style={{ padding: "0 14px", fontSize: 13, color: "#262626", lineHeight: 1.4 }}>
         <span style={{ fontWeight: 600, marginRight: 6 }}>{name}</span>
-        {caption || <span style={{ color: "#8e8e8e" }}>Write a caption...</span>}
+        {plainTextCaption || <span style={{ color: "#8e8e8e" }}>Write a caption...</span>}
       </div>
     </div>
   );
@@ -260,7 +286,7 @@ export const PlatformPreview: React.FC<PlatformPreviewProps> = ({
                 <div style={{ padding: "2px 8px", border: "1px solid white", borderRadius: 12, fontSize: 12, fontWeight: 600, color: "white" }}>Follow</div>
             </div>
             <div style={{ fontSize: 13, color: "white", lineHeight: 1.4, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-                {caption || "Write a caption..."}
+                {plainTextCaption || "Write a caption..."}
             </div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 20, alignItems: "center" }}>
@@ -305,9 +331,9 @@ export const PlatformPreview: React.FC<PlatformPreviewProps> = ({
         <MoreHorizontal size={20} color="white" />
       </div>
       {/* Text Overlay */}
-      {caption && (
+      {plainTextCaption && (
           <div style={{ position: "absolute", top: "50%", left: 20, right: 20, transform: "translateY(-50%)", textAlign: "center", color: "white", fontSize: 24, fontWeight: 700, textShadow: "0 2px 10px rgba(0,0,0,0.5)", wordWrap: "break-word" }}>
-              {caption}
+              {plainTextCaption}
           </div>
       )}
       {/* Bottom Bar */}
@@ -345,9 +371,9 @@ export const PlatformPreview: React.FC<PlatformPreviewProps> = ({
         </div>
       </div>
       {/* Text Overlay */}
-      {caption && (
+      {plainTextCaption && (
           <div style={{ position: "absolute", top: "40%", left: 24, right: 24, textAlign: "center", color: "white", fontSize: 22, fontWeight: 700, textShadow: "0 2px 8px rgba(0,0,0,0.6)", wordWrap: "break-word" }}>
-              {caption}
+              {plainTextCaption}
           </div>
       )}
       {/* Bottom Bar */}
@@ -375,7 +401,7 @@ export const PlatformPreview: React.FC<PlatformPreviewProps> = ({
                 <div style={{ padding: "4px 12px", background: "rgba(255,255,255,0.2)", borderRadius: 14, fontSize: 13, fontWeight: 600, color: "white", backdropFilter: "blur(4px)" }}>Follow</div>
             </div>
             <div style={{ fontSize: 14, color: "white", lineHeight: 1.4, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", textShadow: "0 1px 2px rgba(0,0,0,0.5)" }}>
-                {caption || "Write a caption..."}
+                {plainTextCaption || "Write a caption..."}
             </div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 24, alignItems: "center", paddingBottom: 8 }}>
@@ -421,7 +447,7 @@ export const PlatformPreview: React.FC<PlatformPreviewProps> = ({
             )}
             <div style={{ fontSize: 15, fontWeight: 600, color: "white", marginBottom: 8 }}>@{name.toLowerCase().replace(/\s+/g, '')}</div>
             <div style={{ fontSize: 14, color: "white", lineHeight: 1.4, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-                {caption || "Your caption here..."}
+                {plainTextCaption || "Your caption here..."}
             </div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 16, alignItems: "center", paddingBottom: 16 }}>
@@ -468,7 +494,7 @@ export const PlatformPreview: React.FC<PlatformPreviewProps> = ({
           </div>
           {/* Caption */}
           <div style={{ padding: "0 16px 12px", fontSize: 14, color: "#050505", lineHeight: 1.5, whiteSpace: "pre-wrap" }}>
-            {caption || <span style={{ color: "#65676B" }}>What's on your mind?</span>}
+            {plainTextCaption || <span style={{ color: "#65676B" }}>What's on your mind?</span>}
           </div>
           {/* Image */}
           {renderGridMedia({ width: "100%", maxHeight: 400 })}
@@ -512,7 +538,7 @@ export const PlatformPreview: React.FC<PlatformPreviewProps> = ({
           </div>
           {/* Caption */}
           <div style={{ padding: "4px 16px 12px", fontSize: 14, color: "rgba(0,0,0,0.9)", lineHeight: 1.5, whiteSpace: "pre-wrap" }}>
-            {caption || <span style={{ color: "rgba(0,0,0,0.6)" }}>What do you want to talk about?</span>}
+            {plainTextCaption || <span style={{ color: "rgba(0,0,0,0.6)" }}>What do you want to talk about?</span>}
           </div>
           {/* Image */}
           {renderGridMedia({ width: "100%", maxHeight: 400 })}
@@ -553,7 +579,7 @@ export const PlatformPreview: React.FC<PlatformPreviewProps> = ({
                     </div>
                 </div>
                 <div style={{ fontSize: 15, color: "black", lineHeight: 1.4, marginBottom: 12, whiteSpace: "pre-wrap" }}>
-                    {caption || <span style={{ color: "#999" }}>Start a thread...</span>}
+                    {plainTextCaption || <span style={{ color: "#999" }}>Start a thread...</span>}
                 </div>
                 {mediaList && mediaList.length > 0 && (
                     <div style={{ marginBottom: 12 }}>

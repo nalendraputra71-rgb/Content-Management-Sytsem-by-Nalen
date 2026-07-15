@@ -13,6 +13,7 @@ import {
 } from "./firebase";
 
 import { Header, NavBar, FilterBar, Sidebar } from "./Nav";
+import { HubyTutorial } from "./components/HubyTutorial";
 const MonthView = lazy(() => import("./Views").then(m => ({ default: m.MonthView })));
 const BoardView = lazy(() => import("./Views").then(m => ({ default: m.BoardView })));
 const TimelineView = lazy(() => import("./Views").then(m => ({ default: m.TimelineView })));
@@ -627,6 +628,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme, systemConfig 
   const [confirmAction, setConfirmAction] = useState<{title:string, msg:string, onConfirm:()=>void}|null>(null);
   const [shareModal, setShareModal] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [tutorialActive, setTutorialActive] = useState(false);
   const [isSettingsDirty, setIsSettingsDirty] = useState(false);
   const [pendingTab, setPendingTab] = useState<string | null>(null);
   const workspaceRef = useRef(workspace);
@@ -694,8 +696,13 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme, systemConfig 
 
   useEffect(() => {
     const handler = () => openAdd(new Date().getDate());
+    const closeHandler = () => setModal(null);
     window.addEventListener("openContentModal", handler);
-    return () => window.removeEventListener("openContentModal", handler);
+    window.addEventListener("closeContentModal", closeHandler);
+    return () => {
+      window.removeEventListener("openContentModal", handler);
+      window.removeEventListener("closeContentModal", closeHandler);
+    };
   }, [workspace, user, pillars, platforms, pics, statuses]);
 
   useEffect(() => {
@@ -1675,11 +1682,12 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme, systemConfig 
           await updateWsSettings({ title: newTitle });
         }}
         onQuickAddContent={() => openAdd(new Date().getDate())}
+        tutorialActive={tutorialActive}
       />
       {["dashboard", "content_planner", "analytics", "analytics-overview", "analytics-content", "analytics-trends", "analytics-activity"].includes(tab) && (
         <div style={{ position: "fixed", inset: 0, zIndex: -1, pointerEvents: "none", background: "radial-gradient(circle at 0% 0%, #E3F2FD 0.1%, transparent 50%), radial-gradient(circle at 100% 100%, #FFF3E0 0.1%, transparent 50%), radial-gradient(circle at 100% 0%, #F3E5F5 0.1%, transparent 50%), #FAFAFA", borderRadius: "28px", margin: "8px 8px 8px 0" }} />
       )}
-      <div style={{
+      <div id="main-scroll-container" style={{
         flex: 1,
         minWidth: 0,
         display: "flex",
@@ -1815,6 +1823,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme, systemConfig 
                 statuses={statuses}
                 openEdit={openEdit}
                 isRestricted={isRestricted}
+                isTutorialActive={tutorialActive}
                 activeSubTab={tab.split("-")[1] || "overview"}
                 setActiveSubTab={(newSubTab: string) => {
                   setTab(`analytics-${newSubTab}`);
@@ -1849,7 +1858,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme, systemConfig 
         {createWsModal && <CreateWorkspaceModal key="createWs" workspaces={workspaces} onClose={()=>setCreateWsModal(false)} onCreate={handleCreateWorkspace} />}
         </AnimatePresence>
       <AnimatePresence>
-        {modal && <ContentModal key="content" modal={modal} onSave={handleSave} onClose={()=>setModal(null)} onArchive={archiveItem} onRestore={unarchiveItem} onDelete={deleteItem} onDuplicate={(data:any) => {
+        {modal && <ContentModal key="content" modal={modal} workspace={workspace} onSave={handleSave} onClose={()=>setModal(null)} onArchive={archiveItem} onRestore={unarchiveItem} onDelete={deleteItem} onDuplicate={(data:any) => {
           const duplicatedData = {...data, id: gid(), title: data.title + " (Copy)", status: statuses[0]?.name || "Draft", metrics: {}, adsMetrics: {}};
           handleSave(duplicatedData, true);
           setTimeout(() => setSaveMsg("Konten berhasil diduplikasi."), 100);
@@ -2028,6 +2037,16 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme, systemConfig 
           </motion.div>
         )}
         </AnimatePresence>
+
+      <HubyTutorial 
+        profile={profile} 
+        onUpdateProfile={onUpdateProfile} 
+        tab={tab} 
+        setTab={setTab} 
+        sidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
+        onActiveChange={setTutorialActive}
+      />
     </div>
   </div>
 );

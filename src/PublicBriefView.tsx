@@ -28,9 +28,14 @@ import {
   BarChart2,
   Eye,
   TrendingUp,
-  Award
+  Award,
+  PenTool,
+  Megaphone,
+  Music,
+  Hash
 } from "lucide-react";
 import { PlatformPreview } from "./components/PlatformPreview";
+import { htmlToPlainText } from "./data";
 
 // Platform colors & icons lookup
 function getPlatformStyle(platform: string) {
@@ -89,9 +94,50 @@ function getTranslucentColor(hex: string, opacityPercent: string = "15") {
   return hex;
 }
 
+const DEFAULT_FIELDS = [
+  { id: "objective", label: "Objective", icon: "Target", placeholder: "Tujuan atau target output dari konten ini...", visible: true },
+  { id: "hook", label: "Hook", icon: "AlertCircle", placeholder: "Skenario pembuka konten yang bisa mengundang atensi dalam 3 detik pertama...", visible: true },
+  { id: "briefCopywriting", label: "Brief Utama", icon: "FileText", placeholder: "Arah konten, tone of voice, call to action, poin kata kunci utama...", visible: true },
+  { id: "cta", label: "Call to Action (CTA)", icon: "Megaphone", placeholder: "Ajak audiens melakukan sesuatu (Contoh: Klik link di bio, komen, dll)...", visible: true },
+  { id: "caption", label: "Caption", icon: "PenTool", placeholder: "Salinan caption social media yang sudah siap diposting...", visible: true },
+  { id: "targetAudience", label: "Target Audien", icon: "Users", placeholder: "Spesifik target demografi, persona, atau minat audiens...", visible: false },
+  { id: "keyAngle", label: "Key Angle / Message", icon: "Sparkles", placeholder: "Sudut pandang unik atau pesan utama yang ingin ditekankan...", visible: false },
+  { id: "visualConcept", label: "Visual Concept / Art Direction", icon: "Eye", placeholder: "Gaya visual, estetika, referensi transisi, atau moodboard...", visible: false },
+  { id: "audioBgm", label: "Rekomendasi Audio & BGM", icon: "Music", placeholder: "Suara latar, lagu tren, ketukan, atau instruksi Voice Over (VO)...", visible: false },
+  { id: "outro", label: "Outro / End Card", icon: "ExternalLink", placeholder: "Elemen visual/teks akhir sebelum video selesai...", visible: false },
+  { id: "hashtags", label: "Hashtags", icon: "Hash", placeholder: "Rekomendasi hashtag untuk meningkatkan jangkauan algoritmik...", visible: false }
+];
+
+const getFieldIcon = (iconName: string, size = 14) => {
+  switch (iconName) {
+    case "Target": return <Target size={size} />;
+    case "AlertCircle": return <AlertCircle size={size} />;
+    case "FileText": return <FileText size={size} />;
+    case "Megaphone": return <Megaphone size={size} />;
+    case "PenTool": return <PenTool size={size} />;
+    case "Users": return <Users size={size} />;
+    case "Sparkles": return <Sparkles size={size} />;
+    case "Eye": return <Eye size={size} />;
+    case "Music": return <Music size={size} />;
+    case "ExternalLink": return <ExternalLink size={size} />;
+    case "Hash": return <Hash size={size} />;
+    default: return <FileText size={size} />;
+  }
+};
+
 export function PublicBriefView() {
   const { workspaceId, contentId } = useParams<{ workspaceId: string; contentId: string }>();
   const [brief, setBrief] = useState<any>(null);
+  const [workspace, setWorkspace] = useState<any>(null);
+  const [layoutFields, setLayoutFields] = useState<any[]>(DEFAULT_FIELDS);
+  const [copiedFields, setCopiedFields] = useState<Record<string, boolean>>({});
+  const [localToast, setLocalToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
+  const showToast = (message: string, type: "success" | "error" | "info" = "success") => {
+    setLocalToast({ message, type });
+    setTimeout(() => {
+      setLocalToast(prev => prev?.message === message ? null : prev);
+    }, 3500);
+  };
   const [workspaceName, setWorkspaceName] = useState("Workspace");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -178,7 +224,7 @@ export function PublicBriefView() {
       await updateDoc(docRef, { comments: updatedComments });
     } catch (err: any) {
       console.error("Failed to add section comment:", err);
-      alert("Gagal menambahkan komentar: " + err.message);
+      showToast("Gagal menambahkan komentar: " + err.message, "error");
     }
   };
 
@@ -190,9 +236,10 @@ export function PublicBriefView() {
 
       const docRef = doc(db, "workspaces", workspaceId!, "content", contentId!);
       await updateDoc(docRef, { comments: updatedComments });
+      showToast("Komentar diselesaikan!", "success");
     } catch (err: any) {
       console.error("Failed to resolve comment:", err);
-      alert("Gagal menyelesaikan komentar: " + err.message);
+      showToast("Gagal menyelesaikan komentar: " + err.message, "error");
     }
   };
 
@@ -204,9 +251,10 @@ export function PublicBriefView() {
 
       const docRef = doc(db, "workspaces", workspaceId!, "content", contentId!);
       await updateDoc(docRef, { comments: updatedComments });
+      showToast("Komentar dibuka kembali", "info");
     } catch (err: any) {
       console.error("Failed to reopen comment:", err);
-      alert("Gagal membuka kembali komentar: " + err.message);
+      showToast("Gagal membuka kembali komentar: " + err.message, "error");
     }
   };
 
@@ -402,6 +450,77 @@ export function PublicBriefView() {
     );
   };
 
+  const renderDynamicField = (field: any) => {
+    const { id, label, icon, placeholder, visible } = field;
+    
+    // Only render if marked visible
+    if (!visible) return null;
+
+    let fieldValue = brief ? (brief[id] || "") : "";
+    
+    const isCopied = !!copiedFields[id];
+
+    const handleCopy = (e: any) => {
+      e.stopPropagation();
+      const textToCopy = id === "briefCopywriting" && !brief.briefCopywriting && brief.brief 
+        ? brief.brief 
+        : htmlToPlainText(fieldValue);
+      navigator.clipboard.writeText(textToCopy);
+      setCopiedFields(prev => ({ ...prev, [id]: true }));
+      setTimeout(() => {
+        setCopiedFields(prev => ({ ...prev, [id]: false }));
+      }, 2000);
+    };
+
+    const hasValue = !!fieldValue || (id === "briefCopywriting" && brief && !!brief.brief);
+
+    return (
+      <div 
+        key={id}
+        className={`bg-white border rounded-[24px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.01)] transition-all duration-300 ${openSections[id] ? "border-blue-200 ring-2 ring-blue-500/10 shadow-lg" : "border-gray-100"}`}
+      >
+        <div className="flex justify-between items-center mb-4">
+          <div className="text-[11px] font-extrabold text-gray-400 uppercase tracking-widest flex items-center gap-2 flex-1 min-w-0">
+            {getFieldIcon(icon, 14)} {label}
+            {brief && brief.allowComments && renderSectionCommentBadge(id)}
+          </div>
+          {hasValue && (
+            <button
+              onClick={handleCopy}
+              className="flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 transition duration-150 shrink-0 ml-2"
+            >
+              {isCopied ? (
+                <>
+                  <Check size={13} className="text-emerald-500" /> Tersalin!
+                </>
+              ) : (
+                <>
+                  <Copy size={13} /> Salin {label}
+                </>
+              )}
+            </button>
+          )}
+        </div>
+        
+        {hasValue ? (
+          <div className="bg-black/[0.015] p-5 rounded-2xl text-gray-800 font-medium text-sm leading-relaxed border border-black/[0.01]">
+            {id === "briefCopywriting" && brief && !brief.briefCopywriting && brief.brief ? (
+              <div className="prose max-w-none text-gray-800 leading-relaxed font-medium">
+                <Markdown>{brief.brief}</Markdown>
+              </div>
+            ) : (
+              <div className="tiptap-prose" dangerouslySetInnerHTML={{ __html: fieldValue }} />
+            )}
+          </div>
+        ) : (
+          <p className="text-gray-400 italic text-sm text-center py-4">{placeholder || `Tidak ada spesifikasi ${label.toLowerCase()} khusus.`}</p>
+        )}
+        
+        {brief && brief.allowComments && renderInlineCommentThread(id)}
+      </div>
+    );
+  };
+
   useEffect(() => {
     if (!workspaceId || !contentId) {
       setError("ID Link tidak valid.");
@@ -413,7 +532,9 @@ export function PublicBriefView() {
     getDoc(doc(db, "workspaces", workspaceId))
       .then((snap) => {
         if (snap.exists()) {
-          setWorkspaceName(snap.data()?.name || "Workspace");
+          const wData = snap.data();
+          setWorkspace(wData);
+          setWorkspaceName(wData?.name || "Workspace");
         }
       })
       .catch((err) => {
@@ -457,9 +578,39 @@ export function PublicBriefView() {
     return () => unsubscribe();
   }, [workspaceId, contentId, currentUser, userProfile]);
 
+  const getInitialLayoutFields = () => {
+    if (brief && brief.layoutSettings && Array.isArray(brief.layoutSettings.fields)) {
+      const savedFields = brief.layoutSettings.fields;
+      const merged = [...savedFields];
+      DEFAULT_FIELDS.forEach(def => {
+        if (!merged.some(f => f.id === def.id)) {
+          merged.push(def);
+        }
+      });
+      return merged;
+    }
+    if (workspace && workspace.layoutSettings && Array.isArray(workspace.layoutSettings.fields)) {
+      const savedFields = workspace.layoutSettings.fields;
+      const merged = [...savedFields];
+      DEFAULT_FIELDS.forEach(def => {
+        if (!merged.some(f => f.id === def.id)) {
+          merged.push(def);
+        }
+      });
+      return merged;
+    }
+    return DEFAULT_FIELDS;
+  };
+
+  useEffect(() => {
+    if (brief) {
+      setLayoutFields(getInitialLayoutFields());
+    }
+  }, [brief, workspace]);
+
   const handleCopyCaption = () => {
     if (!brief?.caption) return;
-    navigator.clipboard.writeText(brief.caption);
+    navigator.clipboard.writeText(htmlToPlainText(brief.caption));
     setCopiedCaption(true);
     setTimeout(() => setCopiedCaption(false), 2000);
   };
@@ -499,7 +650,7 @@ export function PublicBriefView() {
       setTimeout(() => setCommentSuccess(false), 2500);
     } catch (err: any) {
       console.error("Failed to add comment:", err);
-      alert("Gagal menambahkan komentar: " + err.message);
+      showToast("Gagal menambahkan komentar: " + err.message, "error");
     } finally {
       setSubmittingComment(false);
     }
@@ -549,12 +700,52 @@ export function PublicBriefView() {
   const typeColor = getContentTypeColor(brief.contentType);
 
   // Platform Preview Media Handler
-  const previewMediaList = brief.referenceImage 
+  let previewMediaList = brief.referenceImage 
     ? [{ url: brief.referenceImage, type: "image" as const }] 
     : (brief.mediaList || []);
 
+  if (previewMediaList.length === 0 && brief.assetLink) {
+    const driveMatch = brief.assetLink.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    if (driveMatch) {
+      previewMediaList = [{ url: `https://drive.google.com/uc?export=view&id=${driveMatch[1]}`, type: "image" as const }];
+    }
+  }
+
   return (
-    <div className="min-h-screen bg-[#FAFAFA] font-sans text-gray-900 pb-16">
+    <div className="min-h-screen bg-[#FAFAFA] font-sans text-gray-900 pb-16 relative">
+      {/* Toast Notification */}
+      <AnimatePresence>
+        {localToast && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.95 }}
+            style={{
+              position: "fixed",
+              top: 24,
+              left: "50%",
+              x: "-50%",
+              background: localToast.type === "success" ? "#10B981" : localToast.type === "error" ? "#EF4444" : "#3B82F6",
+              color: "#FFFFFF",
+              padding: "10px 20px",
+              borderRadius: "9999px",
+              fontSize: "12px",
+              fontWeight: 700,
+              boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              zIndex: 9999,
+              pointerEvents: "none"
+            }}
+          >
+            {localToast.type === "success" && <Check size={14} strokeWidth={3} />}
+            {localToast.type === "error" && <AlertCircle size={14} />}
+            {localToast.type === "info" && <Sparkles size={14} />}
+            {localToast.message}
+          </motion.div>
+        )}
+      </AnimatePresence>
       {/* Sticky Header */}
       <header className="sticky top-0 bg-white/80 backdrop-blur-md border-b border-gray-100 z-30 px-6 py-3">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
@@ -611,10 +802,10 @@ export function PublicBriefView() {
       </header>
 
       {/* Main split-pane content */}
-      <main className="max-w-[1400px] w-full mx-auto px-4 lg:px-6 mt-8 flex flex-col lg:flex-row gap-6 items-start">
+      <main className="max-w-6xl w-full mx-auto px-4 lg:px-6 mt-8 flex flex-col lg:flex-row gap-6 items-start">
         
                 {/* LEFT COLUMN: Properties */}
-        <div className="w-full lg:w-[280px] xl:w-[320px] shrink-0 flex flex-col gap-6">
+        <div className="w-full lg:w-[380px] shrink-0 flex flex-col gap-6">
 <div className="bg-white border border-gray-100 rounded-[24px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.01)] flex flex-col gap-6">
             
             {/* Title Block */}
@@ -812,105 +1003,7 @@ export function PublicBriefView() {
               {/* TAB 1: BRIEF & KONTEN */}
               {activeTab === "draft" && (
                 <div className="flex flex-col gap-6">
-                  
-                  {/* Objective Card */}
-                  <div className={`bg-white border rounded-[24px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.01)] transition-all duration-300 ${openSections["objective"] ? "border-blue-200 ring-2 ring-blue-500/10 shadow-lg" : "border-gray-100"}`}>
-                    <div className="text-[11px] font-extrabold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                      <Target size={14} className="text-gray-400" /> Objective / Tujuan Utama
-                      {brief.allowComments && renderSectionCommentBadge("objective")}
-                    </div>
-                    {brief.objective ? (
-                      <div className="bg-black/[0.015] p-5 rounded-2xl text-gray-800 font-medium text-sm leading-relaxed border border-black/[0.01]">
-                        <div className="tiptap-prose" dangerouslySetInnerHTML={{ __html: brief.objective }} />
-                      </div>
-                    ) : (
-                      <p className="text-gray-400 italic text-sm text-center py-4">Tidak ada spesifikasi objective khusus.</p>
-                    )}
-                    {brief.allowComments && renderInlineCommentThread("objective")}
-                  </div>
-
-                  {/* Hook Card */}
-                  <div className={`bg-white border rounded-[24px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.01)] transition-all duration-300 ${openSections["hook"] ? "border-blue-200 ring-2 ring-blue-500/10 shadow-lg" : "border-gray-100"}`}>
-                    <div className="text-[11px] font-extrabold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                      <Sparkles size={14} className="text-gray-400" /> Hook Pembuka (3 Detik Pertama)
-                      {brief.allowComments && renderSectionCommentBadge("hook")}
-                    </div>
-                    {brief.hook ? (
-                      <div className="bg-black/[0.015] p-5 rounded-2xl text-gray-800 font-medium text-sm leading-relaxed border border-black/[0.01]">
-                        <div className="tiptap-prose" dangerouslySetInnerHTML={{ __html: brief.hook }} />
-                      </div>
-                    ) : (
-                      <p className="text-gray-400 italic text-sm text-center py-4">Skenario / teks hook belum ditentukan.</p>
-                    )}
-                    {brief.allowComments && renderInlineCommentThread("hook")}
-                  </div>
-
-                  {/* Brief Card */}
-                  <div className={`bg-white border rounded-[24px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.01)] transition-all duration-300 ${openSections["brief"] ? "border-blue-200 ring-2 ring-blue-500/10 shadow-lg" : "border-gray-100"}`}>
-                    <div className="text-[11px] font-extrabold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                      <FileText size={14} className="text-gray-400" /> Arah & Detail Brief Konten
-                      {brief.allowComments && renderSectionCommentBadge("brief")}
-                    </div>
-                    {brief.briefCopywriting ? (
-                      <div className="bg-black/[0.015] p-5 rounded-2xl text-gray-800 font-medium text-sm leading-relaxed border border-black/[0.01]">
-                        <div className="tiptap-prose" dangerouslySetInnerHTML={{ __html: brief.briefCopywriting }} />
-                      </div>
-                    ) : brief.brief ? (
-                      <div className="prose max-w-none text-gray-800 leading-relaxed font-medium bg-black/[0.015] p-5 rounded-2xl border border-black/[0.01]">
-                        <Markdown>{brief.brief}</Markdown>
-                      </div>
-                    ) : (
-                      <p className="text-gray-400 italic text-sm text-center py-6">Detail brief konten belum disediakan.</p>
-                    )}
-                    {brief.allowComments && renderInlineCommentThread("brief")}
-                  </div>
-
-                  {/* Call to Action (CTA) Card */}
-                  <div className={`bg-white border rounded-[24px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.01)] transition-all duration-300 ${openSections["cta"] ? "border-blue-200 ring-2 ring-blue-500/10 shadow-lg" : "border-gray-100"}`}>
-                    <div className="text-[11px] font-extrabold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                      <Check size={14} className="text-gray-400" /> Call To Action (CTA)
-                      {brief.allowComments && renderSectionCommentBadge("cta")}
-                    </div>
-                    {brief.cta ? (
-                      <div className="bg-black/[0.015] p-5 rounded-2xl text-gray-800 font-medium text-sm leading-relaxed border border-black/[0.01]">
-                        <div className="tiptap-prose" dangerouslySetInnerHTML={{ __html: brief.cta }} />
-                      </div>
-                    ) : (
-                      <p className="text-gray-400 italic text-sm text-center py-4">Tindakan CTA belum ditentukan.</p>
-                    )}
-                    {brief.allowComments && renderInlineCommentThread("cta")}
-                  </div>
-
-                  {/* Copyable Caption Card */}
-                  {brief.caption && (
-                    <div className={`bg-white border rounded-[24px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.01)] transition-all duration-300 ${openSections["caption"] ? "border-blue-200 ring-2 ring-blue-500/10 shadow-lg" : "border-gray-100"}`}>
-                      <div className="flex justify-between items-center mb-4">
-                        <div className="text-[11px] font-extrabold text-gray-400 uppercase tracking-widest flex items-center gap-2 flex-1 min-w-0">
-                          <Sparkles size={14} className="text-gray-400" /> Copywriting / Caption Final Draft
-                          {brief.allowComments && renderSectionCommentBadge("caption")}
-                        </div>
-                        <button
-                          onClick={handleCopyCaption}
-                          className="flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 transition duration-150 shrink-0 ml-2"
-                        >
-                          {copiedCaption ? (
-                            <>
-                              <Check size={13} className="text-emerald-500" /> Tersalin!
-                            </>
-                          ) : (
-                            <>
-                              <Copy size={13} /> Salin Caption
-                            </>
-                          )}
-                        </button>
-                      </div>
-                      <div className="bg-black/[0.015] p-5 rounded-2xl text-gray-800 font-medium text-sm leading-relaxed border border-black/[0.01] whitespace-pre-wrap">
-                        {brief.caption}
-                      </div>
-                      {brief.allowComments && renderInlineCommentThread("caption")}
-                    </div>
-                  )}
-
+                  {layoutFields.map(field => renderDynamicField(field))}
                 </div>
               )}
 
@@ -1234,28 +1327,6 @@ export function PublicBriefView() {
             </div>
           )}
 
-        </div>
-
-     
-
-        {/* RIGHT COLUMN: Mobile Live Preview */}
-        <div className="w-full lg:w-[320px] xl:w-[360px] shrink-0 flex flex-col gap-6">
-{/* REALISTIC MOBILE LIVE PREVIEW PANEL */}
-          <div className="bg-white border border-gray-100 rounded-[24px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.01)] flex flex-col gap-4">
-            <div className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-              <Eye size={14} className="text-gray-400" /> Preview
-            </div>
-            
-            <div className="py-4 flex justify-center bg-gray-50/50 rounded-2xl border border-gray-100/50">
-              <PlatformPreview
-                platform={brief.platform || "instagram"}
-                contentType={brief.contentType || "feed"}
-                caption={brief.caption || ""}
-                mediaList={previewMediaList}
-                workspaceName={workspaceName}
-              />
-            </div>
-          </div>
         </div>
       </main>
     </div>

@@ -200,7 +200,7 @@ function CustomDropdown({
           gap: 12,
           padding: pill ? "10px 20px" : "10px 16px",
           borderRadius: pill ? "9999px" : "12px",
-          border: "1px solid rgba(44,32,22,0.1)",
+          borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(44,32,22,0.1)",
           background: "white",
           fontSize: 13,
           fontWeight: 700,
@@ -249,7 +249,7 @@ function CustomDropdown({
               right: 0,
               marginTop: 8,
               background: "white",
-              border: "1px solid rgba(44,32,22,0.1)",
+              borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(44,32,22,0.1)",
               borderRadius: 12,
               padding: 8,
               zIndex: 100,
@@ -479,7 +479,7 @@ export function SocialStudioView({
   const [dataSource, setDataSource] = useState("all");
   const dataSourceDropdownRef = useRef<HTMLDivElement>(null);
   const DEFAULT_CONFIG_ITEM = { id: "", title: "", prompt: "" };
-  const [disconnectPrompt, setDisconnectPrompt] = useState<{open: boolean, platformId: string|null}>({open: false, platformId: null});
+  const [disconnectPrompt, setDisconnectPrompt] = useState<{open: boolean, platform: string|null}>({open: false, platform: null});
   const [editingConfig, setEditingConfig] = useState<any>({});
   const [editingConfigId, setEditingConfigId] = useState<string | null>(null);
   const [editSessionId, setEditSessionId] = useState<string | null>(null);
@@ -636,9 +636,9 @@ export function SocialStudioView({
   const saveConfig = async (...args: any[]) => {};
   const [savingConfig, setSavingConfig] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const selectedComment = null;
+  const selectedComment = rawSelectedComment;
   const [selectedContent, setSelectedContent] = useState<any>(null);
-  const selectedInboxMsg = null;
+  const selectedInboxMsg = rawSelectedInboxMsg;
   const sendCommentReply = async (...args: any[]) => {};
   const sendDMMessage = async (...args: any[]) => {};
   
@@ -1047,9 +1047,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
 
   const toggleConnection = async (id: string) => {
     if (connectedPlatforms.includes(id)) {
-      setDisconnectPrompt({ isOpen: true, platformId: id });
+      setDisconnectPrompt({ open: true, platform: id });
     } else {
-      setIntegrationModal({ isOpen: true, platformId: id });
+      setIntegrationModal({ open: true, platform: id });
     }
   };
 
@@ -1297,7 +1297,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
               style={{
                 padding: "12px 12px 40px",
                 background: "white",
-                border: "1px solid rgba(44,32,22,0.1)",
+                borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(44,32,22,0.1)",
                 borderRadius: 12,
                 minHeight: 100,
                 position: "relative",
@@ -1480,7 +1480,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                 className="hover-scale"
                 style={{
                   background: "rgba(44,32,22,0.05)",
-                  border: "none",
+                  borderWidth: 0, borderStyle: "none",
                   cursor: "pointer",
                   width: 32,
                   height: 32,
@@ -1577,7 +1577,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                   width: "100%",
                   background: "var(--theme-primary)",
                   color: "white",
-                  border: "none",
+                  borderWidth: 0, borderStyle: "none",
                   padding: "12px",
                   borderRadius: 12,
                   fontWeight: 700,
@@ -1642,7 +1642,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
               padding: "4px 8px",
               fontSize: 12,
               borderRadius: 6,
-              border: "1px solid rgba(27,127,220,0.3)",
+              borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(27,127,220,0.3)",
               background: "white",
               outline: "none",
             }}
@@ -1715,7 +1715,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                   }}
                   style={{
                     background: "transparent",
-                    border: "none",
+                    borderWidth: 0, borderStyle: "none",
                     display: "flex",
                     alignItems: "center",
                     gap: 8,
@@ -1739,7 +1739,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                   }}
                   style={{
                     background: "transparent",
-                    border: "none",
+                    borderWidth: 0, borderStyle: "none",
                     display: "flex",
                     alignItems: "center",
                     gap: 8,
@@ -1778,7 +1778,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                   }}
                   style={{
                     background: "transparent",
-                    border: "none",
+                    borderWidth: 0, borderStyle: "none",
                     display: "flex",
                     alignItems: "center",
                     gap: 8,
@@ -1864,9 +1864,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                       : "rgba(44,32,22,0.04)",
                     color: isActive ? "white" : "rgba(44,32,22,0.6)",
                     cursor: "pointer",
-                    border: isActive
-                      ? "1px solid var(--theme-primary)"
-                      : "1px solid transparent",
+                    borderWidth: "1px",
+                    borderStyle: "solid",
+                    borderColor: isActive ? "var(--theme-primary)" : "transparent",
                   }}
                   className={isActive ? "" : "hover-bg"}
                 >
@@ -1903,7 +1903,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
               style={{
                 background: "transparent",
                 color: "var(--theme-primary)",
-                border: "none",
+                borderWidth: 0, borderStyle: "none",
                 padding: 0,
                 fontSize: 12,
                 fontWeight: 800,
@@ -1925,7 +1925,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
               width: "100%",
               minHeight: 120,
               borderRadius: 16,
-              border: "none",
+              borderWidth: 0, borderStyle: "none",
               background: "rgba(44,32,22,0.03)",
               padding: "16px",
               fontSize: 14,
@@ -1960,7 +1960,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
               width: "100%",
               minHeight: 140,
               borderRadius: 16,
-              border: "2px dashed rgba(44,32,22,0.1)",
+              borderWidth: "2px", borderStyle: "dashed", borderColor: "rgba(44,32,22,0.1)",
               background: "rgba(44,32,22,0.02)",
               display: "flex",
               flexDirection: "column",
@@ -2090,7 +2090,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                   style={{
                     aspectRatio: "1",
                     borderRadius: 12,
-                    border: "2px dashed rgba(44,32,22,0.1)",
+                    borderWidth: "2px", borderStyle: "dashed", borderColor: "rgba(44,32,22,0.1)",
                     display: "flex",
                     flexDirection: "column",
                     alignItems: "center",
@@ -2173,7 +2173,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                     padding: 12,
                     background: "rgba(239,68,68,0.1)",
                     borderRadius: 12,
-                    border: "1px solid rgba(239,68,68,0.2)",
+                    borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(239,68,68,0.2)",
                   }}
                 >
                   <div
@@ -2226,15 +2226,15 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
     >
       <ContentModalMock />
       <PlatformIntegrationModal
-        isOpen={integrationModal.isOpen}
-        platformId={integrationModal.platformId}
-        onClose={() => setIntegrationModal({ isOpen: false, platformId: null })}
+        isOpen={integrationModal.open}
+        platformId={integrationModal.platform}
+        onClose={() => setIntegrationModal({ open: false, platform: null })}
         workspaceId={workspaceId}
         onSuccess={handleIntegrationSuccess}
       />
 
       <AnimatePresence>
-        {disconnectPrompt.isOpen && disconnectPrompt.platformId && (
+        {disconnectPrompt.open && disconnectPrompt.platform && (
           <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
@@ -2249,14 +2249,14 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                 <h3 className="text-xl font-bold text-[#111827] mb-2">
                   Disconnect{" "}
                   {
-                    PLATFORMS.find((p) => p.id === disconnectPrompt.platformId)
+                    PLATFORMS.find((p) => p.id === disconnectPrompt.platform)
                       ?.name
                   }
                   ?
                 </h3>
-                {disconnectPrompt.platformId && connectedAccountsData[disconnectPrompt.platformId]?.accountName && (
+                {disconnectPrompt.platform && connectedAccountsData[disconnectPrompt.platform]?.accountName && (
                   <p className="text-sm font-semibold text-[#111827]/80 mb-2">
-                    Account: {connectedAccountsData[disconnectPrompt.platformId].accountName}
+                    Account: {connectedAccountsData[disconnectPrompt.platform].accountName}
                   </p>
                 )}
                 <p className="text-sm text-[#111827]/60 mb-6">
@@ -2266,7 +2266,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                 <div className="flex gap-3">
                   <button
                     onClick={() =>
-                      setDisconnectPrompt({ isOpen: false, platformId: null })
+                      setDisconnectPrompt({ open: false, platform: null })
                     }
                     className="flex-1 px-4 py-2.5 rounded-xl font-semibold text-[#111827]/70 bg-black/5 hover:bg-black/10 transition-colors text-sm"
                   >
@@ -2282,12 +2282,12 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                             "workspaces",
                             workspaceId,
                             "connectedAccounts",
-                            disconnectPrompt.platformId!,
+                            disconnectPrompt.platform!,
                           ),
                         );
                         setDisconnectPrompt({
-                          isOpen: false,
-                          platformId: null,
+                          open: false,
+                          platform: null,
                         });
                       } catch (e) {
                         console.error(e);
@@ -2342,7 +2342,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                     onClick={() => setShowCreatePostPopup(true)}
                     style={{
                       background: "var(--theme-primary)",
-                      border: "none",
+                      borderWidth: 0, borderStyle: "none",
                       borderRadius: 9999,
                       padding: "10px 24px",
                       cursor: "pointer",
@@ -2406,7 +2406,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                                   </span>
                                 ) : (
                                   React.cloneElement(
-                                    p.icon as React.ReactElement,
+                                    p.icon as React.ReactElement<any>,
                                     { size: 14 },
                                   )
                                 )}
@@ -2423,7 +2423,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                                 </span>
                               ) : (
                                 React.cloneElement(
-                                  p.icon as React.ReactElement,
+                                  p.icon as React.ReactElement<any>,
                                   { size: 14 },
                                 )
                               )}
@@ -2614,7 +2614,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                       background: "rgba(255,255,255,0.8)",
                       borderRadius: 24,
                       padding: 24,
-                      border: "1px solid rgba(0,0,0,0.03)",
+                      borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(0,0,0,0.03)",
                       boxShadow: "0 4px 16px rgba(0,0,0,0.02)",
                     }}
                   >
@@ -2662,7 +2662,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                 style={{
                   background: "rgba(255,255,255,0.8)",
                   borderRadius: 32,
-                  border: "1px solid rgba(0,0,0,0.03)",
+                  borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(0,0,0,0.03)",
                   boxShadow: "0 8px 32px rgba(0,0,0,0.02)",
                   padding: 32,
                   marginBottom: 24,
@@ -2722,7 +2722,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                       <RechartsTooltip
                         contentStyle={{
                           borderRadius: 12,
-                          border: "none",
+                          borderWidth: 0, borderStyle: "none",
                           boxShadow: "0 5px 20px rgba(0,0,0,0.1)",
                           fontWeight: 700,
                         }}
@@ -2814,7 +2814,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                     background: "rgba(255,255,255,0.8)",
                     borderRadius: 32,
                     padding: 32,
-                    border: "1px solid rgba(0,0,0,0.03)",
+                    borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(0,0,0,0.03)",
                     boxShadow: "0 8px 32px rgba(0,0,0,0.02)",
                   }}
                 >
@@ -3033,7 +3033,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               contentStyle={{
                                 borderRadius: 8,
                                 fontWeight: 700,
-                                border: "none",
+                                borderWidth: 0, borderStyle: "none",
                                 boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
                               }}
                             />
@@ -3063,7 +3063,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                     background: "rgba(var(--theme-primary-rgb), 0.05)",
                     borderRadius: 32,
                     padding: 32,
-                    border: "1px solid rgba(var(--theme-primary-rgb), 0.1)",
+                    borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(var(--theme-primary-rgb), 0.1)",
                     display: "flex",
                     flexDirection: "column",
                   }}
@@ -3097,7 +3097,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                     style={{
                       background: "var(--theme-primary)",
                       color: "white",
-                      border: "none",
+                      borderWidth: 0, borderStyle: "none",
                       padding: "12px 16px",
                       borderRadius: 12,
                       fontSize: 13,
@@ -3147,7 +3147,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                   background: "white",
                   borderRadius: 20,
                   padding: 24,
-                  border: "1px solid rgba(44,32,22,0.05)",
+                  borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(44,32,22,0.05)",
                 }}
               >
                 <div
@@ -3220,7 +3220,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                       color: "#111827",
                       borderRadius: 8,
                       padding: "8px 16px",
-                      border: "1px solid rgba(0,0,0,0.1)",
+                      borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(0,0,0,0.1)",
                       fontWeight: 600,
                       cursor: "pointer",
                       display: "flex",
@@ -3237,7 +3237,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                       color: "#111827",
                       borderRadius: 8,
                       padding: "8px 16px",
-                      border: "1px solid rgba(0,0,0,0.1)",
+                      borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(0,0,0,0.1)",
                       fontWeight: 600,
                       cursor: "pointer",
                       display: "flex",
@@ -3254,7 +3254,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                       color: "white",
                       borderRadius: 8,
                       padding: "8px 16px",
-                      border: "none",
+                      borderWidth: 0, borderStyle: "none",
                       fontWeight: 600,
                       cursor: "pointer",
                       display: "flex",
@@ -3347,7 +3347,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                       style={{
                         padding: "8px 16px 8px 36px",
                         borderRadius: 8,
-                        border: "1px solid rgba(0,0,0,0.1)",
+                        borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(0,0,0,0.1)",
                         fontSize: 13,
                         width: 220,
                       }}
@@ -3359,7 +3359,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                     style={{
                       padding: "8px 16px",
                       background: "white",
-                      border: "1px solid rgba(0,0,0,0.1)",
+                      borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(0,0,0,0.1)",
                       borderRadius: 8,
                       fontSize: 13,
                       fontWeight: 600,
@@ -3375,7 +3375,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                     style={{
                       padding: "8px 16px",
                       background: "white",
-                      border: "1px solid rgba(0,0,0,0.1)",
+                      borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(0,0,0,0.1)",
                       borderRadius: 8,
                       fontSize: 13,
                       fontWeight: 600,
@@ -3393,7 +3393,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                 style={{
                   background: "white",
                   borderRadius: 20,
-                  border: "1px solid rgba(44,32,22,0.05)",
+                  borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(44,32,22,0.05)",
                   overflowX: "auto",
                 }}
               >
@@ -3427,7 +3427,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                             width: 16,
                             height: 16,
                             borderRadius: 4,
-                            border: "1px solid #ccc",
+                            borderWidth: "1px", borderStyle: "solid", borderColor: "#ccc",
                           }}
                         />
                       </th>
@@ -3605,7 +3605,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               width: 16,
                               height: 16,
                               borderRadius: 4,
-                              border: "1px solid #ccc",
+                              borderWidth: "1px", borderStyle: "solid", borderColor: "#ccc",
                             }}
                           />
                         </td>
@@ -3803,7 +3803,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               <button
                                 style={{
                                   background: "white",
-                                  border: "1px solid rgba(0,0,0,0.1)",
+                                  borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(0,0,0,0.1)",
                                   borderRadius: 6,
                                   padding: "4px 12px",
                                   fontSize: 13,
@@ -3817,7 +3817,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               <button
                                 style={{
                                   background: "white",
-                                  border: "1px solid rgba(0,0,0,0.1)",
+                                  borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(0,0,0,0.1)",
                                   borderRadius: 6,
                                   padding: "4px 8px",
                                   color: "#111827",
@@ -3979,7 +3979,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                       padding: "0 16px",
                       borderRadius: 12,
                       fontWeight: 800,
-                      border: "none",
+                      borderWidth: 0, borderStyle: "none",
                       cursor: "pointer",
                       display: "flex",
                       alignItems: "center",
@@ -3998,7 +3998,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                       display: "flex",
                       alignItems: "center",
                       background: "white",
-                      border: "1px solid rgba(44,32,22,0.1)",
+                      borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(44,32,22,0.1)",
                       borderRadius: 12,
                       padding: 4,
                     }}
@@ -4007,7 +4007,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                       className="hover-scale"
                       style={{
                         background: "transparent",
-                        border: "none",
+                        borderWidth: 0, borderStyle: "none",
                         padding: 6,
                         cursor: "pointer",
                         display: "flex",
@@ -4030,7 +4030,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                       className="hover-scale"
                       style={{
                         background: "transparent",
-                        border: "none",
+                        borderWidth: 0, borderStyle: "none",
                         padding: 6,
                         cursor: "pointer",
                         display: "flex",
@@ -4104,7 +4104,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                     flex: 1,
                     padding: "12px 16px",
                     borderRadius: 12,
-                    border: "1px solid rgba(44,32,22,0.1)",
+                    borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(44,32,22,0.1)",
                     fontSize: 14,
                     fontFamily: "inherit",
                     fontWeight: 500,
@@ -4117,7 +4117,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                   style={{
                     background: compLoading ? "rgba(44,32,22,0.5)" : "#2C2016",
                     color: "white",
-                    border: "none",
+                    borderWidth: 0, borderStyle: "none",
                     padding: "0 24px",
                     borderRadius: 12,
                     fontWeight: 800,
@@ -4143,7 +4143,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                       background: "white",
                       borderRadius: 20,
                       padding: 24,
-                      border: "1px solid rgba(44,32,22,0.05)",
+                      borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(44,32,22,0.05)",
                     }}
                   >
                     <div
@@ -4271,7 +4271,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                       padding: 40,
                       background: "white",
                       borderRadius: 20,
-                      border: "1px dashed rgba(44,32,22,0.2)",
+                      borderWidth: "1px", borderStyle: "dashed", borderColor: "rgba(44,32,22,0.2)",
                     }}
                   >
                     <Search
@@ -4311,7 +4311,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                   width: 320,
                   background: "rgba(255,255,255,0.8)",
                   borderRadius: 32,
-                  border: "1px solid rgba(0,0,0,0.03)",
+                  borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(0,0,0,0.03)",
                   boxShadow: "0 8px 32px rgba(0,0,0,0.02)",
                   display: "flex",
                   flexDirection: "column",
@@ -4355,7 +4355,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                           borderRadius: 8,
                           fontSize: 11,
                           fontWeight: 700,
-                          border: "none",
+                          borderWidth: 0, borderStyle: "none",
                           cursor: "pointer",
                           background:
                             inboxViewMode === "dms" ? "white" : "transparent",
@@ -4382,7 +4382,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                           borderRadius: 8,
                           fontSize: 11,
                           fontWeight: 700,
-                          border: "none",
+                          borderWidth: 0, borderStyle: "none",
                           cursor: "pointer",
                           background:
                             inboxViewMode === "comments"
@@ -4443,7 +4443,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                           width: "100%",
                           padding: "6px 10px 6px 28px",
                           borderRadius: 6,
-                          border: "1px solid rgba(44,32,22,0.15)",
+                          borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(44,32,22,0.15)",
                           fontSize: 12,
                           fontFamily: "inherit",
                           outline: "none",
@@ -4676,7 +4676,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                           <div
                             className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 overflow-hidden relative"
                             style={{
-                              border: "1px solid rgba(44,32,22,0.05)",
+                              borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(44,32,22,0.05)",
                             }}
                           >
                             <img
@@ -4791,7 +4791,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                   flex: 1,
                   background: "rgba(255,255,255,0.8)",
                   borderRadius: 32,
-                  border: "1px solid rgba(0,0,0,0.03)",
+                  borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(0,0,0,0.03)",
                   boxShadow: "0 8px 32px rgba(0,0,0,0.02)",
                   display: "flex",
                   flexDirection: "column",
@@ -4913,7 +4913,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                         <div
                           style={{
                             background: "white",
-                            border: "1px solid rgba(44,32,22,0.05)",
+                            borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(44,32,22,0.05)",
                             padding: "12px 16px",
                             borderRadius: "16px 16px 16px 4px",
                             maxWidth: "70%",
@@ -5033,7 +5033,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               borderRadius: 16,
                               fontSize: 12,
                               fontWeight: 700,
-                              border: "none",
+                              borderWidth: 0, borderStyle: "none",
                               cursor: "pointer",
                               display: "flex",
                               alignItems: "center",
@@ -5057,7 +5057,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               borderRadius: 16,
                               fontSize: 12,
                               fontWeight: 700,
-                              border: "none",
+                              borderWidth: 0, borderStyle: "none",
                               cursor: "pointer",
                               display: "flex",
                               alignItems: "center",
@@ -5081,7 +5081,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               borderRadius: 16,
                               fontSize: 12,
                               fontWeight: 700,
-                              border: "none",
+                              borderWidth: 0, borderStyle: "none",
                               cursor: "pointer",
                               display: "flex",
                               alignItems: "center",
@@ -5098,7 +5098,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                             gap: 12,
                             alignItems: "center",
                             background: "white",
-                            border: "1px solid rgba(44,32,22,0.1)",
+                            borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(44,32,22,0.1)",
                             borderRadius: 24,
                             padding: "4px 4px 4px 16px",
                           }}
@@ -5136,7 +5136,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               style={{
                                 width: "100%",
                                 padding: "10px 0",
-                                border: "none",
+                                borderWidth: 0, borderStyle: "none",
                                 fontSize: 14,
                                 outline: "none",
                                 fontFamily: "inherit",
@@ -5228,7 +5228,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                         <div
                           className="w-12 h-12 rounded-xl flex items-center justify-center text-white overflow-hidden"
                           style={{
-                            border: "1px solid rgba(44,32,22,0.05)",
+                            borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(44,32,22,0.05)",
                           }}
                         >
                           <img
@@ -5524,7 +5524,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                             borderRadius: 16,
                             fontSize: 12,
                             fontWeight: 700,
-                            border: "none",
+                            borderWidth: 0, borderStyle: "none",
                             cursor: "pointer",
                             display: "flex",
                             alignItems: "center",
@@ -5548,7 +5548,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                             borderRadius: 16,
                             fontSize: 12,
                             fontWeight: 700,
-                            border: "none",
+                            borderWidth: 0, borderStyle: "none",
                             cursor: "pointer",
                             display: "flex",
                             alignItems: "center",
@@ -5572,7 +5572,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                             borderRadius: 16,
                             fontSize: 12,
                             fontWeight: 700,
-                            border: "none",
+                            borderWidth: 0, borderStyle: "none",
                             cursor: "pointer",
                             display: "flex",
                             alignItems: "center",
@@ -5594,7 +5594,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                             borderRadius: 16,
                             fontSize: 12,
                             color: "#4B5563",
-                            border: "1px solid rgba(0,0,0,0.05)",
+                            borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(0,0,0,0.05)",
                           }}
                         >
                           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -5607,7 +5607,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               setMsgContent("");
                             }}
                             style={{
-                              border: "none",
+                              borderWidth: 0, borderStyle: "none",
                               background: "none",
                               color: "#EF4444",
                               fontWeight: 700,
@@ -5625,7 +5625,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                           gap: 12,
                           alignItems: "center",
                           background: "white",
-                          border: "1px solid rgba(44,32,22,0.1)",
+                          borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(44,32,22,0.1)",
                           borderRadius: 24,
                           padding: "4px 4px 4px 16px",
                         }}
@@ -5663,7 +5663,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                             style={{
                               width: "100%",
                               padding: "10px 0",
-                              border: "none",
+                              borderWidth: 0, borderStyle: "none",
                               fontSize: 14,
                               outline: "none",
                               fontFamily: "inherit",
@@ -5742,7 +5742,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                     width: 280,
                     background: "white",
                     borderRadius: 20,
-                    border: "1px solid rgba(44,32,22,0.05)",
+                    borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(44,32,22,0.05)",
                     display: "flex",
                     flexDirection: "column",
                     overflowY: "auto",
@@ -5757,7 +5757,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                           borderRadius: 16,
                           overflow: "hidden",
                           position: "relative",
-                          border: "1px solid rgba(0,0,0,0.05)",
+                          borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(0,0,0,0.05)",
                           background: "black",
                         }}
                       >
@@ -5841,7 +5841,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                             padding: "6px 10px",
                             borderRadius: 12,
                             background: "white",
-                            border: "1px solid rgba(44,32,22,0.15)",
+                            borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(44,32,22,0.15)",
                             color: "#111827",
                             fontWeight: 700,
                             fontSize: 12,
@@ -6025,7 +6025,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                             padding: "6px 10px",
                             borderRadius: 8,
                             background: "white",
-                            border: "1px solid rgba(44,32,22,0.15)",
+                            borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(44,32,22,0.15)",
                             color: "#111827",
                             fontWeight: 600,
                             fontSize: 12,
@@ -6081,7 +6081,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                             width: "100%",
                             padding: "6px 10px",
                             borderRadius: 8,
-                            border: "1px solid rgba(44,32,22,0.15)",
+                            borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(44,32,22,0.15)",
                             fontSize: 12,
                             fontWeight: 500,
                             color: "#111827",
@@ -6140,7 +6140,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                             width: "100%",
                             padding: "6px 10px",
                             borderRadius: 8,
-                            border: "1px solid rgba(44,32,22,0.15)",
+                            borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(44,32,22,0.15)",
                             fontSize: 12,
                             outline: "none",
                             marginBottom: 12,
@@ -6178,7 +6178,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                                 width: 14,
                                 height: 14,
                                 borderRadius: 4,
-                                border: "1px solid rgba(44,32,22,0.2)",
+                                borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(44,32,22,0.2)",
                               }}
                             />
                             <span
@@ -6207,7 +6207,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                                 width: 14,
                                 height: 14,
                                 borderRadius: 4,
-                                border: "1px solid rgba(44,32,22,0.2)",
+                                borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(44,32,22,0.2)",
                               }}
                             />
                             <span
@@ -6253,7 +6253,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                             width: "100%",
                             padding: "6px 10px",
                             borderRadius: 8,
-                            border: "1px solid rgba(44,32,22,0.15)",
+                            borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(44,32,22,0.15)",
                             fontSize: 12,
                             outline: "none",
                             resize: "none",
@@ -6356,7 +6356,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                     className="hover-bg"
                     style={{
                       background: "transparent",
-                      border: "none",
+                      borderWidth: 0, borderStyle: "none",
                       color: "#193546",
                       borderRadius: 8,
                       padding: "10px 12px",
@@ -6378,7 +6378,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                       background: isSearchMode
                         ? "rgba(27,127,220,0.1)"
                         : "transparent",
-                      border: "none",
+                      borderWidth: 0, borderStyle: "none",
                       color: isSearchMode ? "#1B7FDC" : "#193546",
                       borderRadius: 8,
                       padding: "10px 12px",
@@ -6400,7 +6400,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                       background: showConfigPanel
                         ? "rgba(27,127,220,0.1)"
                         : "transparent",
-                      border: "none",
+                      borderWidth: 0, borderStyle: "none",
                       color: showConfigPanel ? "#1B7FDC" : "#193546",
                       borderRadius: 8,
                       padding: "10px 12px",
@@ -6507,7 +6507,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                 <div
                   style={{
                     background: "rgba(13,184,211,0.05)",
-                    border: "1px solid rgba(13,184,211,0.2)",
+                    borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(13,184,211,0.2)",
                     borderRadius: 16,
                     padding: "16px",
                     marginTop: 16,
@@ -6613,6 +6613,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
 
               {/* MAIN CHAT AREA */}
               <div
+                id="social-hub-ai-panel"
                 style={{
                   flex: 1,
                   minWidth: 0,
@@ -6662,7 +6663,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                           className="hover-bg"
                           style={{
                             background: "transparent",
-                            border: "none",
+                            borderWidth: 0, borderStyle: "none",
                             cursor: "pointer",
                             display: "flex",
                             alignItems: "center",
@@ -6705,7 +6706,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                             width: "100%",
                             padding: "16px 48px 16px 48px",
                             borderRadius: 16,
-                            border: "1px solid rgba(6,91,152,0.2)",
+                            borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(6,91,152,0.2)",
                             fontSize: 16,
                             outline: "none",
                             boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
@@ -6720,7 +6721,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               top: "50%",
                               transform: "translateY(-50%)",
                               background: "transparent",
-                              border: "none",
+                              borderWidth: 0, borderStyle: "none",
                               cursor: "pointer",
                               display: "flex",
                               alignItems: "center",
@@ -6828,7 +6829,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                                   padding: "16px 20px",
                                   borderRadius: 12,
                                   background: "white",
-                                  border: "1px solid rgba(6,91,152,0.1)",
+                                  borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(6,91,152,0.1)",
                                   cursor: "pointer",
                                   display: "flex",
                                   flexDirection: "column",
@@ -6913,7 +6914,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                         )}
                       </div>
                     </div>
-                  ) : chatHistory.length === 1 ? (
+                  ) : chatHistory.length <= 1 ? (
                     // EMPTY STATE (GREETING & CARDS)
                     <div
                       style={{
@@ -7007,7 +7008,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                           className="hover-scale hover-glow"
                           style={{
                             background: "white",
-                            border: "1px solid rgba(6,91,152,0.1)",
+                            borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(6,91,152,0.1)",
                             borderRadius: 16,
                             padding: 16,
                             width: 250,
@@ -7106,7 +7107,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                           className="hover-scale hover-glow"
                           style={{
                             background: "white",
-                            border: "1px solid rgba(6,91,152,0.1)",
+                            borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(6,91,152,0.1)",
                             borderRadius: 16,
                             padding: 16,
                             width: 250,
@@ -7195,7 +7196,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                           className="hover-scale hover-glow"
                           style={{
                             background: "white",
-                            border: "1px solid rgba(6,91,152,0.1)",
+                            borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(6,91,152,0.1)",
                             borderRadius: 16,
                             padding: 16,
                             width: 250,
@@ -7385,7 +7386,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                                 background: "white",
                                 padding: "8px 18px",
                                 borderRadius: 24,
-                                border: "1px solid rgba(6,91,152,0.1)",
+                                borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(6,91,152,0.1)",
                                 fontSize: 12,
                                 fontWeight: 600,
                                 color: "#193546",
@@ -7479,10 +7480,12 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                                     ? "rgba(13,184,211,0.08)"
                                     : "white",
                                 color: "#193546",
-                                border:
+                                borderWidth: "1px",
+                                borderStyle: "solid",
+                                borderColor:
                                   msg.role === "user"
-                                    ? "1px solid rgba(13,184,211,0.2)"
-                                    : "1px solid rgba(6,91,152,0.1)",
+                                    ? "rgba(13,184,211,0.2)"
+                                    : "rgba(6,91,152,0.1)",
                                 fontSize: 12,
                                 lineHeight: 1.5,
                                 boxShadow:
@@ -7500,7 +7503,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                                     <SimulatedStreamMarkdown
                                       content={msg.content}
                                       onComplete={() =>
-                                        setAnimatingMessageIndex(null)
+                                        setAnimatingMessageIndex(-1)
                                       }
                                       scrollContainerRef={
                                         chatScrollContainerRef
@@ -7533,7 +7536,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                                   }}
                                   style={{
                                     background: "transparent",
-                                    border: "none",
+                                    borderWidth: 0, borderStyle: "none",
                                     fontSize: 12,
                                     fontWeight: 700,
                                     color: "#065B98",
@@ -7552,7 +7555,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                                   }}
                                   style={{
                                     background: "transparent",
-                                    border: "none",
+                                    borderWidth: 0, borderStyle: "none",
                                     fontSize: 12,
                                     fontWeight: 700,
                                     color: "#0DB8D3",
@@ -7654,7 +7657,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                         background: "white",
                         borderRadius: 20,
                         padding: "8px 12px",
-                        border: "1px solid rgba(6,91,152,0.15)",
+                        borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(6,91,152,0.15)",
                         boxShadow:
                           "0 12px 30px rgba(0,0,0,0.06), 0 0 20px rgba(13,184,211,0.05) inset",
                         display: "flex",
@@ -7687,7 +7690,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                         rows={1}
                         style={{
                           width: "100%",
-                          border: "none",
+                          borderWidth: 0, borderStyle: "none",
                           outline: "none",
                           fontSize: 12,
                           background: "transparent",
@@ -7733,7 +7736,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                                 gap: 6,
                                 padding: "4px 10px",
                                 background: "rgba(13,184,211,0.1)",
-                                border: "1px solid rgba(13,184,211,0.2)",
+                                borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(13,184,211,0.2)",
                                 borderRadius: 14,
                                 fontSize: 10,
                                 fontWeight: 600,
@@ -7760,7 +7763,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                                     left: 0,
                                     marginBottom: 8,
                                     background: "white",
-                                    border: "1px solid rgba(6,91,152,0.1)",
+                                    borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(6,91,152,0.1)",
                                     borderRadius: 12,
                                     padding: 6,
                                     boxShadow: "0 12px 32px rgba(0,0,0,0.1)",
@@ -7828,7 +7831,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                                 gap: 6,
                                 padding: "4px 10px",
                                 background: "rgba(27,127,220,0.1)",
-                                border: "1px solid rgba(27,127,220,0.2)",
+                                borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(27,127,220,0.2)",
                                 borderRadius: 14,
                                 fontSize: 10,
                                 fontWeight: 600,
@@ -7852,7 +7855,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                                     left: 0,
                                     marginBottom: 8,
                                     background: "white",
-                                    border: "1px solid rgba(6,91,152,0.1)",
+                                    borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(6,91,152,0.1)",
                                     borderRadius: 12,
                                     padding: 6,
                                     boxShadow: "0 12px 32px rgba(0,0,0,0.1)",
@@ -7935,7 +7938,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                             className="hover-scale"
                             style={{
                               background: "transparent",
-                              border: "none",
+                              borderWidth: 0, borderStyle: "none",
                               display: "flex",
                               alignItems: "center",
                               gap: 4,
@@ -7960,7 +7963,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                                 chatLoading || !chatInput.trim()
                                   ? "#065B98"
                                   : "white",
-                              border: "none",
+                              borderWidth: 0, borderStyle: "none",
                               borderRadius: 16,
                               padding: "6px 14px",
                               display: "flex",
@@ -8063,7 +8066,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                             onClick={handleCloseConfigPanel}
                             style={{
                               background: "rgba(6,91,152,0.05)",
-                              border: "none",
+                              borderWidth: 0, borderStyle: "none",
                               cursor: "pointer",
                               color: "#193546",
                               padding: 8,
@@ -8188,7 +8191,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               width: "100%",
                               padding: "12px",
                               borderRadius: 12,
-                              border: "1px solid rgba(6,91,152,0.1)",
+                              borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(6,91,152,0.1)",
                               fontSize: 13,
                               fontFamily: "inherit",
                               background: "white",
@@ -8220,7 +8223,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               width: "100%",
                               padding: "12px",
                               borderRadius: 12,
-                              border: "1px solid rgba(6,91,152,0.1)",
+                              borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(6,91,152,0.1)",
                               fontSize: 13,
                               fontFamily: "inherit",
                               background: "white",
@@ -8252,7 +8255,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               width: "100%",
                               padding: "12px",
                               borderRadius: 12,
-                              border: "1px solid rgba(6,91,152,0.1)",
+                              borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(6,91,152,0.1)",
                               fontSize: 13,
                               fontFamily: "inherit",
                               background: "white",
@@ -8284,7 +8287,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               width: "100%",
                               padding: "12px",
                               borderRadius: 12,
-                              border: "1px solid rgba(6,91,152,0.1)",
+                              borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(6,91,152,0.1)",
                               fontSize: 13,
                               fontFamily: "inherit",
                               background: "white",
@@ -8319,7 +8322,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               width: "100%",
                               padding: "12px",
                               borderRadius: 12,
-                              border: "1px solid rgba(6,91,152,0.1)",
+                              borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(6,91,152,0.1)",
                               fontSize: 13,
                               fontFamily: "inherit",
                               background: "white",
@@ -8354,7 +8357,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               width: "100%",
                               padding: "12px",
                               borderRadius: 12,
-                              border: "1px solid rgba(6,91,152,0.1)",
+                              borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(6,91,152,0.1)",
                               fontSize: 13,
                               fontFamily: "inherit",
                               background: "white",
@@ -8386,7 +8389,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               width: "100%",
                               padding: "12px",
                               borderRadius: 12,
-                              border: "1px solid rgba(6,91,152,0.1)",
+                              borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(6,91,152,0.1)",
                               fontSize: 13,
                               fontFamily: "inherit",
                               background: "white",
@@ -8421,7 +8424,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               width: "100%",
                               padding: "12px",
                               borderRadius: 12,
-                              border: "1px solid rgba(6,91,152,0.1)",
+                              borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(6,91,152,0.1)",
                               fontSize: 13,
                               fontFamily: "inherit",
                               background: "white",
@@ -8456,7 +8459,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               width: "100%",
                               padding: "12px",
                               borderRadius: 12,
-                              border: "1px solid rgba(6,91,152,0.1)",
+                              borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(6,91,152,0.1)",
                               fontSize: 13,
                               fontFamily: "inherit",
                               background: "white",
@@ -8488,7 +8491,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               width: "100%",
                               padding: "12px",
                               borderRadius: 12,
-                              border: "1px solid rgba(6,91,152,0.1)",
+                              borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(6,91,152,0.1)",
                               fontSize: 13,
                               fontFamily: "inherit",
                               background: "white",
@@ -8523,7 +8526,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               width: "100%",
                               padding: "12px",
                               borderRadius: 12,
-                              border: "1px solid rgba(6,91,152,0.1)",
+                              borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(6,91,152,0.1)",
                               fontSize: 13,
                               fontFamily: "inherit",
                               background: "white",
@@ -8560,7 +8563,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               width: "100%",
                               padding: "12px",
                               borderRadius: 12,
-                              border: "1px solid rgba(6,91,152,0.1)",
+                              borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(6,91,152,0.1)",
                               fontSize: 13,
                               fontFamily: "inherit",
                               background: "white",
@@ -8597,7 +8600,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               width: "100%",
                               padding: "12px",
                               borderRadius: 12,
-                              border: "1px solid rgba(6,91,152,0.1)",
+                              borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(6,91,152,0.1)",
                               fontSize: 13,
                               fontFamily: "inherit",
                               background: "white",
@@ -8655,7 +8658,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                                       ? "#ccc"
                                       : "#1B7FDC",
                                   color: "white",
-                                  border: "none",
+                                  borderWidth: 0, borderStyle: "none",
                                   fontSize: 13,
                                   fontWeight: 600,
                                   cursor:
@@ -8738,7 +8741,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               borderRadius: 12,
                               background: "rgba(224,36,36,0.1)",
                               color: "#E02424",
-                              border: "none",
+                              borderWidth: 0, borderStyle: "none",
                               fontSize: 13,
                               fontWeight: 600,
                               cursor: "pointer",
@@ -8755,7 +8758,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               borderRadius: 12,
                               background: "#1B7FDC",
                               color: "white",
-                              border: "none",
+                              borderWidth: 0, borderStyle: "none",
                               fontSize: 13,
                               fontWeight: 600,
                               cursor: "pointer",
@@ -8804,7 +8807,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
               onClick={() => setShowCreatePostPopup(false)}
               style={{
                 background: "transparent",
-                border: "none",
+                borderWidth: 0, borderStyle: "none",
                 width: 28,
                 height: 28,
                 borderRadius: 14,
@@ -8913,9 +8916,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                                 gap: 8,
                                 padding: "6px 16px 6px 6px",
                                 borderRadius: 20,
-                                border: isSelected
-                                  ? "none"
-                                  : "1px solid rgba(44,32,22,0.08)",
+                                borderWidth: isSelected ? "0" : "1px",
+                                borderStyle: isSelected ? "none" : "solid",
+                                borderColor: isSelected ? "transparent" : "rgba(44,32,22,0.08)",
                                 background: isSelected
                                   ? p.color
                                   : "transparent",
@@ -8950,7 +8953,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                                   </span>
                                 ) : (
                                   React.cloneElement(
-                                    p.icon as React.ReactElement,
+                                    p.icon as React.ReactElement<any>,
                                     { size: 14 },
                                   )
                                 )}
@@ -8982,7 +8985,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                         <div
                           key={pId}
                           style={{
-                            border: "1px solid rgba(44,32,22,0.08)",
+                            borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(44,32,22,0.08)",
                             borderRadius: 16,
                             overflow: "hidden",
                             background: "white",
@@ -9036,7 +9039,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                                   </span>
                                 ) : (
                                   React.cloneElement(
-                                    p.icon as React.ReactElement,
+                                    p.icon as React.ReactElement<any>,
                                     { size: 12 },
                                   )
                                 )}
@@ -9132,7 +9135,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                             {typeof p.icon === "string" ? (
                               <span>{p.icon}</span>
                             ) : (
-                              React.cloneElement(p.icon as React.ReactElement, {
+                              React.cloneElement(p.icon as React.ReactElement<any>, {
                                 size: 12,
                               })
                             )}
@@ -9211,7 +9214,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                   style={{
                     background:
                       createPostMode === "now" ? "white" : "transparent",
-                    border: "none",
+                    borderWidth: 0, borderStyle: "none",
                     borderRadius: 8,
                     padding: "8px 16px",
                     fontSize: 13,
@@ -9235,7 +9238,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                   style={{
                     background:
                       createPostMode === "schedule" ? "white" : "transparent",
-                    border: "none",
+                    borderWidth: 0, borderStyle: "none",
                     borderRadius: 8,
                     padding: "8px 16px",
                     fontSize: 13,
@@ -9264,7 +9267,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                     onChange={(e) => setCreatePostDate(e.target.value)}
                     style={{
                       borderRadius: 10,
-                      border: "none",
+                      borderWidth: 0, borderStyle: "none",
                       background: "rgba(44,32,22,0.03)",
                       padding: "8px 12px",
                       fontSize: 13,
@@ -9286,7 +9289,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                     onChange={(e) => setCreatePostTime(e.target.value)}
                     style={{
                       borderRadius: 10,
-                      border: "none",
+                      borderWidth: 0, borderStyle: "none",
                       background: "rgba(44,32,22,0.03)",
                       padding: "8px 12px",
                       fontSize: 13,
@@ -9310,7 +9313,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                 onClick={() => setShowCreatePostPopup(false)}
                 style={{
                   background: "transparent",
-                  border: "none",
+                  borderWidth: 0, borderStyle: "none",
                   borderRadius: 10,
                   padding: "10px 20px",
                   fontWeight: 700,
@@ -9326,7 +9329,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                 onClick={handleCreatePost}
                 style={{
                   background: "var(--theme-primary)",
-                  border: "none",
+                  borderWidth: 0, borderStyle: "none",
                   borderRadius: 10,
                   padding: "10px 24px",
                   fontWeight: 700,

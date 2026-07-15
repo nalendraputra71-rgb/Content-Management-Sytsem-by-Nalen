@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Heart, Instagram, Twitter, Facebook, Linkedin, MapPin, Mail, Phone, Globe, ChevronDown } from 'lucide-react';
+import { Heart, Instagram, Twitter, Facebook, Linkedin, MapPin, Mail, Globe, ChevronDown } from 'lucide-react';
 import { TiktokIcon, ThreadsIcon } from './social-icons';
 
 export const PublicHeader = ({ currentLang, onLangChange, transparentOnTop = false }: { currentLang: 'id' | 'en', onLangChange?: (l: 'id' | 'en') => void, transparentOnTop?: boolean }) => {
@@ -99,7 +99,7 @@ export const PublicFooter = ({ currentLang, onLangChange }: { currentLang: 'id' 
                  </div>
                  <div>
                    <p className="font-medium text-slate-700 mb-0.5">Hubify HQ</p>
-                   <p className="leading-relaxed">Gupit, Nguter<br/>Sukoharjo, Jawa Tengah 57571</p>
+                   <p className="leading-relaxed">Central Java, Indonesia</p>
                  </div>
               </div>
               <div className="flex items-center gap-3 text-sm text-slate-500 relative z-20">
@@ -107,12 +107,6 @@ export const PublicFooter = ({ currentLang, onLangChange }: { currentLang: 'id' 
                    <Mail size={16} className="text-slate-400" />
                  </div>
                  <a href="mailto:support@hubifysocial.com" className="hover:text-slate-900 transition-colors">support@hubifysocial.com</a>
-              </div>
-              <div className="flex items-center gap-3 text-sm text-slate-500 relative z-20">
-                 <div className="shrink-0">
-                   <Phone size={16} className="text-slate-400" />
-                 </div>
-                 <a href="tel:+6281330242230" className="hover:text-slate-900 transition-colors">+62 813-3024-2230</a>
               </div>
             </div>
           </div>

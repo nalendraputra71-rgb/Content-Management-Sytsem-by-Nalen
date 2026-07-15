@@ -121,7 +121,7 @@ export function MonthView({year,month,monthContent,filtered,openEdit,openAdd,sho
   };
 
   return (
-    <div style={{
+    <div id="content-planner-calendar" style={{
       background: "rgba(255, 255, 255, 0.6)",
       backdropFilter: "none",
       WebkitBackdropFilter: "none",

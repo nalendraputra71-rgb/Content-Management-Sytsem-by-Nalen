@@ -394,7 +394,7 @@ export function DashboardView({ user, profile, activeWorkspace, content, theme, 
             }
           `}
         </style>
-        <div className="dashboard-grid">
+        <div id="dashboard-main-grid" className="dashboard-grid">
           <SortableContext items={layout.map(w => w.id)} strategy={rectSortingStrategy}>
             {layout.map((w) => (
               <DashboardWidget 
@@ -419,7 +419,7 @@ export function DashboardView({ user, profile, activeWorkspace, content, theme, 
       </DndContext>
 
       {/* Space: Shared With Me */}
-      <div style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 16 }}>
+      <div id="dashboard-shared-with-me" style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 16 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(37, 99, 235, 0.08)", width: 36, height: 36, borderRadius: 10, flexShrink: 0 }}>
             <Share2 size={18} color="var(--theme-primary)" />
@@ -762,7 +762,7 @@ function MetricsRow({ content, config, updateConfig, theme }: any) {
   };
 
   return (
-    <div style={{ background: "var(--theme-gradient)", padding: 24, borderRadius: 24, border: "1px solid rgba(0,0,0,0.03)", boxShadow: "0 10px 30px rgba(0,0,0,0.1)" }}>
+    <div id="dashboard-monthly-goals" style={{ background: "var(--theme-gradient)", padding: 24, borderRadius: 24, border: "1px solid rgba(0,0,0,0.03)", boxShadow: "0 10px 30px rgba(0,0,0,0.1)" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
         <h2 style={{ fontSize: 16, fontWeight: 800, color: "rgba(255,255,255,0.9)", letterSpacing: 0.5, margin: 0, textTransform: "uppercase" }}>Goal Metrics Tiap Bulannya</h2>
         <button 
@@ -967,7 +967,7 @@ function DashboardWidget({ item, isEditing, onResize, ...props }: any) {
   if (!content) return null;
 
   return (
-    <div ref={setNodeRef} style={style} className={`w-widget w-widget-span-${item.w} group ${isEditing ? 'active:cursor-grabbing' : ''}`}>
+    <div id={`bento-widget-${item.id}`} ref={setNodeRef} style={style} className={`w-widget w-widget-span-${item.w} group ${isEditing ? 'active:cursor-grabbing' : ''}`}>
       <style>
         {`
           .widget-content-container {

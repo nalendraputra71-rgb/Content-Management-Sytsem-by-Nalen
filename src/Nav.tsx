@@ -566,7 +566,9 @@ function ChatSupportPanel({
           style={{
             flex: 1,
             padding: 14,
-            border: "none",
+            borderTop: "none",
+            borderRight: "none",
+            borderLeft: "none",
             borderBottom: `3px solid ${view === "form" ? "var(--theme-primary)" : "transparent"}`,
             background: "white",
             fontSize: 12,
@@ -582,7 +584,9 @@ function ChatSupportPanel({
           style={{
             flex: 1,
             padding: 14,
-            border: "none",
+            borderTop: "none",
+            borderRight: "none",
+            borderLeft: "none",
             borderBottom: `3px solid ${view === "history" ? "var(--theme-primary)" : "transparent"}`,
             background: "white",
             fontSize: 12,
@@ -976,6 +980,7 @@ export function Sidebar({
   onCreateWorkspaceRequest,
   onTitleChange,
   onQuickAddContent,
+  tutorialActive,
 }: any) {
   const navigate = useNavigate();
   const [showViews, setShowViews] = useState(true);
@@ -988,6 +993,15 @@ export function Sidebar({
   const [wsMenuOpen, setWsMenuOpen] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleValue, setTitleValue] = useState("");
+
+  useEffect(() => {
+    if (tutorialActive) {
+      setShowViews(true);
+      setShowSocial(true);
+      setShowHubiverse(true);
+      setShowSocMgmt(true);
+    }
+  }, [tutorialActive]);
 
   const VIEWS = [
     { id: "month", ic: <Calendar size={18} />, lb: "Bulan" },
@@ -1689,6 +1703,7 @@ export function Sidebar({
                               >
                                 {HUBIVERSE.map((v: any) => (
                                   <button
+                                    id={"sidebar-tab-" + v.id}
                                     className="hover-scale"
                                     key={v.id}
                                     onClick={() => {
@@ -1830,6 +1845,7 @@ export function Sidebar({
                               }}
                             >
                               <button
+                                id="sidebar-tab-dashboard"
                                 className="hover-scale"
                                 onClick={() => {
                                   setTab("dashboard");
@@ -1894,6 +1910,7 @@ export function Sidebar({
                               </button>
                               {(systemConfig?.features?.contentPlanner !== false || isSuperAdmin) && (
                                 <button
+                                  id="sidebar-tab-content_planner"
                                   className="hover-scale"
                                   onClick={() => {
                                     setTab("content_planner");
@@ -1956,6 +1973,7 @@ export function Sidebar({
                               )}
                               {/* 1. Overview */}
                               <button
+                                id="sidebar-tab-analytics-overview"
                                 className="hover-scale"
                                 onClick={() => {
                                   setTab("analytics-overview");
@@ -2018,6 +2036,7 @@ export function Sidebar({
 
                               {/* 2. Kinerja Konten */}
                               <button
+                                id="sidebar-tab-analytics-content"
                                 className="hover-scale"
                                 onClick={() => {
                                   setTab("analytics-content");
@@ -2080,6 +2099,7 @@ export function Sidebar({
 
                               {/* 3. Tren & Pertumbuhan */}
                               <button
+                                id="sidebar-tab-analytics-trends"
                                 className="hover-scale"
                                 onClick={() => {
                                   setTab("analytics-trends");
@@ -2142,6 +2162,7 @@ export function Sidebar({
 
                               {/* 4. Waktu Aktivitas */}
                               <button
+                                id="sidebar-tab-analytics-activity"
                                 className="hover-scale"
                                 onClick={() => {
                                   setTab("analytics-activity");
@@ -2274,6 +2295,7 @@ export function Sidebar({
                               >
                                 {SOCIAL_STUDIO.map((v: any) => (
                                   <button
+                                    id={"sidebar-tab-" + v.id}
                                     className="hover-scale"
                                     key={v.id}
                                     onClick={() => {
@@ -3189,6 +3211,7 @@ export function NavBar({
           <AnimatePresence mode="popLayout" initial={false}>
             {!isAddOpen ? (
               <motion.button
+                id="navbar-tambah-baru"
                 key="btn-tambah"
                 className="hover-scale btn-hover"
                 onClick={() => setIsAddOpen(true)}
@@ -3231,6 +3254,7 @@ export function NavBar({
                 }}
               >
                 <button
+                  id="navbar-tambah-konten"
                   className="hover-scale"
                   onClick={() => {
                     onOpenAdd();

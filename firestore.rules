@@ -52,11 +52,11 @@ service cloud.firestore {
       allow list: if isSignedIn();
       allow create: if isSignedIn() && request.auth.uid == userId && incoming().uid == userId;
       allow update: if isSignedIn() && (
-        (request.auth.uid == userId && incoming().diff(existing()).affectedKeys().hasOnly(['fullName', 'nickname', 'avatar', 'username', 'activeUntil', 'plan', 'hasUsedPromo', 'emailVerified', 'createdAt', 'themeId', 'bio', 'following', 'followers', 'aiTokensUsed', 'aiRequestsCount'])) ||
+        (request.auth.uid == userId && incoming().diff(existing()).affectedKeys().hasOnly(['fullName', 'nickname', 'avatar', 'username', 'activeUntil', 'plan', 'hasUsedPromo', 'emailVerified', 'createdAt', 'themeId', 'bio', 'following', 'followers', 'aiTokensUsed', 'aiRequestsCount', 'completedTour', 'role'])) ||
         (incoming().diff(existing()).affectedKeys().hasOnly(['followers'])) ||
         isAdmin()
       );
-      allow delete: if isAdmin();
+      allow delete: if isAdmin() || (isSignedIn() && request.auth.uid == userId);
       
       match /hubaiConfig/{document=**} {
         allow read, write: if isSignedIn() && request.auth.uid == userId;
@@ -82,6 +82,14 @@ service cloud.firestore {
     // Collection Group rule for memberships
     match /{path=**}/members/{memberId} {
       allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    // Collection Group rule for content
+    match /{path=**}/content/{contentId} {
+      allow read: if isSignedIn() && (
+        resource.data.get('isPublic', false) == true || 
+        (resource.data.get('sharedUids', []) is list && request.auth.uid in resource.data.get('sharedUids', []))
+      );
     }
 
     // ─── ADMINS ───────────────────────────────────────────────────────────────
@@ -113,7 +121,8 @@ service cloud.firestore {
     match /usernames/{username} {
       allow read: if isSignedIn();
       allow create: if isSignedIn(); // Validated via transaction in UserProfile
-      allow delete: if isSignedIn() && existing().uid == request.auth.uid;
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn() && (resource == null || resource.data.get('uid', request.auth.uid) == request.auth.uid);
     }
 
     match /global_notifications/{notifId} {

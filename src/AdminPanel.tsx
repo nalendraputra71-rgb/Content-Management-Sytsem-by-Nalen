@@ -794,7 +794,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                 <h3 style={{fontSize:18, fontWeight:800, marginBottom:20}}>Subscription Plans</h3>
                 <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(300px, 1fr))", gap:20, marginBottom:40}}>
                   {plans.map(p => (
-                    <div key={p.id} style={CARD({padding:24, borderRadius:24, border:"1px solid #EEE", borderTop:`4px solid ${p.popular ? 'var(--theme-primary)' : '#EEE'}`})}>
+                    <div key={p.id} style={CARD({padding:24, borderRadius:24, borderRight:"1px solid #EEE", borderBottom:"1px solid #EEE", borderLeft:"1px solid #EEE", borderTop:`4px solid ${p.popular ? 'var(--theme-primary)' : '#EEE'}`})}>
                        <div style={{display:"flex", justifyContent:"space-between", alignItems:"flex-start"}}>
                           <div>
                             <div style={{fontSize:18, fontWeight:800}}>{p.name}</div>

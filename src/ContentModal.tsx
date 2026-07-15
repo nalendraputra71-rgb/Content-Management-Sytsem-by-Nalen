@@ -84,7 +84,14 @@ import {
   Search,
   AtSign,
   X,
-  UserCheck
+  UserCheck,
+  Settings,
+  ArrowUp,
+  ArrowDown,
+  Music,
+  Hash,
+  Compass,
+  Layout
 } from "lucide-react";
 
 const getMetricIcon = (k: string, color?: string, size = 14) => {
@@ -169,7 +176,38 @@ const ADS_CATEGORIES = [
   }
 ];
 
-export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,onDuplicate,pillars,platforms,contentTypes,pics,statuses,onSettingUpdate}: any) {
+const DEFAULT_FIELDS = [
+  { id: "objective", label: "Objective", icon: "Target", placeholder: "Tujuan atau target output dari konten ini...", visible: true },
+  { id: "hook", label: "Hook", icon: "AlertCircle", placeholder: "Skenario pembuka konten yang bisa mengundang atensi dalam 3 detik pertama...", visible: true },
+  { id: "briefCopywriting", label: "Brief Utama", icon: "FileText", placeholder: "Arah konten, tone of voice, call to action, poin kata kunci utama...", visible: true },
+  { id: "cta", label: "Call to Action (CTA)", icon: "Megaphone", placeholder: "Ajak audiens melakukan sesuatu (Contoh: Klik link di bio, komen, dll)...", visible: true },
+  { id: "caption", label: "Caption", icon: "PenTool", placeholder: "Salinan caption social media yang sudah siap diposting...", visible: true },
+  { id: "targetAudience", label: "Target Audien", icon: "Users", placeholder: "Spesifik target demografi, persona, atau minat audiens...", visible: false },
+  { id: "keyAngle", label: "Key Angle / Message", icon: "Sparkles", placeholder: "Sudut pandang unik atau pesan utama yang ingin ditekankan...", visible: false },
+  { id: "visualConcept", label: "Visual Concept / Art Direction", icon: "Eye", placeholder: "Gaya visual, estetika, referensi transisi, atau moodboard...", visible: false },
+  { id: "audioBgm", label: "Rekomendasi Audio & BGM", icon: "Music", placeholder: "Suara latar, lagu tren, ketukan, atau instruksi Voice Over (VO)...", visible: false },
+  { id: "outro", label: "Outro / End Card", icon: "ExternalLink", placeholder: "Elemen visual/teks akhir sebelum video selesai...", visible: false },
+  { id: "hashtags", label: "Hashtags", icon: "Hash", placeholder: "Rekomendasi hashtag untuk meningkatkan jangkauan algoritmik...", visible: false }
+];
+
+const getFieldIcon = (iconName: string, size = 14) => {
+  switch (iconName) {
+    case "Target": return <Target size={size} />;
+    case "AlertCircle": return <AlertCircle size={size} />;
+    case "FileText": return <FileText size={size} />;
+    case "Megaphone": return <Megaphone size={size} />;
+    case "PenTool": return <PenTool size={size} />;
+    case "Users": return <Users size={size} />;
+    case "Sparkles": return <Sparkles size={size} />;
+    case "Eye": return <Eye size={size} />;
+    case "Music": return <Music size={size} />;
+    case "ExternalLink": return <ExternalLink size={size} />;
+    case "Hash": return <Hash size={size} />;
+    default: return <FileText size={size} />;
+  }
+};
+
+export function ContentModal({modal, workspace, onSave,onClose,onArchive,onRestore,onDelete,onDuplicate,pillars,platforms,contentTypes,pics,statuses,onSettingUpdate}: any) {
   const [d,setD] = useState({...modal.data,metrics:{...(modal.data.metrics||{})},adsMetrics:{...(modal.data.adsMetrics||{views:0,reach:0,likes:0,comments:0,reposts:0,shares:0,saves:0,profileVisits:0,bioLinkTaps:0,follows:0,clicks:0,conversions:0,msgConvStarted:0,threeSecPlays:0,spendBudget:0,dailyBudget:0,duration:0,cprProfileVisit:0,audience:""})},referenceLinks:modal.data.referenceLinks||[],customFields:modal.data.customFields||[]});
   const [aiResult, setAiResult] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
@@ -533,6 +571,40 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
     return (localStorage.getItem("contentModalLayout") as "center" | "drawer") || "center";
   });
   const [activeTab, setActiveTab] = useState<"draft" | "refs" | "metrics">("draft");
+  const [copiedFields, setCopiedFields] = useState<Record<string, boolean>>({});
+  const [showLayoutConfig, setShowLayoutConfig] = useState(false);
+  const [layoutScope, setLayoutScope] = useState<"local" | "global">("local");
+  const [localToast, setLocalToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
+
+  const showToast = (message: string, type: "success" | "error" | "info" = "success") => {
+    setLocalToast({ message, type });
+    setTimeout(() => {
+      setLocalToast(prev => prev?.message === message ? null : prev);
+    }, 3500);
+  };
+  const [layoutFields, setLayoutFields] = useState<any[]>(() => {
+    if (modal.data && modal.data.layoutSettings && Array.isArray(modal.data.layoutSettings.fields)) {
+      const savedFields = modal.data.layoutSettings.fields;
+      const merged = [...savedFields];
+      DEFAULT_FIELDS.forEach(def => {
+        if (!merged.some(f => f.id === def.id)) {
+          merged.push(def);
+        }
+      });
+      return merged;
+    }
+    if (workspace && workspace.layoutSettings && Array.isArray(workspace.layoutSettings.fields)) {
+      const savedFields = workspace.layoutSettings.fields;
+      const merged = [...savedFields];
+      DEFAULT_FIELDS.forEach(def => {
+        if (!merged.some(f => f.id === def.id)) {
+          merged.push(def);
+        }
+      });
+      return merged;
+    }
+    return DEFAULT_FIELDS;
+  });
   useEffect(() => {
     localStorage.setItem("contentModalLayout", layoutMode);
   }, [layoutMode]);
@@ -929,7 +1001,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
 
   const analyzeContent = async () => {
     if(!d.caption && !d.briefCopywriting) {
-        alert("Harap isi caption atau brief terlebih dahulu untuk dianalisis AI.");
+        showToast("Harap isi caption atau brief terlebih dahulu untuk dianalisis AI.", "error");
         return;
     }
     setAiLoading(true);
@@ -962,9 +1034,512 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
     setAiLoading(false);
   };
 
+  const getInitialLayoutFields = () => {
+    if (modal.data && modal.data.layoutSettings && Array.isArray(modal.data.layoutSettings.fields)) {
+      const savedFields = modal.data.layoutSettings.fields;
+      const merged = [...savedFields];
+      DEFAULT_FIELDS.forEach(def => {
+        if (!merged.some(f => f.id === def.id)) {
+          merged.push(def);
+        }
+      });
+      return merged;
+    }
+    if (workspace && workspace.layoutSettings && Array.isArray(workspace.layoutSettings.fields)) {
+      const savedFields = workspace.layoutSettings.fields;
+      const merged = [...savedFields];
+      DEFAULT_FIELDS.forEach(def => {
+        if (!merged.some(f => f.id === def.id)) {
+          merged.push(def);
+        }
+      });
+      return merged;
+    }
+    return DEFAULT_FIELDS;
+  };
+
+  const saveLayoutSettings = async (fields: any[], scope: "local" | "global") => {
+    try {
+      if (scope === "local") {
+        const updatedD = {
+          ...dRef.current,
+          layoutSettings: { fields }
+        };
+        dRef.current = updatedD;
+        setD(updatedD);
+        await onSave(updatedD, false);
+      } else {
+        if (workspace && workspace.id) {
+          const workspaceRef = doc(db, "workspaces", workspace.id);
+          await updateDoc(workspaceRef, {
+            layoutSettings: { fields }
+          });
+          const updatedD = {
+            ...dRef.current
+          };
+          delete updatedD.layoutSettings;
+          dRef.current = updatedD;
+          setD(updatedD);
+          await onSave(updatedD, false);
+        }
+      }
+      setLayoutFields(fields);
+      setShowLayoutConfig(false);
+      showToast("Pengaturan tata letak berhasil disimpan!", "success");
+    } catch (error) {
+      console.error("Error saving layout settings:", error);
+      showToast("Gagal menyimpan pengaturan tata letak.", "error");
+    }
+  };
+
+  const renderLayoutConfigPanel = () => {
+    const applyPreset = (presetType: "sederhana" | "standar" | "lengkap") => {
+      const updated = layoutFields.map(f => {
+        if (presetType === "sederhana") {
+          return { ...f, visible: ["objective", "caption"].includes(f.id) };
+        } else if (presetType === "standar") {
+          return { ...f, visible: ["objective", "hook", "briefCopywriting", "cta", "caption"].includes(f.id) };
+        } else {
+          return { ...f, visible: true };
+        }
+      });
+      setLayoutFields(updated);
+      showToast(`Preset ${presetType === "sederhana" ? "Sederhana" : presetType === "standar" ? "Standar" : "Lengkap"} diaktifkan!`, "info");
+    };
+
+    return (
+      <motion.div 
+        initial={{ opacity: 0, y: -10 }} 
+        animate={{ opacity: 1, y: 0 }} 
+        exit={{ opacity: 0, y: -10 }}
+        style={{
+          background: "linear-gradient(135deg, #FCFAF7 0%, #F5EFEB 100%)",
+          border: "1.5px solid rgba(166, 124, 28, 0.2)",
+          borderRadius: 20,
+          padding: "24px",
+          marginBottom: 20,
+          boxShadow: "0 10px 25px -5px rgba(166, 124, 28, 0.05), inset 0 2px 4px rgba(255,255,255,0.8)",
+          overflow: "hidden"
+        }}
+      >
+        {/* Header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ background: "rgba(166, 124, 28, 0.1)", p: 2, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", width: 32, height: 32 }}>
+              <Settings size={18} style={{ color: "#A67C1C" }} />
+            </div>
+            <div>
+              <h4 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: "#2C2016" }}>Desainer Tata Letak Brief</h4>
+              <p style={{ margin: "2px 0 0", fontSize: 11, color: "rgba(44,32,22,0.5)" }}>Aktifkan kolom-kolom yang Anda perlukan dan atur urutannya secara instan.</p>
+            </div>
+          </div>
+          <button 
+            onClick={() => setShowLayoutConfig(false)}
+            style={{ background: "rgba(0,0,0,0.04)", border: "none", color: "#2C2016", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", width: 26, height: 26, borderRadius: "50%", transition: "all 0.2s" }}
+            onMouseOver={(e: any) => e.currentTarget.style.background = "rgba(0,0,0,0.08)"}
+            onMouseOut={(e: any) => e.currentTarget.style.background = "rgba(0,0,0,0.04)"}
+          >
+            <X size={14} />
+          </button>
+        </div>
+
+        {/* Quick Presets Bar */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, background: "rgba(255,255,255,0.45)", border: "1px solid rgba(44,32,22,0.06)", padding: "12px 14px", borderRadius: 12, marginBottom: 16 }}>
+          <span style={{ fontSize: 10, fontWeight: 800, color: "rgba(44,32,22,0.5)", textTransform: "uppercase", letterSpacing: "0.5px" }}>Pilih Preset Cepat:</span>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button
+              onClick={() => applyPreset("sederhana")}
+              style={{ flex: 1, padding: "6px 10px", background: "#FFFFFF", border: "1px solid rgba(44,32,22,0.08)", borderRadius: 8, fontSize: 11, fontWeight: 700, color: "#2C2016", cursor: "pointer", boxShadow: "0 2px 4px rgba(0,0,0,0.02)", display: "flex", alignItems: "center", justifyContent: "center", gap: 4, transition: "all 0.15s" }}
+              onMouseOver={(e: any) => e.currentTarget.style.transform = "translateY(-1px)"}
+              onMouseOut={(e: any) => e.currentTarget.style.transform = "translateY(0)"}
+            >
+              🌱 Sederhana
+            </button>
+            <button
+              onClick={() => applyPreset("standar")}
+              style={{ flex: 1, padding: "6px 10px", background: "#FFFFFF", border: "1px solid rgba(44,32,22,0.08)", borderRadius: 8, fontSize: 11, fontWeight: 700, color: "#2C2016", cursor: "pointer", boxShadow: "0 2px 4px rgba(0,0,0,0.02)", display: "flex", alignItems: "center", justifyContent: "center", gap: 4, transition: "all 0.15s" }}
+              onMouseOver={(e: any) => e.currentTarget.style.transform = "translateY(-1px)"}
+              onMouseOut={(e: any) => e.currentTarget.style.transform = "translateY(0)"}
+            >
+              ⭐️ Standar
+            </button>
+            <button
+              onClick={() => applyPreset("lengkap")}
+              style={{ flex: 1, padding: "6px 10px", background: "#FFFFFF", border: "1px solid rgba(44,32,22,0.08)", borderRadius: 8, fontSize: 11, fontWeight: 700, color: "#2C2016", cursor: "pointer", boxShadow: "0 2px 4px rgba(0,0,0,0.02)", display: "flex", alignItems: "center", justifyContent: "center", gap: 4, transition: "all 0.15s" }}
+              onMouseOver={(e: any) => e.currentTarget.style.transform = "translateY(-1px)"}
+              onMouseOut={(e: any) => e.currentTarget.style.transform = "translateY(0)"}
+            >
+              🔥 Lengkap
+            </button>
+          </div>
+        </div>
+
+        {/* List of fields (Animated) */}
+        <motion.div layout style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 20 }}>
+          {layoutFields.map((field, idx) => {
+            const isFieldVisible = field.visible !== false;
+            return (
+              <motion.div 
+                layout
+                key={field.id}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  background: isFieldVisible ? "#ffffff" : "rgba(255,255,255,0.4)",
+                  padding: "10px 14px",
+                  borderRadius: 12,
+                  borderTop: isFieldVisible ? "1.5px solid #E2E8F0" : "1.5px solid rgba(44, 32, 22, 0.05)",
+                  borderRight: isFieldVisible ? "1.5px solid #E2E8F0" : "1.5px solid rgba(44, 32, 22, 0.05)",
+                  borderBottom: isFieldVisible ? "1.5px solid #E2E8F0" : "1.5px solid rgba(44, 32, 22, 0.05)",
+                  borderLeft: isFieldVisible ? "4px solid #3B82F6" : "4px solid #CBD5E1",
+                  boxShadow: isFieldVisible ? "0 4px 12px -2px rgba(0,0,0,0.03)" : "none",
+                  transition: "all 0.2s"
+                }}
+              >
+                {/* Left side: Toggle + Icon + Label */}
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  {/* Custom iOS Toggle Switch */}
+                  <button 
+                    onClick={() => {
+                      const updated = [...layoutFields];
+                      updated[idx] = { ...field, visible: !isFieldVisible };
+                      setLayoutFields(updated);
+                    }}
+                    style={{ 
+                      background: "transparent", 
+                      border: "none", 
+                      cursor: "pointer", 
+                      padding: 0,
+                      display: "flex",
+                      alignItems: "center"
+                    }}
+                  >
+                    <div style={{
+                      width: 38,
+                      height: 20,
+                      borderRadius: 10,
+                      background: isFieldVisible ? "#3B82F6" : "#E2E8F0",
+                      position: "relative",
+                      transition: "background-color 0.2s"
+                    }}>
+                      <div style={{
+                        width: 14,
+                        height: 14,
+                        borderRadius: "50%",
+                        background: "#ffffff",
+                        position: "absolute",
+                        top: 3,
+                        left: isFieldVisible ? 21 : 3,
+                        boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
+                        transition: "left 0.2s cubic-bezier(0.4, 0, 0.2, 1)"
+                      }} />
+                    </div>
+                  </button>
+
+                  {/* Field Icon and Label */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ color: isFieldVisible ? "#3B82F6" : "rgba(44,32,22,0.3)", display: "flex", alignItems: "center" }}>
+                      {getFieldIcon(field.icon, 14)}
+                    </span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: isFieldVisible ? "#2C2016" : "rgba(44,32,22,0.4)" }}>
+                      {field.label}
+                    </span>
+                    {/* Status Badge */}
+                    <span style={{
+                      fontSize: 9,
+                      fontWeight: 800,
+                      textTransform: "uppercase",
+                      padding: "2px 6px",
+                      borderRadius: 6,
+                      background: isFieldVisible ? "rgba(16, 185, 129, 0.1)" : "rgba(0,0,0,0.04)",
+                      color: isFieldVisible ? "#10B981" : "rgba(0,0,0,0.4)"
+                    }}>
+                      {isFieldVisible ? "Aktif" : "Sembunyi"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Right side: Reorder Actions */}
+                <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                  <div style={{ marginRight: 6, display: "flex", alignItems: "center" }}>
+                    {/* Tiny inline custom SVG grip icon */}
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" style={{ opacity: 0.25, color: "#2C2016" }}>
+                      <circle cx="9" cy="5" r="1.5" />
+                      <circle cx="9" cy="12" r="1.5" />
+                      <circle cx="9" cy="19" r="1.5" />
+                      <circle cx="15" cy="5" r="1.5" />
+                      <circle cx="15" cy="12" r="1.5" />
+                      <circle cx="15" cy="19" r="1.5" />
+                    </svg>
+                  </div>
+
+                  {/* Move Up */}
+                  <button
+                    disabled={idx === 0}
+                    onClick={() => {
+                      if (idx === 0) return;
+                      const updated = [...layoutFields];
+                      const temp = updated[idx];
+                      updated[idx] = updated[idx - 1];
+                      updated[idx - 1] = temp;
+                      setLayoutFields(updated);
+                    }}
+                    style={{
+                      background: idx === 0 ? "rgba(0,0,0,0.01)" : "#FFFFFF",
+                      border: "1px solid rgba(44, 32, 22, 0.08)",
+                      borderRadius: 8,
+                      width: 28,
+                      height: 28,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      cursor: idx === 0 ? "default" : "pointer",
+                      color: idx === 0 ? "rgba(0,0,0,0.15)" : "#2C2016",
+                      boxShadow: idx === 0 ? "none" : "0 2px 4px rgba(0,0,0,0.02)",
+                      transition: "all 0.1s"
+                    }}
+                    onMouseOver={(e: any) => { if (idx !== 0) e.currentTarget.style.background = "#F1F5F9"; }}
+                    onMouseOut={(e: any) => { if (idx !== 0) e.currentTarget.style.background = "#FFFFFF"; }}
+                  >
+                    <ArrowUp size={13} />
+                  </button>
+
+                  {/* Move Down */}
+                  <button
+                    disabled={idx === layoutFields.length - 1}
+                    onClick={() => {
+                      if (idx === layoutFields.length - 1) return;
+                      const updated = [...layoutFields];
+                      const temp = updated[idx];
+                      updated[idx] = updated[idx + 1];
+                      updated[idx + 1] = temp;
+                      setLayoutFields(updated);
+                    }}
+                    style={{
+                      background: idx === layoutFields.length - 1 ? "rgba(0,0,0,0.01)" : "#FFFFFF",
+                      border: "1px solid rgba(44, 32, 22, 0.08)",
+                      borderRadius: 8,
+                      width: 28,
+                      height: 28,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      cursor: idx === layoutFields.length - 1 ? "default" : "pointer",
+                      color: idx === layoutFields.length - 1 ? "rgba(0,0,0,0.15)" : "#2C2016",
+                      boxShadow: idx === layoutFields.length - 1 ? "none" : "0 2px 4px rgba(0,0,0,0.02)",
+                      transition: "all 0.1s"
+                    }}
+                    onMouseOver={(e: any) => { if (idx !== layoutFields.length - 1) e.currentTarget.style.background = "#F1F5F9"; }}
+                    onMouseOut={(e: any) => { if (idx !== layoutFields.length - 1) e.currentTarget.style.background = "#FFFFFF"; }}
+                  >
+                    <ArrowDown size={13} />
+                  </button>
+                </div>
+              </motion.div>
+            );
+          })}
+        </motion.div>
+
+        {/* Target scope chooser */}
+        <div style={{ background: "rgba(44, 32, 22, 0.03)", padding: 14, borderRadius: 16, marginBottom: 20, border: "1px solid rgba(44,32,22,0.02)" }}>
+          <label style={{ fontSize: 10, fontWeight: 800, color: "rgba(44,32,22,0.5)", textTransform: "uppercase", display: "block", marginBottom: 8, letterSpacing: "0.5px" }}>
+            Cakupan Penyimpanan Pengaturan:
+          </label>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button
+              onClick={() => setLayoutScope("local")}
+              style={{
+                flex: 1,
+                padding: "8px 12px",
+                borderRadius: 10,
+                border: `1.5px solid ${layoutScope === "local" ? "#3B82F6" : "rgba(44,32,22,0.08)"}`,
+                background: layoutScope === "local" ? "rgba(59,130,246,0.08)" : "#ffffff",
+                color: layoutScope === "local" ? "#3B82F6" : "rgba(44,32,22,0.6)",
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: "pointer",
+                textAlign: "center",
+                boxShadow: layoutScope === "local" ? "0 4px 12px -2px rgba(59,130,246,0.15)" : "0 2px 4px rgba(0,0,0,0.02)",
+                transition: "all 0.2s"
+              }}
+            >
+              📌 Hanya Brief Ini
+            </button>
+            <button
+              onClick={() => setLayoutScope("global")}
+              style={{
+                flex: 1,
+                padding: "8px 12px",
+                borderRadius: 10,
+                border: `1.5px solid ${layoutScope === "global" ? "#3B82F6" : "rgba(44,32,22,0.08)"}`,
+                background: layoutScope === "global" ? "rgba(59,130,246,0.08)" : "#ffffff",
+                color: layoutScope === "global" ? "#3B82F6" : "rgba(44,32,22,0.6)",
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: "pointer",
+                textAlign: "center",
+                boxShadow: layoutScope === "global" ? "0 4px 12px -2px rgba(59,130,246,0.15)" : "0 2px 4px rgba(0,0,0,0.02)",
+                transition: "all 0.2s"
+              }}
+            >
+              🌐 Semua Brief di Workspace
+            </button>
+          </div>
+        </div>
+
+        {/* Save configuration button */}
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+          <button
+            onClick={() => {
+              const reloaded = getInitialLayoutFields();
+              setLayoutFields(reloaded);
+              setShowLayoutConfig(false);
+              showToast("Konfigurasi dibatalkan", "info");
+            }}
+            style={{
+              background: "transparent",
+              border: "none",
+              color: "rgba(44,32,22,0.6)",
+              padding: "8px 16px",
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: "pointer",
+              borderRadius: 8,
+              transition: "all 0.2s"
+            }}
+            onMouseOver={(e: any) => e.currentTarget.style.background = "rgba(0,0,0,0.04)"}
+            onMouseOut={(e: any) => e.currentTarget.style.background = "transparent"}
+          >
+            Batal
+          </button>
+          <button
+            onClick={() => saveLayoutSettings(layoutFields, layoutScope)}
+            style={{
+              background: "#3B82F6",
+              color: "#ffffff",
+              border: "none",
+              borderRadius: 10,
+              padding: "8px 20px",
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: "pointer",
+              boxShadow: "0 4px 14px rgba(59,130,246,0.35)",
+              transition: "all 0.2s"
+            }}
+            onMouseOver={(e: any) => {
+              e.currentTarget.style.background = "#2563EB";
+              e.currentTarget.style.transform = "translateY(-1px)";
+            }}
+            onMouseOut={(e: any) => {
+              e.currentTarget.style.background = "#3B82F6";
+              e.currentTarget.style.transform = "translateY(0)";
+            }}
+          >
+            Simpan Tata Letak
+          </button>
+        </div>
+      </motion.div>
+    );
+  };
+
+  const renderDynamicField = (field: any) => {
+    const { id, label, icon, placeholder, minRows = 3 } = field;
+    const fieldValue = d[id] || "";
+    const isEditing = editingFieldRight === id;
+
+    const handleCopy = (e: any) => {
+      e.stopPropagation();
+      navigator.clipboard.writeText(htmlToPlainText(fieldValue));
+      setCopiedFields(prev => ({ ...prev, [id]: true }));
+      setTimeout(() => {
+        setCopiedFields(prev => ({ ...prev, [id]: false }));
+      }, 2000);
+    };
+
+    const isCopied = copiedFields[id];
+
+    const renderAiButton = () => {
+      if (id === "briefCopywriting") {
+        return (
+          <button onClick={analyzeContent} disabled={aiLoading} 
+            style={{...B(false), fontSize:10, padding:"4px 10px", borderRadius: 8, background:"#f3f4f6", color:"#1f2937", border:"1px solid #d1d5db", display:"flex", alignItems:"center", gap:4}}>
+            <GeminiIcon size={12} />
+            {aiLoading ? <LoadingDots /> : "Analyze with Gemini"}
+          </button>
+        );
+      }
+      if (id === "caption") {
+        return (
+          <button onClick={generateCaption} disabled={captionLoading} 
+            style={{...B(false), fontSize:10, padding:"4px 10px", borderRadius: 8, background:"#f3f4f6", color:"#1f2937", border:"1px solid #d1d5db", display:"flex", alignItems:"center", gap:4}}>
+            <GeminiIcon size={12} />
+            {captionLoading ? <LoadingDots /> : "Generate Caption"}
+          </button>
+        );
+      }
+      return null;
+    };
+
+    if (isEditing) {
+      return (
+        <div key={id} ref={activeFieldRef} style={{ background: "#ffffff", border: "1px solid rgba(44, 32, 22, 0.08)", borderRadius: 16, padding: "16px 20px", boxShadow: "0 8px 32px rgba(0, 0, 0, 0.04)", display: "flex", flexDirection: "column" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+            <label style={{ fontSize: 12, fontWeight: 600, color: "rgba(44,32,22,0.6)", display: "flex", alignItems: "center", gap: 6, margin: 0 }}>
+              {getFieldIcon(icon, 14)} {label}
+            </label>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              {renderAiButton()}
+              {renderSectionCommentBadge(id)}
+            </div>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", minHeight: id === "briefCopywriting" ? 120 : id === "caption" ? 150 : 80 }}>
+            <RichTextEditor 
+              style={{ width: "100%" }} 
+              inputRef={id === "briefCopywriting" ? briefRef : id === "caption" ? captionRef : id === "objective" ? objectiveRef : undefined} 
+              value={fieldValue} 
+              onChange={(val) => set(id, val)} 
+              minRows={id === "briefCopywriting" ? 6 : id === "caption" ? 8 : minRows} 
+              placeholder={placeholder} 
+            />
+          </div>
+          {renderInlineCommentThread(id)}
+        </div>
+      );
+    } else {
+      return (
+        <div 
+          key={id}
+          onClick={() => setEditingFieldRight(id)}
+          style={{ background: "#ffffff", border: "1px solid rgba(44, 32, 22, 0.08)", borderRadius: 16, padding: "16px 20px", boxShadow: "0 8px 32px rgba(0, 0, 0, 0.04)", cursor: "pointer", display: "flex", flexDirection: "column" }}
+          title={`Klik untuk mengedit ${label}`}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(44,32,22,0.4)", textTransform: "uppercase", display: "flex", alignItems: "center", gap: 6, letterSpacing: "0.5px" }}>
+              {getFieldIcon(icon, 14)} {label}
+              {renderSectionCommentBadge(id)}
+            </span>
+            {fieldValue && (
+              <button 
+                onClick={handleCopy} 
+                style={{ background: isCopied ? "rgba(46,125,50,0.1)" : "rgba(59,130,246,0.08)", border: "none", color: isCopied ? "#2E7D32" : "#3B82F6", padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 750, cursor: isCopied ? "default" : "pointer", display: "flex", alignItems: "center", transition: "all 0.3s ease" }}
+              >
+                {isCopied ? <>Berhasil disalin</> : <><Copy size={12} style={{marginRight: 4}} /> Salin {label}</>}
+              </button>
+            )}
+          </div>
+          <div style={{ fontSize: 13, color: "#2C2016", lineHeight: 1.5, background: id === "briefCopywriting" ? "#FCFAF7" : id === "caption" ? "#FAFDFB" : "rgba(44,32,22,0.02)", padding: "12px 16px", borderRadius: 10, border: "1px solid rgba(44, 32, 22, 0.03)" }}>
+            {fieldValue ? <div className="tiptap-prose" dangerouslySetInnerHTML={{ __html: fieldValue }} /> : <span style={{ color: "rgba(44,32,22,0.4)", fontStyle: "italic" }}>Belum ada {label.toLowerCase()}. Klik di sini untuk mengedit.</span>}
+          </div>
+          {renderInlineCommentThread(id)}
+        </div>
+      );
+    }
+  };
+
   const generateCaption = async () => {
     if(!d.briefCopywriting) {
-        alert("Harap isi Brief Konten terlebih dahulu agar AI memiliki konteks untuk membuat caption.");
+        showToast("Harap isi Brief Konten terlebih dahulu agar AI memiliki konteks untuk membuat caption.", "error");
         return;
     }
     setCaptionLoading(true);
@@ -982,15 +1557,16 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
         
         const data = await callAiWithQuota(auth.currentUser?.uid || 'anon', undefined, { prompt, model: "gemini-2.0-flash" });
         set("caption", (data.text || "").trim());
+        showToast("Caption berhasil dibuat oleh Gemini!", "success");
     } catch (e: any) {
         console.error("AI Error:", e);
         const errMsg = e.message || "";
         if (errMsg.includes("habis")) {
-          alert(errMsg);
+          showToast(errMsg, "error");
         } else if (errMsg.includes("429") || errMsg.includes("RESOURCE_EXHAUSTED") || errMsg.includes("Quota exceeded")) {
-          alert("Gagal menggenerate caption: Terlalu banyak permintaan AI. Silakan tunggu sekitar 30 detik lalu coba lagi.");
+          showToast("Gagal menggenerate caption: Terlalu banyak permintaan AI. Silakan tunggu sekitar 30 detik lalu coba lagi.", "error");
         } else {
-          alert("Gagal menggenerate caption: " + errMsg);
+          showToast("Gagal menggenerate caption: " + errMsg, "error");
         }
     }
     setCaptionLoading(false);
@@ -1031,6 +1607,7 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
         willChange: "opacity"
       }}>
       <motion.div 
+        id="content-brief-modal-card"
         initial={layoutMode === "drawer" ? { x: "100%", opacity: 0.85 } : { scale: 0.96, opacity: 0, y: 12 }} 
         animate={layoutMode === "drawer" ? { x: 0, opacity: 1 } : { scale: 1, opacity: 1, y: 0 }} 
         exit={layoutMode === "drawer" ? { x: "100%", opacity: 0.85 } : { scale: 0.96, opacity: 0, y: 12 }} 
@@ -1041,8 +1618,10 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
         onClick={e=>e.stopPropagation()} 
         style={{
           background: "#ffffff", 
-          border: layoutMode === "drawer" ? "none" : "1px solid rgba(0,0,0,0.08)",
-          borderLeft: layoutMode === "drawer" ? "1px solid rgba(0,0,0,0.08)" : undefined,
+          borderTop: layoutMode === "drawer" ? "none" : "1px solid rgba(0,0,0,0.08)",
+          borderRight: layoutMode === "drawer" ? "none" : "1px solid rgba(0,0,0,0.08)",
+          borderBottom: layoutMode === "drawer" ? "none" : "1px solid rgba(0,0,0,0.08)",
+          borderLeft: layoutMode === "drawer" ? "1px solid rgba(0,0,0,0.08)" : "1px solid rgba(0,0,0,0.08)",
           borderRadius: layoutMode === "drawer" ? "24px 0 0 24px" : "24px",
           maxWidth: "1050px",
           width:"100%",
@@ -1054,6 +1633,40 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
           transform: "translate3d(0,0,0)"
         }}
       >
+        {/* Toast Notification */}
+        <AnimatePresence>
+          {localToast && (
+            <motion.div
+              initial={{ opacity: 0, y: -20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.95 }}
+              style={{
+                position: "absolute",
+                top: 24,
+                left: "50%",
+                x: "-50%",
+                background: localToast.type === "success" ? "#10B981" : localToast.type === "error" ? "#EF4444" : "#3B82F6",
+                color: "#FFFFFF",
+                padding: "10px 20px",
+                borderRadius: "9999px",
+                fontSize: "12px",
+                fontWeight: 700,
+                boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                zIndex: 9999,
+                pointerEvents: "none"
+              }}
+            >
+              {localToast.type === "success" && <Check size={14} strokeWidth={3} />}
+              {localToast.type === "error" && <AlertTriangle size={14} />}
+              {localToast.type === "info" && <Sparkles size={14} />}
+              {localToast.message}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Modal Controls */}
         <div style={{position: "absolute", top: 32, right: 32, display: "flex", alignItems: "center", gap: "8px", zIndex: 50}}>
           <button 
@@ -1482,187 +2095,48 @@ export function ContentModal({modal,onSave,onClose,onArchive,onRestore,onDelete,
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: "16px", width: "100%" }}>
               
-              {/* TAB DRAFT (Objective, Brief, Caption) */}
+              {/* TAB DRAFT (Objective, Brief, Caption, and customizable layout fields) */}
               {activeTab === "draft" && (
                 <div style={{ display: "flex", flexDirection: "column", gap: "16px", width: "100%" }}>
-                {/* Objective Block */}
-                {editingFieldRight === "objective" ? (
-                  <div ref={activeFieldRef} style={{ background: "#ffffff", border: "1px solid rgba(44, 32, 22, 0.08)", borderRadius: 16, padding: "16px 20px", boxShadow: "0 8px 32px rgba(0, 0, 0, 0.04)" }}>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-                      <label style={{ fontSize: 12, fontWeight: 600, color: "rgba(44,32,22,0.6)", display: "flex", alignItems: "center", gap: 6, margin: 0 }}>
-                        <Target size={14} /> Objective
-                      </label>
-                      {renderSectionCommentBadge("objective")}
-                    </div>
-                    <RichTextEditor inputRef={objectiveRef} value={d.objective} onChange={(val)=>set("objective",val)} minRows={2} placeholder="Tujuan atau target output dari konten ini..."/>
-                    {renderInlineCommentThread("objective")}
+                  
+                  {/* CONFIG BUTTON BAR */}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(44,32,22,0.4)", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                      Panduan & Salinan Konten
+                    </span>
+                    <button
+                      onClick={() => setShowLayoutConfig(!showLayoutConfig)}
+                      style={{
+                        background: showLayoutConfig ? "rgba(166, 124, 28, 0.1)" : "rgba(44,32,22,0.04)",
+                        border: showLayoutConfig ? "1px solid rgba(166, 124, 28, 0.2)" : "1px solid rgba(44,32,22,0.05)",
+                        borderRadius: 8,
+                        padding: "4px 10px",
+                        fontSize: 11,
+                        fontWeight: 700,
+                        color: showLayoutConfig ? "#A67C1C" : "rgba(44,32,22,0.6)",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 4,
+                        cursor: "pointer",
+                        transition: "all 0.2s"
+                      }}
+                    >
+                      <Settings size={12} />
+                      {showLayoutConfig ? "Tutup Pengaturan" : "Atur Kolom"}
+                    </button>
                   </div>
-                ) : (
-                  <div 
-                    onClick={() => setEditingFieldRight("objective")}
-                    style={{ background: "#ffffff", border: "1px solid rgba(44, 32, 22, 0.08)", borderRadius: 16, padding: "16px 20px", boxShadow: "0 8px 32px rgba(0, 0, 0, 0.04)", cursor: "pointer" }}
-                    title="Klik untuk mengedit Objective"
-                  >
-                    <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(44,32,22,0.4)", textTransform: "uppercase", marginBottom: 6, letterSpacing: "0.5px", display: "flex", alignItems: "center", gap: 6 }}>
-                      <Target size={14} /> Objective
-                      {renderSectionCommentBadge("objective")}
-                    </div>
-                    <div style={{ fontSize: 13, color: "#2C2016", lineHeight: 1.5, background: "rgba(44,32,22,0.02)", padding: "12px 16px", borderRadius: 10 }}>
-                      {d.objective ? <div className="tiptap-prose" dangerouslySetInnerHTML={{ __html: d.objective }} /> : <span style={{ color: "rgba(44,32,22,0.4)", fontStyle: "italic" }}>Tidak ada spesifikasi objective khusus. Klik di sini untuk mengedit.</span>}
-                    </div>
-                    {renderInlineCommentThread("objective")}
-                  </div>
-                )}
 
-                {/* Hook Block */}
-                {editingFieldRight === "hook" ? (
-                  <div ref={activeFieldRef} style={{ background: "#ffffff", border: "1px solid rgba(44, 32, 22, 0.08)", borderRadius: 16, padding: "16px 20px", boxShadow: "0 8px 32px rgba(0, 0, 0, 0.04)" }}>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-                      <label style={{ fontSize: 12, fontWeight: 600, color: "rgba(44,32,22,0.6)", display: "flex", alignItems: "center", gap: 6, margin: 0 }}>
-                        <AlertCircle size={14} /> Hook
-                      </label>
-                      {renderSectionCommentBadge("hook")}
-                    </div>
-                    <RichTextEditor value={d.hook || ""} onChange={(val)=>set("hook",val)} minRows={2} placeholder="Skenario pembuka konten yang bisa mengundang atensi dalam 3 detik pertama..."/>
-                    {renderInlineCommentThread("hook")}
-                  </div>
-                ) : (
-                  <div 
-                    onClick={() => setEditingFieldRight("hook")}
-                    style={{ background: "#ffffff", border: "1px solid rgba(44, 32, 22, 0.08)", borderRadius: 16, padding: "16px 20px", boxShadow: "0 8px 32px rgba(0, 0, 0, 0.04)", cursor: "pointer" }}
-                    title="Klik untuk mengedit Hook"
-                  >
-                    <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(44,32,22,0.4)", textTransform: "uppercase", marginBottom: 6, letterSpacing: "0.5px", display: "flex", alignItems: "center", gap: 6 }}>
-                      <AlertCircle size={14} /> Hook
-                      {renderSectionCommentBadge("hook")}
-                    </div>
-                    <div style={{ fontSize: 13, color: "#2C2016", lineHeight: 1.5, background: "rgba(44,32,22,0.02)", padding: "12px 16px", borderRadius: 10 }}>
-                      {d.hook ? <div className="tiptap-prose" dangerouslySetInnerHTML={{ __html: d.hook }} /> : <span style={{ color: "rgba(44,32,22,0.4)", fontStyle: "italic" }}>Skenario / teks hook belum diisi. Klik di sini untuk mengedit.</span>}
-                    </div>
-                    {renderInlineCommentThread("hook")}
-                  </div>
-                )}
+                  {/* Render the config drawer */}
+                  <AnimatePresence>
+                    {showLayoutConfig && renderLayoutConfigPanel()}
+                  </AnimatePresence>
 
-                {/* Brief Block */}
-                {editingFieldRight === "brief" ? (
-                  <div ref={activeFieldRef} style={{ background: "#ffffff", border: "1px solid rgba(44, 32, 22, 0.08)", borderRadius: 16, padding: "16px 20px", boxShadow: "0 8px 32px rgba(0, 0, 0, 0.04)", display: "flex", flexDirection: "column" }}>
-                    <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom: 8}}>
-                        <label style={{ fontSize: 12, fontWeight: 600, color: "rgba(44,32,22,0.6)", display: "flex", alignItems: "center", gap: 6, margin: 0 }}>
-                          <FileText size={14} /> Brief
-                        </label>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          <button onClick={analyzeContent} disabled={aiLoading} 
-                            style={{...B(false), fontSize:10, padding:"4px 10px", borderRadius: 8, background:"#f3f4f6", color:"#1f2937", border:"1px solid #d1d5db", display:"flex", alignItems:"center", gap:4}}>
-                            <GeminiIcon size={12} />
-                            {aiLoading ? <LoadingDots /> : "Analyze with Gemini"}
-                          </button>
-                          {renderSectionCommentBadge("brief")}
-                        </div>
-                    </div>
-                    <div style={{display: "flex", flexDirection: "column", minHeight: 120}}>
-                      <RichTextEditor style={{width: "100%"}} inputRef={briefRef} value={d.briefCopywriting} onChange={(val)=>set("briefCopywriting",val)} minRows={6} placeholder="Arah konten, tone of voice, call to action, poin kata kunci utama..."/>
-                    </div>
-                    {renderInlineCommentThread("brief")}
-                  </div>
-                ) : (
-                  <div 
-                    onClick={() => setEditingFieldRight("brief")}
-                    style={{ background: "#ffffff", border: "1px solid rgba(44, 32, 22, 0.08)", borderRadius: 16, padding: "16px 20px", boxShadow: "0 8px 32px rgba(0, 0, 0, 0.04)", cursor: "pointer", display: "flex", flexDirection: "column" }}
-                    title="Klik untuk mengedit Brief"
-                  >
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(44,32,22,0.4)", textTransform: "uppercase", display: "flex", alignItems: "center", gap: 6, letterSpacing: "0.5px" }}>
-                        <FileText size={14} /> Brief
-                        {renderSectionCommentBadge("brief")}
-                      </span>
-                      {d.briefCopywriting && (
-                        <button onClick={(e) => { e.stopPropagation(); if (copiedBrief) return; navigator.clipboard.writeText(htmlToPlainText(d.briefCopywriting)); setCopiedBrief(true); setTimeout(() => setCopiedBrief(false), 2000); }} style={{ background: copiedBrief ? "rgba(46,125,50,0.1)" : "rgba(59,130,246,0.08)", border: "none", color: copiedBrief ? "#2E7D32" : "#3B82F6", padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 750, cursor: copiedBrief ? "default" : "pointer", display: "flex", alignItems: "center", transition: "all 0.3s ease" }}>
-                          {copiedBrief ? <>Berhasil disalin</> : <><Copy size={12} style={{marginRight: 4}} /> Salin Brief</>}
-                        </button>
-                      )}
-                    </div>
-                    <div style={{ fontSize: 13, color: "#2C2016", lineHeight: 1.5, background: "#FCFAF7", padding: "12px 16px", borderRadius: 10, border: "1px solid rgba(44, 32, 22, 0.03)" }}>
-                      {d.briefCopywriting ? <div className="tiptap-prose" dangerouslySetInnerHTML={{ __html: d.briefCopywriting }} /> : <span style={{ color: "rgba(44,32,22,0.4)", fontStyle: "italic" }}>Belum ada brief konten. Klik di sini untuk mengedit.</span>}
-                    </div>
-                    {renderInlineCommentThread("brief")}
-                  </div>
-                )}
-
-                {/* CTA Block */}
-                {editingFieldRight === "cta" ? (
-                  <div ref={activeFieldRef} style={{ background: "#ffffff", border: "1px solid rgba(44, 32, 22, 0.08)", borderRadius: 16, padding: "16px 20px", boxShadow: "0 8px 32px rgba(0, 0, 0, 0.04)" }}>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-                      <label style={{ fontSize: 12, fontWeight: 600, color: "rgba(44,32,22,0.6)", display: "flex", alignItems: "center", gap: 6, margin: 0 }}>
-                        <Megaphone size={14} /> Call to Action (CTA)
-                      </label>
-                      {renderSectionCommentBadge("cta")}
-                    </div>
-                    <RichTextEditor value={d.cta || ""} onChange={(val)=>set("cta",val)} minRows={2} placeholder="Ajak audiens melakukan sesuatu (Contoh: Klik link di bio, komen, dll)..."/>
-                    {renderInlineCommentThread("cta")}
-                  </div>
-                ) : (
-                  <div 
-                    onClick={() => setEditingFieldRight("cta")}
-                    style={{ background: "#ffffff", border: "1px solid rgba(44, 32, 22, 0.08)", borderRadius: 16, padding: "16px 20px", boxShadow: "0 8px 32px rgba(0, 0, 0, 0.04)", cursor: "pointer" }}
-                    title="Klik untuk mengedit Call to Action"
-                  >
-                    <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(44,32,22,0.4)", textTransform: "uppercase", marginBottom: 6, letterSpacing: "0.5px", display: "flex", alignItems: "center", gap: 6 }}>
-                      <Megaphone size={14} /> Call to Action (CTA)
-                      {renderSectionCommentBadge("cta")}
-                    </div>
-                    <div style={{ fontSize: 13, color: "#2C2016", lineHeight: 1.5, background: "rgba(44,32,22,0.02)", padding: "12px 16px", borderRadius: 10 }}>
-                      {d.cta ? <div className="tiptap-prose" dangerouslySetInnerHTML={{ __html: d.cta }} /> : <span style={{ color: "rgba(44,32,22,0.4)", fontStyle: "italic" }}>Call to Action belum diisi. Klik di sini untuk mengedit.</span>}
-                    </div>
-                    {renderInlineCommentThread("cta")}
-                  </div>
-                )}
-
-                {/* Caption Block */}
-                {editingFieldRight === "caption" ? (
-                  <div ref={activeFieldRef} style={{ background: "#ffffff", border: "1px solid rgba(44, 32, 22, 0.08)", borderRadius: 16, padding: "16px 20px", boxShadow: "0 8px 32px rgba(0, 0, 0, 0.04)", display: "flex", flexDirection: "column" }}>
-                    <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom: 8}}>
-                        <label style={{ fontSize: 12, fontWeight: 600, color: "rgba(44,32,22,0.6)", display: "flex", alignItems: "center", gap: 6, margin: 0 }}>
-                          <PenTool size={14} /> Caption
-                        </label>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          <button onClick={generateCaption} disabled={captionLoading} 
-                            style={{...B(false), fontSize:10, padding:"4px 10px", borderRadius: 8, background:"#f3f4f6", color:"#1f2937", border:"1px solid #d1d5db", display:"flex", alignItems:"center", gap:4}}>
-                            <GeminiIcon size={12} />
-                            {captionLoading ? <LoadingDots /> : "Generate Caption"}
-                          </button>
-                          {renderSectionCommentBadge("caption")}
-                        </div>
-                    </div>
-                    <div style={{display: "flex", flexDirection: "column", minHeight: 150}}>
-                      <RichTextEditor style={{width: "100%"}} inputRef={captionRef} value={d.caption} onChange={(val)=>set("caption",val)} minRows={8} placeholder="Salinan caption social media yang sudah siap diposting..."/>
-                    </div>
-                    {renderInlineCommentThread("caption")}
-                  </div>
-                ) : (
-                  <div 
-                    onClick={() => setEditingFieldRight("caption")}
-                    style={{ background: "#ffffff", border: "1px solid rgba(44, 32, 22, 0.08)", borderRadius: 16, padding: "16px 20px", boxShadow: "0 8px 32px rgba(0, 0, 0, 0.04)", cursor: "pointer", display: "flex", flexDirection: "column" }}
-                    title="Klik untuk mengedit Caption"
-                  >
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(44,32,22,0.4)", textTransform: "uppercase", display: "flex", alignItems: "center", gap: 6, letterSpacing: "0.5px" }}>
-                        <PenTool size={14} /> Caption
-                        {renderSectionCommentBadge("caption")}
-                      </span>
-                      {d.caption && (
-                        <button onClick={(e) => { e.stopPropagation(); if (copiedCaption) return; navigator.clipboard.writeText(htmlToPlainText(d.caption)); setCopiedCaption(true); setTimeout(() => setCopiedCaption(false), 2000); }} style={{ background: copiedCaption ? "rgba(46,125,50,0.1)" : "rgba(59,130,246,0.08)", border: "none", color: copiedCaption ? "#2E7D32" : "#3B82F6", padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 750, cursor: copiedCaption ? "default" : "pointer", display: "flex", alignItems: "center", transition: "all 0.3s ease" }}>
-                          {copiedCaption ? <>Berhasil disalin</> : <><Copy size={12} style={{marginRight: 4}} /> Salin Caption</>}
-                        </button>
-                      )}
-                    </div>
-                    <div style={{ fontSize: 13, color: "#2C2016", lineHeight: 1.5, background: "#FAFDFB", padding: "12px 16px", borderRadius: 10, border: "1px solid rgba(44, 32, 22, 0.03)" }}>
-                      {d.caption ? <div className="tiptap-prose" dangerouslySetInnerHTML={{ __html: d.caption }} /> : <span style={{ color: "rgba(44,32,22,0.4)", fontStyle: "italic" }}>Belum ada salinan caption. Klik di sini untuk mengedit.</span>}
-                    </div>
-                    {renderInlineCommentThread("caption")}
-                  </div>
-                )}
-              </div>
-            )}
+                  {/* Render all visible fields according to the saved layout order */}
+                  {layoutFields
+                    .filter(f => f.visible !== false)
+                    .map(field => renderDynamicField(field))}
+                </div>
+              )}
 
             {/* TAB REFS (Cloud Links & Resources) */}
             {activeTab === "refs" && (

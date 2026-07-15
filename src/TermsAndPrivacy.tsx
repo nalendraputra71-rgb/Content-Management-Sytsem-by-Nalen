@@ -2054,28 +2054,7 @@ export function AboutUs() {
           </div>
         </div>
 
-        {/* Company Card */}
-        <div className="max-w-4xl mx-auto px-6 mt-24">
-          <div className="bg-gradient-to-r from-[#0B2A4A] to-indigo-900 rounded-[2rem] p-1 shadow-2xl">
-            <div className="bg-white rounded-[1.8rem] p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8">
-              <div>
-                <div className="text-xs font-bold tracking-widest text-blue-600 uppercase mb-2">{lang === 'id' ? 'Dikembangkan Oleh' : 'Developed By'}</div>
-                <h3 className="text-2xl font-extrabold text-[#0B2A4A] mb-2">PT Harapan Untuk Bangsa</h3>
-                <p className="text-slate-500 flex items-center gap-2">
-                  <Globe size={16} /> Jakarta, Indonesia
-                </p>
-              </div>
-              <div className="shrink-0">
-                <a 
-                  href="mailto:support@hubifysocial.com" 
-                  className="inline-flex items-center gap-2 px-8 py-4 bg-[#0B2A4A] text-white rounded-xl font-bold hover:bg-blue-800 transition-all shadow-md hover:shadow-xl hover:-translate-y-1"
-                >
-                  <Mail size={18} /> {lang === 'id' ? 'Hubungi Tim Kami' : 'Contact Our Team'}
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
+
 
       </main>
       <PublicFooter currentLang={lang} onLangChange={handleLangChange} />
