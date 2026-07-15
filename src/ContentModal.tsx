@@ -223,7 +223,7 @@ export function ContentModal({modal, workspace, onSave,onClose,onArchive,onResto
   const [isReaderMode, setIsReaderMode] = useState(modal.mode !== "add");
   const [editingFieldLeft, setEditingFieldLeft] = useState<string | null>(null);
   const [editingFieldRight, setEditingFieldRight] = useState<string | null>(null);
-  const activeFieldRef = useRef<HTMLDivElement | null>(null);
+  const activeFieldRef = useRef<any>(null);
 
   // Inline comment states
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
@@ -1125,7 +1125,7 @@ export function ContentModal({modal, workspace, onSave,onClose,onArchive,onResto
         {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ background: "rgba(166, 124, 28, 0.1)", p: 2, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", width: 32, height: 32 }}>
+            <div style={{ background: "rgba(166, 124, 28, 0.1)", padding: 2, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", width: 32, height: 32 }}>
               <Settings size={18} style={{ color: "#A67C1C" }} />
             </div>
             <div>
@@ -1495,7 +1495,6 @@ export function ContentModal({modal, workspace, onSave,onClose,onArchive,onResto
           </div>
           <div style={{ display: "flex", flexDirection: "column", minHeight: id === "briefCopywriting" ? 120 : id === "caption" ? 150 : 80 }}>
             <RichTextEditor 
-              style={{ width: "100%" }} 
               inputRef={id === "briefCopywriting" ? briefRef : id === "caption" ? captionRef : id === "objective" ? objectiveRef : undefined} 
               value={fieldValue} 
               onChange={(val) => set(id, val)} 

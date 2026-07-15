@@ -167,7 +167,7 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
           
           <div className="relative z-10 flex items-center gap-3 mb-12">
             <div className="w-10 h-10 rounded-2xl overflow-hidden shadow-lg flex items-center justify-center">
-              <img src="/icon.png" alt="Hubify" className="w-full h-full object-cover scale-110" onError={(e) => { e.currentTarget.parentElement!.style.display = 'none'; e.currentTarget.parentElement!.nextElementSibling!.style.display = 'flex' }} />
+              <img src="/icon.png" alt="Hubify" className="w-full h-full object-cover scale-110" onError={(e) => { (e.currentTarget.parentElement as HTMLElement).style.display = 'none'; (e.currentTarget.parentElement!.nextElementSibling as HTMLElement).style.display = 'flex' }} />
             </div>
             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-400 to-blue-200 hidden items-center justify-center text-[#0B2A4A] font-extrabold text-xl shadow-lg">
               H

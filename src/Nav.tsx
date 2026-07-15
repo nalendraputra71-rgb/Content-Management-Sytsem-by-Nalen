@@ -1202,8 +1202,8 @@ export function Sidebar({
                     transform: "scale(1.1)",
                   }}
                   onError={(e) => {
-                    e.currentTarget.parentElement!.style.display = "none";
-                    e.currentTarget.parentElement!.nextElementSibling!.style.display =
+                    (e.currentTarget.parentElement as HTMLElement).style.display = "none";
+                    (e.currentTarget.parentElement!.nextElementSibling as HTMLElement).style.display =
                       "flex";
                   }}
                 />

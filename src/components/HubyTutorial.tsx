@@ -200,14 +200,15 @@ export function HubyTutorial({
       const el = document.getElementById(step.highlightSelector);
       if (el && el.offsetWidth > 0 && el.offsetHeight > 0) {
         if (shouldScroll) {
-          el.scrollIntoView({ behavior: "smooth", block: "start" });
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
         }
         const rect = el.getBoundingClientRect();
         setElementRect(rect);
-      } else {
-        setElementRect(null);
       }
     };
+
+    // Try immediately first to prevent flash/delay if element is already in DOM
+    calculateRect(false);
 
     // Calculate rect with delay to allow transition completion
     const delay = step.tabTarget !== tab ? 450 : 150;
@@ -464,8 +465,8 @@ export function HubyTutorial({
               />
             )}
 
-            {/* If there is no spotlight (elementRect is null), we show a beautifully centered, cloud-themed splash screen. */}
-            {!elementRect ? (
+            {/* If there is no spotlight, we show a beautifully centered, cloud-themed splash screen. */}
+            {!currentStepData.highlightSelector ? (
               <div
                 style={{
                   position: "fixed",
@@ -624,7 +625,7 @@ export function HubyTutorial({
                   </div>
                 </motion.div>
               </div>
-            ) : (
+            ) : elementRect ? (
               // Spotlight cloud-style speech bubble
               <motion.div
                 key={currentStep}
@@ -801,7 +802,7 @@ export function HubyTutorial({
                   </div>
                 </div>
               </motion.div>
-            )}
+            ) : null}
           </div>
         )}
       </AnimatePresence>

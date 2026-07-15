@@ -337,7 +337,7 @@ export function NotificationToast({ toast, onClose, onClick, onInviteAction }: {
           }}
         >
           <div style={{width: 24, height: 24, borderRadius: 12, background: "rgba(44,32,22,0.05)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0}}>
-            {typeof toast.icon === "string" ? toast.icon : React.cloneElement(toast.icon as React.ReactElement, { size: 14 })}
+            {typeof toast.icon === "string" ? toast.icon : React.cloneElement(toast.icon as React.ReactElement<any>, { size: 14 })}
           </div>
           <div style={{display: "flex", alignItems: "center", gap: 8}}>
             <div style={{fontSize: 13, fontWeight: 700, color: "#2C2016"}}>{toast.title}</div>
