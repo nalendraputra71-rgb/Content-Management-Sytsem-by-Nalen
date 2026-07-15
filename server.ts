@@ -1141,7 +1141,8 @@ if (!process.env.VERCEL) {
 
     // Vite middleware untuk development mode
     if (process.env.NODE_ENV !== "production") {
-      const { createServer: createViteServer } = await import("vite");
+      const vitePkg = "vite";
+      const { createServer: createViteServer } = await import(vitePkg /* @vite-ignore */);
       const vite = await createViteServer({
         server: { middlewareMode: true },
         appType: "spa",

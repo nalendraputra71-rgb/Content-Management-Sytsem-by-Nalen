@@ -6,10 +6,12 @@ export const config = {
 
 let app;
 try {
+  // Use the pre-built server.cjs if available (to avoid `@vercel/node` bundling TS again)
+  // But since Vercel might not trace dist/server.cjs properly if we use dynamic require,
+  // we require ../server.ts and rely on the fact that we hid vite from the tracer.
   app = require("../server").default;
 } catch (error) {
   console.error("Failed to load server.ts:", error);
-  // Create a dummy express app to return the error
   const express = require("express");
   app = express();
   app.all("*", (req, res) => {
@@ -20,5 +22,4 @@ try {
     });
   });
 }
-
 export default app;
