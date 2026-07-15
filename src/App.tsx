@@ -1,3 +1,4 @@
+import { useI18n } from "./i18n";
 import { useState, useEffect, useMemo, useRef, lazy, Suspense } from "react";
 import { HashRouter, Routes, Route, Navigate, useParams } from "react-router-dom";
 import { 
@@ -335,6 +336,7 @@ const INTERNATIONAL_OBSERVANCES = [
 ];
 
 export default function App() {
+  const { lang } = useI18n();
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -461,6 +463,7 @@ export default function App() {
 }
 
 function OnboardingOverlay({ user, profile, onUpdate }: any) {
+  const { lang } = useI18n();
   const [nickname, setNickname] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -480,14 +483,14 @@ function OnboardingOverlay({ user, profile, onUpdate }: any) {
     <div style={{position:"fixed", inset:0, background:"rgba(255,255,255,0.9)", backdropFilter: "none", zIndex:9999, display:"flex", alignItems:"center", justifyContent:"center", padding:24}}>
        <motion.div initial={{opacity:0, scale:0.92, y:20}} animate={{opacity:1, scale:1, y:0}} style={{maxWidth:440, width:"100%", background:"white", padding:"48px 40px", borderRadius:40, boxShadow:"0 30px 60px rgba(44,32,22,0.15)", textAlign:"center", border:"1px solid rgba(44,32,22,0.05)"}}>
           <div style={{fontSize:48, marginBottom:24}}>✨</div>
-          <h2 style={{fontSize:28, fontWeight:900, marginBottom:12, color:"#2C2016", letterSpacing:"-0.5px"}}>Selamat Datang! 👋</h2>
-          <p style={{fontSize:15, color:"rgba(44,32,22,0.6)", marginBottom:32, lineHeight:1.6}}>Senang sekali Anda bergabung. Agar pengalaman mengelola konten jadi lebih akrab, boleh kami tahu siapa nama panggilan Anda?</p>
+          <h2 style={{fontSize:28, fontWeight:900, marginBottom:12, color:"#2C2016", letterSpacing:"-0.5px"}}>{lang === "id" ? "Selamat Datang! 👋" : "Welcome! 👋"}</h2>
+          <p style={{fontSize:15, color:"rgba(44,32,22,0.6)", marginBottom:32, lineHeight:1.6}}>{lang === "id" ? "Senang sekali Anda bergabung. Agar pengalaman mengelola konten jadi lebih akrab, boleh kami tahu siapa nama panggilan Anda?" : "Glad to have you onboard. To make your content management experience more personal, what should we call you?"}</p>
           
           <div style={{position:"relative", marginBottom:24}}>
             <input 
               value={nickname} 
               onChange={e=>setNickname(e.target.value)} 
-              placeholder="Misal: Nalen, Putra, dll." 
+              placeholder={lang === "id" ? "Misal: Nalen, Putra, dll." : "E.g., John, Jane, etc."} 
               autoFocus
               onKeyDown={e=>e.key==="Enter"&&handleSave()}
               style={{
@@ -503,10 +506,10 @@ function OnboardingOverlay({ user, profile, onUpdate }: any) {
             style={{...B(true), width:"100%", height:60, borderRadius:30, fontSize:15, fontWeight:800, letterSpacing:0.5}}
             className="hover-scale shadow-lg"
           >
-            {loading ? "Menyiapkan Workspace..." : "Mulai Gunakan Dashboard"}
+            {loading ? (lang === "id" ? "Menyiapkan Workspace..." : "Preparing Workspace...") : (lang === "id" ? "Mulai Gunakan Dashboard" : "Start Using Dashboard")}
           </button>
           
-          <p style={{fontSize:11, color:"rgba(44,32,22,0.4)", marginTop:24, fontWeight:600}}>Anda dapat mengubah nama ini kapan saja di pengaturan profil.</p>
+          <p style={{fontSize:11, color:"rgba(44,32,22,0.4)", marginTop:24, fontWeight:600}}>{lang === "id" ? "Anda dapat mengubah nama ini kapan saja di pengaturan profil." : "You can change this anytime in profile settings."}</p>
        </motion.div>
     </div>
   );
@@ -537,6 +540,7 @@ function CMSLayout({ children }: any) {
 }
 
 function QuickAddEventModal({ workspace, onClose, onSaveSettings }: any) {
+  const { lang } = useI18n();
   const [name, setName] = useState("");
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
@@ -571,13 +575,13 @@ function QuickAddEventModal({ workspace, onClose, onSaveSettings }: any) {
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.4)", backdropFilter: "none" }} />
       <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0, transition: { duration: 0.15 } }} style={{ position: "relative", zIndex: 1, background: "#FAFAF8", width: "90%", maxWidth: 440, borderRadius: 24, boxShadow: "0 24px 64px rgba(44,32,22,0.3)", overflow: "hidden", display: "flex", flexDirection: "column", maxHeight: "90vh" }}>
         <div style={{ padding: "20px 24px", borderBottom: "1px solid rgba(0,0,0,0.05)", background: "white", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#2C2016", display: "flex", alignItems: "center", gap: 8 }}><Calendar size={20} /> Tambah Event Kustom</h3>
+          <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#2C2016", display: "flex", alignItems: "center", gap: 8 }}><Calendar size={20} />{lang === "id" ? " Tambah Event Kustom" : " Add Custom Event"}</h3>
           <button onClick={onClose} style={{ background: "rgba(44,32,22,0.05)", border: "none", width: 32, height: 32, borderRadius: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }} className="hover-scale">✕</button>
         </div>
         <div style={{ padding: 24, overflowY: "auto", display: "flex", flexDirection: "column", gap: 16 }}>
           {error && <div style={{ fontSize: 13, background: "#FDF5F8", color: "#9C2B4E", padding: "10px 14px", borderRadius: 10, fontWeight: 600 }}>{error}</div>}
           <div>
-            <label style={{ fontSize: 12, fontWeight: 700, marginBottom: 6, display: "block", color: "var(--theme-primary)" }}>Nama Event *</label>
+            <label style={{ fontSize: 12, fontWeight: 700, marginBottom: 6, display: "block", color: "var(--theme-primary)" }}>{lang === "id" ? "Nama Event *" : "Event Name *"}</label>
             <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Contoh: Launching Produk" style={I({ fontSize: 14 })} />
           </div>
           <div style={{ display: "flex", gap: 12 }}>
@@ -592,7 +596,7 @@ function QuickAddEventModal({ workspace, onClose, onSaveSettings }: any) {
           </div>
           <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
             <div>
-              <label style={{ fontSize: 12, fontWeight: 700, marginBottom: 6, display: "block", color: "var(--theme-primary)" }}>Warna Event</label>
+              <label style={{ fontSize: 12, fontWeight: 700, marginBottom: 6, display: "block", color: "var(--theme-primary)" }}>{lang === "id" ? "Warna Event" : "Event Color"}</label>
               <ColorPickerSelect value={color} onChange={(val) => setColor(val)} size={44} />
             </div>
             <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, cursor: "pointer", color: "#2C2016", fontWeight: 600, marginTop: 18 }}>
@@ -602,8 +606,8 @@ function QuickAddEventModal({ workspace, onClose, onSaveSettings }: any) {
           </div>
         </div>
         <div style={{ padding: "16px 24px", background: "white", borderTop: "1px solid rgba(0,0,0,0.05)", display: "flex", justifyContent: "flex-end", gap: 10 }}>
-          <button onClick={onClose} style={{ ...B(false), fontSize: 13, padding: "10px 20px", height: "auto", borderRadius: 12 }}>Batal</button>
-          <button onClick={handleSave} style={{ ...B(true, "var(--theme-primary)"), fontSize: 13, padding: "10px 24px", height: "auto", borderRadius: 12, color: "white", border: "none", fontWeight: 800 }}>Simpan Event</button>
+          <button onClick={onClose} style={{ ...B(false), fontSize: 13, padding: "10px 20px", height: "auto", borderRadius: 12 }}>{lang === "id" ? "Batal" : "Cancel"}</button>
+          <button onClick={handleSave} style={{ ...B(true, "var(--theme-primary)"), fontSize: 13, padding: "10px 24px", height: "auto", borderRadius: 12, color: "white", border: "none", fontWeight: 800 }}>{lang === "id" ? "Simpan Event" : "Save Event"}</button>
         </div>
       </motion.div>
     </div>
@@ -611,6 +615,7 @@ function QuickAddEventModal({ workspace, onClose, onSaveSettings }: any) {
 }
 
 function Dashboard({ user, profile, onUpdateProfile, currentTheme, systemConfig }: any) {
+  const { lang } = useI18n();
   const [tab, setTab]           = useState("dashboard");
   const [contentTab, setContentTab] = useState("month");
   const [workspace, setWorkspace] = useState<any>(null);
@@ -1383,7 +1388,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme, systemConfig 
     }
 
     setConfirmAction({
-      title: "Hapus Konten?",
+      title: lang === "id" ? "Hapus Konten?" : "Delete Content?",
       msg: "Yakin ingin menghapus permanen konten ini? Tindakan ini tidak dapat dikembalikan.",
       onConfirm: doDelete
     });
@@ -1419,7 +1424,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme, systemConfig 
     if (!workspace || bulkIds.length === 0 || isRestricted) return;
     
     setConfirmAction({
-      title: type === "delete" ? "Hapus Massal?" : type === "restore" ? "Pulihkan Massal?" : "Arsipkan Massal?",
+      title: type === "delete" ? (lang === "id" ? "Hapus Massal?" : "Bulk Delete?") : type === "restore" ? (lang === "id" ? "Pulihkan Massal?" : "Bulk Restore?") : (lang === "id" ? "Arsipkan Massal?" : "Bulk Archive?"),
       msg: `Apakah Anda yakin ingin ${type === "delete" ? "menghapus permanen" : type === "restore" ? "memulihkan" : "mengarsipkan"} ${bulkIds.length} konten?`,
       onConfirm: async () => {
         try {
@@ -1651,10 +1656,10 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme, systemConfig 
         )}
         
         {errorMsg.includes("index") && (
-          <button onClick={()=>window.location.reload()} className="hover-scale" style={{...B(true), padding:"10px 24px", borderRadius:24}}>Coba Refresh Sekarang</button>
+          <button onClick={()=>window.location.reload()} className="hover-scale" style={{...B(true), padding:"10px 24px", borderRadius:24}}>{lang === "id" ? "Coba Refresh Sekarang" : "Try Refreshing Now"}</button>
         )}
         
-        <button onClick={()=>{ signOut(auth).then(() => window.location.hash = "#/login"); }} className="hover-scale" style={{...B(false), fontSize:13, borderRadius:24, marginTop:12}}>Batal & Logout</button>
+        <button onClick={()=>{ signOut(auth).then(() => window.location.hash = "#/login"); }} className="hover-scale" style={{...B(false), fontSize:13, borderRadius:24, marginTop:12}}>{lang === "id" ? "Batal & Logout" : "Cancel & Logout"}</button>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
@@ -1769,9 +1774,9 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme, systemConfig 
       
       {isUnverified && (
         <div style={{background:"#FBF5E3", borderBottom:"1px solid rgba(166,124,28,0.1)", padding:"12px 24px", display:"flex", alignItems:"center", justifyContent:"center", gap:12, zIndex:50}}>
-          <span style={{fontSize:13, fontWeight:700, color:"#A67C12"}}>⚠️ Data Belum Lengkap:</span>
-          <span style={{fontSize:13, color:"rgba(44,32,22,0.6)"}}>Isi nama panggilan dan verifikasi email Anda untuk menggunakan fitur Hubify Social.</span>
-          <button onClick={() => window.location.hash="/profile"} style={{background:"#A67C12", color:"white", border:"none", padding:"6px 14px", borderRadius:20, fontSize:12, fontWeight:800, cursor:"pointer"}}>Lengkapi Sekarang</button>
+          <span style={{fontSize:13, fontWeight:700, color:"#A67C12"}}>{lang === "id" ? "⚠️ Data Belum Lengkap:" : "⚠️ Incomplete Data:"}</span>
+          <span style={{fontSize:13, color:"rgba(44,32,22,0.6)"}}>{lang === "id" ? "Isi nama panggilan dan verifikasi email Anda untuk menggunakan fitur Hubify Social." : "Fill in your nickname and verify your email to use Hubify Social features."}</span>
+          <button onClick={() => window.location.hash="/profile"} style={{background:"#A67C12", color:"white", border:"none", padding:"6px 14px", borderRadius:20, fontSize:12, fontWeight:800, cursor:"pointer"}}>{lang === "id" ? "Lengkapi Sekarang" : "Complete Now"}</button>
         </div>
       )}
 
@@ -1801,7 +1806,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme, systemConfig 
         {isRestricted && (
           <div style={{background:"#F8EAF0",border:"1px solid #9C2B4E",color:"#9C2B4E",padding:"12px 24px",borderRadius:12,marginBottom:24,display:"flex",alignItems:"center",gap:12,fontWeight:600}}>
             🔒 Mode Terbatas: Masa aktif Anda telah habis. <span style={{flex:1}}></span>
-            <button onClick={()=>window.location.hash="/billing"} style={{background:"#9C2B4E",color:"#fff",padding:"8px 16px",borderRadius:8,fontSize:14,border:"none",cursor:"pointer"}}>Berlangganan Untuk Selengkapnya</button>
+            <button onClick={()=>window.location.hash="/billing"} style={{background:"#9C2B4E",color:"#fff",padding:"8px 16px",borderRadius:8,fontSize:14,border:"none",cursor:"pointer"}}>{lang === "id" ? "Berlangganan Untuk Selengkapnya" : "Subscribe for More"}</button>
           </div>
         )}
         <AnimatePresence mode="wait">
@@ -1875,8 +1880,8 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme, systemConfig 
         {exportModal && <motion.div key="export" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} transition={{ duration: 0.15 }} style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.8)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center", padding:16}}>
           <motion.div initial={{scale:0.95, opacity:0, y:20}} animate={{scale:1, opacity:1, y:0}} exit={{scale:0.95, opacity:0, y:20}} transition={{ type: "spring", damping: 25, stiffness: 300 }} style={{...CARD({width:"100%", maxWidth:440, padding:32, borderRadius:24, boxShadow:"0 20px 40px rgba(0,0,0,0.2)", position:"relative"}), background: "#FFFFFF", backdropFilter: "none", WebkitBackdropFilter: "none"}}>
              <button className="hover-scale" onClick={()=>setExportModal(false)} style={{position:"absolute",top:20,right:20,background:"rgba(44,32,22,0.05)",border:"none",borderRadius:"50%",width:32,height:32,cursor:"pointer",fontSize:18,color:"#2C2016",display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
-             <h3 style={{fontSize:20, fontWeight:700, margin:"0 0 8px", color:"#2C2016", display:"flex", alignItems:"center", gap:8}}><Download size={20} /> Ekspor Data (XLSX)</h3>
-             <p style={{fontSize:14, color:"rgba(44,32,22,0.6)", marginBottom:24, lineHeight:1.5}}>Unduh data konten workspace <strong style={{color:"var(--theme-primary)"}}>{workspace?.name}</strong> dalam format Excel.</p>
+             <h3 style={{fontSize:20, fontWeight:700, margin:"0 0 8px", color:"#2C2016", display:"flex", alignItems:"center", gap:8}}><Download size={20} />{lang === "id" ? " Ekspor Data (XLSX)" : " Export Data (XLSX)"}</h3>
+             <p style={{fontSize:14, color:"rgba(44,32,22,0.6)", marginBottom:24, lineHeight:1.5}}>{lang === "id" ? "Unduh data konten workspace " : "Download workspace "}<strong style={{color:"var(--theme-primary)"}}>{workspace?.name}</strong>{lang === "id" ? " dalam format Excel." : " content data in Excel format."}</p>
              
              <div style={{display:"flex", flexDirection:"column", gap:16, marginBottom: 28, textAlign: "left"}}>
                 <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:12}}>
@@ -1888,7 +1893,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme, systemConfig 
                   }}>
                     <input type="radio" name="exOpt" checked={exOption === "all"} onChange={()=>setExOption("all")} style={{display:"none"}} />
                     <div style={{width:18, height:18, borderRadius:"50%", border: exOption === "all" ? "5px solid var(--theme-primary)" : "2px solid rgba(44,32,22,0.2)"}}></div>
-                    Semua Data
+                    {lang === "id" ? "Semua Data" : "All Data"}
                   </label>
                   <label style={{
                     display:"flex", alignItems:"center", gap:10, fontSize:14, cursor:"pointer",
@@ -1898,7 +1903,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme, systemConfig 
                   }}>
                     <input type="radio" name="exOpt" checked={exOption === "filter"} onChange={()=>setExOption("filter")} style={{display:"none"}} />
                     <div style={{width:18, height:18, borderRadius:"50%", border: exOption === "filter" ? "5px solid var(--theme-primary)" : "2px solid rgba(44,32,22,0.2)"}}></div>
-                    Filter Spesifik
+                    {lang === "id" ? "Filter Spesifik" : "Specific Filter"}
                   </label>
                 </div>
 
@@ -1908,18 +1913,18 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme, systemConfig 
                        <div style={{display:"flex", flexDirection:"column", gap:16, marginTop: 4, padding: 16, background: "rgba(44,32,22,0.02)", border: "1px solid rgba(44,32,22,0.06)", borderRadius: 16}}>
                          <div style={{display:"flex", gap:12}}>
                            <div style={{flex:1}}>
-                             <label style={{display:"block", fontSize:12, fontWeight:700, marginBottom:6, color:"rgba(44,32,22,0.7)"}}>Dari Tanggal</label>
+                             <label style={{display:"block", fontSize:12, fontWeight:700, marginBottom:6, color:"rgba(44,32,22,0.7)"}}>{lang === "id" ? "Dari Tanggal" : "From Date"}</label>
                              <input type="date" value={exStart} onChange={(e)=>setExStart(e.target.value)} style={{width:"100%", padding:"10px 14px", borderRadius:10, border:"1px solid rgba(44,32,22,0.1)", fontSize:13, outline:"none", fontFamily:"inherit", color:"#2C2016"}} />
                            </div>
                            <div style={{flex:1}}>
-                             <label style={{display:"block", fontSize:12, fontWeight:700, marginBottom:6, color:"rgba(44,32,22,0.7)"}}>Sampai Tanggal</label>
+                             <label style={{display:"block", fontSize:12, fontWeight:700, marginBottom:6, color:"rgba(44,32,22,0.7)"}}>{lang === "id" ? "Sampai Tanggal" : "To Date"}</label>
                              <input type="date" value={exEnd} onChange={(e)=>setExEnd(e.target.value)} style={{width:"100%", padding:"10px 14px", borderRadius:10, border:"1px solid rgba(44,32,22,0.1)", fontSize:13, outline:"none", fontFamily:"inherit", color:"#2C2016"}} />
                            </div>
                          </div>
                          <div>
-                           <label style={{display:"block", fontSize:12, fontWeight:700, marginBottom:6, color:"rgba(44,32,22,0.7)"}}>Platform Tertentu</label>
+                           <label style={{display:"block", fontSize:12, fontWeight:700, marginBottom:6, color:"rgba(44,32,22,0.7)"}}>{lang === "id" ? "Platform Tertentu" : "Specific Platform"}</label>
                            <select value={exPlatform} onChange={(e)=>setExPlatform(e.target.value)} style={{width:"100%", padding:"10px 14px", borderRadius:10, border:"1px solid rgba(44,32,22,0.1)", fontSize:13, outline:"none", fontFamily:"inherit", color:"#2C2016", backgroundColor:"white"}}>
-                             <option value="All">Semua Platform</option>
+                             <option value="All">{lang === "id" ? "Semua Platform" : "All Platforms"}</option>
                              {platforms.map((p:any, i:number) => { const val = typeof p === "string" ? p : (p.name || p.id || ""); return <option key={val || i} value={val}>{val}</option>; })}
                            </select>
                          </div>
@@ -1930,7 +1935,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme, systemConfig 
              </div>
 
              <div style={{display:"flex",gap:12}}>
-                 <button className="hover-scale" onClick={()=>setExportModal(false)} style={{...B(false), flex:1, height:48, fontSize:14, borderRadius:24}}>Batal</button>
+                 <button className="hover-scale" onClick={()=>setExportModal(false)} style={{...B(false), flex:1, height:48, fontSize:14, borderRadius:24}}>{lang === "id" ? "Batal" : "Cancel"}</button>
                  <button className="btn-hover hover-scale" onClick={() => {
                 let toExport = content;
                 if (exOption === "filter") {
@@ -1948,7 +1953,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme, systemConfig 
                 }
 
                 if (toExport.length === 0) {
-                   alert("Tidak ada data yang sesuai dengan filter tersebut.");
+                   alert(lang === "id" ? "Tidak ada data yang sesuai dengan filter tersebut." : "No data matching the filter.");
                    return;
                 }
 
@@ -1986,7 +1991,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme, systemConfig 
                 XLSX.writeFile(wb, `Export_${workspace?.name}.xlsx`);
                 setExportModal(false);
              });
-             }} style={{...B(true, "var(--theme-primary)"), flex:2, height:48, fontSize:14, borderRadius:24, display:"flex", alignItems:"center", justifyContent:"center", gap:8}}>Unduh File Excel</button>
+             }} style={{...B(true, "var(--theme-primary)"), flex:2, height:48, fontSize:14, borderRadius:24, display:"flex", alignItems:"center", justifyContent:"center", gap:8}}>{lang === "id" ? "Unduh File Excel" : "Download Excel File"}</button>
              </div>
           </motion.div>
         </motion.div>}
@@ -1995,11 +2000,11 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme, systemConfig 
         {confirmAction && (
           <motion.div key="confirm" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.8)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center"}}>
             <motion.div initial={{scale:0.95, opacity:0, y:20}} animate={{scale:1, opacity:1, y:0}} exit={{scale:0.95, opacity:0, y:20}} transition={{ type: "spring", damping: 25, stiffness: 300 }} style={{...CARD({width:400, padding:32, borderRadius:24, boxShadow:"0 20px 40px rgba(0,0,0,0.2)", textAlign:"center"}), background: "#FFFFFF", backdropFilter: "none", WebkitBackdropFilter: "none"}}>
-               <h3 style={{fontSize:20, fontWeight:700, marginBottom:16, color: confirmAction.title.includes("Hapus") ? "#9C2B4E" : "#2C2016"}}>{confirmAction.title}</h3>
+               <h3 style={{fontSize:20, fontWeight:700, marginBottom:16, color: (confirmAction.title.includes("Hapus") || confirmAction.title.includes("Delete")) ? "#9C2B4E" : "#2C2016"}}>{confirmAction.title}</h3>
                <p style={{fontSize:14, color:"rgba(44,32,22,0.6)", marginBottom:24, lineHeight:1.5}}>{confirmAction.msg}</p>
                <div style={{display:"flex",gap:12,justifyContent:"center"}}>
-                 <button className="hover-scale" onClick={()=>setConfirmAction(null)} style={{...B(false), flex:1, height:48, fontSize:14, borderRadius:24}}>Batal</button>
-                 <button className="hover-scale btn-hover" onClick={()=>{confirmAction.onConfirm(); setConfirmAction(null);}} style={{...B(true, confirmAction.title.includes("Hapus") ? "#9C2B4E" : "#3B82F6"), flex:1, height:48, fontSize:14, borderRadius:24}}>{confirmAction.title.includes("Hapus") ? (confirmAction.title.includes("Keluar") ? "Keluar" : "Hapus") : "Lanjutkan"}</button>
+                 <button className="hover-scale" onClick={()=>setConfirmAction(null)} style={{...B(false), flex:1, height:48, fontSize:14, borderRadius:24}}>{lang === "id" ? "Batal" : "Cancel"}</button>
+                 <button className="hover-scale btn-hover" onClick={()=>{confirmAction.onConfirm(); setConfirmAction(null);}} style={{...B(true, (confirmAction.title.includes("Hapus") || confirmAction.title.includes("Delete")) ? "#9C2B4E" : "#3B82F6"), flex:1, height:48, fontSize:14, borderRadius:24}}>{(confirmAction.title.includes("Hapus") || confirmAction.title.includes("Delete")) ? ((confirmAction.title.includes("Keluar") || confirmAction.title.includes("Leave")) ? (lang === "id" ? "Keluar" : "Leave") : (lang === "id" ? "Hapus" : "Delete")) : (lang === "id" ? "Lanjutkan" : "Continue")}</button>
                </div>
             </motion.div>
           </motion.div>
@@ -2010,7 +2015,7 @@ function Dashboard({ user, profile, onUpdateProfile, currentTheme, systemConfig 
         {pendingTab && (
           <motion.div key="unsaved" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.8)", zIndex:1001, display:"flex", alignItems:"center", justifyContent:"center"}}>
             <motion.div initial={{scale:0.95, opacity:0, y:20}} animate={{scale:1, opacity:1, y:0}} exit={{scale:0.95, opacity:0, y:20}} style={CARD({width:400, padding:32, borderRadius:24, textAlign:"center"})}>
-               <h3 style={{fontSize:20, fontWeight:700, marginBottom:16}}>Simpan Perubahan?</h3>
+               <h3 style={{fontSize:20, fontWeight:700, marginBottom:16}}>{lang === "id" ? "Simpan Perubahan?" : "Save Changes?"}</h3>
                <p style={{fontSize:14, color:"rgba(44,32,22,0.6)", marginBottom:24, lineHeight:1.5}}>Anda memiliki perubahan yang belum disimpan. Ingin menyimpannya sekarang sebelum meninggalkan halaman ini?</p>
                <div style={{display:"flex", flexDirection:"column", gap:12}}>
                  <button className="hover-scale" onClick={async () => {

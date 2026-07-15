@@ -395,7 +395,7 @@ export function FAQ() {
     { 
       id: '8d', category: 'billing', 
       qId: "Apakah Anda menawarkan diskon untuk organisasi nirlaba atau pelajar?", 
-      aId: "Ya, kami menawarkan diskon khusus untuk LSM terdaftar dan pelajar. Silakan hubungi tim dukungan kami dengan kredensial Anda untuk mengklaimnya.",
+      aId: lang === "id" ? "Ya, kami menawarkan diskon khusus untuk LSM terdaftar dan pelajar. Silakan hubungi tim dukungan kami dengan kredensial Anda untuk mengklaimnya." : "Yes, we offer special discounts for registered NGOs and students. Please contact our support team with your credentials to claim it.",
       qEn: "Do you offer a non-profit or student discount?", 
       aEn: "Yes, we offer special discounts for registered NGOs and students. Please contact our support team with your credentials to claim it." 
     },

@@ -39,8 +39,8 @@ const plan = searchParams.get('plan') || 'solo';
     ];
   } else if (plan === 'solo') {
     planName = 'Solo Creator';
-    originalPrice = isAnnual ? 99000 * 12 : 99000;
-    finalPrice = isAnnual ? 79000 * 12 : 99000;
+    originalPrice = isAnnual ? 1000 * 12 : 1000;
+    finalPrice = isAnnual ? 1000 * 12 : 1000;
     features = [
       "1 Workspace", 
       "10 Akun Sosmed", 

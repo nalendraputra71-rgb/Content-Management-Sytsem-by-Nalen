@@ -1,3 +1,4 @@
+import { useI18n } from "./i18n";
 import { PlatformPreview } from "./components/PlatformPreview";
 import { db, callAiWithQuota, handleFirestoreError, collection, onSnapshot, addDoc, serverTimestamp, setDoc, doc, updateDoc, deleteDoc } from "./firebase";
 import React, { useState, useEffect, useRef } from "react";
@@ -428,6 +429,7 @@ export function SocialStudioView({
   const [inboxViewMode, setInboxViewMode] = useState<"dms" | "comments">("dms");
   const [rawSelectedComment, setRawSelectedComment] = useState<any>(null);
 
+  const { lang } = useI18n();
   const setSelectedInboxMsg = setRawSelectedInboxMsg;
   const setSelectedComment = setRawSelectedComment;
 
@@ -620,14 +622,34 @@ export function SocialStudioView({
   
   const [heatmapMetric, setHeatmapMetric] = useState("engagement");
   const [hubaiConfigs, setHubaiConfigs] = useState<any[]>([]);
-  const HUBAI_TIPS = ["Tip 1", "Tip 2"];
+  const HUBAI_TIPS = lang === "id"
+    ? [
+        "Gunakan hook yang menarik di 3 detik pertama video Anda untuk meningkatkan retention rate secara signifikan.",
+        "Konsistensi posting lebih penting daripada kuantitas. Buat jadwal yang realistis dan patuhi itu.",
+        "Selalu sertakan Call to Action (CTA) yang jelas di setiap akhir postingan untuk mengarahkan audiens."
+      ]
+    : [
+        "Use an engaging hook in the first 3 seconds of your video to significantly increase retention rate.",
+        "Consistency in posting is more important than quantity. Create a realistic schedule and stick to it.",
+        "Always include a clear Call to Action (CTA) at the end of each post to guide your audience."
+      ];
   const inboxChatScrollRef = useRef<HTMLDivElement>(null);
   const [integrationModal, setIntegrationModal] = useState<{open: boolean, platform: string|null}>({open: false, platform: null});
   const [isSearchMode, setIsSearchMode] = useState(false);
   const [mergedComments, setMergedComments] = useState<any[]>([]);
   const [metaApiError, setMetaApiError] = useState<string | null>(null);
   const [platformOverrides, setPlatformOverrides] = useState<Record<string, any>>({});
-  const PROMPT_IDEAS = ["Idea 1", "Idea 2"];
+  const PROMPT_IDEAS = lang === "id"
+    ? [
+        "Buat rancangan konten Reels Instagram tentang cara jualan online untuk pemula agar langsung closing.",
+        "Berikan 5 ide konten Carousel TikTok yang mengedukasi tentang personal branding.",
+        "Tulis caption LinkedIn yang profesional dan persuasif untuk mempromosikan produk SaaS."
+      ]
+    : [
+        "Create an Instagram Reels content draft about how to sell online for beginners to close deals instantly.",
+        "Give 5 educational TikTok Carousel content ideas about personal branding.",
+        "Write a professional and persuasive LinkedIn caption to promote a SaaS product."
+      ];
   const [realInsights, setRealInsights] = useState<any>(null);
   const [realPosts, setRealPosts] = useState<any[]>([]);
   
@@ -650,7 +672,17 @@ export function SocialStudioView({
   
   const updateEditingConfig = (key: string, value: any) => setEditingConfig((prev: any) => ({...prev, [key]: value}));
   const [targetMessageIndex, setTargetMessageIndex] = useState(-1);
-  const ANALYSIS_IDEAS = ["Idea 1"];
+  const ANALYSIS_IDEAS = lang === "id"
+    ? [
+        "Analisis performa konten saya minggu lalu dan berikan rekomendasi peningkatan interaksi.",
+        "Evaluasi strategi kompetitor di platform Instagram berdasarkan data terbaru.",
+        "Rancang jadwal posting konten terbaik untuk audiens saya bulan ini."
+      ]
+    : [
+        "Analyze my content performance last week and provide recommendations to increase interaction.",
+        "Evaluate competitor strategy on Instagram based on the latest data.",
+        "Design the best content posting schedule for my audience this month."
+      ];
 
 
   const handleSendMessage = async () => {
@@ -1266,7 +1298,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
           marginTop: 24,
         }}
       >
-        {["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"].map((d) => (
+        {(lang === "id" ? ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"] : ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]).map((d) => (
           <div
             key={d}
             style={{
@@ -1507,7 +1539,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                 "Caption panjang lebar bla bla bla #hashtag #viral #fyp"
               </div>
               <h4 style={{ fontSize: 14, fontWeight: 800, marginBottom: 16 }}>
-                Insight Detail
+                {lang === "id" ? "Insight Detail" : "Insight Details"}
               </h4>
               <div
                 style={{
@@ -1534,7 +1566,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                           marginBottom: 4,
                         }}
                       >
-                        {m}
+                        {m === "Komen" ? (lang === "id" ? "Komen" : "Comments") : m === "Save" ? (lang === "id" ? "Simpan" : "Saves") : m === "Share" ? (lang === "id" ? "Share" : "Shares") : m}
                       </div>
                       <div
                         style={{
@@ -1584,7 +1616,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                   cursor: "pointer",
                 }}
               >
-                Buka di Platform Asli
+                {lang === "id" ? "Buka di Platform Asli" : "Open in Native Platform"}
               </button>
             </div>
           </div>
@@ -1758,7 +1790,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                   onClick={async (e) => {
                     e.stopPropagation();
                     if (
-                      confirm("Yakin ingin menghapus histori percakapan ini?")
+                      confirm(lang === "id" ? "Yakin ingin menghapus histori percakapan ini?" : "Are you sure you want to delete this conversation history?")
                     ) {
                       await deleteDoc(
                         doc(db, "users", user.uid, "aiChats", s.id),
@@ -1769,7 +1801,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                           {
                             role: "assistant",
                             content:
-                              "Halo! Saya HUB.AI, asisten khusus untuk content creator.",
+                              lang === "id"
+                                ? "Halo! Saya HUB.AI, asisten khusus untuk content creator."
+                                : "Hello! I am HUB.AI, a dedicated assistant for content creators.",
                           },
                         ]);
                       }
@@ -2478,7 +2512,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                         <span>{res.message}</span>
                         {res.status === 'error' && res.message.includes('token') && (
                           <div className="mt-2 font-semibold text-red-900 bg-red-100/50 p-2 rounded-md">
-                            💡 Solusi: Token otorisasi sudah kadaluarsa (expired) atau tidak valid. Silakan klik icon {plat} di atas untuk "Disconnect", lalu klik lagi untuk "Connect" ulang agar mendapatkan token yang baru.
+                            {lang === "id" ? "💡 Solusi: Token otorisasi sudah kadaluarsa (expired) atau tidak valid. Silakan klik icon " + plat + " di atas untuk \"Disconnect\", lalu klik lagi untuk \"Connect\" ulang agar mendapatkan token yang baru." : "💡 Solution: Authorization token is expired or invalid. Please click the " + plat + " icon above to \"Disconnect\", then click again to \"Connect\" to get a new token."}
                           </div>
                         )}
                       </div>
@@ -3937,7 +3971,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                       margin: 0,
                     }}
                   >
-                    Kalender Konten Sosial
+                    {lang === "id" ? "Kalender Konten Sosial" : "Social Content Calendar"}
                   </h2>
                   <p
                     style={{
@@ -3947,27 +3981,29 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                       fontWeight: 600,
                     }}
                   >
-                    Lihat semua postingan yang terpublikasi atau jadwalkan plan.
+                    {lang === "id" ? "Lihat semua postingan yang terpublikasi atau jadwalkan plan." : "View all published posts or schedule a plan."}
                   </p>
                 </div>
                 <div style={{ display: "flex", gap: 12 }}>
                   <button
                     onClick={() => {
                       alert(
-                        "Fitur AI Calendar sedang menjalankan mockup auto-assign.",
+                        lang === "id"
+                          ? "Fitur AI Calendar sedang menjalankan mockup auto-assign."
+                          : "AI Calendar feature is running auto-assign mockup.",
                       );
                       setCalendarPosts([
                         ...calendarPosts,
                         {
                           day: Math.floor(Math.random() * 28 + 1),
                           type: "tt",
-                          title: "Ide Konten AI 1",
+                          title: lang === "id" ? "Ide Konten AI 1" : "AI Content Idea 1",
                           time: "10:00",
                         },
                         {
                           day: Math.floor(Math.random() * 28 + 1),
                           type: "ig",
-                          title: "Ide Konten AI 2",
+                          title: lang === "id" ? "Ide Konten AI 2" : "AI Content Idea 2",
                           time: "15:30",
                         },
                       ]);
@@ -4024,7 +4060,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                         padding: "0 12px",
                       }}
                     >
-                      Agustus 2026
+                      {lang === "id" ? "Agustus 2026" : "August 2026"}
                     </div>
                     <button
                       className="hover-scale"
@@ -4124,7 +4160,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                     cursor: compLoading ? "not-allowed" : "pointer",
                   }}
                 >
-                  {compLoading ? "Menganalisis..." : "Tambah Kompetitor"}
+                  {compLoading ? (lang === "id" ? "Menganalisis..." : "Analyzing...") : (lang === "id" ? "Tambah Kompetitor" : "Add Competitor")}
                 </button>
               </div>
 
@@ -5513,7 +5549,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                         <button
                           onClick={() =>
                             setMsgContent(
-                              "Halo kak, terima kasih banyak atas responnya! 🙏",
+                              lang === "id" ? "Halo kak, terima kasih banyak atas responnya! 🙏" : "Hi, thank you so much for the response! 🙏",
                             )
                           }
                           className="hover-scale"
@@ -5537,7 +5573,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                         <button
                           onClick={() =>
                             setMsgContent(
-                              "Halo kak, boleh langsung cek link di bio kita ya untuk info lengkapnya! 😊",
+                              lang === "id" ? "Halo kak, boleh langsung cek link di bio kita ya untuk info lengkapnya! 😊" : "Hi, you can check the link in our bio for full info! 😊",
                             )
                           }
                           className="hover-scale"
@@ -6348,7 +6384,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                         {
                           role: "assistant",
                           content:
-                            "Halo! Saya HUB.AI, asisten khusus untuk content creator. Apa yang bisa saya bantu hari ini? Mau brainstorm ide konten atau buat draft caption?",
+                            lang === "id"
+                              ? "Halo! Saya HUB.AI, asisten khusus untuk content creator. Apa yang bisa saya bantu hari ini? Mau brainstorm ide konten atau buat draft caption?"
+                              : "Hello! I am HUB.AI, a dedicated assistant for content creators. How can I help you today? Would you like to brainstorm content ideas or write a caption draft?",
                         },
                       ]);
                       setIsSearchMode(false);
@@ -6369,7 +6407,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                       transition: "all 0.2s",
                     }}
                   >
-                    <Edit3 size={16} /> Percakapan baru
+                    <Edit3 size={16} /> {lang === "id" ? "Percakapan baru" : "New chat"}
                   </button>
                   <button
                     onClick={() => setIsSearchMode(true)}
@@ -6391,7 +6429,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                       transition: "all 0.2s",
                     }}
                   >
-                    <Search size={16} /> Telusuri percakapan
+                    <Search size={16} /> {lang === "id" ? "Telusuri percakapan" : "Search conversations"}
                   </button>
                   <button
                     onClick={handleToggleConfigPanel}
@@ -6413,7 +6451,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                       transition: "all 0.2s",
                     }}
                   >
-                    <Settings size={16} /> Konfigurasi
+                    <Settings size={16} /> {lang === "id" ? "Konfigurasi" : "Configuration"}
                   </button>
                 </div>
 
@@ -6476,7 +6514,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                           gap: 6,
                         }}
                       >
-                        <Clock size={12} /> HISTORY
+                        <Clock size={12} /> {lang === "id" ? "RIWAYAT" : "HISTORY"}
                       </div>
                       <div
                         style={{
@@ -6496,7 +6534,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               color: "rgba(25,53,70,0.4)",
                             }}
                           >
-                            Belum ada histori.
+                            {lang === "id" ? "Belum ada histori." : "No history yet."}
                           </div>
                         )}
                       </div>
@@ -6530,7 +6568,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                         color: "rgba(25,53,70,0.6)",
                       }}
                     >
-                      HUB.AI Limit
+                      {lang === "id" ? "Batas HUB.AI" : "HUB.AI Limit"}
                     </span>
                     <span
                       style={{
@@ -6683,7 +6721,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                             margin: 0,
                           }}
                         >
-                          Telusuri Percakapan
+                          {lang === "id" ? "Telusuri Percakapan" : "Search Conversations"}
                         </h2>
                       </div>
                       <div style={{ position: "relative", marginBottom: 32 }}>
@@ -6701,7 +6739,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                           autoFocus
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
-                          placeholder="Cari kata kunci atau judul percakapan..."
+                          placeholder={lang === "id" ? "Cari kata kunci atau judul percakapan..." : "Search keywords or conversation titles..."}
                           style={{
                             width: "100%",
                             padding: "16px 48px 16px 48px",
@@ -6777,7 +6815,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                           })
                           .map((s) => {
                             // Determine the best snippet to show
-                            let bestSnippet = "Tidak ada pesan pengguna.";
+                            let bestSnippet = lang === "id" ? "Tidak ada pesan pengguna." : "No user message.";
                             if (s.messages && s.messages.length > 0) {
                               // If we have a search query, find the first matching message
                               if (searchQuery) {
@@ -6909,7 +6947,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               fontSize: 14,
                             }}
                           >
-                            Tidak ada percakapan yang cocok dengan pencarian.
+                            {lang === "id" ? "Tidak ada percakapan yang cocok dengan pencarian." : "No conversations match your search."}
                           </div>
                         )}
                       </div>
@@ -6968,7 +7006,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                           zIndex: 1,
                         }}
                       >
-                        Welcome to HUB.AI
+                        {lang === "id" ? "Selamat Datang di HUB.AI" : "Welcome to HUB.AI"}
                       </h2>
                       <p
                         style={{
@@ -6979,7 +7017,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                           zIndex: 1,
                         }}
                       >
-                        Apa yang bisa saya temukan untuk kontenmu hari ini?
+                        {lang === "id" ? "Apa yang bisa saya temukan untuk kontenmu hari ini?" : "What can I find for your content today?"}
                       </p>
 
                       <div
@@ -7071,16 +7109,21 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                                 letterSpacing: "0.5px",
                               }}
                             >
-                              IDE KONTEN KREATIF
+                              {lang === "id" ? "IDE KONTEN KREATIF" : "CREATIVE CONTENT IDEAS"}
                             </div>
                             <div style={{ display: "flex", gap: 3 }}>
                               {PROMPT_IDEAS.map((_, i) => (
                                 <div
                                   key={i}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setCurrentPromptIndex(i);
+                                  }}
                                   style={{
-                                    width: 4,
-                                    height: 4,
+                                    width: 6,
+                                    height: 6,
                                     borderRadius: "50%",
+                                    cursor: "pointer",
                                     background:
                                       i === currentPromptIndex
                                         ? "#1B7FDC"
@@ -7170,16 +7213,21 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                                 letterSpacing: "0.5px",
                               }}
                             >
-                              ANALISIS & EVALUASI
+                              {lang === "id" ? "ANALISIS & EVALUASI" : "ANALYSIS & EVALUATION"}
                             </div>
                             <div style={{ display: "flex", gap: 3 }}>
                               {ANALYSIS_IDEAS.map((_, i) => (
                                 <div
                                   key={i}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setCurrentAnalysisIndex(i);
+                                  }}
                                   style={{
-                                    width: 4,
-                                    height: 4,
+                                    width: 6,
+                                    height: 6,
                                     borderRadius: "50%",
+                                    cursor: "pointer",
                                     background:
                                       i === currentAnalysisIndex
                                         ? "#0DB8D3"
@@ -7258,16 +7306,21 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                                 letterSpacing: "0.5px",
                               }}
                             >
-                              TIPS & TRIK HUB.AI
+                              {lang === "id" ? "TIPS & TRIK HUB.AI" : "HUB.AI TIPS & TRICKS"}
                             </div>
                             <div style={{ display: "flex", gap: 3 }}>
                               {HUBAI_TIPS.map((_, i) => (
                                 <div
                                   key={i}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setCurrentTipIndex(i);
+                                  }}
                                   style={{
-                                    width: 4,
-                                    height: 4,
+                                    width: 6,
+                                    height: 6,
                                     borderRadius: "50%",
+                                    cursor: "pointer",
                                     background:
                                       i === currentTipIndex
                                         ? "#F59E0B"
@@ -7297,7 +7350,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                             color: "rgba(25,53,70,0.6)",
                           }}
                         >
-                          Biar lebih kamu banget:
+                          {lang === "id" ? "Biar lebih kamu banget:" : "Personalize your AI:"}
                         </span>
                       </div>
                       <div
@@ -7330,51 +7383,51 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                           {[
                             {
                               icon: <User size={14} color="#0DB8D3" />,
-                              text: "Atur Peran AI",
+                              text: lang === "id" ? "Atur Peran AI" : "Set AI Persona",
                             },
                             {
                               icon: <AlignLeft size={14} color="#1B7FDC" />,
-                              text: "Set Pilar Konten",
+                              text: lang === "id" ? "Set Pilar Konten" : "Set Content Pillars",
                             },
                             {
                               icon: <FileText size={14} color="#10B981" />,
-                              text: "Tambah Contoh",
+                              text: lang === "id" ? "Tambah Contoh" : "Add Example",
                             },
                             {
                               icon: <Mic size={14} color="#F59E0B" />,
-                              text: "Tone of Voice",
+                              text: lang === "id" ? "Gaya Bahasa" : "Tone of Voice",
                             },
                             {
                               icon: <Users size={14} color="#8B5CF6" />,
-                              text: "Target Audience",
+                              text: lang === "id" ? "Target Audiens" : "Target Audience",
                             },
                             {
                               icon: <Book size={14} color="#E83A59" />,
-                              text: "Kamus Brand",
+                              text: lang === "id" ? "Kamus Brand" : "Brand Dictionary",
                             },
                             {
                               icon: <User size={14} color="#0DB8D3" />,
-                              text: "Atur Peran AI",
+                              text: lang === "id" ? "Atur Peran AI" : "Set AI Persona",
                             },
                             {
                               icon: <AlignLeft size={14} color="#1B7FDC" />,
-                              text: "Set Pilar Konten",
+                              text: lang === "id" ? "Set Pilar Konten" : "Set Content Pillars",
                             },
                             {
                               icon: <FileText size={14} color="#10B981" />,
-                              text: "Tambah Contoh",
+                              text: lang === "id" ? "Tambah Contoh" : "Add Example",
                             },
                             {
                               icon: <Mic size={14} color="#F59E0B" />,
-                              text: "Tone of Voice",
+                              text: lang === "id" ? "Gaya Bahasa" : "Tone of Voice",
                             },
                             {
                               icon: <Users size={14} color="#8B5CF6" />,
-                              text: "Target Audience",
+                              text: lang === "id" ? "Target Audiens" : "Target Audience",
                             },
                             {
                               icon: <Book size={14} color="#E83A59" />,
-                              text: "Kamus Brand",
+                              text: lang === "id" ? "Kamus Brand" : "Brand Dictionary",
                             },
                           ].map((item, idx) => (
                             <div
@@ -7666,7 +7719,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                       }}
                     >
                       <textarea
-                        placeholder="Tanya apapun ke HUB.AI..."
+                        placeholder={lang === "id" ? "Tanya apapun ke HUB.AI..." : "Ask HUB.AI anything..."}
                         value={chatInput}
                         onChange={(e) => {
                           const target = e.target;
@@ -7745,7 +7798,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               }}
                             >
                               {dataSource === "all"
-                                ? "Semua Data"
+                                ? (lang === "id" ? "Semua Data" : "All Data")
                                 : dataSource === "social_management"
                                   ? "Social Management"
                                   : "Social Studio"}{" "}
@@ -7775,7 +7828,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                                   }}
                                 >
                                   {[
-                                    { id: "all", label: "Semua Data" },
+                                    { id: "all", label: lang === "id" ? "Semua Data" : "All Data" },
                                     {
                                       id: "social_management",
                                       label: "Social Management",
@@ -7916,7 +7969,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                                         paddingTop: 6,
                                       }}
                                     >
-                                      <Settings size={12} /> Atur Config
+                                      <Settings size={12} /> {lang === "id" ? "Atur Konfigurasi" : "Set up Config"}
                                     </div>
                                   )}
                                 </motion.div>
@@ -7933,7 +7986,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                         >
                           <button
                             onClick={() =>
-                              alert("Fitur Attach File akan segera hadir!")
+                              alert(lang === "id" ? "Fitur Lampirkan Berkas akan segera hadir!" : "Attach File feature is coming soon!")
                             }
                             className="hover-scale"
                             style={{
@@ -7948,7 +8001,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               cursor: "pointer",
                             }}
                           >
-                            <Paperclip size={14} /> Attach
+                            <Paperclip size={14} /> {lang === "id" ? "Lampirkan" : "Attach"}
                           </button>
                           <button
                             onClick={() => handleChatSubmit()}
@@ -7981,7 +8034,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                                   : "0 6px 16px rgba(27,127,220,0.3)",
                             }}
                           >
-                            <ArrowUp size={14} /> Send
+                            <ArrowUp size={14} /> {lang === "id" ? "Kirim" : "Send"}
                           </button>
                         </div>
                       </div>
@@ -7994,9 +8047,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                           fontWeight: 500,
                         }}
                       >
-                        HUB.AI may display inaccurate info.{" "}
+                        {lang === "id" ? "HUB.AI dapat menampilkan info yang tidak akurat." : "HUB.AI may display inaccurate info."}{" "}
                         <u style={{ cursor: "pointer", color: "#065B98" }}>
-                          Verification Guide
+                          {lang === "id" ? "Panduan Verifikasi" : "Verification Guide"}
                         </u>
                       </div>
                     </div>
@@ -8058,8 +8111,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               letterSpacing: "0.5px",
                             }}
                           >
-                            <Settings size={18} color="#0DB8D3" /> KONFIGURASI
-                            AI
+                            <Settings size={18} color="#0DB8D3" /> {lang === "id" ? "KONFIGURASI AI" : "AI CONFIGURATION"}
                           </div>
                           <button
                             className="hover-bg"
@@ -8084,10 +8136,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                             lineHeight: 1.5,
                           }}
                         >
-                          Atur profil, gaya bahasa, dan panduan brand. Anda
-                          dapat membuat hingga 5 konfigurasi kustom untuk
-                          berbagai brand atau audiens yang berbeda agar hasil AI
-                          lebih personal.
+                          {lang === "id"
+                            ? "Atur profil, gaya bahasa, dan panduan brand. Anda dapat membuat hingga 5 konfigurasi kustom untuk berbagai brand atau audiens yang berbeda agar hasil AI lebih personal."
+                            : "Set up profiles, tone of voice, and brand guidelines. You can create up to 5 custom configurations for different brands or target audiences to make AI outputs more personalized."}
                         </p>
                       </div>
                       <div
@@ -8152,7 +8203,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               alignItems: "center",
                             }}
                           >
-                            <Plus size={14} /> Tambah
+                            <Plus size={14} /> {lang === "id" ? "Tambah" : "Add"}
                           </div>
                         )}
                       </div>
@@ -8179,10 +8230,10 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               letterSpacing: "1px",
                             }}
                           >
-                            Nama Konfigurasi
+                            {lang === "id" ? "Nama Konfigurasi" : "Configuration Name"}
                           </label>
                           <input
-                            placeholder="Contoh: Config Instagram Utama..."
+                            placeholder={lang === "id" ? "Contoh: Config Instagram Utama..." : "Example: Main Instagram Config..."}
                             value={editingConfig.name}
                             onChange={(e) =>
                               updateEditingConfig("name", e.target.value)
@@ -8211,10 +8262,10 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               letterSpacing: "1px",
                             }}
                           >
-                            Posisi Pekerjaan
+                            {lang === "id" ? "Posisi Pekerjaan" : "Job Role / Title"}
                           </label>
                           <input
-                            placeholder="Contoh: Social Media Manager..."
+                            placeholder={lang === "id" ? "Contoh: Social Media Manager..." : "Example: Social Media Manager..."}
                             value={editingConfig.jobRole}
                             onChange={(e) =>
                               updateEditingConfig("jobRole", e.target.value)
@@ -8243,10 +8294,10 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               letterSpacing: "1px",
                             }}
                           >
-                            Gaya Bahasa (Tone of Voice)
+                            {lang === "id" ? "Gaya Bahasa (Tone of Voice)" : "Tone of Voice"}
                           </label>
                           <input
-                            placeholder="Contoh: Santai, Gaul, dan Persuasif..."
+                            placeholder={lang === "id" ? "Contoh: Santai, Gaul, dan Persuasif..." : "Example: Casual, Friendly, and Persuasive..."}
                             value={editingConfig.toneOfVoice}
                             onChange={(e) =>
                               updateEditingConfig("toneOfVoice", e.target.value)
@@ -8275,10 +8326,10 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               letterSpacing: "1px",
                             }}
                           >
-                            Nama Brand
+                            {lang === "id" ? "Nama Brand" : "Brand Name"}
                           </label>
                           <input
-                            placeholder="Contoh: Kopi Senja..."
+                            placeholder={lang === "id" ? "Contoh: Kopi Senja..." : "Example: Sunset Coffee..."}
                             value={editingConfig.brandName}
                             onChange={(e) =>
                               updateEditingConfig("brandName", e.target.value)
@@ -8307,10 +8358,10 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               letterSpacing: "1px",
                             }}
                           >
-                            Bidang / Industri
+                            {lang === "id" ? "Bidang / Industri" : "Industry"}
                           </label>
                           <input
-                            placeholder="Contoh: F&B / Minuman..."
+                            placeholder={lang === "id" ? "Contoh: F&B / Minuman..." : "Example: Food & Beverage..."}
                             value={editingConfig.brandIndustry}
                             onChange={(e) =>
                               updateEditingConfig(
@@ -8342,10 +8393,10 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               letterSpacing: "1px",
                             }}
                           >
-                            Target Audience
+                            {lang === "id" ? "Target Audiens" : "Target Audience"}
                           </label>
                           <input
-                            placeholder="Contoh: Gen Z, Mahasiswa, Pekerja Kantoran..."
+                            placeholder={lang === "id" ? "Contoh: Gen Z, Mahasiswa, Pekerja Kantoran..." : "Example: Gen Z, Students, Office Workers..."}
                             value={editingConfig.targetAudience}
                             onChange={(e) =>
                               updateEditingConfig(
@@ -8377,10 +8428,10 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               letterSpacing: "1px",
                             }}
                           >
-                            Unique Selling Proposition (USP)
+                            {lang === "id" ? "Keunikan Brand (USP)" : "Unique Selling Proposition (USP)"}
                           </label>
                           <input
-                            placeholder="Apa yang membedakan brand anda..."
+                            placeholder={lang === "id" ? "Apa yang membedakan brand anda..." : "What sets your brand apart..."}
                             value={editingConfig.usp}
                             onChange={(e) =>
                               updateEditingConfig("usp", e.target.value)
@@ -8409,10 +8460,10 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               letterSpacing: "1px",
                             }}
                           >
-                            Tujuan Konten
+                            {lang === "id" ? "Tujuan Konten" : "Content Goals"}
                           </label>
                           <input
-                            placeholder="Contoh: Awareness, Sales, Edukasi..."
+                            placeholder={lang === "id" ? "Contoh: Awareness, Sales, Edukasi..." : "Example: Awareness, Sales, Education..."}
                             value={editingConfig.contentGoals}
                             onChange={(e) =>
                               updateEditingConfig(
@@ -8444,10 +8495,10 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               letterSpacing: "1px",
                             }}
                           >
-                            Pilar Konten (Topik Utama)
+                            {lang === "id" ? "Pilar Konten (Topik Utama)" : "Content Pillars (Main Topics)"}
                           </label>
                           <input
-                            placeholder="Contoh: Motivasi, Humor, Tips & Trik..."
+                            placeholder={lang === "id" ? "Contoh: Motivasi, Humor, Tips & Trik..." : "Example: Motivation, Humor, Tips & Tricks..."}
                             value={editingConfig.contentPillars}
                             onChange={(e) =>
                               updateEditingConfig(
@@ -8479,10 +8530,10 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               letterSpacing: "1px",
                             }}
                           >
-                            Kompetitor (Benchmarks)
+                            {lang === "id" ? "Kompetitor (Benchmarks)" : "Competitors (Benchmarks)"}
                           </label>
                           <input
-                            placeholder="Contoh: Kopi Janji Jiwa, Kopi Kenangan..."
+                            placeholder={lang === "id" ? "Contoh: Kopi Janji Jiwa, Kopi Kenangan..." : "Example: Sunset Coffee, Dawn Coffee..."}
                             value={editingConfig.competitors}
                             onChange={(e) =>
                               updateEditingConfig("competitors", e.target.value)
@@ -8511,10 +8562,10 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               letterSpacing: "1px",
                             }}
                           >
-                            Info Tambahan
+                            {lang === "id" ? "Info Tambahan" : "Additional Info"}
                           </label>
                           <textarea
-                            placeholder="Target market adalah Gen Z, produk unggulan kopi susu karamel..."
+                            placeholder={lang === "id" ? "Target market adalah Gen Z, produk unggulan kopi susu karamel..." : "Target market is Gen Z, signature product is caramel latte..."}
                             value={editingConfig.additionalInfo}
                             onChange={(e) =>
                               updateEditingConfig(
@@ -8548,10 +8599,10 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               letterSpacing: "1px",
                             }}
                           >
-                            Kamus Brand (Glossary)
+                            {lang === "id" ? "Kamus Brand (Glossary)" : "Brand Glossary"}
                           </label>
                           <textarea
-                            placeholder="Tuliskan kata kunci, pantangan istilah, dan padanan kata yang spesifik ke brand anda. Contoh: Jangan pakai kata 'murah', gunakan 'hemat'..."
+                            placeholder={lang === "id" ? "Tuliskan kata kunci, pantangan istilah, dan padanan kata yang spesifik ke brand anda. Contoh: Jangan pakai kata 'murah', gunakan 'hemat'..." : "Write down keywords, forbidden terms, and brand vocabulary. Example: Do not use the word 'cheap', use 'budget-friendly'..."}
                             value={editingConfig.brandGlossary}
                             onChange={(e) =>
                               updateEditingConfig(
@@ -8585,10 +8636,10 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               letterSpacing: "1px",
                             }}
                           >
-                            Contoh Konten (Referensi)
+                            {lang === "id" ? "Contoh Konten (Referensi)" : "Content Reference (Examples)"}
                           </label>
                           <textarea
-                            placeholder="Tuliskan format atau gaya draft konten yang pernah berhasil dan ingin HUB.AI ikuti polanya..."
+                            placeholder={lang === "id" ? "Tuliskan format atau gaya draft konten yang pernah berhasil dan ingin HUB.AI ikuti polanya..." : "Write down content drafts or styles that were successful and you want HUB.AI to replicate..."}
                             value={editingConfig.contentExamples}
                             onChange={(e) =>
                               updateEditingConfig(
@@ -8642,8 +8693,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                                     fontWeight: 500,
                                   }}
                                 >
-                                  * Harap isi seluruh kolom konfigurasi untuk
-                                  menyimpan.
+                                  {lang === "id" ? "* Harap isi seluruh kolom konfigurasi untuk menyimpan." : "* Please fill in all configuration fields to save."}
                                 </div>
                               )}
                               <button
@@ -8669,8 +8719,8 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                                 }}
                               >
                                 {savingConfig
-                                  ? "Menyimpan..."
-                                  : "Simpan Konfigurasi"}
+                                  ? (lang === "id" ? "Menyimpan..." : "Saving...")
+                                  : lang === "id" ? "Simpan Konfigurasi" : "Save Configuration"}
                               </button>
                             </div>
                           );
@@ -8718,7 +8768,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                             fontWeight: 700,
                           }}
                         >
-                          Konfigurasi Belum Lengkap
+                          {lang === "id" ? "Konfigurasi Belum Lengkap" : "Incomplete Configuration"}
                         </h3>
                         <p
                           style={{
@@ -8728,9 +8778,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                             lineHeight: 1.5,
                           }}
                         >
-                          Ada konfigurasi yang masih belum diisi lengkap. Apakah
-                          Anda ingin melanjutkan menyunting atau menutup dan
-                          menghapus konfigurasi yang belum lengkap?
+                          {lang === "id"
+                            ? "Ada konfigurasi yang masih belum diisi lengkap. Apakah Anda ingin melanjutkan menyunting atau menutup dan menghapus konfigurasi yang belum lengkap?"
+                            : "There is an incomplete configuration. Do you want to continue editing, or close and discard the incomplete configuration?"}
                         </p>
                         <div style={{ display: "flex", gap: 12 }}>
                           <button
@@ -8748,7 +8798,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                             }}
                             className="hover-bg-slate"
                           >
-                            Tutup & Hapus
+                            {lang === "id" ? "Tutup & Hapus" : "Close & Discard"}
                           </button>
                           <button
                             onClick={() => setShowDiscardModal(false)}
@@ -8765,7 +8815,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                             }}
                             className="hover-scale"
                           >
-                            Lanjut Edit
+                            {lang === "id" ? "Lanjut Edit" : "Continue Editing"}
                           </button>
                         </div>
                       </motion.div>
@@ -8865,7 +8915,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                       <div
                         style={{ fontSize: 13, color: "rgba(44,32,22,0.5)" }}
                       >
-                        Silakan hubungkan akun di pengaturan terlebih dahulu.
+                        {lang === "id" ? "Silakan hubungkan akun di pengaturan terlebih dahulu." : "Please connect your account in settings first."}
                       </div>
                     ) : (
                       PLATFORMS.filter(

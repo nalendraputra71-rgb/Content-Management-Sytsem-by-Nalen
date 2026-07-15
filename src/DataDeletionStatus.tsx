@@ -1,8 +1,10 @@
+import { useI18n } from "./i18n";
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { CheckCircle2 } from "lucide-react";
 
 export function DataDeletionStatus() {
+  const { lang } = useI18n();
   const [code, setCode] = useState("");
 
   useEffect(() => {
@@ -28,7 +30,7 @@ export function DataDeletionStatus() {
         </p>
         <div className="bg-gray-50 p-4 rounded-xl border mb-6 text-left">
           <p className="text-xs text-gray-500 mb-1 uppercase tracking-wider font-semibold">Kode Konfirmasi</p>
-          <p className="font-mono font-medium text-lg text-gray-900">{code || "Tidak ada kode"}</p>
+          <p className="font-mono font-medium text-lg text-gray-900">{code || (lang === "id" ? "Tidak ada kode" : "No code")}</p>
         </div>
         <p className="text-xs text-gray-500 mb-8">
           Data yang berkaitan dengan akun Facebook/Meta Anda akan dihapus sepenuhnya dari sistem kami sesuai dengan kebijakan privasi.

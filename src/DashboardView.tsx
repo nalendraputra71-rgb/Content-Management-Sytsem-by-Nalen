@@ -1,3 +1,4 @@
+import { useI18n } from "./i18n";
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { 
   motion, 
@@ -58,6 +59,7 @@ const DEFAULT_LAYOUT: LayoutItem[] = [
 ];
 
 export function DashboardView({ user, profile, activeWorkspace, content, theme, setTab, sidebarOpen, setSidebarOpen, openEdit, openAdd }: any) {
+  const { lang } = useI18n();
   const [isEditing, setIsEditing] = useState(false);
   const [layout, setLayout] = useState<LayoutItem[]>(DEFAULT_LAYOUT);
   const navigate = useNavigate();
@@ -66,8 +68,16 @@ export function DashboardView({ user, profile, activeWorkspace, content, theme, 
     goals: { posts: 20, views: 10000, engagement: 1000, er: 5 }
   });
   const [todos, setTodos] = useState<any[]>([]);
-  const [weather, setWeather] = useState<any>({ temp: "--", desc: "Memuat info...", city: "Mencari lokasi..." });
-  const [trends, setTrends] = useState<string[]>(["Cara viral hari ini", "Content strategy", "Trending audio", "Tips FYP TikTok"]);
+  const [weather, setWeather] = useState<any>({ 
+    temp: "--", 
+    desc: lang === "id" ? "Memuat info..." : "Loading info...", 
+    city: lang === "id" ? "Mencari lokasi..." : "Locating..." 
+  });
+  const [trends, setTrends] = useState<string[]>(
+    lang === "id" 
+      ? ["Cara viral hari ini", "Content strategy", "Trending audio", "Tips FYP TikTok"]
+      : ["How to go viral today", "Content strategy", "Trending audio", "TikTok FYP Tips"]
+  );
   const [trendGeo, setTrendGeo] = useState<string>("ID");
   const [loading, setLoading] = useState(true);
   const [sharedBriefs, setSharedBriefs] = useState<any[]>([]);
@@ -102,19 +112,19 @@ export function DashboardView({ user, profile, activeWorkspace, content, theme, 
         if (!data?.current_weather) throw new Error("No current_weather data found");
         
         // Reverse geocoding for city
-        let city = "Lokasi Tidak Diketahui";
+        let city = lang === "id" ? "Lokasi Tidak Diketahui" : "Unknown Location";
         try {
           const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`);
           if (geoRes.ok) {
             const geoData = await geoRes.json();
-            city = geoData.address?.city || geoData.address?.town || geoData.address?.village || geoData.address?.county || "Lokasi Anda";
+            city = geoData.address?.city || geoData.address?.town || geoData.address?.village || geoData.address?.county || (lang === "id" ? "Lokasi Anda" : "Your Location");
           }
         } catch(e) {}
 
-        setWeather({ temp: data.current_weather.temperature, desc: "Cerah & Berawan", city });
+        setWeather({ temp: data.current_weather.temperature, desc: lang === "id" ? "Cerah & Berawan" : "Partly Cloudy", city });
       } catch (e) {
         // Fallback gracefully without console.error (which triggers health check alerts)
-        setWeather({ temp: 28, desc: "Cerah & Berawan", city: "Jakarta" });
+        setWeather({ temp: 28, desc: lang === "id" ? "Cerah & Berawan" : "Partly Cloudy", city: "Jakarta" });
       }
     };
     if (navigator.geolocation) {
@@ -309,16 +319,16 @@ export function DashboardView({ user, profile, activeWorkspace, content, theme, 
                <AnimatePresence>
                  {clockMenu && (
                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} style={{ position: "absolute", top: "100%", right: 0, marginTop: 12, background: "rgba(255,255,255,0.85)", backdropFilter: "none", WebkitBackdropFilter: "none", padding: 16, borderRadius: 16, boxShadow: "0 10px 40px rgba(0,0,0,0.15)", border: "1px solid rgba(255,255,255,0.7)", minWidth: 200, zIndex: 100 }}>
-                     <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(0,0,0,0.4)", textTransform: "uppercase", marginBottom: 12 }}>Tampilan Jam</div>
+                     <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(0,0,0,0.4)", textTransform: "uppercase", marginBottom: 12 }}>{lang === "id" ? "Tampilan Jam" : "Clock Display"}</div>
                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                       <button onClick={() => { updateConfig("clock", { ...clockSettings, type: "digital" }); setClockMenu(false); }} style={{ ...B(clockSettings.type === "digital", theme.primary), padding: "8px 12px", fontSize: 13 }}>Jam Digital</button>
-                       <button onClick={() => { updateConfig("clock", { ...clockSettings, type: "analog" }); setClockMenu(false); }} style={{ ...B(clockSettings.type === "analog", theme.primary), padding: "8px 12px", fontSize: 13 }}>Jam Analog</button>
+                       <button onClick={() => { updateConfig("clock", { ...clockSettings, type: "digital" }); setClockMenu(false); }} style={{ ...B(clockSettings.type === "digital", theme.primary), padding: "8px 12px", fontSize: 13 }}>{lang === "id" ? "Jam Digital" : "Digital Clock"}</button>
+                       <button onClick={() => { updateConfig("clock", { ...clockSettings, type: "analog" }); setClockMenu(false); }} style={{ ...B(clockSettings.type === "analog", theme.primary), padding: "8px 12px", fontSize: 13 }}>{lang === "id" ? "Jam Analog" : "Analog Clock"}</button>
                      </div>
                      {clockSettings.type === "digital" && (
                        <>
-                         <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(0,0,0,0.4)", textTransform: "uppercase", margin: "16px 0 12px 0" }}>Format Waktu</div>
+                         <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(0,0,0,0.4)", textTransform: "uppercase", margin: "16px 0 12px 0" }}>{lang === "id" ? "Format Waktu" : "Time Format"}</div>
                          <div style={{ display: "flex", gap: 8 }}>
-                           <button onClick={() => { updateConfig("clock", { ...clockSettings, format: 24 }); setClockMenu(false); }} style={{ ...B(clockSettings.format === 24, theme.primary), flex: 1, padding: "8px 0", fontSize: 13 }}>24 Jam</button>
+                           <button onClick={() => { updateConfig("clock", { ...clockSettings, format: 24 }); setClockMenu(false); }} style={{ ...B(clockSettings.format === 24, theme.primary), flex: 1, padding: "8px 0", fontSize: 13 }}>{lang === "id" ? "24 Jam" : "24 Hour"}</button>
                            <button onClick={() => { updateConfig("clock", { ...clockSettings, format: 12 }); setClockMenu(false); }} style={{ ...B(clockSettings.format === 12, theme.primary), flex: 1, padding: "8px 0", fontSize: 13 }}>AM/PM</button>
                          </div>
                        </>
@@ -334,7 +344,7 @@ export function DashboardView({ user, profile, activeWorkspace, content, theme, 
              style={{ ...B(isEditing, isEditing ? "var(--theme-primary)" : "#2C2016"), borderRadius: 12, height: 32, padding: "0 16px", fontSize: 12 }}
              className="hover-scale"
            >
-             {isEditing ? <><Save size={14} /> Selesai</> : <><Layout size={14} /> Atur Widget</>}
+             {isEditing ? <><Save size={14} /> {lang === "id" ? "Selesai" : "Done"}</> : <><Layout size={14} /> {lang === "id" ? "Atur Widget" : "Manage Widgets"}</>}
            </button>
         </div>
       </div>
@@ -426,13 +436,13 @@ export function DashboardView({ user, profile, activeWorkspace, content, theme, 
           </div>
           <div>
             <h2 style={{ fontSize: 20, fontWeight: 800, color: "#111827", margin: 0, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Shared With Me</h2>
-            <p style={{ fontSize: 12, color: "rgba(0,0,0,0.5)", margin: 0 }}>Brief konten kreatif yang dibagikan khusus untuk Anda oleh rekan kreator Hubify</p>
+            <p style={{ fontSize: 12, color: "rgba(0,0,0,0.5)", margin: 0 }}>{lang === "id" ? "Brief konten kreatif yang dibagikan khusus untuk Anda oleh rekan kreator Hubify" : "Creative content briefs shared specially for you by fellow Hubify creators"}</p>
           </div>
         </div>
 
         {sharedLoading ? (
           <div style={{ padding: "40px", textAlign: "center", color: "rgba(0,0,0,0.3)", fontSize: 13 }}>
-            Memuat brief bersama...
+            {lang === "id" ? "Memuat brief bersama..." : "Loading shared briefs..."}
           </div>
         ) : sharedBriefs.length === 0 ? (
           <div style={{
@@ -447,9 +457,11 @@ export function DashboardView({ user, profile, activeWorkspace, content, theme, 
             gap: 8
           }}>
             <div style={{ fontSize: 24 }}>📂</div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "#111827" }}>Belum ada brief yang dibagikan kepada Anda</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "#111827" }}>{lang === "id" ? "Belum ada brief yang dibagikan kepada Anda" : "No briefs shared with you yet"}</div>
             <div style={{ fontSize: 12, color: "rgba(0,0,0,0.4)", maxWidth: 440 }}>
-              Jika rekan tim Anda membagikan draft brief konten kreatif mereka dengan email atau username Anda, brief tersebut akan otomatis muncul di sini.
+              {lang === "id"
+                ? "Jika rekan tim Anda membagikan draft brief konten kreatif mereka dengan email atau username Anda, brief tersebut akan otomatis muncul di sini."
+                : "If your teammates share their creative content brief drafts with your email or username, they will automatically appear here."}
             </div>
           </div>
         ) : (
@@ -509,7 +521,7 @@ export function DashboardView({ user, profile, activeWorkspace, content, theme, 
                   </div>
 
                   <h3 style={{ fontSize: 15, fontWeight: 800, color: "#111827", margin: "0 0 6px 0", lineHeight: 1.3 }}>
-                    {b.title || "Brief Tanpa Judul"}
+                    {b.title || (lang === "id" ? "Brief Tanpa Judul" : "Untitled Brief")}
                   </h3>
                   
                   <p style={{
@@ -523,7 +535,7 @@ export function DashboardView({ user, profile, activeWorkspace, content, theme, 
                     overflow: "hidden",
                     flex: 1
                   }}>
-                    {b.objective || "Tidak ada deskripsi singkat."}
+                    {b.objective || (lang === "id" ? "Tidak ada deskripsi singkat." : "No short description.")}
                   </p>
 
                   <div style={{
@@ -540,16 +552,16 @@ export function DashboardView({ user, profile, activeWorkspace, content, theme, 
                       </div>
                       <div style={{ overflow: "hidden" }}>
                         <div style={{ fontSize: 10, fontWeight: 700, color: "#374151", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                          {b.ownerName || "Rekan Kreator"}
+                          {b.ownerName || (lang === "id" ? "Rekan Kreator" : "Fellow Creator")}
                         </div>
                         <div style={{ fontSize: 8, color: "rgba(0,0,0,0.4)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginTop: -1 }}>
-                          {b.ownerEmail || "@pengirim"}
+                          {b.ownerEmail || (lang === "id" ? "@pengirim" : "@sender")}
                         </div>
                       </div>
                     </div>
 
                     <div style={{ display: "flex", alignItems: "center", gap: 4, color: "var(--theme-primary)", fontSize: 11, fontWeight: 800 }}>
-                      <span>Buka</span>
+                      <span>{lang === "id" ? "Buka" : "Open"}</span>
                       <ArrowRight size={12} />
                     </div>
                   </div>
@@ -566,22 +578,23 @@ export function DashboardView({ user, profile, activeWorkspace, content, theme, 
 // --- TOP LEVEL COMPONENTS ---
 
 function GreetingSection({ profile, theme, trends = ["Cara viral di TikTok hari ini", "AI untuk Content Creator", "Ide konten Instagram kreatif", "Tips jualan di e-commerce", "Trend warna pastel", "Outfit inspirasi minggu ini"], trendGeo, onTrendGeoChange }: any) {
+  const { lang } = useI18n();
   const [hour, setHour] = useState(() => new Date().getHours());
   useEffect(() => {
     const t = setInterval(() => setHour(new Date().getHours()), 60000);
     return () => clearInterval(t);
   }, []);
 
-  let greeting = "Selamat Malam";
+  let greeting = (lang === "id" ? "Selamat Malam" : "Good Evening");
   let greetingIcon = "🌙";
   if (hour >= 5 && hour < 11) {
-    greeting = "Selamat Pagi";
+    greeting = (lang === "id" ? "Selamat Pagi" : "Good Morning");
     greetingIcon = "🌅";
   } else if (hour >= 11 && hour < 15) {
-    greeting = "Selamat Siang";
+    greeting = (lang === "id" ? "Selamat Siang" : "Good Afternoon");
     greetingIcon = "☀️";
   } else if (hour >= 15 && hour < 18) {
-    greeting = "Selamat Sore";
+    greeting = (lang === "id" ? "Selamat Sore" : "Good Afternoon");
     greetingIcon = "🌇";
   }
 
@@ -597,7 +610,7 @@ function GreetingSection({ profile, theme, trends = ["Cara viral di TikTok hari 
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 24 }}>
         <h1 style={{ fontSize: 48, fontWeight: 900, color: "#2C2016", letterSpacing: "-1.5px", margin: 0, lineHeight: 1.1 }}>
           {greeting},<br/>
-          <span style={{ color: theme.primary }}>{profile?.nickname || profile?.fullName?.split(" ")[0] || "Kreator"}! {greetingIcon}</span>
+          <span style={{ color: theme.primary }}>{profile?.nickname || profile?.fullName?.split(" ")[0] || (lang === "id" ? "Kreator" : "Creator")}! {greetingIcon}</span>
         </h1>
       </div>
 
@@ -657,6 +670,7 @@ function GreetingSection({ profile, theme, trends = ["Cara viral di TikTok hari 
 }
 
 function MetricsRow({ content, config, updateConfig, theme }: any) {
+  const { lang } = useI18n();
   const [showGoals, setShowGoals] = useState(false);
   const [customGoals, setCustomGoals] = useState<any[]>(config.customGoals || []);
 
@@ -699,19 +713,19 @@ function MetricsRow({ content, config, updateConfig, theme }: any) {
   };
 
   const SOURCE_OPTIONS = [
-    { id: "totalPosts", label: "Konten Publik", icon: "CheckCircle2" },
-    { id: "pendingPosts", label: "Konten Draft", icon: "Edit3" },
-    { id: "views", label: "Total Views", icon: "Eye" },
-    { id: "reach", label: "Total Reach", icon: "Users" },
-    { id: "engSum", label: "Total Engagement", icon: "Zap" },
-    { id: "engRate", label: "Engagement Rate (%)", icon: "TrendingUp" },
-    { id: "likes", label: "Total Likes", icon: "Heart" },
-    { id: "comments", label: "Total Comments", icon: "MessageSquare" },
-    { id: "shares", label: "Total Shares", icon: "Share2" },
-    { id: "saves", label: "Total Saves", icon: "Bookmark" },
-    { id: "reposts", label: "Total Reposts", icon: "Repeat" },
-    { id: "clicks", label: "Link Clicks", icon: "MousePointerClick" },
-    { id: "conversions", label: "Total Conversions", icon: "Award" }
+    { id: "totalPosts", label: lang === "id" ? "Konten Publik" : "Published Posts", icon: "CheckCircle2" },
+    { id: "pendingPosts", label: lang === "id" ? "Konten Draft" : "Draft Posts", icon: "Edit3" },
+    { id: "views", label: lang === "id" ? "Total Views" : "Total Views", icon: "Eye" },
+    { id: "reach", label: lang === "id" ? "Total Reach" : "Total Reach", icon: "Users" },
+    { id: "engSum", label: lang === "id" ? "Total Engagement" : "Total Engagement", icon: "Zap" },
+    { id: "engRate", label: lang === "id" ? "Engagement Rate (%)" : "Engagement Rate (%)", icon: "TrendingUp" },
+    { id: "likes", label: lang === "id" ? "Total Likes" : "Total Likes", icon: "Heart" },
+    { id: "comments", label: lang === "id" ? "Total Comments" : "Total Comments", icon: "MessageSquare" },
+    { id: "shares", label: lang === "id" ? "Total Shares" : "Total Shares", icon: "Share2" },
+    { id: "saves", label: lang === "id" ? "Total Saves" : "Total Saves", icon: "Bookmark" },
+    { id: "reposts", label: lang === "id" ? "Total Reposts" : "Total Reposts", icon: "Repeat" },
+    { id: "clicks", label: lang === "id" ? "Link Clicks" : "Link Clicks", icon: "MousePointerClick" },
+    { id: "conversions", label: lang === "id" ? "Total Conversions" : "Total Conversions", icon: "Award" }
   ];
 
   // Default Standard Metrics Array (used if config.customGoals is empty/undefined)
@@ -750,7 +764,7 @@ function MetricsRow({ content, config, updateConfig, theme }: any) {
   };
 
   const addGoal = () => {
-    setCustomGoals([...customGoals, { id: "g_"+Date.now(), label: "Total Views (Semua)", source: "views", current: 0, target: 100, icon: "Eye", isPerc: false }]);
+    setCustomGoals([...customGoals, { id: "g_"+Date.now(), label: lang === "id" ? "Total Views (Semua)" : "Total Views (All)", source: "views", current: 0, target: 100, icon: "Eye", isPerc: false }]);
   };
 
   const removeGoal = (id: string) => {
@@ -764,7 +778,7 @@ function MetricsRow({ content, config, updateConfig, theme }: any) {
   return (
     <div id="dashboard-monthly-goals" style={{ background: "var(--theme-gradient)", padding: 24, borderRadius: 24, border: "1px solid rgba(0,0,0,0.03)", boxShadow: "0 10px 30px rgba(0,0,0,0.1)" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-        <h2 style={{ fontSize: 16, fontWeight: 800, color: "rgba(255,255,255,0.9)", letterSpacing: 0.5, margin: 0, textTransform: "uppercase" }}>Goal Metrics Tiap Bulannya</h2>
+        <h2 style={{ fontSize: 16, fontWeight: 800, color: "rgba(255,255,255,0.9)", letterSpacing: 0.5, margin: 0, textTransform: "uppercase" }}>{lang === "id" ? "Goal Metrics Tiap Bulannya" : "Monthly Goal Metrics"}</h2>
         <button 
           onClick={() => {
             if (!config.customGoals || config.customGoals.length === 0) {
@@ -777,7 +791,7 @@ function MetricsRow({ content, config, updateConfig, theme }: any) {
           className="hover-scale"
           style={{ background: "rgba(255,255,255,0.2)", color: "white", border: "none", fontSize: 12, padding: "6px 16px", borderRadius: 12, height: 32, display: "flex", alignItems: "center", gap: 6, fontWeight: 700, cursor: "pointer" }}
         >
-          <Edit3 size={14} /> Kustomisasi Goals
+          <Edit3 size={14} /> {lang === "id" ? "Kustomisasi Goals" : "Customize Goals"}
         </button>
       </div>
 
@@ -798,8 +812,8 @@ function MetricsRow({ content, config, updateConfig, theme }: any) {
              </div>
              <div style={{ marginTop: 12, fontSize: 12, fontWeight: 600, color: m.current >= m.target ? "#A7F3D0" : "#FECACA" }}>
                 {m.current >= m.target 
-                  ? "Tercapai! ✨" 
-                  : `Kurang ${(m.target - m.current).toLocaleString()} lagi`}
+                  ? (lang === "id" ? "Tercapai! ✨" : "Achieved! ✨")
+                  : (lang === "id" ? `Kurang ${(m.target - m.current).toLocaleString()} lagi` : `${(m.target - m.current).toLocaleString()} remaining`)}
              </div>
           </div>
         ))}
@@ -808,7 +822,7 @@ function MetricsRow({ content, config, updateConfig, theme }: any) {
       {showGoals && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <div style={{ background: "#FFFFFF", padding: 32, borderRadius: 24, border: "1px solid rgba(0,0,0,0.05)", width: 800, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 30px 60px rgba(0,0,0,0.15)" }}>
-             <h3 style={{ fontSize: 20, fontWeight: 800, marginBottom: 24 }}>Kustomisasi Goal Bulanan</h3>
+             <h3 style={{ fontSize: 20, fontWeight: 800, marginBottom: 24 }}>{lang === "id" ? "Kustomisasi Goal Bulanan" : "Monthly Goal Customization"}</h3>
              
              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                {customGoals.map((g, i) => (
@@ -860,18 +874,18 @@ function MetricsRow({ content, config, updateConfig, theme }: any) {
                        }} style={{ ...I({}), padding:"12px 14px 12px 52px", width: "100%", boxSizing: "border-box", fontSize: 13, fontWeight: 700, height: 44, color: "var(--theme-primary)" }} />
                     </div>
 
-                    <button onClick={() => removeGoal(g.id)} className="hover-scale" style={{ width: 44, height: 44, borderRadius: 12, border: "none", background: "rgba(225,29,72,0.1)", color: "#E11D48", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }} title="Hapus Goal">
+                    <button onClick={() => removeGoal(g.id)} className="hover-scale" style={{ width: 44, height: 44, borderRadius: 12, border: "none", background: "rgba(225,29,72,0.1)", color: "#E11D48", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }} title={lang === "id" ? "Hapus Goal" : "Delete Goal"}>
                        <Trash2 size={18} />
                     </button>
                  </div>
                ))}
                <button onClick={addGoal} style={{ padding: 16, borderRadius: 16, border: "2px dashed #DDD", background: "transparent", color: "#666", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-                 <Plus size={16} /> Tambah Goal Baru
+                 <Plus size={16} /> {lang === "id" ? "Tambah Goal Baru" : "Add New Goal"}
                </button>
              </div>
 
              <div style={{ display: "flex", gap: 12, marginTop: 24 }}>
-                <button onClick={()=>setShowGoals(false)} style={{ ...B(false), flex: 1, padding: 12 }}>Batal</button>
+                <button onClick={()=>setShowGoals(false)} style={{ ...B(false), flex: 1, padding: 12 }}>{lang === "id" ? "Batal" : "Cancel"}</button>
                 <button 
                   onClick={()=>{
                     updateConfig("customGoals", customGoals); 
@@ -879,7 +893,7 @@ function MetricsRow({ content, config, updateConfig, theme }: any) {
                   }} 
                   style={{ ...B(true, theme.primary), flex: 1, padding: 12 }}
                 >
-                  Simpan Goal
+                  {lang === "id" ? "Simpan Goal" : "Save Goals"}
                 </button>
              </div>
           </div>
@@ -999,6 +1013,7 @@ function DashboardWidget({ item, isEditing, onResize, ...props }: any) {
 // --- SPECIFIC WIDGETS REDESIGNED ---
 
 function TodoWidget({ todos, activeWorkspace, user, content, theme, openEdit }: any) {
+  const { lang } = useI18n();
   const [tab, setTab] = useState<"active" | "history">("active");
   const [addingTodo, setAddingTodo] = useState(false);
   const [newTodo, setNewTodo] = useState("");
@@ -1121,7 +1136,7 @@ function TodoWidget({ todos, activeWorkspace, user, content, theme, openEdit }: 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid rgba(0,0,0,0.05)", marginBottom: "clamp(8px, 4cqh, 16px)" }}>
         <div style={{ display: "flex", gap: "clamp(8px, 2cqw, 20px)" }}>
           <button onClick={() => setTab("active")} style={{ ...TAB(tab === "active"), fontSize: "clamp(12px, 5cqw, 15px)", padding: "clamp(6px, 2cqh, 10px) 0" }}>To Do List</button>
-          <button onClick={() => setTab("history")} style={{ ...TAB(tab === "history"), fontSize: "clamp(12px, 5cqw, 15px)", padding: "clamp(6px, 2cqh, 10px) 0" }}>Riwayat</button>
+          <button onClick={() => setTab("history")} style={{ ...TAB(tab === "history"), fontSize: "clamp(12px, 5cqw, 15px)", padding: "clamp(6px, 2cqh, 10px) 0" }}>{lang === "id" ? "Riwayat" : "History"}</button>
         </div>
         <button 
           onClick={() => setAddingTodo(!addingTodo)}
@@ -1139,7 +1154,7 @@ function TodoWidget({ todos, activeWorkspace, user, content, theme, openEdit }: 
               <div style={{ background: "rgba(255,255,255,0.5)", padding: "clamp(10px, 4cqw, 16px)", borderRadius: 16, border: "1px solid rgba(0,0,0,0.05)" }}>
                 <input 
                   value={newTodo} onChange={(e)=>setNewTodo(e.target.value)}
-                  placeholder="Tugas baru..."
+                  placeholder={lang === "id" ? "Tugas baru..." : "New task..."}
                   autoFocus
                   style={I({ border: "none", background: "white", padding: "clamp(8px, 3cqh, 12px)", borderRadius: 12, marginBottom: 12, fontSize: "clamp(12px, 5cqw, 14px)" })}
                 />
@@ -1150,7 +1165,7 @@ function TodoWidget({ todos, activeWorkspace, user, content, theme, openEdit }: 
                      onChange={(e)=>setNewTodoDate(e.target.value)}
                      style={I({ padding: "clamp(6px, 2cqh, 8px) 12px", background: "rgba(255,255,255,0.6)", border: "none", borderRadius: 12, flex: 1, fontSize: "clamp(11px, 4cqw, 13px)" })}
                    />
-                   <button onClick={addTodo} style={{ ...B(true, theme.primary), padding: "clamp(6px, 2cqh, 8px) clamp(10px, 4cqw, 16px)", borderRadius: 12, fontSize: "clamp(11px, 4cqw, 13px)" }}>Simpan</button>
+                   <button onClick={addTodo} style={{ ...B(true, theme.primary), padding: "clamp(6px, 2cqh, 8px) clamp(10px, 4cqw, 16px)", borderRadius: 12, fontSize: "clamp(11px, 4cqw, 13px)" }}>{lang === "id" ? "Simpan" : "Save"}</button>
                 </div>
               </div>
             </motion.div>
@@ -1164,7 +1179,7 @@ function TodoWidget({ todos, activeWorkspace, user, content, theme, openEdit }: 
               <div style={{ marginBottom: "clamp(12px, 5cqh, 24px)" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: "clamp(8px, 4cqh, 16px)" }}>
                   <div style={{ flex: 1, height: 1, background: "rgba(0,0,0,0.05)" }} />
-                  <div style={{ fontSize: "clamp(10px, 3.5cqw, 12px)", fontWeight: 800, color: "#9C2B4E", textTransform: "uppercase" }}>Lewat TenggatWaktu</div>
+                  <div style={{ fontSize: "clamp(10px, 3.5cqw, 12px)", fontWeight: 800, color: "#9C2B4E", textTransform: "uppercase" }}>{lang === "id" ? "Lewat TenggatWaktu" : "Overdue"}</div>
                   <div style={{ flex: 1, height: 1, background: "rgba(0,0,0,0.05)" }} />
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
@@ -1179,12 +1194,12 @@ function TodoWidget({ todos, activeWorkspace, user, content, theme, openEdit }: 
             <div style={{ marginBottom: "clamp(12px, 5cqh, 24px)" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: "clamp(8px, 4cqh, 16px)" }}>
                 <div style={{ flex: 1, height: 1, background: "rgba(0,0,0,0.05)" }} />
-                <div style={{ fontSize: "clamp(10px, 3.5cqw, 12px)", fontWeight: 800, color: "rgba(0,0,0,0.4)", textTransform: "uppercase" }}>Hari Ini</div>
+                <div style={{ fontSize: "clamp(10px, 3.5cqw, 12px)", fontWeight: 800, color: "rgba(0,0,0,0.4)", textTransform: "uppercase" }}>{lang === "id" ? "Hari Ini" : "Today"}</div>
                 <div style={{ flex: 1, height: 1, background: "rgba(0,0,0,0.05)" }} />
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
                 <AnimatePresence>
-                  {activeToday.length === 0 && completedToday.length === 0 && <div style={{ fontSize: "clamp(11px, 4cqw, 14px)", color: "rgba(0,0,0,0.3)", textAlign: "center", padding: 12 }}>Kosong</div>}
+                  {activeToday.length === 0 && completedToday.length === 0 && <div style={{ fontSize: "clamp(11px, 4cqw, 14px)", color: "rgba(0,0,0,0.3)", textAlign: "center", padding: 12 }}>{lang === "id" ? "Kosong" : "Empty"}</div>}
                   {activeToday.map(t => <TodoItem key={t.id} todo={t} onToggle={toggleTodo} onDelete={deleteTodo} onRename={renameTodo} theme={theme} onOpenBrief={handleOpenBrief} />)}
                   {completedToday.map(t => <TodoItem key={t.id} todo={t} onToggle={toggleTodo} onDelete={deleteTodo} onRename={renameTodo} theme={theme} onOpenBrief={handleOpenBrief} />)}
                 </AnimatePresence>
@@ -1195,12 +1210,12 @@ function TodoWidget({ todos, activeWorkspace, user, content, theme, openEdit }: 
             <div style={{ marginBottom: "clamp(12px, 5cqh, 24px)" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: "clamp(8px, 4cqh, 16px)" }}>
                 <div style={{ flex: 1, height: 1, background: "rgba(0,0,0,0.05)" }} />
-                <div style={{ fontSize: "clamp(10px, 3.5cqw, 12px)", fontWeight: 800, color: "rgba(0,0,0,0.4)", textTransform: "uppercase" }}>Besok</div>
+                <div style={{ fontSize: "clamp(10px, 3.5cqw, 12px)", fontWeight: 800, color: "rgba(0,0,0,0.4)", textTransform: "uppercase" }}>{lang === "id" ? "Besok" : "Tomorrow"}</div>
                 <div style={{ flex: 1, height: 1, background: "rgba(0,0,0,0.05)" }} />
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
                 <AnimatePresence>
-                  {activeTomorrow.length === 0 && completedTomorrow.length === 0 && <div style={{ fontSize: "clamp(11px, 4cqw, 14px)", color: "rgba(0,0,0,0.3)", textAlign: "center", padding: 12 }}>Kosong</div>}
+                  {activeTomorrow.length === 0 && completedTomorrow.length === 0 && <div style={{ fontSize: "clamp(11px, 4cqw, 14px)", color: "rgba(0,0,0,0.3)", textAlign: "center", padding: 12 }}>{lang === "id" ? "Kosong" : "Empty"}</div>}
                   {activeTomorrow.map(t => <TodoItem key={t.id} todo={t} onToggle={toggleTodo} onDelete={deleteTodo} onRename={renameTodo} theme={theme} onOpenBrief={handleOpenBrief} />)}
                   {completedTomorrow.map(t => <TodoItem key={t.id} todo={t} onToggle={toggleTodo} onDelete={deleteTodo} onRename={renameTodo} theme={theme} onOpenBrief={handleOpenBrief} />)}
                 </AnimatePresence>
@@ -1214,12 +1229,12 @@ function TodoWidget({ todos, activeWorkspace, user, content, theme, openEdit }: 
         {tab === "history" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <div style={{ display: "flex", gap: "clamp(4px, 2cqw, 12px)", alignItems: "center", background: "rgba(255,255,255,0.5)", padding: "clamp(8px, 3cqw, 12px)", borderRadius: 16, flexWrap: "wrap" }}>
-              <div style={{ fontSize: "clamp(10px, 4cqw, 13px)", fontWeight: 700, color: "rgba(0,0,0,0.6)", width: "100%" }}>Filter Rentang Tanggal:</div>
-              <input type="date" value={histStart} onChange={(e)=>setHistStart(e.target.value)} style={I({fontSize: "clamp(10px, 4cqw, 13px)", padding: "clamp(4px, 2cqw, 8px)"})} title="Tanggal Mulai" />
+              <div style={{ fontSize: "clamp(10px, 4cqw, 13px)", fontWeight: 700, color: "rgba(0,0,0,0.6)", width: "100%" }}>{lang === "id" ? "Filter Rentang Tanggal:" : "Filter Date Range:"}</div>
+              <input type="date" value={histStart} onChange={(e)=>setHistStart(e.target.value)} style={I({fontSize: "clamp(10px, 4cqw, 13px)", padding: "clamp(4px, 2cqw, 8px)"})} title={lang === "id" ? "Tanggal Mulai" : "Start Date"} />
               <span>-</span>
-              <input type="date" value={histEnd} onChange={(e)=>setHistEnd(e.target.value)} style={I({fontSize: "clamp(10px, 4cqw, 13px)", padding: "clamp(4px, 2cqw, 8px)"})} title="Tanggal Selesai" />
+              <input type="date" value={histEnd} onChange={(e)=>setHistEnd(e.target.value)} style={I({fontSize: "clamp(10px, 4cqw, 13px)", padding: "clamp(4px, 2cqw, 8px)"})} title={lang === "id" ? "Tanggal Selesai" : "End Date"} />
             </div>
-            {completedTodos.length === 0 && <div style={{ textAlign: "center", padding: 20, color: "rgba(0,0,0,0.3)", fontSize: "clamp(11px, 4cqw, 14px)" }}>Belum ada riwayat.</div>}
+            {completedTodos.length === 0 && <div style={{ textAlign: "center", padding: 20, color: "rgba(0,0,0,0.3)", fontSize: "clamp(11px, 4cqw, 14px)" }}>{lang === "id" ? "Belum ada riwayat." : "No history yet."}</div>}
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                <AnimatePresence>
                  {completedTodos.map(t => (
@@ -1237,6 +1252,7 @@ function TodoWidget({ todos, activeWorkspace, user, content, theme, openEdit }: 
 function TodoItem({ todo, onToggle, onRename, onDelete, theme, disableAnimation, onOpenBrief }: any) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(todo.text);
+  const { lang } = useI18n();
 
   const handleRename = () => {
     if (editValue.trim() && editValue.trim() !== todo.text) {
@@ -1306,7 +1322,7 @@ function TodoItem({ todo, onToggle, onRename, onDelete, theme, disableAnimation,
               lineHeight: 1.4 
             }}
             className={todo.isAutomated ? "hover:text-[var(--theme-primary)] hover:underline transition-all" : ""}
-            title={todo.isAutomated ? "Klik untuk membuka brief konten" : "Klik untuk mengubah nama tugas"}
+            title={todo.isAutomated ? (lang === "id" ? "Klik untuk membuka brief konten" : "Click to open content brief") : (lang === "id" ? "Klik untuk mengubah nama tugas" : "Click to rename task")}
           >
             {todo.text}
           </div>
@@ -1332,6 +1348,7 @@ function TodoItem({ todo, onToggle, onRename, onDelete, theme, disableAnimation,
 }
 
 function DailyProgressWidget({ todos, content, theme }: any) {
+  const { lang } = useI18n();
   const todayStr = new Date().toISOString().split("T")[0];
   
   const automatedContent = content.filter((c: any) => {
@@ -1376,11 +1393,11 @@ function DailyProgressWidget({ todos, content, theme }: any) {
         </svg>
         <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
           <div style={{ fontSize: "clamp(24px, 12cqw, 48px)", fontWeight: 900, color: "#2C2016", letterSpacing: "-2px" }}>{perc}%</div>
-          <div style={{ fontSize: "clamp(10px, 4cqw, 14px)", fontWeight: 700, color: "rgba(0,0,0,0.4)" }}>Selesai {displayCompleted}/{displayTotal}</div>
+          <div style={{ fontSize: "clamp(10px, 4cqw, 14px)", fontWeight: 700, color: "rgba(0,0,0,0.4)" }}>{lang === "id" ? "Selesai" : "Done"} {displayCompleted}/{displayTotal}</div>
         </div>
       </div>
       <div style={{ fontSize: "clamp(11px, 4cqw, 16px)", fontWeight: 800, color: perc >= 100 && total > 0 ? "#34A853" : "#2C2016", textAlign: "center", minHeight: 20 }}>
-        {total === 0 ? "Belum tugas." : perc >= 100 ? "Semua Tugas Selesai! 🎉" : "Terus semangat!"}
+        {total === 0 ? lang === "id" ? "Belum tugas." : "No tasks." : perc >= 100 ? lang === "id" ? "Semua Tugas Selesai! 🎉" : "All Tasks Done! 🎉" : lang === "id" ? "Terus semangat!" : "Keep it up!"}
       </div>
     </div>
   );
@@ -1391,12 +1408,18 @@ import { createPortal } from "react-dom";
 function StickyNoteWidget({ config, updateConfig, theme }: any) {
   const [showModal, setShowModal] = useState(false);
   const notes = config.stickyNotes || [];
+  const { lang } = useI18n();
   
-  const dummyNotes = [
+  const dummyNotes = lang === "id" ? [
     { id: "d1", text: "Briefing konten Tiktok besok jam 10 pagi", color: "#FFF59D" },
     { id: "d2", text: "Cek email brand partnership dari X", color: "#81D4FA" },
     { id: "d3", text: "Edit video tutorial makeup part 2", color: "#F48FB1" },
     { id: "d4", text: "Riset ide untuk hari Ibu", color: "#C5E1A5" }
+  ] : [
+    { id: "d1", text: "Tiktok content briefing tomorrow at 10 AM", color: "#FFF59D" },
+    { id: "d2", text: "Check brand partnership email from X", color: "#81D4FA" },
+    { id: "d3", text: "Edit makeup tutorial video part 2", color: "#F48FB1" },
+    { id: "d4", text: "Research ideas for Mother's Day", color: "#C5E1A5" }
   ];
 
   const displayNotes = notes.length > 0 ? notes : dummyNotes;
@@ -1409,7 +1432,7 @@ function StickyNoteWidget({ config, updateConfig, theme }: any) {
           <div style={{ fontSize: "clamp(10px, 4cqw, 14px)", fontWeight: 800, textTransform: "uppercase", whiteSpace: "nowrap" }}>Sticky Notes</div>
         </div>
         <button className="hover-scale" onClick={() => setShowModal(true)} style={{ background: theme.primary+"15", border: "none", color: theme.primary, cursor: "pointer", padding: "clamp(4px, 2cqh, 8px) clamp(8px, 3cqw, 12px)", borderRadius: 12, fontSize: "clamp(10px, 3.5cqw, 13px)", fontWeight: 800, whiteSpace: "nowrap" }}>
-           Buka Semua ({notes.length})
+           {lang === "id" ? `Buka Semua (${notes.length})` : `Open All (${notes.length})`}
         </button>
       </div>
       
@@ -1427,7 +1450,7 @@ function StickyNoteWidget({ config, updateConfig, theme }: any) {
                   }
                 }}
                 style={{ width: "100%", height: "100%", background: "transparent", border: "none", resize: "none", outline: "none", fontSize: "clamp(11px, 4cqw, 14px)", fontWeight: 600, color: "rgba(0,0,0,0.8)", lineHeight: 1.4 }}
-                placeholder="Pesan kosong..."
+                placeholder={lang === "id" ? "Pesan kosong..." : "Empty note..."}
               />
            </div>
          ))}
@@ -1448,6 +1471,7 @@ function StickyNoteWidget({ config, updateConfig, theme }: any) {
 function StickyNotesModal({ notes, updateConfig, onClose, theme }: any) {
   const colors = ["#FFF59D", "#FFCC80", "#FFAB91", "#F48FB1", "#CE93D8", "#B39DDB", "#90CAF9", "#81D4FA", "#80CBC4", "#C5E1A5"];
   const [showColorOptions, setShowColorOptions] = useState<{[id:string]:boolean}>({});
+  const { lang } = useI18n();
   
   const addNote = () => {
     if (notes.length >= 10) return;
@@ -1475,10 +1499,14 @@ function StickyNotesModal({ notes, updateConfig, onClose, theme }: any) {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
             <div>
               <h2 style={{ fontSize: 28, fontWeight: 900, marginBottom: 4 }}>Sticky Notes</h2>
-              <p style={{ fontSize: 13, color: "rgba(0,0,0,0.4)" }}>Catat ide dan reminder cepat ({notes.length}/10)</p>
+              <p style={{ fontSize: 13, color: "rgba(0,0,0,0.4)" }}>
+                {lang === "id" ? `Catat ide dan reminder cepat (${notes.length}/10)` : `Take quick notes and reminders (${notes.length}/10)`}
+              </p>
             </div>
             <div style={{ display: "flex", gap: 12 }}>
-              <button className="hover-scale" disabled={notes.length >= 10} onClick={addNote} style={{ ...B(true, theme.primary), padding: "12px 24px", borderRadius: 16, fontSize: 14, fontWeight: 800 }}>+ Tambah Note</button>
+              <button className="hover-scale" disabled={notes.length >= 10} onClick={addNote} style={{ ...B(true, theme.primary), padding: "12px 24px", borderRadius: 16, fontSize: 14, fontWeight: 800 }}>
+                {lang === "id" ? "+ Tambah Note" : "+ Add Note"}
+              </button>
               <button className="hover-scale" onClick={onClose} style={{ background: "rgba(0,0,0,0.05)", border: "none", cursor: "pointer", padding: 12, borderRadius: 16 }}><X size={24} /></button>
             </div>
           </div>
@@ -1488,7 +1516,7 @@ function StickyNotesModal({ notes, updateConfig, onClose, theme }: any) {
               {notes.map((n: any) => (
                 <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} key={n.id} style={{ background: n.color, borderRadius: 24, padding: 24, position: "relative", display: "flex", flexDirection: "column", boxShadow: "0 10px 30px rgba(0,0,0,0.08)", minHeight: 200 }}>
                    <div style={{ display: "flex", gap: 6, marginBottom: 16, flexWrap: "wrap", background: showColorOptions[n.id] ? "rgba(255,255,255,0.4)" : "transparent", padding: 6, borderRadius: 12, width: "max-content", alignItems: "center", transition: "all 0.2s" }}>
-                     <button onClick={() => setShowColorOptions(p => ({...p, [n.id]: !p[n.id]}))} style={{ width: 18, height: 18, borderRadius: "50%", background: n.color, border: "2px solid rgba(0,0,0,0.4)", cursor: "pointer", padding: 0 }} title="Ubah Warna" />
+                     <button onClick={() => setShowColorOptions(p => ({...p, [n.id]: !p[n.id]}))} style={{ width: 18, height: 18, borderRadius: "50%", background: n.color, border: "2px solid rgba(0,0,0,0.4)", cursor: "pointer", padding: 0 }} title={lang === "id" ? "Ubah Warna" : "Change Color"} />
                      {showColorOptions[n.id] && colors.filter(c => c !== n.color).map(c => (
                        <button key={c} onClick={() => changeColor(n.id, c)} style={{ width: 18, height: 18, borderRadius: "50%", background: c, border: "2px solid transparent", cursor: "pointer", padding: 0 }} />
                      ))}
@@ -1496,12 +1524,12 @@ function StickyNotesModal({ notes, updateConfig, onClose, theme }: any) {
                    <textarea 
                      value={n.text}
                      onChange={e => updateNote(n.id, e.target.value)}
-                     placeholder="Mulai mengetik ide kamu..."
+                     placeholder={lang === "id" ? "Mulai mengetik ide kamu..." : "Start typing your ideas..."}
                      style={{ flex: 1, width: "100%", background: "transparent", border: "none", resize: "none", outline: "none", fontSize: 16, fontWeight: 600, color: "rgba(0,0,0,0.8)", lineHeight: 1.5 }}
                    />
                    <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 12 }}>
                      <button onClick={() => deleteNote(n.id)} style={{ background: "rgba(0,0,0,0.1)", border: "none", borderRadius: 12, padding: "8px 16px", fontSize: 12, fontWeight: 800, cursor: "pointer", color: "rgba(0,0,0,0.6)" }}>
-                       Hapus Note
+                       {lang === "id" ? "Hapus Note" : "Delete Note"}
                      </button>
                    </div>
                 </motion.div>
@@ -1514,9 +1542,12 @@ function StickyNotesModal({ notes, updateConfig, onClose, theme }: any) {
 }
 
 function ShortcutWidget({ theme, setTab, navigate }: any) {
+  const { lang } = useI18n();
   return (
     <div style={{ padding: 0, height: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "clamp(8px, 4cqw, 16px)", flexDirection: "row", flexWrap: "wrap", alignContent: "center" }}>
-      <div style={{ fontSize: "clamp(10px, 3.5cqw, 13px)", fontWeight: 800, color: "rgba(0,0,0,0.3)", textTransform: "uppercase", whiteSpace: "nowrap", flexShrink: 0 }}>QUICK ACTION</div>
+      <div style={{ fontSize: "clamp(10px, 3.5cqw, 13px)", fontWeight: 800, color: "rgba(0,0,0,0.3)", textTransform: "uppercase", whiteSpace: "nowrap", flexShrink: 0 }}>
+        {lang === "id" ? "QUICK ACTION" : "QUICK ACTIONS"}
+      </div>
       
       <div style={{ display: "flex", gap: "clamp(8px, 2cqw, 12px)", flex: 1, justifyContent: "flex-end", height: "100%", alignItems: "center" }}>
         <button 
@@ -1524,21 +1555,21 @@ function ShortcutWidget({ theme, setTab, navigate }: any) {
           onClick={() => setTab("settings")}
           style={{ background: "rgba(255,255,255,0.5)", border: "1px solid rgba(0,0,0,0.05)", padding: "0 clamp(12px, 4cqw, 24px)", borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontSize: "clamp(11px, 4cqw, 13px)", fontWeight: 800, color: "#2C2016", cursor: "pointer", height: "clamp(40px, 15cqh, 56px)", flex: 1, whiteSpace: "nowrap" }}
         >
-          <Settings size={"clamp(14px, 5cqw, 16px)"} /> <span style={{display: "inline-block", overflow: "hidden", textOverflow: "ellipsis"}}>Pengaturan</span>
+          <Settings size={"clamp(14px, 5cqw, 16px)"} /> <span style={{display: "inline-block", overflow: "hidden", textOverflow: "ellipsis"}}>{lang === "id" ? "Pengaturan" : "Settings"}</span>
         </button>
         <button 
           className="hover-scale"
           onClick={() => navigate("/profile")}
           style={{ background: "rgba(255,255,255,0.5)", border: "1px solid rgba(0,0,0,0.05)", padding: "0 clamp(12px, 4cqw, 24px)", borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontSize: "clamp(11px, 4cqw, 13px)", fontWeight: 800, color: "#2C2016", cursor: "pointer", height: "clamp(40px, 15cqh, 56px)", flex: 1, whiteSpace: "nowrap" }}
         >
-          <UserIcon size={"clamp(14px, 5cqw, 16px)"} /> <span style={{display: "inline-block", overflow: "hidden", textOverflow: "ellipsis"}}>Profil</span>
+          <UserIcon size={"clamp(14px, 5cqw, 16px)"} /> <span style={{display: "inline-block", overflow: "hidden", textOverflow: "ellipsis"}}>{lang === "id" ? "Profil" : "Profile"}</span>
         </button>
         <button 
           className="hover-scale"
           style={{ ...B(true, theme.primary), padding: "0 clamp(12px, 4cqw, 24px)", borderRadius: 16, fontSize: "clamp(11px, 4cqw, 13px)", fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", gap: 10, border: "none", color: "white", cursor: "pointer", height: "clamp(40px, 15cqh, 56px)", flex: 1.5, boxShadow: `0 10px 30px ${theme.primary}25`, whiteSpace: "nowrap" }}
           onClick={() => window.dispatchEvent(new CustomEvent("openContentModal"))}
         >
-          <Sparkles size={"clamp(14px, 5cqw, 18px)"} /> <span style={{display: "inline-block", overflow: "hidden", textOverflow: "ellipsis"}}>Buat Konten</span>
+          <Sparkles size={"clamp(14px, 5cqw, 18px)"} /> <span style={{display: "inline-block", overflow: "hidden", textOverflow: "ellipsis"}}>{lang === "id" ? "Buat Konten" : "Create Content"}</span>
         </button>
       </div>
     </div>
@@ -1547,6 +1578,7 @@ function ShortcutWidget({ theme, setTab, navigate }: any) {
 
 // --- ISOLATED LIVE CLOCK COMPONENT FOR HIGH PERFORMANCE ---
 function LiveClock({ config, updateConfig, theme }: any) {
+  const { lang } = useI18n();
   const [time, setTime] = useState(new Date());
   const [clockMenu, setClockMenu] = useState(false);
 
@@ -1593,16 +1625,16 @@ function LiveClock({ config, updateConfig, theme }: any) {
       <AnimatePresence>
         {clockMenu && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} style={{ position: "absolute", top: "100%", right: 0, marginTop: 12, background: "rgba(255,255,255,0.85)", backdropFilter: "none", WebkitBackdropFilter: "none", padding: 16, borderRadius: 16, boxShadow: "0 10px 40px rgba(0,0,0,0.15)", border: "1px solid rgba(255,255,255,0.7)", minWidth: 200, zIndex: 100 }}>
-            <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(0,0,0,0.4)", textTransform: "uppercase", marginBottom: 12 }}>Tampilan Jam</div>
+            <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(0,0,0,0.4)", textTransform: "uppercase", marginBottom: 12 }}>{lang === "id" ? "Tampilan Jam" : "Clock Display"}</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              <button onClick={() => { updateConfig("clock", { ...clockSettings, type: "digital" }); setClockMenu(false); }} style={{ ...B(clockSettings.type === "digital", theme.primary), padding: "8px 12px", fontSize: 13 }}>Jam Digital</button>
-              <button onClick={() => { updateConfig("clock", { ...clockSettings, type: "analog" }); setClockMenu(false); }} style={{ ...B(clockSettings.type === "analog", theme.primary), padding: "8px 12px", fontSize: 13 }}>Jam Analog</button>
+              <button onClick={() => { updateConfig("clock", { ...clockSettings, type: "digital" }); setClockMenu(false); }} style={{ ...B(clockSettings.type === "digital", theme.primary), padding: "8px 12px", fontSize: 13 }}>{lang === "id" ? "Jam Digital" : "Digital Clock"}</button>
+              <button onClick={() => { updateConfig("clock", { ...clockSettings, type: "analog" }); setClockMenu(false); }} style={{ ...B(clockSettings.type === "analog", theme.primary), padding: "8px 12px", fontSize: 13 }}>{lang === "id" ? "Jam Analog" : "Analog Clock"}</button>
             </div>
             {clockSettings.type === "digital" && (
               <>
-                <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(0,0,0,0.4)", textTransform: "uppercase", margin: "16px 0 12px 0" }}>Format Waktu</div>
+                <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(0,0,0,0.4)", textTransform: "uppercase", margin: "16px 0 12px 0" }}>{lang === "id" ? "Format Waktu" : "Time Format"}</div>
                 <div style={{ display: "flex", gap: 8 }}>
-                  <button onClick={() => { updateConfig("clock", { ...clockSettings, format: 24 }); setClockMenu(false); }} style={{ ...B(clockSettings.format === 24, theme.primary), flex: 1, padding: "8px 0", fontSize: 13 }}>24 Jam</button>
+                  <button onClick={() => { updateConfig("clock", { ...clockSettings, format: 24 }); setClockMenu(false); }} style={{ ...B(clockSettings.format === 24, theme.primary), flex: 1, padding: "8px 0", fontSize: 13 }}>{lang === "id" ? "24 Jam" : "24 Hour"}</button>
                   <button onClick={() => { updateConfig("clock", { ...clockSettings, format: 12 }); setClockMenu(false); }} style={{ ...B(clockSettings.format === 12, theme.primary), flex: 1, padding: "8px 0", fontSize: 13 }}>AM/PM</button>
                 </div>
               </>

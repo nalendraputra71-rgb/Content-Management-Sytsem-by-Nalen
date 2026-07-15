@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
+import { useI18n } from "./i18n";
 import { 
   auth, db, googleProvider, signInWithPopup, 
   createUserWithEmailAndPassword, signInWithEmailAndPassword,
@@ -9,6 +10,7 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 
 export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: any) => void, currentUser?: any }) {
+  const { lang, setLang } = useI18n();
   const location = useLocation();
   const initialMode = location.state?.mode || "signup";
   const [mode, setMode] = useState<"login" | "signup" | "forgot">(initialMode);
@@ -205,17 +207,39 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
 
         {/* Right: Form */}
         <div className="w-full md:w-[55%] p-6 md:p-10 flex flex-col relative overflow-y-auto bg-white">
-            <button onClick={() => window.location.href = '#/'} className="flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-[#1D4D7A] transition-colors mb-4 shrink-0 w-fit">
+          <div className="flex items-center justify-between mb-4">
+            <button onClick={() => window.location.href = '#/'} className="flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-[#1D4D7A] transition-colors shrink-0 w-fit">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-              Kembali
+              {lang === 'id' ? 'Kembali' : 'Back'}
             </button>
+            <div className="flex items-center gap-2 bg-slate-50 p-1 rounded-lg border border-slate-200">
+              <button 
+                onClick={() => setLang('id')}
+                className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${lang === 'id' ? 'bg-white text-[#1D4D7A] shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+              >
+                ID
+              </button>
+              <button 
+                onClick={() => setLang('en')}
+                className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${lang === 'en' ? 'bg-white text-[#1D4D7A] shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+              >
+                EN
+              </button>
+            </div>
+          </div>
             
             <div className="flex-1 flex flex-col justify-center">
               <AnimatePresence mode="wait">
               <motion.div key={mode} initial={{opacity:0, x:20}} animate={{opacity:1, x:0}} exit={{opacity:0, x:-20}} transition={{ duration: 0.3, ease: "easeOut" }}>
-                <h2 className="text-2xl md:text-3xl font-extrabold text-[#0B2A4A] mb-1">{mode === 'signup' ? 'Mulai Sekarang 🔥' : mode === 'login' ? 'Selamat Datang Lagi 👋' : 'Reset Password 🤔'}</h2>
+                <h2 className="text-2xl md:text-3xl font-extrabold text-[#0B2A4A] mb-1">
+                  {mode === 'signup' ? (lang === 'id' ? 'Mulai Sekarang 🔥' : 'Start Now 🔥') 
+                   : mode === 'login' ? (lang === 'id' ? 'Selamat Datang Lagi 👋' : 'Welcome Back 👋') 
+                   : (lang === 'id' ? 'Reset Password 🤔' : 'Reset Password 🤔')}
+                </h2>
                 <p className="text-sm font-medium text-slate-500 mb-6">
-                  {mode === 'signup' ? 'Bikin akun sekarang juga.' : mode === 'login' ? 'Masuk buat lanjutin kerjaan kamu yang tertunda.' : 'Tenang, kita bantu pulihin akun kamu.'}
+                  {mode === 'signup' ? (lang === 'id' ? 'Bikin akun sekarang juga.' : 'Create your account right now.') 
+                   : mode === 'login' ? (lang === 'id' ? 'Masuk buat lanjutin kerjaan kamu yang tertunda.' : 'Log in to continue your pending work.') 
+                   : (lang === 'id' ? 'Tenang, kita bantu pulihin akun kamu.' : 'Don\'t worry, we\'ll help you recover your account.')}
                 </p>
 
                 {error && <motion.div initial={{opacity:0, y:-10}} animate={{opacity:1, y:0}} className="mb-4 p-3 bg-red-50 text-red-600 rounded-xl text-sm font-bold border border-red-100 flex items-start gap-2"><span className="text-base mt-0.5">🚨</span> <span>{error}</span></motion.div>}
@@ -224,14 +248,14 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
                 {mode === "forgot" ? (
                   <form onSubmit={handleForgot} className="space-y-3">
                     <div className="space-y-1">
-                      <label className="text-xs font-bold text-[#0B2A4A] ml-1">Email Saat Daftar</label>
-                      <input type="email" placeholder="contoh@hubify.com" className="w-full p-3 rounded-xl border-2 border-slate-100 focus:border-[#1D4D7A] bg-slate-50 focus:bg-white outline-none transition-all font-medium text-[#0B2A4A] placeholder:text-slate-400 text-sm" value={email} onChange={e=>setEmail(e.target.value)} />
+                      <label className="text-xs font-bold text-[#0B2A4A] ml-1">{lang === 'id' ? 'Email Saat Daftar' : 'Registered Email'}</label>
+                      <input type="email" placeholder={lang === 'id' ? "contoh@hubify.com" : "example@hubify.com"} className="w-full p-3 rounded-xl border-2 border-slate-100 focus:border-[#1D4D7A] bg-slate-50 focus:bg-white outline-none transition-all font-medium text-[#0B2A4A] placeholder:text-slate-400 text-sm" value={email} onChange={e=>setEmail(e.target.value)} />
                     </div>
                     <button disabled={loading} className="w-full bg-[#1D4D7A] text-white rounded-xl p-3 font-bold text-sm hover:bg-[#0B2A4A] transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-[#1D4D7A]/20 mt-3 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none">
-                      {loading ? "Ngirim..." : "Kirim Link Reset"}
+                      {loading ? (lang === 'id' ? "Ngirim..." : "Sending...") : (lang === 'id' ? "Kirim Link Reset" : "Send Reset Link")}
                     </button>
                     <div className="text-center mt-4 text-sm">
-                      <button type="button" onClick={() => setMode("login")} className="text-slate-500 font-bold hover:text-[#1D4D7A] transition-colors">Batal, kembali ke Login</button>
+                      <button type="button" onClick={() => setMode("login")} className="text-slate-500 font-bold hover:text-[#1D4D7A] transition-colors">{lang === 'id' ? 'Batal, kembali ke Login' : 'Cancel, back to Login'}</button>
                     </div>
                   </form>
                 ) : (
@@ -239,53 +263,52 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
                     {mode === "signup" && (
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1">
-                          <label className="text-xs font-bold text-[#0B2A4A] ml-1">Nama Lengkap</label>
+                          <label className="text-xs font-bold text-[#0B2A4A] ml-1">{lang === 'id' ? 'Nama Lengkap' : 'Full Name'}</label>
                           <input type="text" placeholder="John Doe" className="w-full p-3 rounded-xl border-2 border-slate-100 focus:border-[#1D4D7A] bg-slate-50 focus:bg-white outline-none transition-all font-medium text-[#0B2A4A] placeholder:text-slate-400 text-sm" value={fullName} onChange={e=>setFullName(e.target.value)} required />
                         </div>
                         <div className="space-y-1">
-                          <label className="text-xs font-bold text-[#0B2A4A] ml-1">Nama Panggilan</label>
+                          <label className="text-xs font-bold text-[#0B2A4A] ml-1">{lang === 'id' ? 'Nama Panggilan' : 'Nickname'}</label>
                           <input type="text" placeholder="Loe" className="w-full p-3 rounded-xl border-2 border-slate-100 focus:border-[#1D4D7A] bg-slate-50 focus:bg-white outline-none transition-all font-medium text-[#0B2A4A] placeholder:text-slate-400 text-sm" value={nickname} onChange={e=>setNickname(e.target.value)} required />
                         </div>
                       </div>
                     )}
                     <div className="space-y-1">
                       <label className="text-xs font-bold text-[#0B2A4A] ml-1">Email</label>
-                      <input type="email" placeholder="contoh@hubify.com" className="w-full p-3 rounded-xl border-2 border-slate-100 focus:border-[#1D4D7A] bg-slate-50 focus:bg-white outline-none transition-all font-medium text-[#0B2A4A] placeholder:text-slate-400 text-sm" value={email} onChange={e=>setEmail(e.target.value)} required />
+                      <input type="email" placeholder={lang === 'id' ? "contoh@hubify.com" : "example@hubify.com"} className="w-full p-3 rounded-xl border-2 border-slate-100 focus:border-[#1D4D7A] bg-slate-50 focus:bg-white outline-none transition-all font-medium text-[#0B2A4A] placeholder:text-slate-400 text-sm" value={email} onChange={e=>setEmail(e.target.value)} required />
                     </div>
                     <div className="space-y-1">
                       <div className="flex justify-between items-center ml-1">
                         <label className="text-xs font-bold text-[#0B2A4A]">Password</label>
                         {mode === "login" && (
-                          <button type="button" onClick={() => setMode("forgot")} className="text-xs font-bold text-blue-600 hover:text-[#0B2A4A] transition-colors">Lupa Password?</button>
+                          <button type="button" onClick={() => setMode("forgot")} className="text-xs font-bold text-blue-600 hover:text-[#0B2A4A] transition-colors">{lang === 'id' ? 'Lupa Password?' : 'Forgot Password?'}</button>
                         )}
                       </div>
-                      <input type="password" placeholder="Minimal 6 karakter" className="w-full p-3 rounded-xl border-2 border-slate-100 focus:border-[#1D4D7A] bg-slate-50 focus:bg-white outline-none transition-all font-medium text-[#0B2A4A] placeholder:text-slate-400 text-sm" value={password} onChange={e=>setPassword(e.target.value)} required />
+                      <input type="password" placeholder={lang === 'id' ? "Minimal 6 karakter" : "Minimum 6 characters"} className="w-full p-3 rounded-xl border-2 border-slate-100 focus:border-[#1D4D7A] bg-slate-50 focus:bg-white outline-none transition-all font-medium text-[#0B2A4A] placeholder:text-slate-400 text-sm" value={password} onChange={e=>setPassword(e.target.value)} required />
                     </div>
                     
                     <button disabled={loading} className="w-full bg-[#1D4D7A] text-white rounded-xl p-3 mt-4 font-bold text-sm hover:bg-[#0B2A4A] transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-[#1D4D7A]/20 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none">
-                      {loading ? "Tunggu bentar..." : mode === "login" ? "Masuk ke Dashboard" : "Daftar"}
+                      {loading ? (lang === 'id' ? "Tunggu bentar..." : "Please wait...") : mode === "login" ? (lang === 'id' ? "Masuk ke Dashboard" : "Enter Dashboard") : (lang === 'id' ? "Daftar" : "Sign Up")}
                     </button>
                   </form>
                 )}
-
                 {mode !== "forgot" && (
                   <>
                     <div className="flex items-center my-6 text-xs font-bold text-slate-300 gap-4">
                       <div className="flex-1 h-[1px] bg-slate-100 rounded-full"></div>
-                      ATAU LEBIH CEPAT
+                      {lang === 'id' ? 'ATAU LEBIH CEPAT' : 'OR FASTER WITH'}
                       <div className="flex-1 h-[1px] bg-slate-100 rounded-full"></div>
                     </div>
 
                     <button onClick={handleGoogle} disabled={loading} className="w-full flex items-center justify-center gap-3 border-2 border-slate-100 bg-white rounded-xl p-3 font-bold text-[#0B2A4A] text-sm hover:border-[#1D4D7A]/30 hover:bg-blue-50/50 transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none">
                       <svg viewBox="0 0 24 24" width="20" height="20" xmlns="http://www.w3.org/2000/svg"><g transform="matrix(1, 0, 0, 1, 27.009001, -39.238998)"><path fill="#4285F4" d="M -3.264 51.509 C -3.264 50.719 -3.334 49.969 -3.454 49.239 L -14.754 49.239 L -14.754 53.749 L -8.284 53.749 C -8.574 55.229 -9.424 56.479 -10.684 57.329 L -10.684 60.329 L -6.824 60.329 C -4.564 58.239 -3.264 55.159 -3.264 51.509 Z"/><path fill="#34A853" d="M -14.754 63.239 C -11.514 63.239 -8.804 62.159 -6.824 60.329 L -10.684 57.329 C -11.764 58.049 -13.134 58.489 -14.754 58.489 C -17.884 58.489 -20.534 56.379 -21.484 53.529 L -25.464 53.529 L -25.464 56.619 C -23.494 60.539 -19.444 63.239 -14.754 63.239 Z"/><path fill="#FBBC05" d="M -21.484 53.529 C -21.734 52.809 -21.864 52.039 -21.864 51.239 C -21.864 50.439 -21.724 49.669 -21.484 48.949 L -21.484 45.859 L -25.464 45.859 C -26.284 47.479 -26.754 49.299 -26.754 51.239 C -26.754 53.179 -26.284 54.999 -25.464 56.619 L -21.484 53.529 Z"/><path fill="#EA4335" d="M -14.754 43.989 C -12.984 43.989 -11.404 44.599 -10.154 45.789 L -6.734 42.369 C -8.804 40.429 -11.514 39.239 -14.754 39.239 C -19.444 39.239 -23.494 41.939 -25.464 45.859 L -21.484 48.949 C -20.534 46.099 -17.884 43.989 -14.754 43.989 Z"/></g></svg>
-                      {mode === "login" ? "Masuk pake Google" : "Daftar pake Google"}
+                      {mode === "login" ? (lang === 'id' ? "Masuk pake Google" : "Continue with Google") : (lang === 'id' ? "Daftar pake Google" : "Sign up with Google")}
                     </button>
 
                     <div className="mt-6 text-center text-xs font-medium text-slate-500 bg-slate-50 p-3 rounded-xl border border-slate-100">
                       {mode === "login" ? (
-                        <>Belum gabung sama Hubify? <button onClick={() => setMode("signup")} className="text-[#1D4D7A] font-bold hover:underline">Daftar sekarang</button></>
+                        <>{lang === 'id' ? 'Belum gabung sama Hubify?' : 'New to Hubify?'} <button onClick={() => setMode("signup")} className="text-[#1D4D7A] font-bold hover:underline">{lang === 'id' ? 'Daftar sekarang' : 'Sign up now'}</button></>
                       ) : (
-                        <>Udah punya akun? <button onClick={() => setMode("login")} className="text-[#1D4D7A] font-bold hover:underline">Masuk di sini</button></>
+                        <>{lang === 'id' ? 'Udah punya akun?' : 'Already have an account?'} <button onClick={() => setMode("login")} className="text-[#1D4D7A] font-bold hover:underline">{lang === 'id' ? 'Masuk di sini' : 'Log in here'}</button></>
                       )}
                     </div>
                   </>

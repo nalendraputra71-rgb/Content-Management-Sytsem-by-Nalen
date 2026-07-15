@@ -6,6 +6,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { TiktokIcon, ThreadsIcon } from './components/social-icons';
 
+import { useI18n } from './i18n';
+
 const analyticsData = [
   { name: 'Mon', views: 4000, engagement: 2400 },
   { name: 'Tue', views: 3000, engagement: 1398 },
@@ -80,13 +82,10 @@ export function LandingPage() {
   const [calendarViewIdx, setCalendarViewIdx] = useState(0);
   const [dragOverDate, setDragOverDate] = useState<number | null>(null);
 
-  const [lang, setLang] = useState<'id' | 'en'>(() => {
-    return (localStorage.getItem('hubify_locale') as 'id' | 'en') || 'en';
-  });
+  const { lang, setLang } = useI18n();
 
   const handleLangChange = (l: 'id' | 'en') => {
     setLang(l);
-    localStorage.setItem('hubify_locale', l);
   };
 
   const [calendarItems, setCalendarItems] = useState([
@@ -371,7 +370,7 @@ export function LandingPage() {
                       <div className="font-bold">Alex</div>
                       <div className="flex items-center gap-2">
                         <span className="bg-blue-500 text-white text-[9px] px-1.5 py-0.5 rounded uppercase font-bold">PRO</span>
-                        <span className="text-[10px] text-white/50">Pengaturan Profil</span>
+                        <span className="text-[10px] text-white/50">{lang === "id" ? "Pengaturan Profil" : "Profile Settings"}</span>
                       </div>
                     </div>
                   </div>
@@ -386,10 +385,10 @@ export function LandingPage() {
                 {/* Greetings & Top Info */}
                 <div className="flex justify-between items-start">
                    <div>
-                     <h1 className="text-3xl md:text-5xl font-extrabold text-[#1B293C] leading-none mb-6">Selamat Pagi,<br/><span className="text-[#2D5A86]">Alex! ☀️</span></h1>
+                     <h1 className="text-3xl md:text-5xl font-extrabold text-[#1B293C] leading-none mb-6">{lang === "id" ? "Selamat Pagi," : "Good Morning,"}<br/><span className="text-[#2D5A86]">Alex! ☀️</span></h1>
                      
                      <div className="inline-flex items-center gap-3 bg-[#EAF0F6] text-[#2D5A86] px-4 py-2 rounded-full font-bold text-sm">
-                       <TrendingUp size={16}/> GOOGLE TRENDS NAIK: <span className="text-[#1B293C]">"Work From Anywhere"</span>
+                       <TrendingUp size={16}/> GOOGLE TRENDS UP: <span className="text-[#1B293C]">"Work From Anywhere"</span>
                      </div>
                    </div>
 
@@ -401,7 +400,7 @@ export function LandingPage() {
                            <Cloud size={24} className="text-[#2D5A86]"/> 
                            <div className="text-3xl font-bold">28.5°C</div>
                          </div>
-                         <div className="text-slate-500 font-medium text-sm mt-1">Cerah & Berawan</div>
+                         <div className="text-slate-500 font-medium text-sm mt-1">{lang === "id" ? "Cerah & Berawan" : "Clear & Cloudy"}</div>
                        </div>
                        
                        <div className="w-20 h-20 rounded-full border-4 border-[#1B293C] relative flex items-center justify-center bg-[#FAFAF8] shadow-sm">
@@ -418,7 +417,7 @@ export function LandingPage() {
                 {/* Goal Metrics Tiap Bulannya */}
                 <div className="bg-[#1C3A5A] rounded-[24px] p-6 shadow-xl relative overflow-hidden">
                   <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-                    <h2 className="text-white font-extrabold tracking-wide uppercase text-sm">Goal Metrics Tiap Bulannya</h2>
+                    <h2 className="text-white font-extrabold tracking-wide uppercase text-sm">{lang === "id" ? "Goal Metrics Tiap Bulannya" : "Monthly Goal Metrics"}</h2>
                     <button className="flex items-center gap-2 bg-white/10 text-white hover:bg-white/20 px-4 py-2.5 rounded-full text-xs font-bold transition-colors">
                       <Edit2 size={12}/> Kustomisasi Goals
                     </button>
@@ -432,7 +431,7 @@ export function LandingPage() {
                       <div className="text-lg font-extrabold text-white mb-2">
                         2,450 <span className="text-[10px] text-white/60 font-semibold">/ 10,000</span>
                       </div>
-                      <div className="text-orange-300 font-bold text-[10px]">Kurang 7,550 lagi</div>
+                      <div className="text-orange-300 font-bold text-[10px]">{lang === "id" ? "Kurang 7,550 lagi" : "7,550 more to go"}</div>
                     </div>
 
                     <div className="bg-[#2D4E75] rounded-2xl p-4 border border-white/5">
@@ -442,7 +441,7 @@ export function LandingPage() {
                       <div className="text-lg font-extrabold text-white mb-2">
                         420 <span className="text-[10px] text-white/60 font-semibold">/ 1,000</span>
                       </div>
-                      <div className="text-orange-300 font-bold text-[10px]">Kurang 580 lagi</div>
+                      <div className="text-orange-300 font-bold text-[10px]">{lang === "id" ? "Kurang 580 lagi" : "580 more to go"}</div>
                     </div>
 
                     <div className="bg-[#2D4E75] rounded-2xl p-4 border border-white/5">
@@ -452,7 +451,7 @@ export function LandingPage() {
                       <div className="text-lg font-extrabold text-white mb-2">
                         2 <span className="text-[10px] text-white/60 font-semibold">/ 5</span>
                       </div>
-                      <div className="text-orange-300 font-bold text-[10px]">Kurang 3 lagi</div>
+                      <div className="text-orange-300 font-bold text-[10px]">{lang === "id" ? "Kurang 3 lagi" : "3 more to go"}</div>
                     </div>
                   </div>
                 </div>
@@ -476,10 +475,10 @@ export function LandingPage() {
                         </svg>
                         <div className="absolute inset-0 flex flex-col items-center justify-center pt-4">
                            <div className="text-4xl font-extrabold text-[#1B293C]">50%</div>
-                           <div className="text-slate-500 font-bold text-sm">Selesai 1/2</div>
+                           <div className="text-slate-500 font-bold text-sm">{lang === "id" ? "Selesai 1/2" : "Completed 1/2"}</div>
                         </div>
                     </div>
-                    <div className="font-extrabold text-[#1B293C] mt-2">Terus semangat!</div>
+                    <div className="font-extrabold text-[#1B293C] mt-2">{lang === "id" ? "Terus semangat!" : "Keep it up!"}</div>
                   </div>
 
                   {/* To Do List */}
@@ -487,7 +486,7 @@ export function LandingPage() {
                     <div className="flex justify-between items-center px-6 pt-6 pb-0 border-b border-slate-100">
                        <div className="flex gap-6">
                           <div className="font-extrabold text-[#1B293C] border-b-2 border-[#1B293C] pb-3 text-sm">To Do List</div>
-                          <div className="font-bold text-slate-400 pb-3 text-sm">Riwayat</div>
+                          <div className="font-bold text-slate-400 pb-3 text-sm">{lang === "id" ? "Riwayat" : "History"}</div>
                        </div>
                        <button className="w-8 h-8 rounded-full bg-[#1C3A5A] text-white flex items-center justify-center -mt-3 shadow-md">
                          <Plus size={18}/>
@@ -501,7 +500,7 @@ export function LandingPage() {
                        
                        <div className="text-center font-extrabold text-[#9C2B4E] uppercase text-[10px] tracking-wider relative">
                           <div className="absolute border-b border-black/5 w-full top-1/2 z-0"></div>
-                          <span className="bg-white px-3 relative z-10">LEWAT TENGGATWAKTU</span>
+                          <span className="bg-white px-3 relative z-10">{lang === "id" ? "LEWAT TENGGATWAKTU" : "OVERDUE"}</span>
                        </div>
                        
                        <div className="flex items-start gap-4">
@@ -528,7 +527,7 @@ export function LandingPage() {
                        
                        <div className="text-center font-extrabold text-slate-400 uppercase text-[9px] tracking-wider relative pt-2">
                           <div className="absolute border-b border-black/5 w-full top-[16px] z-0"></div>
-                          <span className="bg-white px-2 relative z-10">HARI INI</span>
+                          <span className="bg-white px-2 relative z-10">{lang === "id" ? "HARI INI" : "TODAY"}</span>
                        </div>
 
                        <div className="flex items-start gap-4 pb-2">
@@ -553,16 +552,16 @@ export function LandingPage() {
 
                     <div className="grid grid-cols-2 gap-2.5 flex-1">
                       <div className="bg-[#FCF5BC] rounded-[10px] p-2.5 relative shadow-sm hover:-rotate-1 transition-transform">
-                         <p className="font-bold text-[#6D6222] text-[9px] leading-snug">Ingat deadline laporan bulanan hari Jumat.</p>
+                         <p className="font-bold text-[#6D6222] text-[9px] leading-snug">{lang === "id" ? "Ingat deadline laporan bulanan hari Jumat." : "Remember the monthly report deadline on Friday."}</p>
                       </div>
                       <div className="bg-[#FCDCA5] rounded-[10px] p-2.5 relative shadow-sm hover:rotate-1 transition-transform">
-                         <p className="font-bold text-[#8C5D20] text-[9px] leading-snug">Kirim invoice ke klien restoran.</p>
+                         <p className="font-bold text-[#8C5D20] text-[9px] leading-snug">{lang === "id" ? "Kirim invoice ke klien restoran." : "Send invoice to the restaurant client."}</p>
                       </div>
                       <div className="bg-[#FFB1AD] rounded-[10px] p-2.5 relative shadow-sm hover:-rotate-1 transition-transform">
-                         <p className="font-bold text-[#9D3B36] text-[9px] leading-snug">Ide Konten: Edukasi produk skincare B</p>
+                         <p className="font-bold text-[#9D3B36] text-[9px] leading-snug">{lang === "id" ? "Ide Konten: Edukasi produk skincare B" : "Content Idea: Skincare B product education"}</p>
                       </div>
                       <div className="bg-[#EDAED0] rounded-[10px] p-2.5 relative shadow-sm hover:rotate-1 transition-transform">
-                         <p className="font-bold text-[#8D4468] text-[9px] leading-snug">Cek revisi desain dari tim kreatif.</p>
+                         <p className="font-bold text-[#8D4468] text-[9px] leading-snug">{lang === "id" ? "Cek revisi desain dari tim kreatif." : "Check design revisions from the creative team."}</p>
                       </div>
                     </div>
                   </div>
@@ -698,7 +697,7 @@ export function LandingPage() {
                          <span className="text-sm font-bold text-white truncate">Nalendra Putra</span>
                          <div className="flex items-center gap-2">
                             <span className="text-[8px] font-extrabold bg-blue-500 text-white px-1.5 py-0.5 rounded">PRO</span>
-                            <span className="text-[9px] text-slate-400 hover:text-slate-300 cursor-pointer truncate">Pengaturan Profil</span>
+                            <span className="text-[9px] text-slate-400 hover:text-slate-300 cursor-pointer truncate">{lang === "id" ? "Pengaturan Profil" : "Profile Settings"}</span>
                          </div>
                       </div>
                    </div>
@@ -713,7 +712,7 @@ export function LandingPage() {
                  {/* Header (Greeting & Time) */}
                  <div className="flex justify-between items-end px-4 md:px-6 py-4 bg-[#fcfdfd] border-b border-black/5">
                    <div>
-                     <h2 className="text-xl md:text-3xl font-extrabold text-[#11233A] leading-tight tracking-tight">Selamat Malam,<br/><span className="text-[#1f5f99]">Nalen!</span> 🌙</h2>
+                     <h2 className="text-xl md:text-3xl font-extrabold text-[#11233A] leading-tight tracking-tight">{lang === "id" ? "Selamat Malam," : "Good Evening,"}<br/><span className="text-[#1f5f99]">Nalen!</span> 🌙</h2>
                    </div>
                    <div className="text-2xl md:text-4xl font-black text-[#11233A] tracking-tighter">07:41<span className="text-sm md:text-lg font-bold text-slate-500 ml-1 tracking-normal">PM</span></div>
                  </div>
@@ -747,19 +746,19 @@ export function LandingPage() {
                  <div className="flex flex-nowrap items-end gap-3 px-4 md:px-6 py-3 border-b border-black/5 bg-[#fcfdfd] overflow-x-auto custom-scrollbar pb-3">
                     <div className="flex flex-col gap-1 min-w-[130px] shrink-0">
                       <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider ml-1">Pillar</span>
-                      <select className="border border-slate-200 rounded-full px-3 py-1.5 text-[11px] md:text-xs font-bold text-slate-700 outline-none hover:border-slate-300 transition-colors bg-white"><option>Semua</option></select>
+                      <select className="border border-slate-200 rounded-full px-3 py-1.5 text-[11px] md:text-xs font-bold text-slate-700 outline-none hover:border-slate-300 transition-colors bg-white"><option>{lang === "id" ? "Semua" : "All"}</option></select>
                     </div>
                     <div className="flex flex-col gap-1 min-w-[130px] shrink-0">
                       <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider ml-1">Platform</span>
-                      <select className="border border-slate-200 rounded-full px-3 py-1.5 text-[11px] md:text-xs font-bold text-slate-700 outline-none hover:border-slate-300 transition-colors bg-white"><option>Semua</option></select>
+                      <select className="border border-slate-200 rounded-full px-3 py-1.5 text-[11px] md:text-xs font-bold text-slate-700 outline-none hover:border-slate-300 transition-colors bg-white"><option>{lang === "id" ? "Semua" : "All"}</option></select>
                     </div>
                     <div className="flex flex-col gap-1 min-w-[130px] shrink-0">
                       <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider ml-1">Tipe Konten</span>
-                      <select className="border border-slate-200 rounded-full px-3 py-1.5 text-[11px] md:text-xs font-bold text-slate-700 outline-none hover:border-slate-300 transition-colors bg-white"><option>Semua</option></select>
+                      <select className="border border-slate-200 rounded-full px-3 py-1.5 text-[11px] md:text-xs font-bold text-slate-700 outline-none hover:border-slate-300 transition-colors bg-white"><option>{lang === "id" ? "Semua" : "All"}</option></select>
                     </div>
                     <div className="flex flex-col gap-1 min-w-[130px] shrink-0">
                       <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider ml-1">PIC</span>
-                      <select className="border border-slate-200 rounded-full px-3 py-1.5 text-[11px] md:text-xs font-bold text-slate-700 outline-none hover:border-slate-300 transition-colors bg-white"><option>Semua</option></select>
+                      <select className="border border-slate-200 rounded-full px-3 py-1.5 text-[11px] md:text-xs font-bold text-slate-700 outline-none hover:border-slate-300 transition-colors bg-white"><option>{lang === "id" ? "Semua" : "All"}</option></select>
                     </div>
                     <div className="flex gap-2 shrink-0 h-[30px] md:h-[32px]">
                       <button className="border border-slate-200 bg-white rounded-full px-4 text-[11px] md:text-xs font-bold hover:bg-slate-50 text-slate-600 transition-colors shadow-sm flex items-center gap-1.5 whitespace-nowrap h-full"><span>📦</span> Arsip</button>

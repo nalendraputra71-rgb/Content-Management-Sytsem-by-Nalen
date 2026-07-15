@@ -1,8 +1,9 @@
+import { useI18n } from "./i18n";
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Clock, Instagram, Facebook, Youtube, Linkedin, Music, Globe , ChevronDown } from "lucide-react";
 import { 
-  MONTHS, MS, DAYS_S, MK, MC,
+  MONTHS, MONTHS_EN, MS, MS_EN, DAYS_S, DAYS_S_EN, MK, MC,
   eng, fmt, fmtD, fmtT, getMin, gps, gpc, gss,
   I, B, CARD, PBadge, SBadge, PiBadge, getDynamicEvents, htmlToPlainText 
 } from "./data";
@@ -28,6 +29,7 @@ function getPlatformIcon(platformIdentifier: string, size = 12, color?: string) 
 }
 
 export function MonthView({year,month,monthContent,filtered,openEdit,openAdd,showHolidays,holidays,customEvents,pillars,platforms,pics,showArchived,contentTypes,moveItemDate}: any) {
+  const { lang } = useI18n();
   const [dragOverDate, setDragOverDate] = useState<number | null>(null);
   
   const dim = new Date(year,month,0).getDate();
@@ -133,7 +135,7 @@ export function MonthView({year,month,monthContent,filtered,openEdit,openAdd,sho
       boxShadow: "0 10px 40px rgba(0, 0, 0, 0.03)"
     }}>
       <div style={{display:"grid",gridTemplateColumns:"repeat(7,minmax(0,1fr))",gap:8,marginBottom:12}}>
-        {DAYS_S.map(d=><div key={d} style={{textAlign:"center",fontSize:12,fontWeight:600,textTransform:"uppercase",color:"rgba(0,0,0,0.5)",letterSpacing:1}}>{d}</div>)}
+        {(lang === "id" ? DAYS_S : DAYS_S_EN).map(d=><div key={d} style={{textAlign:"center",fontSize:12,fontWeight:600,textTransform:"uppercase",color:"rgba(0,0,0,0.5)",letterSpacing:1}}>{d}</div>)}
       </div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(7,minmax(0,1fr))",gap:8}}>
         {Array.from({length:sd}).map((_,i)=><div key={`e${i}`} style={{minHeight:100,background:"transparent"}}/>)}
@@ -301,6 +303,7 @@ export function MonthView({year,month,monthContent,filtered,openEdit,openAdd,sho
 }
 
 export function WeekView({year,month,content,filtered,openEdit,openAdd,pillars,platforms,showHolidays,holidays,showArchived}: any) {
+  const { lang } = useI18n();
   const [wOff,setWOff] = useState(0);
   const base = new Date(year,month-1,1);
   const ws = new Date(base.getTime() + wOff*7*86400000);
@@ -312,12 +315,12 @@ export function WeekView({year,month,content,filtered,openEdit,openAdd,pillars,p
   return (
     <div>
       <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:16}}>
-        <button onClick={()=>setWOff(w=>w-1)} style={{...B(false),padding:"4px 8px", background:"transparent", border:"none", boxShadow:"none", color:"#787774"}}>← Previous</button>
+        <button onClick={()=>setWOff(w=>w-1)} style={{...B(false),padding:"4px 8px", background:"transparent", border:"none", boxShadow:"none", color:"#787774"}}>{lang === "id" ? "← Sebelumnya" : "← Previous"}</button>
         <div style={{fontSize:16,fontWeight:600,color:"#37352F"}}>
           {fmtD(days[0].y,days[0].mo,days[0].d)} — {fmtD(days[6].y,days[6].mo,days[6].d)}
         </div>
-        <button onClick={()=>setWOff(w=>w+1)} style={{...B(false),padding:"4px 8px", background:"transparent", border:"none", boxShadow:"none", color:"#787774"}}>Next →</button>
-        <button onClick={()=>setWOff(0)} style={{...B(false),padding:"4px 8px",fontSize:12, background:"transparent", border:"none", boxShadow:"none", color:"#787774"}}>Today</button>
+        <button onClick={()=>setWOff(w=>w+1)} style={{...B(false),padding:"4px 8px", background:"transparent", border:"none", boxShadow:"none", color:"#787774"}}>{lang === "id" ? "Berikutnya →" : "Next →"}</button>
+        <button onClick={()=>setWOff(0)} style={{...B(false),padding:"4px 8px",fontSize:12, background:"transparent", border:"none", boxShadow:"none", color:"#787774"}}>{lang === "id" ? "Hari Ini" : "Today"}</button>
       </div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:12}}>
         {days.map(day=>{
@@ -330,7 +333,7 @@ export function WeekView({year,month,content,filtered,openEdit,openAdd,pillars,p
             <div key={day.d+"-"+day.mo} style={{background:"transparent",borderRadius:0,padding:0,border:"none",minHeight:180}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8, borderBottom: "1px solid rgba(55,53,47,0.08)", paddingBottom: 8}}>
                 <div style={{display:"flex", alignItems:"baseline", gap: 6}}>
-                  <div style={{fontSize:12,fontWeight:600,color:isToday?"#2383e2":"#787774"}}>{DAYS_S[day.dow]}</div>
+                  <div style={{fontSize:12,fontWeight:600,color:isToday?"#2383e2":"#787774"}}>{(lang === "id" ? DAYS_S : DAYS_S_EN)[day.dow]}</div>
                   <div style={{fontSize:18,fontWeight:500,lineHeight:1,color:isToday?"#2383e2":"#37352F"}}>{day.d}</div>
                 </div>
                 <button onClick={()=>openAdd(day.d)} style={{background:"transparent",border:"none",borderRadius:"4px",width:20,height:20,cursor:"pointer",color:"#787774",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",padding:0,transition:"all 0.2s"}} className="hover:bg-gray-200">+</button>
@@ -363,6 +366,7 @@ export function WeekView({year,month,content,filtered,openEdit,openAdd,pillars,p
 }
 
 export function BoardView({year,month,content,filtered,openEdit,openAdd,statuses,pillars,platforms,search,showArchived}: any) {
+  const { lang } = useI18n();
   const items = filtered.filter((c:any)=>c.year===year&&c.month===month&&(!c.archived || showArchived));
   
   const High = ({txt}:any) => {
@@ -438,6 +442,7 @@ export function BoardView({year,month,content,filtered,openEdit,openAdd,statuses
 }
 
 export function TimelineView({year,month,content,filtered,openEdit,openAdd,pillars,platforms,showHolidays,holidays,showArchived}: any) {
+  const { lang } = useI18n();
   const scrollRef = useRef<HTMLDivElement>(null);
   const dim = new Date(year,month,0).getDate();
   const getItems = (d:any) => filtered.filter((c:any)=>c.day===d&&(!c.archived || showArchived)).sort((a:any,b:any) => getMin(a) - getMin(b));
@@ -447,7 +452,7 @@ export function TimelineView({year,month,content,filtered,openEdit,openAdd,pilla
   },[year,month]);
   return (
     <div>
-      <div style={{fontSize:20,fontWeight:600,marginBottom:20,color:"rgba(0,0,0,0.8)"}}>Timeline — {MONTHS[month-1]} {year}</div>
+      <div style={{fontSize:20,fontWeight:600,marginBottom:20,color:"rgba(0,0,0,0.8)"}}>Timeline — {(lang === "id" ? MONTHS : MONTHS_EN)[month-1]} {year}</div>
       <div ref={scrollRef} style={{
         overflowX:"auto",
         paddingBottom:20,
@@ -469,7 +474,7 @@ export function TimelineView({year,month,content,filtered,openEdit,openAdd,pilla
             return (
               <div key={day} style={{flex:"0 0 200px",background:"transparent",borderRadius:0,padding:0,borderRight:"1px solid rgba(0,0,0,0.1)",minHeight:220, paddingRight: 24}}>
                 <div style={{borderBottom:"1px solid rgba(0,0,0,0.1)",paddingBottom:12,marginBottom:16, display:"flex", alignItems:"baseline", gap: 8}}>
-                  <div style={{fontSize:13,fontWeight:600,color:"rgba(0,0,0,0.4)"}}>{DAYS_S[dow]}</div>
+                  <div style={{fontSize:13,fontWeight:600,color:"rgba(0,0,0,0.4)"}}>{(lang === "id" ? DAYS_S : DAYS_S_EN)[dow]}</div>
                   <div style={{fontSize:20,fontWeight:600,lineHeight:1,color:isWe?"rgba(0,0,0,0.4)":"rgba(0,0,0,0.8)"}}>{day}</div>
                   {ev&&<div style={{fontSize:11,color:"#D9730D",fontWeight:600,lineHeight:1.2, marginLeft: "auto"}}>{ev}</div>}
                 </div>
@@ -501,6 +506,7 @@ export function TimelineView({year,month,content,filtered,openEdit,openAdd,pilla
 }
 
 export function TableView({filtered,openEdit,archiveItem,unarchiveItem,deleteItem,pillars,platforms,showArchived,search,bulkIds,setBulkIds,onBulk}: any) {
+  const { lang } = useI18n();
   const [sort,setSort] = useState({col:"day",dir:"asc"});
 
   const defaultWidths: Record<string, number> = {
@@ -583,15 +589,15 @@ export function TableView({filtered,openEdit,archiveItem,unarchiveItem,deleteIte
         <div style={{padding:"8px 16px",background:"rgba(59,130,246,0.05)",borderBottom:"1px solid rgba(59,130,246,0.1)",display:"flex",gap:12,alignItems:"center"}}>
           <span style={{fontSize:13,fontWeight:600,color:"#3B82F6"}}>{bulkIds.length} terpilih</span>
           <div style={{width:1,height:14,background:"rgba(59,130,246,0.2)"}}/>
-          <button onClick={()=>onBulk("archive")} style={{background:"none",border:"none",color:"#723680",fontSize:13,fontWeight:600,cursor:"pointer"}}>📦 Arsip Massal</button>
-          <button onClick={()=>onBulk("restore")} style={{background:"none",border:"none",color:"#2E7D32",fontSize:13,fontWeight:600,cursor:"pointer"}}>🔄 Pulihkan Massal</button>
-          <button onClick={()=>onBulk("delete")} style={{background:"none",border:"none",color:"#9C2B4E",fontSize:13,fontWeight:600,cursor:"pointer"}}>🗑️ Hapus Massal</button>
+          <button onClick={()=>onBulk("archive")} style={{background:"none",border:"none",color:"#723680",fontSize:13,fontWeight:600,cursor:"pointer"}}>{lang === "id" ? "📦 Arsip Massal" : "📦 Bulk Archive"}</button>
+          <button onClick={()=>onBulk("restore")} style={{background:"none",border:"none",color:"#2E7D32",fontSize:13,fontWeight:600,cursor:"pointer"}}>{lang === "id" ? "🔄 Pulihkan Massal" : "🔄 Bulk Restore"}</button>
+          <button onClick={()=>onBulk("delete")} style={{background:"none",border:"none",color:"#9C2B4E",fontSize:13,fontWeight:600,cursor:"pointer"}}>{lang === "id" ? "🗑️ Hapus Massal" : "🗑️ Bulk Delete"}</button>
           <div style={{flex:1}}/>
-          <button onClick={()=>setBulkIds([])} style={{background:"none",border:"none",color:"rgba(44,32,22,0.4)",fontSize:13,cursor:"pointer"}}>Batal</button>
+          <button onClick={()=>setBulkIds([])} style={{background:"none",border:"none",color:"rgba(44,32,22,0.4)",fontSize:13,cursor:"pointer"}}>{lang === "id" ? "Batal" : "Cancel"}</button>
         </div>
       )}
       {sorted.length===0
-        ? <div style={{padding:48,textAlign:"center",color:"#787774",fontSize:14}}>No contents</div>
+        ? <div style={{padding:48,textAlign:"center",color:"#787774",fontSize:14}}>{lang === "id" ? "Tidak ada konten" : "No contents"}</div>
         : <div style={{overflowX: "auto"}}><table style={{minWidth:"100%", width: "max-content", borderCollapse:"collapse", tableLayout: "fixed", borderSpacing: 0}}>
             <thead>
               <tr style={{background:"rgba(255,255,255,0.4)"}}>
@@ -637,10 +643,10 @@ export function TableView({filtered,openEdit,archiveItem,unarchiveItem,deleteIte
                     <td style={{...td,textAlign:"left",fontWeight:500}}>{fmt(e)}</td>
                     <td style={td}>
                       <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
-                        <button onClick={()=>openEdit(item)} style={{background:"#F1F1EF",border:"none",borderRadius:4,padding:"4px 8px",fontSize:11,cursor:"pointer",color:"#37352F",fontWeight:500}}>Edit</button>
-                        {item.status==="Published"&&!item.archived&&<button onClick={()=>archiveItem(item.id)} style={{background:"#F1F1EF",border:"none",borderRadius:4,padding:"4px 8px",fontSize:11,cursor:"pointer",color:"#37352F",fontWeight:500}}>Arsip</button>}
-                        {item.archived&&<button onClick={()=>unarchiveItem(item.id)} style={{background:"#F1F1EF",border:"none",borderRadius:4,padding:"4px 8px",fontSize:11,cursor:"pointer",color:"#37352F",fontWeight:500}}>Pulihkan</button>}
-                        {!item.archived&&<button onClick={()=>deleteItem(item.id)} style={{background:"#FFEEA3",border:"1px solid #FFE066",borderRadius:4,padding:"4px 8px",fontSize:11,cursor:"pointer",color:"#D9730D",fontWeight:500}}>Hapus</button>}
+                        <button onClick={()=>openEdit(item)} style={{background:"#F1F1EF",border:"none",borderRadius:4,padding:"4px 8px",fontSize:11,cursor:"pointer",color:"#37352F",fontWeight:500}}>{lang === "id" ? "Edit" : "Edit"}</button>
+                        {item.status==="Published"&&!item.archived&&<button onClick={()=>archiveItem(item.id)} style={{background:"#F1F1EF",border:"none",borderRadius:4,padding:"4px 8px",fontSize:11,cursor:"pointer",color:"#37352F",fontWeight:500}}>{lang === "id" ? "Arsip" : "Archive"}</button>}
+                        {item.archived&&<button onClick={()=>unarchiveItem(item.id)} style={{background:"#F1F1EF",border:"none",borderRadius:4,padding:"4px 8px",fontSize:11,cursor:"pointer",color:"#37352F",fontWeight:500}}>{lang === "id" ? "Pulihkan" : "Restore"}</button>}
+                        {!item.archived&&<button onClick={()=>deleteItem(item.id)} style={{background:"#FFEEA3",border:"1px solid #FFE066",borderRadius:4,padding:"4px 8px",fontSize:11,cursor:"pointer",color:"#D9730D",fontWeight:500}}>{lang === "id" ? "Hapus" : "Delete"}</button>}
                       </div>
                     </td>
                   </tr>

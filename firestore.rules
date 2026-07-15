@@ -87,8 +87,8 @@ service cloud.firestore {
     // Collection Group rule for content
     match /{path=**}/content/{contentId} {
       allow read: if isSignedIn() && (
-        resource.data.get('isPublic', false) == true || 
-        (resource.data.get('sharedUids', []) is list && request.auth.uid in resource.data.get('sharedUids', []))
+        resource.data.isPublic == true || 
+        request.auth.uid in resource.data.sharedUids
       );
     }
 
@@ -197,14 +197,14 @@ service cloud.firestore {
         allow read: if isMember(wsId) || isAdmin() || 
                     get(/databases/$(database)/documents/workspaces/$(wsId)).data.publicLinkEnabled == true || 
                     (resource != null && (
-                      resource.data.get('isPublic', false) == true || 
-                      (resource.data.get('sharedUids', []) is list && request.auth.uid in resource.data.get('sharedUids', []))
+                      resource.data.isPublic == true || 
+                      request.auth.uid in resource.data.sharedUids
                     ));
         allow create: if (isEditor(wsId) || isAdmin()) && incoming().workspaceId == wsId && (incoming().userId == request.auth.uid || isAdmin());
         allow delete: if isEditor(wsId) || isAdmin();
         allow update: if isEditor(wsId) || isAdmin() || (
           resource != null && 
-          resource.data.get('isPublic', false) == true && 
+          resource.data.isPublic == true && 
           resource.data.get('allowComments', false) == true && 
           incoming().diff(existing()).affectedKeys().hasOnly(['comments'])
         );

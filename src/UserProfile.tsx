@@ -1,3 +1,4 @@
+import { useI18n } from "./i18n";
 import { useState, useEffect } from "react";
 import {
   auth,
@@ -42,6 +43,7 @@ export function UserProfile({
   onUpdate: (data: any) => void;
 }) {
   const navigate = useNavigate();
+  const { lang } = useI18n();
   const [name, setName] = useState(userProfile?.fullName || "");
   const [nickname, setNickname] = useState(userProfile?.nickname || "");
   const [userName, setUserName] = useState(userProfile?.username || "");
@@ -302,7 +304,7 @@ export function UserProfile({
     } catch (e: any) {
       if (e.code === "auth/requires-recent-login") {
         setMessage({
-          text: "Sesi telah berakhir. Silakan logout dan login kembali untuk keamanan.",
+          text: lang === "id" ? "Sesi telah berakhir. Silakan logout dan login kembali untuk keamanan." : "Session has expired. Please logout and login again for security.",
           type: "error",
         });
       } else {
@@ -320,7 +322,7 @@ export function UserProfile({
         
         await sendEmailVerification(auth.currentUser);
         setEmailStatusMsg(
-          "Email verifikasi telah dikirim. Silakan cek inbox Anda.",
+          lang === "id" ? "Email verifikasi telah dikirim. Silakan cek inbox Anda." : "Verification email has been sent. Please check your inbox.",
         );
       } catch (e: any) {
         setEmailStatusMsg(e.message);
@@ -860,7 +862,7 @@ export function UserProfile({
                     whiteSpace: "nowrap",
                   }}
                 >
-                  {hasPasswordProvider ? "Ubah" : "Simpan"}
+                  {hasPasswordProvider ? (lang === "id" ? "Ubah" : "Change") : (lang === "id" ? "Simpan" : "Save")}
                 </button>
               </div>
             </div>
@@ -1245,7 +1247,7 @@ export function UserProfile({
                   cursor: loading ? "not-allowed" : "pointer",
                 }}
               >
-                {loading ? "Memproses..." : "Hapus Akun"}
+                {loading ? (lang === "id" ? "Memproses..." : "Processing...") : (lang === "id" ? "Hapus Akun" : "Delete Account")}
               </button>
             </div>
           </motion.div>

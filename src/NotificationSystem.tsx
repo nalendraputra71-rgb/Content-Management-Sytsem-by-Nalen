@@ -1,9 +1,11 @@
+import { useI18n } from "./i18n";
 import React, { useState, useEffect } from "react";
 import { Bell, CalendarClock, PartyPopper, X, ChevronDown, ChevronUp, Archive, Trash2, HelpCircle, CheckCheck } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { db, collection, query, onSnapshot, orderBy, where, collectionGroup, doc, updateDoc, deleteDoc } from "./firebase";
 
 export function useNotifications(userProfile: any) {
+  const { lang } = useI18n();
   const [notifications, setNotifications] = useState<any[]>([]);
   const [toast, setToast] = useState<any | null>(null);
   
@@ -45,18 +47,18 @@ export function useNotifications(userProfile: any) {
         notifs.push({
           id: "pro_active",
           icon: <PartyPopper size={14} color="#538135" />,
-          title: "Akun PRO Aktif!",
-          desc: `Terima kasih telah berlangganan! Akun PRO Anda aktif sampai dengan tanggal ${activeUntil.toLocaleDateString("id-ID", {dateStyle:"medium"})}.`,
-          time: "Baru saja",
+          title: lang === "id" ? "Akun PRO Aktif!" : "PRO Account Active!",
+          desc: lang === "id" ? `Terima kasih telah berlangganan! Akun PRO Anda aktif sampai dengan tanggal ${activeUntil.toLocaleDateString("id-ID", {dateStyle:"medium"})}.` : `Thank you for subscribing! Your PRO account is active until ${activeUntil.toLocaleDateString("en-US", {dateStyle:"medium"})}.`,
+          time: lang === "id" ? "Baru saja" : "Just now",
           unread: true
         });
       } else {
       notifs.push({
         id: "welcome",
         icon: <PartyPopper size={14} color="#3B82F6" />,
-        title: "Selamat Datang!",
-        desc: "Nikmati 7 hari free trial penuh fitur.",
-        time: "Sistem",
+        title: lang === "id" ? "Selamat Datang!" : "Welcome!",
+        desc: lang === "id" ? "Nikmati 7 hari free trial penuh fitur." : "Enjoy a 7-day full-featured free trial.",
+        time: lang === "id" ? "Sistem" : "System",
         unread: true
       });
     }
@@ -65,18 +67,18 @@ export function useNotifications(userProfile: any) {
       notifs.unshift({
         id: "expired",
         icon: <CalendarClock size={14} color="#9C2B4E" />,
-        title: "Masa Aktif Berakhir",
-        desc: "Langganan Anda telah berakhir. Silakan perpanjang paket.",
-        time: "Hari ini",
+        title: lang === "id" ? "Masa Aktif Berakhir" : "Subscription Expired",
+        desc: lang === "id" ? "Langganan Anda telah berakhir. Silakan perpanjang paket." : "Your subscription has ended. Please renew your plan.",
+        time: lang === "id" ? "Hari ini" : "Today",
         unread: true
       });
     } else if (sisaHari <= 3 && sisaHari > 0) {
       notifs.unshift({
         id: "expiring_soon",
         icon: <CalendarClock size={14} color="var(--theme-primary)" />,
-        title: `Akses berakhir dalam ${sisaHari} hari!`,
-        desc: `Segera perpanjang langganan agar alur kerja tidak terhenti.`,
-        time: "Hari ini",
+        title: lang === "id" ? `Akses berakhir dalam ${sisaHari} hari!` : `Access expires in ${sisaHari} days!`,
+        desc: lang === "id" ? `Segera perpanjang langganan agar alur kerja tidak terhenti.` : `Renew your subscription soon so your workflow is not interrupted.`,
+        time: lang === "id" ? "Hari ini" : "Today",
         unread: true
       });
     }
@@ -109,7 +111,7 @@ export function useNotifications(userProfile: any) {
           icon: <Bell size={14} color="#2D7A5E" />,
           title: n.title,
           desc: n.desc,
-          time: new Date(n.createdAt).toLocaleString("id-ID", {dateStyle:"short", timeStyle:"short"}),
+          time: new Date(n.createdAt).toLocaleString(lang === "id" ? "id-ID" : "en-US", {dateStyle:"short", timeStyle:"short"}),
           unread: true
         }));
 
@@ -147,9 +149,9 @@ export function useNotifications(userProfile: any) {
                   ticketNotifs.push({
                      id: `ticket_${d.id}`,
                      icon: <Bell size={14} color="#3B82F6" />,
-                     title: "Balasan Tiket Bantuan",
+                     title: lang === "id" ? "Balasan Tiket Bantuan" : "Support Ticket Reply",
                      desc: lastMsg.text,
-                     time: new Date(lastMsg.timestamp).toLocaleString("id-ID", {dateStyle:"short", timeStyle:"short"}),
+                     time: new Date(lastMsg.timestamp).toLocaleString(lang === "id" ? "id-ID" : "en-US", {dateStyle:"short", timeStyle:"short"}),
                      unread: !data.readByUser
                   });
                }
@@ -191,7 +193,7 @@ export function useNotifications(userProfile: any) {
                    icon: <Bell size={14} color="#3B82F6" />,
                    title: "Undangan Workspace Baru",
                    desc: `${inviter} mengundang Anda untuk bergabung ke "${wsName}".`,
-                   time: new Date(data.joinedAt || Date.now()).toLocaleString("id-ID", {dateStyle:"short", timeStyle:"short"}),
+                   time: new Date(data.joinedAt || Date.now()).toLocaleString(lang === "id" ? "id-ID" : "en-US", {dateStyle:"short", timeStyle:"short"}),
                    unread: true
                });
             });
@@ -236,7 +238,7 @@ export function useNotifications(userProfile: any) {
                    title: data.title,
                    desc: data.body,
                    link: data.link,
-                   time: data.createdAt?.toMillis ? new Date(data.createdAt.toMillis()).toLocaleString("id-ID", {dateStyle:"short", timeStyle:"short"}) : new Date().toLocaleString("id-ID", {dateStyle:"short", timeStyle:"short"}),
+                   time: data.createdAt?.toMillis ? new Date(data.createdAt.toMillis()).toLocaleString(lang === "id" ? "id-ID" : "en-US", {dateStyle:"short", timeStyle:"short"}) : new Date().toLocaleString(lang === "id" ? "id-ID" : "en-US", {dateStyle:"short", timeStyle:"short"}),
                    unread: !data.read
                });
             });
@@ -309,6 +311,7 @@ export function useNotifications(userProfile: any) {
 }
 
 export function NotificationToast({ toast, onClose, onClick, onInviteAction }: { toast: any, onClose: () => void, onClick: () => void, onInviteAction?: (wsId:string, mId:string, action:'accept'|'reject') => void }) {
+  const { lang } = useI18n();
   const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
@@ -347,8 +350,8 @@ export function NotificationToast({ toast, onClose, onClick, onInviteAction }: {
           </div>
           {toast.type === "invite" && (
             <div style={{display: "flex", gap: 6, marginLeft: 8}}>
-                <button onClick={(e)=>{ e.stopPropagation(); onInviteAction?.(toast.workspaceId, toast.memberId, 'accept'); }} style={{padding:"6px 12px", background:"#3B82F6", border:"none", borderRadius:16, color:"white", fontSize:12, fontWeight:700, cursor:"pointer"}}>Terima</button>
-                <button onClick={(e)=>{ e.stopPropagation(); onInviteAction?.(toast.workspaceId, toast.memberId, 'reject'); }} style={{padding:"6px 12px", background:"rgba(44,32,22,0.05)", border:"none", borderRadius:16, color:"#2C2016", fontSize:12, fontWeight:700, cursor:"pointer"}}>Tolak</button>
+                <button onClick={(e)=>{ e.stopPropagation(); onInviteAction?.(toast.workspaceId, toast.memberId, 'accept'); }} style={{padding:"6px 12px", background:"#3B82F6", border:"none", borderRadius:16, color:"white", fontSize:12, fontWeight:700, cursor:"pointer"}}>{lang === "id" ? "Terima" : "Accept"}</button>
+                <button onClick={(e)=>{ e.stopPropagation(); onInviteAction?.(toast.workspaceId, toast.memberId, 'reject'); }} style={{padding:"6px 12px", background:"rgba(44,32,22,0.05)", border:"none", borderRadius:16, color:"#2C2016", fontSize:12, fontWeight:700, cursor:"pointer"}}>{lang === "id" ? "Tolak" : "Reject"}</button>
             </div>
           )}
           <button onClick={(e) => { e.stopPropagation(); onClose(); }} style={{background: "none", border: "none", cursor: "pointer", color: "rgba(44,32,22,0.3)", flexShrink:0, padding: 4, display: "flex", alignItems: "center", justifyContent: "center", marginLeft: 8}} className="hover:text-black hover:bg-gray-100 rounded-full transition-colors">
@@ -361,6 +364,7 @@ export function NotificationToast({ toast, onClose, onClick, onInviteAction }: {
 }
 
 export function NotificationPanel({ notifications, onClose, onRead, onContactSupport, deleteNotif, deleteAll, markAllRead, onInviteAction }: { notifications: any[], onClose: () => void, onRead: (id: string) => void, onContactSupport: () => void, deleteNotif: (id:string)=>void, deleteAll: ()=>void, markAllRead?: () => void, onInviteAction?: (wsId:string, mId:string, action:'accept'|'reject') => void }) {
+  const { lang } = useI18n();
   const visibleNotifs = notifications;
   
   return (
@@ -397,7 +401,7 @@ export function NotificationPanel({ notifications, onClose, onRead, onContactSup
               <div style={{width: 48, height: 48, borderRadius: 24, background: "rgba(255,255,255,0.05)", display: "flex", alignItems: "center", justifyContent: "center"}}>
                 <Bell size={20} color="rgba(255,255,255,0.3)" />
               </div>
-              <div style={{fontSize: 12, fontWeight: 500}}>Belum ada notifikasi.</div>
+              <div style={{fontSize: 12, fontWeight: 500}}>{lang === "id" ? "Belum ada notifikasi." : "No notifications."}</div>
             </motion.div>
           )}
           {visibleNotifs.map((n) => (
@@ -428,8 +432,8 @@ export function NotificationPanel({ notifications, onClose, onRead, onContactSup
                       {n.desc}
                       {n.type === "invite" && (
                           <div style={{display: "flex", gap: 8, marginTop: 8}}>
-                              <button onClick={(e)=>{ e.stopPropagation(); onInviteAction?.(n.workspaceId, n.memberId, 'accept'); }} style={{flex:1, padding:"6px", background:"#3B82F6", border:"none", borderRadius:6, color:"white", fontSize:11, fontWeight:700, cursor:"pointer"}}>Terima</button>
-                              <button onClick={(e)=>{ e.stopPropagation(); onInviteAction?.(n.workspaceId, n.memberId, 'reject'); }} style={{flex:1, padding:"6px", background:"rgba(255,255,255,0.1)", border:"none", borderRadius:6, color:"white", fontSize:11, fontWeight:700, cursor:"pointer"}}>Tolak</button>
+                              <button onClick={(e)=>{ e.stopPropagation(); onInviteAction?.(n.workspaceId, n.memberId, 'accept'); }} style={{flex:1, padding:"6px", background:"#3B82F6", border:"none", borderRadius:6, color:"white", fontSize:11, fontWeight:700, cursor:"pointer"}}>{lang === "id" ? "Terima" : "Accept"}</button>
+                              <button onClick={(e)=>{ e.stopPropagation(); onInviteAction?.(n.workspaceId, n.memberId, 'reject'); }} style={{flex:1, padding:"6px", background:"rgba(255,255,255,0.1)", border:"none", borderRadius:6, color:"white", fontSize:11, fontWeight:700, cursor:"pointer"}}>{lang === "id" ? "Tolak" : "Reject"}</button>
                           </div>
                       )}
                   </div>
@@ -438,8 +442,8 @@ export function NotificationPanel({ notifications, onClose, onRead, onContactSup
                       {n.desc}
                       {n.type === "invite" && (
                           <div style={{display: "flex", gap: 8, marginTop: 8}}>
-                              <button onClick={(e)=>{ e.stopPropagation(); onInviteAction?.(n.workspaceId, n.memberId, 'accept'); }} style={{flex:1, padding:"6px", background:"#3B82F6", border:"none", borderRadius:6, color:"white", fontSize:11, fontWeight:700, cursor:"pointer"}}>Terima</button>
-                              <button onClick={(e)=>{ e.stopPropagation(); onInviteAction?.(n.workspaceId, n.memberId, 'reject'); }} style={{flex:1, padding:"6px", background:"rgba(255,255,255,0.1)", border:"none", borderRadius:6, color:"white", fontSize:11, fontWeight:700, cursor:"pointer"}}>Tolak</button>
+                              <button onClick={(e)=>{ e.stopPropagation(); onInviteAction?.(n.workspaceId, n.memberId, 'accept'); }} style={{flex:1, padding:"6px", background:"#3B82F6", border:"none", borderRadius:6, color:"white", fontSize:11, fontWeight:700, cursor:"pointer"}}>{lang === "id" ? "Terima" : "Accept"}</button>
+                              <button onClick={(e)=>{ e.stopPropagation(); onInviteAction?.(n.workspaceId, n.memberId, 'reject'); }} style={{flex:1, padding:"6px", background:"rgba(255,255,255,0.1)", border:"none", borderRadius:6, color:"white", fontSize:11, fontWeight:700, cursor:"pointer"}}>{lang === "id" ? "Tolak" : "Reject"}</button>
                           </div>
                       )}
                   </div>

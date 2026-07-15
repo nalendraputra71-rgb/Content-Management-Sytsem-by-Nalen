@@ -1,0 +1,12 @@
+61 export function DashboardView({ user, profile, activeWorkspace, content, theme, setTab, sidebarOpen, setSidebarOpen, openEdit, openAdd }: any) {
+570 function GreetingSection({ profile, theme, trends = ["Cara viral di TikTok hari ini", "AI untuk Content Creator", "Ide konten Instagram kreatif", "Tips jualan di e-commerce", "Trend warna pastel", "Outfit inspirasi minggu ini"], trendGeo, onTrendGeoChange }: any) {
+661 function MetricsRow({ content, config, updateConfig, theme }: any) {
+895 function ResizeHandle({ item, onResize }: any) {
+941 function DashboardWidget({ item, isEditing, onResize, ...props }: any) {
+1003 function TodoWidget({ todos, activeWorkspace, user, content, theme, openEdit }: any) {
+1239 function TodoItem({ todo, onToggle, onRename, onDelete, theme, disableAnimation, onOpenBrief }: any) {
+1336 function DailyProgressWidget({ todos, content, theme }: any) {
+1393 function StickyNoteWidget({ config, updateConfig, theme }: any) {
+1450 function StickyNotesModal({ notes, updateConfig, onClose, theme }: any) {
+1518 function ShortcutWidget({ theme, setTab, navigate }: any) {
+1551 function LiveClock({ config, updateConfig, theme }: any) {

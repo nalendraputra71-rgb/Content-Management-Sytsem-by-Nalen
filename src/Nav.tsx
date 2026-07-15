@@ -1,3 +1,4 @@
+import { useI18n } from "./i18n";
 import { motion, AnimatePresence } from "motion/react";
 import { useState, useEffect, useRef } from "react";
 import { db, collection, query, where, onSnapshot, doc, updateDoc, addDoc } from "./firebase";
@@ -44,7 +45,7 @@ import {
   Printer,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { eng, fmt, YEARS, B, I, TAB, MONTHS, CustomDropdown } from "./data";
+import { eng, fmt, YEARS, B, I, TAB, MONTHS, MONTHS_EN, CustomDropdown } from "./data";
 import {
   useNotifications,
   NotificationToast,
@@ -54,6 +55,7 @@ import { MenuToggle } from "./MenuToggle";
 import { ColorPickerSelect } from "./components/ColorPickerSelect";
 
 export function Header({ profile }: any) {
+  const { lang } = useI18n();
   const [time, setTime] = useState(new Date());
   const [clockMenu, setClockMenu] = useState(false);
   const [clockSettings, setClockSettings] = useState(() => {
@@ -71,16 +73,16 @@ export function Header({ profile }: any) {
   }, []);
 
   const hour = time.getHours();
-  let greeting = "Selamat Malam";
+  let greeting = lang === "id" ? "Selamat Malam" : "Good Evening";
   let greetingIcon = "🌙";
   if (hour >= 5 && hour < 11) {
-    greeting = "Selamat Pagi";
+    greeting = lang === "id" ? "Selamat Pagi" : "Good Morning";
     greetingIcon = "🌅";
   } else if (hour >= 11 && hour < 15) {
-    greeting = "Selamat Siang";
+    greeting = lang === "id" ? "Selamat Siang" : "Good Afternoon";
     greetingIcon = "☀️";
   } else if (hour >= 15 && hour < 18) {
-    greeting = "Selamat Sore";
+    greeting = lang === "id" ? "Selamat Sore" : "Good Afternoon";
     greetingIcon = "🌇";
   }
 
@@ -961,6 +963,7 @@ function ChatSupportPanel({
 }
 
 export function Sidebar({
+
   systemConfig,
   open,
   setOpen,
@@ -982,6 +985,7 @@ export function Sidebar({
   onQuickAddContent,
   tutorialActive,
 }: any) {
+  const { lang } = useI18n();
   const navigate = useNavigate();
   const [showViews, setShowViews] = useState(true);
   const [showWorkspaces, setShowWorkspaces] = useState(false);
@@ -1004,11 +1008,11 @@ export function Sidebar({
   }, [tutorialActive]);
 
   const VIEWS = [
-    { id: "month", ic: <Calendar size={18} />, lb: "Bulan" },
-    { id: "board", ic: <Layout size={18} />, lb: "Board" },
-    { id: "timeline", ic: <Clock size={18} />, lb: "Timeline" },
-    { id: "table", ic: <List size={18} />, lb: "Tabel" },
-    { id: "analytics", ic: <PieChart size={18} />, lb: "Analitik" },
+    { id: "month", ic: <Calendar size={18} />, lb: lang === "id" ? "Bulan" : "Month" },
+    { id: "board", ic: <Layout size={18} />, lb: lang === "id" ? "Board" : "Board" },
+    { id: "timeline", ic: <Clock size={18} />, lb: lang === "id" ? "Timeline" : "Timeline" },
+    { id: "table", ic: <List size={18} />, lb: lang === "id" ? "Tabel" : "Table" },
+    { id: "analytics", ic: <PieChart size={18} />, lb: lang === "id" ? "Analitik" : "Analytics" },
   ];
 
   const isSuperAdmin =
@@ -1639,10 +1643,10 @@ export function Sidebar({
                             transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
                           }}
                           className="hover-scale active:scale-95"
-                          title="Tambah Brief Konten Baru"
+                          title={lang === "id" ? "Tambah Brief Konten Baru" : "Add New Content Brief"}
                         >
                           <Plus size={open ? 14 : 18} strokeWidth={3} color="#FFFFFF" />
-                          {open && <span style={{ letterSpacing: "0.2px", color: "#FFFFFF" }}>Tambah Brief</span>}
+                          {open && <span style={{ letterSpacing: "0.2px", color: "#FFFFFF" }}>{lang === "id" ? "Tambah Brief" : "Add Brief"}</span>}
                         </button>
                       </div>
 
@@ -2868,15 +2872,15 @@ export function Sidebar({
                   >
                     {leavingWs.type === "delete" ? (
                       <>
-                        Apakah Anda yakin ingin menghapus workspace{" "}
-                        <b>{leavingWs.name}</b> secara permanen? Tindakan ini
-                        tidak dapat dibatalkan.
+                        {lang === "id" ? "Apakah Anda yakin ingin menghapus workspace " : "Are you sure you want to permanently delete the workspace "}
+                        <b>{leavingWs.name}</b>
+                        {lang === "id" ? " secara permanen? Tindakan ini tidak dapat dibatalkan." : "? This action cannot be undone."}
                       </>
                     ) : (
                       <>
-                        Apakah Anda yakin ingin meninggalkan workspace{" "}
-                        <b>{leavingWs.name}</b>? Anda akan kehilangan akses ke
-                        data di dalamnya.
+                        {lang === "id" ? "Apakah Anda yakin ingin meninggalkan workspace " : "Are you sure you want to leave the workspace "}
+                        <b>{leavingWs.name}</b>
+                        {lang === "id" ? "? Anda akan kehilangan akses ke data di dalamnya." : "? You will lose access to its data."}
                       </>
                     )}
                   </p>
@@ -2948,6 +2952,7 @@ export function Sidebar({
 }
 
 function ColsIcon({ size }: any) {
+  const { lang } = useI18n();
   return (
     <div
       style={{
@@ -2965,6 +2970,7 @@ function ColsIcon({ size }: any) {
 }
 
 export function NavBar({
+
   tab,
   setTab,
   year,
@@ -2980,6 +2986,7 @@ export function NavBar({
   onShare,
   sidebarOpen,
 }: any) {
+  const { lang } = useI18n();
   const [localSearchOpen, setLocalSearchOpen] = useState(!sidebarOpen);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const addRef = useRef<HTMLDivElement>(null);
@@ -2998,10 +3005,10 @@ export function NavBar({
   }, []);
 
   const CONTENT_TABS = [
-    { id: "month", label: "Bulan" },
-    { id: "board", label: "Board" },
-    { id: "timeline", label: "Timeline" },
-    { id: "table", label: "Tabel" },
+    { id: "month", label: lang === "id" ? "Bulan" : "Month" },
+    { id: "board", label: lang === "id" ? "Board" : "Board" },
+    { id: "timeline", label: lang === "id" ? "Timeline" : "Timeline" },
+    { id: "table", label: lang === "id" ? "Tabel" : "Table" },
   ];
 
   return (
@@ -3096,7 +3103,7 @@ export function NavBar({
           <div style={{ width: 110 }}>
             <CustomDropdown
               value={String(month)}
-              options={MONTHS.map((m, i) => ({ id: String(i + 1), name: m }))}
+              options={(lang === "id" ? MONTHS : MONTHS_EN).map((m, i) => ({ id: String(i + 1), name: m }))}
               onChange={(v: any) => setMonth(+v)}
               style={{
                 padding: "6px 10px",
@@ -3236,7 +3243,7 @@ export function NavBar({
                 }}
               >
                 <Plus size={16} />{" "}
-                <span style={{ whiteSpace: "nowrap" }}>Tambah Baru</span>
+                <span style={{ whiteSpace: "nowrap" }}>{lang === "id" ? "Tambah Baru" : "Add New"}</span>
               </motion.button>
             ) : (
               <motion.div
@@ -3277,7 +3284,7 @@ export function NavBar({
                   }}
                 >
                   <Edit2 size={14} />{" "}
-                  <span style={{ whiteSpace: "nowrap" }}>Konten</span>
+                  <span style={{ whiteSpace: "nowrap" }}>{lang === "id" ? "Konten" : "Content"}</span>
                 </button>
                 <div
                   style={{
@@ -3310,7 +3317,7 @@ export function NavBar({
                   }}
                 >
                   <Calendar size={14} />{" "}
-                  <span style={{ whiteSpace: "nowrap" }}>Event</span>
+                  <span style={{ whiteSpace: "nowrap" }}>{lang === "id" ? "Event" : "Event"}</span>
                 </button>
               </motion.div>
             )}
@@ -3349,6 +3356,7 @@ function MultiSelectFilter({
   style,
   onUpdateOptions,
 }: any) {
+  const { lang } = useI18n();
   const [open, setOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -3416,17 +3424,19 @@ function MultiSelectFilter({
   };
 
   const displayLabel = values.includes("All")
-    ? "Semua"
+    ? (lang === "id" ? "Semua" : "All")
     : values.length > 0
       ? values
           .map((v: any) => {
             const o = options.find(
               (opt: any) => (opt.id || opt.name || opt) === v,
             );
-            return o ? o.name || o.id || o : v;
+            const valLabel = o ? o.name || o.id || o : v;
+            if (valLabel === "Semua") return lang === "id" ? "Semua" : "All";
+            return valLabel;
           })
           .join(", ")
-      : `Tidak ada ${label}`;
+      : lang === "id" ? `Tidak ada ${label}` : `No ${label}`;
 
   return (
     <div ref={ref} style={{ position: "relative", width: "100%" }}>
@@ -3531,7 +3541,7 @@ function MultiSelectFilter({
                     marginBottom: 4,
                   }}
                 >
-                  <span>Edit Opsi</span>
+                  <span>{lang === "id" ? "Edit Opsi" : "Edit Options"}</span>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -3694,8 +3704,11 @@ function MultiSelectFilter({
                 {options.map((opt: any, i: any) => {
                   const val =
                     typeof opt === "string" ? opt : opt.id || opt.name;
-                  const name =
+                  let name =
                     typeof opt === "string" ? opt : opt.name || opt.id;
+                  if (name === "Semua") {
+                    name = lang === "id" ? "Semua" : "All";
+                  }
                   const isAll = values.includes("All");
                   const selected =
                     val === "All" ? isAll : isAll || values.includes(val);
@@ -3796,6 +3809,7 @@ function MultiSelectFilter({
 }
 
 export function FilterBar({
+
   filters,
   setFilters,
   pillars,
@@ -3811,6 +3825,7 @@ export function FilterBar({
   onExportClick,
   onSettingUpdate,
 }: any) {
+  const { lang } = useI18n();
   const set = (k: any, v: any) => setFilters((p: any) => ({ ...p, [k]: v }));
   return (
     <div
@@ -3840,10 +3855,10 @@ export function FilterBar({
         }}
       >
         {[
-          ["Pillar", pillars, "pillar"],
-          ["Platform", platforms, "platform"],
-          ["Tipe Konten", contentTypes, "contentType"],
-          ["PIC", pics, "pic"],
+          [lang === "id" ? "Pillar" : "Pillar", pillars, "pillar"],
+          [lang === "id" ? "Platform" : "Platform", platforms, "platform"],
+          [lang === "id" ? "Tipe Konten" : "Content Type", contentTypes, "contentType"],
+          [lang === "id" ? "PIC" : "PIC", pics, "pic"],
         ].map(([l, opt, key]) => (
           <div
             key={key as string}

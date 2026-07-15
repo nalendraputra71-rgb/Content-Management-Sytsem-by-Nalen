@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useI18n } from "./i18n";
 import { I, B, CARD, THEMES } from "./data";
 import { ColorPickerSelect } from "./components/ColorPickerSelect";
 import { 
@@ -16,11 +17,13 @@ import {
   Cloud, 
   FlaskConical,
   Trash2,
-  X
+  X,
+  Globe
 } from "lucide-react";
 
 function getSectionIcon(id: string, size = 16) {
   switch (id) {
+    case "language": return <Globe size={size} />;
     case "visual": return <Palette size={size} />;
     case "pillars": return <Layers size={size} />;
     case "platforms": return <Smartphone size={size} />;
@@ -57,6 +60,7 @@ export const HOLIDAY_API_OPTIONS = [
 ];
 
 export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, profile, onUpdateProfile, onDirty, onLeave, onDelete, isOwner }: any) {
+  const { lang, setLang } = useI18n();
   const [section, setSection] = useState("visual");
   const [pendingSection, setPendingSection] = useState<string | null>(null);
   
@@ -136,13 +140,14 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
   }, [JSON.stringify(initialSettings)]);
 
   const sections = [
-    ["visual", "Tema Visual"],
-    ["pillars", "Content Pillars"],
-    ["contentTypes", "Tipe Konten"],
-    ["pics", "Team PIC"],
-    ["statuses", "Status Workflow"],
-    ["holidays", "Hari Besar"],
-    ["customEvents", "Event Kustom"],
+    ["language", lang === 'id' ? "Bahasa" : "Language"],
+    ["visual", lang === 'id' ? "Tema Visual" : "Visual Theme"],
+    ["pillars", lang === 'id' ? "Pilar Konten" : "Content Pillars"],
+    ["contentTypes", lang === 'id' ? "Tipe Konten" : "Content Types"],
+    ["pics", lang === 'id' ? "Anggota Tim / PIC" : "Team / PIC"],
+    ["statuses", lang === 'id' ? "Status Workflow" : "Workflow Status"],
+    ["holidays", lang === 'id' ? "Hari Besar" : "Holidays"],
+    ["customEvents", lang === 'id' ? "Event Kustom" : "Custom Events"],
     ["workspace", "Workspace"],
     ["general", "General & Debug"]
   ];
@@ -310,7 +315,7 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
     <div style={{ display: "flex", gap: 8, marginTop: 12, background: "var(--theme-primary)11", padding: 10, borderRadius: 16, border: "1px dashed var(--theme-primary)44", alignItems: "center" }}>
       {colorPicker && <ColorPickerSelect value={newColor} onChange={(val) => setNewColor(val)} />}
       <input value={value} onChange={(e: any) => onChange(e.target.value)} onKeyDown={(e: any) => e.key === "Enter" && onAdd()} placeholder={placeholder} style={I({ flex: 1, border: "none", background: "white", boxShadow: "0 2px 8px rgba(0,0,0,0.04)", fontSize: 14 })} />
-      <button onClick={onAdd} className="hover-scale" style={{ ...B(true, "var(--theme-primary)"), padding: "0 20px", height: 42, fontWeight: 700, borderRadius: 12, border: "none", color: "white" }}>Tambah</button>
+      <button onClick={onAdd} className="hover-scale" style={{ ...B(true, "var(--theme-primary)"), padding: "0 20px", height: 42, fontWeight: 700, borderRadius: 12, border: "none", color: "white" }}>{lang === 'id' ? 'Tambah' : 'Add'}</button>
     </div>
   );
 
@@ -333,13 +338,13 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
       {/* Header Sticky Action Bar */}
       <div style={{ background: "white", borderRadius: 16, padding: "12px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", boxShadow: "0 1px 4px rgba(44,32,22,0.08)", position: "sticky", top: 16, zIndex: 60 }}>
         <div>
-          <h2 style={{ fontSize: 18, fontWeight: 800, margin: 0, color: "#2C2016" }}>Pengaturan Workspace</h2>
-          <p style={{ fontSize: 11, color: "rgba(44,32,22,0.4)", margin: 0, fontWeight: 600 }}>Ubah kategori, platform, PIC, dan event khusus.</p>
+          <h2 style={{ fontSize: 18, fontWeight: 800, margin: 0, color: "#2C2016" }}>{lang === 'id' ? 'Pengaturan Workspace' : 'Workspace Settings'}</h2>
+          <p style={{ fontSize: 11, color: "rgba(44,32,22,0.4)", margin: 0, fontWeight: 600 }}>{lang === 'id' ? 'Ubah kategori, platform, PIC, dan event khusus.' : 'Change categories, platforms, PICs, and custom events.'}</p>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           {saveSuccess && (
             <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 700, color: "#2D7A5E" }}>
-              <CheckCircle2 size={16} /> Tersimpan
+              <CheckCircle2 size={16} /> {lang === 'id' ? 'Tersimpan' : 'Saved'}
             </span>
           )}
           <button 
@@ -351,7 +356,7 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
               display: "flex", alignItems: "center", gap: 8, padding: "10px 24px", borderRadius: 24, fontSize: 14, fontWeight: 800, cursor: saving ? "not-allowed" : "pointer", border: "none", color: "white"
             }}
           >
-            <Save size={18} /> {saving ? "Menyimpan..." : "Simpan Perubahan"}
+            <Save size={18} /> {saving ? (lang === 'id' ? "Menyimpan..." : "Saving...") : (lang === 'id' ? "Simpan Perubahan" : "Save Changes")}
           </button>
         </div>
       </div>
@@ -397,6 +402,51 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
           ))}
         </div>
         <div style={CARD()}>
+          {section === "language" && (
+            <div className="fade-in">
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+                <div style={{ background: "var(--theme-primary)22", padding: 10, borderRadius: 12, color: "var(--theme-primary)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  {getSectionIcon("language", 20)}
+                </div>
+                <div>
+                  <h3 style={{ fontSize: 18, margin: 0, color: "#2C2016" }}>{lang === 'id' ? 'Bahasa Antarmuka' : 'Interface Language'}</h3>
+                  <p style={{ fontSize: 12, color: "rgba(44,32,22,0.5)", margin: "4px 0 0" }}>
+                    {lang === 'id' ? 'Pilih bahasa yang ingin digunakan di seluruh antarmuka aplikasi.' : 'Choose the language you want to use throughout the application interface.'}
+                  </p>
+                </div>
+              </div>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div 
+                  onClick={() => setLang('id')}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 16, border: `2px solid ${lang === 'id' ? 'var(--theme-primary)' : 'transparent'}`, background: lang === 'id' ? 'var(--theme-primary)11' : '#f8f9fa', borderRadius: 12, cursor: 'pointer', transition: 'all 0.2s' }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <span style={{ fontSize: 24 }}>🇮🇩</span>
+                    <div>
+                      <div style={{ fontWeight: 700, color: '#2C2016' }}>Bahasa Indonesia</div>
+                      <div style={{ fontSize: 12, color: 'rgba(44,32,22,0.5)' }}>Bahasa sistem default</div>
+                    </div>
+                  </div>
+                  {lang === 'id' && <CheckCircle2 size={20} color="var(--theme-primary)" />}
+                </div>
+
+                <div 
+                  onClick={() => setLang('en')}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 16, border: `2px solid ${lang === 'en' ? 'var(--theme-primary)' : 'transparent'}`, background: lang === 'en' ? 'var(--theme-primary)11' : '#f8f9fa', borderRadius: 12, cursor: 'pointer', transition: 'all 0.2s' }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <span style={{ fontSize: 24 }}>🇺🇸</span>
+                    <div>
+                      <div style={{ fontWeight: 700, color: '#2C2016' }}>English</div>
+                      <div style={{ fontSize: 12, color: 'rgba(44,32,22,0.5)' }}>International language</div>
+                    </div>
+                  </div>
+                  {lang === 'en' && <CheckCircle2 size={20} color="var(--theme-primary)" />}
+                </div>
+              </div>
+            </div>
+          )}
           {section === "visual" && (
             <div className="fade-in">
               <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
@@ -404,8 +454,8 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
                   {getSectionIcon("visual", 20)}
                 </div>
                 <div>
-                  <h3 style={{ fontSize: 18, margin: 0, color: "#2C2016" }}>Tema Visual Profesional</h3>
-                  <p style={{ fontSize: 12, color: "rgba(44,32,22,0.5)", margin: "4px 0 0" }}>Pilih salah satu dari 10 tema warna profesional untuk aplikasi Anda. Tema ini berlaku secara global.</p>
+                  <h3 style={{ fontSize: 18, margin: 0, color: "#2C2016" }}>{lang === 'id' ? 'Tema Visual Profesional' : 'Professional Visual Theme'}</h3>
+                  <p style={{ fontSize: 12, color: "rgba(44,32,22,0.5)", margin: "4px 0 0" }}>{lang === 'id' ? 'Pilih salah satu dari 10 tema warna profesional untuk aplikasi Anda. Tema ini berlaku secara global.' : 'Choose one of 10 professional color themes for your app. This theme applies globally.'}</p>
                 </div>
               </div>
               
@@ -464,8 +514,8 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
                   {getSectionIcon("pillars", 20)}
                 </div>
                 <div>
-                  <h3 style={{ fontSize: 18, margin: 0, color: "#2C2016" }}>Content Pillars</h3>
-                  <p style={{ fontSize: 12, color: "rgba(44,32,22,0.5)", margin: "4px 0 0" }}>Kategori konten utama untuk strategi Anda</p>
+                  <h3 style={{ fontSize: 18, margin: 0, color: "#2C2016" }}>{lang === 'id' ? 'Pilar Konten' : 'Content Pillars'}</h3>
+                  <p style={{ fontSize: 12, color: "rgba(44,32,22,0.5)", margin: "4px 0 0" }}>{lang === 'id' ? 'Kategori konten utama untuk strategi Anda' : 'Main content categories for your strategy'}</p>
                 </div>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -473,11 +523,11 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
                 <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", background: "white", borderRadius: 12, border: "1px solid rgba(44,32,22,0.05)", boxShadow: "0 2px 8px rgba(44,32,22,0.02)", transition: "all 0.2s" }} className="hover:border-[var(--theme-primary)44]">
                   <ColorPickerSelect value={p.color} onChange={(val) => editPillar(i, p.name, val)} />
                   <input value={p.name} onChange={(e: any) => editPillar(i, e.target.value, p.color)} style={{ flex: 1, fontSize: 14, fontWeight: 600, border: "none", background: "transparent", outline: "none", color: "#2C2016" }} />
-                  <button onClick={() => delPillar(i)} style={{ background: "#FDF5F8", border: "none", borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#9C2B4E", transition: "all 0.2s" }} className="hover:bg-[#9C2B4E] hover:text-white">Hapus</button>
+                  <button onClick={() => delPillar(i)} style={{ background: "#FDF5F8", border: "none", borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#9C2B4E", transition: "all 0.2s" }} className="hover:bg-[#9C2B4E] hover:text-white">{lang === 'id' ? 'Hapus' : 'Delete'}</button>
                 </div>
               ))}
               </div>
-              {renderInputRow("Nama pillar baru...", newVal, setNewVal, addPillar, true)}
+              {renderInputRow("" + (lang === 'id' ? 'Nama pillar baru...' : 'New pillar name...') + "", newVal, setNewVal, addPillar, true)}
             </div>
           )}
           {section === "platforms" && (
@@ -487,8 +537,8 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
                   {getSectionIcon("platforms", 20)}
                 </div>
                 <div>
-                  <h3 style={{ fontSize: 18, margin: 0, color: "#2C2016" }}>Platforms</h3>
-                  <p style={{ fontSize: 12, color: "rgba(44,32,22,0.5)", margin: "4px 0 0" }}>Saluran distribusi konten Anda</p>
+                  <h3 style={{ fontSize: 18, margin: 0, color: "#2C2016" }}>{lang === 'id' ? 'Platform' : 'Platforms'}</h3>
+                  <p style={{ fontSize: 12, color: "rgba(44,32,22,0.5)", margin: "4px 0 0" }}>{lang === 'id' ? 'Saluran distribusi konten Anda' : 'Your content distribution channels'}</p>
                 </div>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -496,11 +546,11 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
                 <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", background: "white", borderRadius: 12, border: "1px solid rgba(44,32,22,0.05)", boxShadow: "0 2px 8px rgba(44,32,22,0.02)", transition: "all 0.2s" }} className="hover:border-[var(--theme-primary)44]">
                   <ColorPickerSelect value={p.color} onChange={(val) => editPlatform(i, p.name, val)} />
                   <input value={p.name} onChange={(e: any) => editPlatform(i, e.target.value, p.color)} style={{ flex: 1, fontSize: 14, fontWeight: 600, border: "none", background: "transparent", outline: "none", color: "#2C2016" }} />
-                  <button onClick={() => delPlatform(i)} style={{ background: "#FDF5F8", border: "none", borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#9C2B4E", transition: "all 0.2s" }} className="hover:bg-[#9C2B4E] hover:text-white">Hapus</button>
+                  <button onClick={() => delPlatform(i)} style={{ background: "#FDF5F8", border: "none", borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#9C2B4E", transition: "all 0.2s" }} className="hover:bg-[#9C2B4E] hover:text-white">{lang === 'id' ? 'Hapus' : 'Delete'}</button>
                 </div>
               ))}
               </div>
-              {renderInputRow("Nama platform baru...", newVal, setNewVal, addPlatform, true)}
+              {renderInputRow("" + (lang === 'id' ? 'Nama platform baru...' : 'New platform name...') + "", newVal, setNewVal, addPlatform, true)}
             </div>
           )}
           {section === "contentTypes" && (
@@ -510,8 +560,8 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
                   <ClipboardList size={20} />
                 </div>
                 <div>
-                  <h3 style={{ fontSize: 18, margin: 0, color: "#2C2016" }}>Tipe Konten</h3>
-                  <p style={{ fontSize: 12, color: "rgba(44,32,22,0.5)", margin: "4px 0 0" }}>Bentuk dan format konten (Video, Feed, dll)</p>
+                  <h3 style={{ fontSize: 18, margin: 0, color: "#2C2016" }}>{lang === 'id' ? 'Tipe Konten' : 'Content Types'}</h3>
+                  <p style={{ fontSize: 12, color: "rgba(44,32,22,0.5)", margin: "4px 0 0" }}>{lang === 'id' ? 'Bentuk dan format konten (Video, Feed, dll)' : 'Content shapes and formats (Video, Feed, etc)'}</p>
                 </div>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -519,11 +569,11 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
                 <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", background: "white", borderRadius: 12, border: "1px solid rgba(44,32,22,0.05)", boxShadow: "0 2px 8px rgba(44,32,22,0.02)", transition: "all 0.2s" }} className="hover:border-[var(--theme-primary)44]">
                   <ColorPickerSelect value={p.color} onChange={(val) => editContentType(i, p.name, val)} />
                   <input value={p.name} onChange={(e: any) => editContentType(i, e.target.value, p.color)} style={{ flex: 1, fontSize: 14, fontWeight: 600, border: "none", background: "transparent", outline: "none", color: "#2C2016" }} />
-                  <button onClick={() => delContentType(i)} style={{ background: "#FDF5F8", border: "none", borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#9C2B4E", transition: "all 0.2s" }} className="hover:bg-[#9C2B4E] hover:text-white">Hapus</button>
+                  <button onClick={() => delContentType(i)} style={{ background: "#FDF5F8", border: "none", borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#9C2B4E", transition: "all 0.2s" }} className="hover:bg-[#9C2B4E] hover:text-white">{lang === 'id' ? 'Hapus' : 'Delete'}</button>
                 </div>
               ))}
               </div>
-              {renderInputRow("Nama tipe konten baru...", newVal, setNewVal, addContentType, true)}
+              {renderInputRow("" + (lang === 'id' ? 'Nama tipe konten baru...' : 'New content type name...') + "", newVal, setNewVal, addContentType, true)}
             </div>
           )}
           {section === "pics" && (
@@ -533,8 +583,8 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
                   {getSectionIcon("pics", 20)}
                 </div>
                 <div>
-                  <h3 style={{ fontSize: 18, margin: 0, color: "#2C2016" }}>Team PIC</h3>
-                  <p style={{ fontSize: 12, color: "rgba(44,32,22,0.5)", margin: "4px 0 0" }}>Anggota tim yang bertanggung jawab (Person In Charge)</p>
+                  <h3 style={{ fontSize: 18, margin: 0, color: "#2C2016" }}>{lang === 'id' ? 'PIC Tim' : 'Team PIC'}</h3>
+                  <p style={{ fontSize: 12, color: "rgba(44,32,22,0.5)", margin: "4px 0 0" }}>{lang === 'id' ? 'Anggota tim yang bertanggung jawab (Person In Charge)' : 'Team members in charge (Person In Charge)'}</p>
                 </div>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -545,12 +595,12 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
                   <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", background: "white", borderRadius: 12, border: "1px solid rgba(44,32,22,0.05)", boxShadow: "0 2px 8px rgba(44,32,22,0.02)", transition: "all 0.2s" }} className="hover:border-[var(--theme-primary)44]">
                     <ColorPickerSelect value={color} onChange={(val) => editPic(i, name, val)} />
                     <input value={name} onChange={(e: any) => editPic(i, e.target.value, color)} style={{ flex: 1, fontSize: 14, fontWeight: 600, border: "none", background: "transparent", outline: "none", color: "#2C2016" }} />
-                    <button onClick={() => delPic(i)} style={{ background: "#FDF5F8", border: "none", borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#9C2B4E", transition: "all 0.2s" }} className="hover:bg-[#9C2B4E] hover:text-white">Hapus</button>
+                    <button onClick={() => delPic(i)} style={{ background: "#FDF5F8", border: "none", borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#9C2B4E", transition: "all 0.2s" }} className="hover:bg-[#9C2B4E] hover:text-white">{lang === 'id' ? 'Hapus' : 'Delete'}</button>
                   </div>
                 );
               })}
               </div>
-              {renderInputRow("Nama PIC baru...", newVal, setNewVal, addPic, true)}
+              {renderInputRow("" + (lang === 'id' ? 'Nama PIC baru...' : 'New PIC name...') + "", newVal, setNewVal, addPic, true)}
             </div>
           )}
           {section === "statuses" && (
@@ -560,8 +610,8 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
                   {getSectionIcon("statuses", 20)}
                 </div>
                 <div>
-                  <h3 style={{ fontSize: 18, margin: 0, color: "#2C2016" }}>Status Workflow</h3>
-                  <p style={{ fontSize: 12, color: "rgba(44,32,22,0.5)", margin: "4px 0 0" }}>Urutan dari atas ke bawah = alur kerja</p>
+                  <h3 style={{ fontSize: 18, margin: 0, color: "#2C2016" }}>{lang === 'id' ? 'Status Workflow' : 'Workflow Status'}</h3>
+                  <p style={{ fontSize: 12, color: "rgba(44,32,22,0.5)", margin: "4px 0 0" }}>{lang === 'id' ? 'Urutan dari atas ke bawah = alur kerja' : 'Top to bottom order = workflow'}</p>
                 </div>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -574,12 +624,12 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
                     <ColorPickerSelect value={color} onChange={(val) => editStatus(i, name, val)} />
                     <input value={name} onChange={(e: any) => editStatus(i, e.target.value, color)} style={{ flex: 1, background: color + "15", color: color, fontSize: 13, fontWeight: 700, padding: "6px 12px", borderRadius: 8, border: "none", outline: "none", maxWidth: "fit-content" }} />
                     <div style={{flex: 1}} />
-                    <button onClick={() => delStatus(i)} style={{ background: "#FDF5F8", border: "none", borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#9C2B4E", transition: "all 0.2s" }} className="hover:bg-[#9C2B4E] hover:text-white">Hapus</button>
+                    <button onClick={() => delStatus(i)} style={{ background: "#FDF5F8", border: "none", borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#9C2B4E", transition: "all 0.2s" }} className="hover:bg-[#9C2B4E] hover:text-white">{lang === 'id' ? 'Hapus' : 'Delete'}</button>
                   </div>
                 );
               })}
               </div>
-              {renderInputRow("Status baru (e.g. In Review)...", newVal, setNewVal, addStatus, true)}
+              {renderInputRow("" + (lang === 'id' ? 'Status baru (e.g. In Review)...' : 'New status (e.g. In Review)...') + "", newVal, setNewVal, addStatus, true)}
             </div>
           )}
           {section === "holidays" && (
@@ -589,16 +639,16 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
                   {getSectionIcon("holidays", 20)}
                 </div>
                 <div>
-                  <h3 style={{ fontSize: 18, margin: 0, color: "#2C2016" }}>Hari Besar & Event Tahunan</h3>
-                  <p style={{ fontSize: 12, color: "rgba(44,32,22,0.5)", margin: "4px 0 0" }}>Kelola hari libur otomatis (via API) atau tambahkan hari besar kustom Anda sendiri.</p>
+                  <h3 style={{ fontSize: 18, margin: 0, color: "#2C2016" }}>{lang === 'id' ? 'Hari Besar & Event Tahunan' : 'Holidays & Annual Events'}</h3>
+                  <p style={{ fontSize: 12, color: "rgba(44,32,22,0.5)", margin: "4px 0 0" }}>{lang === 'id' ? 'Kelola hari libur otomatis (via API) atau tambahkan hari besar kustom Anda sendiri.' : 'Manage automatic holidays (via API) or add your own custom holidays.'}</p>
                 </div>
               </div>
 
               {/* Pengaturan Tampilan */}
               <div style={{ background: "white", padding: 20, borderRadius: 16, border: "1px solid rgba(44,32,22,0.06)", display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
                 <div>
-                  <h4 style={{ fontSize: 14, fontWeight: 700, margin: "0 0 4px", color: "#2C2016" }}>Tampilkan di Kalender</h4>
-                  <p style={{ fontSize: 12, color: "rgba(44,32,22,0.5)", margin: 0 }}>Pilih apakah label hari besar dan event kustom ditampilkan di semua tampilan kalender.</p>
+                  <h4 style={{ fontSize: 14, fontWeight: 700, margin: "0 0 4px", color: "#2C2016" }}>" + (lang === 'id' ? 'Tampilkan di Kalender' : 'Show in Calendar') + "</h4>
+                  <p style={{ fontSize: 12, color: "rgba(44,32,22,0.5)", margin: 0 }}>" + (lang === 'id' ? 'Pilih apakah label hari besar dan event kustom ditampilkan di semua tampilan kalender.' : 'Choose whether holiday and custom event labels are displayed in all calendar views.') + "</p>
                 </div>
                 <div style={{
                   width: 48, height: 28, background: localShowHolidays ? "var(--theme-primary)" : "rgba(44,32,22,0.1)",
@@ -618,7 +668,7 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
                   🔌 Sinkronisasi Kalender Hari Libur Otomatis
                 </h4>
                 <p style={{ fontSize: 11, color: "rgba(44,32,22,0.6)", margin: "0 0 14px", lineHeight: 1.4 }}>
-                  Pilih kalender hari libur nasional resmi untuk ditampilkan otomatis di dashboard dan sistem kalender mingguan/bulanan Anda. Bisa diaktifkan bersamaan.
+                  {lang === "id" ? "Pilih kalender hari libur nasional resmi untuk ditampilkan otomatis di dashboard dan sistem kalender mingguan/bulanan Anda. Bisa diaktifkan bersamaan." : "Select official national holiday calendars to automatically display on your dashboard and weekly/monthly calendar system. Can be enabled simultaneously."}
                 </p>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 10 }}>
                   {HOLIDAY_API_OPTIONS.map((opt) => {
@@ -668,8 +718,8 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
               </div>
 
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-                <h4 style={{ fontSize: 13, fontWeight: 700, margin: 0, color: "#2C2016" }}>📋 Daftar Hari Besar Kustom</h4>
-                <span style={{ fontSize: 11, color: "rgba(44,32,22,0.4)" }}>{sortedHolidays.length} Kustom terdaftar</span>
+                <h4 style={{ fontSize: 13, fontWeight: 700, margin: 0, color: "#2C2016" }}>" + (lang === 'id' ? '📋 Daftar Hari Besar Kustom' : '📋 Custom Holidays List') + "</h4>
+                <span style={{ fontSize: 11, color: "rgba(44,32,22,0.4)" }}>{sortedHolidays.length}" + (lang === 'id' ? ' Kustom terdaftar' : ' Custom registered') + "</span>
               </div>
               
               <div style={{ maxHeight: 220, overflow: "auto", display: "flex", flexDirection: "column", gap: 8, marginBottom: 24, paddingRight: 4 }}>
@@ -697,7 +747,7 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
                         color: "#9C2B4E", 
                         transition: "all 0.2s" 
                       }} 
-                      title="Hapus"
+                      title={lang === "id" ? "Hapus" : "Delete"}
                       className="hover:bg-[#9C2B4E] hover:text-white"
                     >
                       <Trash2 size={13} />
@@ -713,7 +763,7 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
               
               <div style={{ display: "flex", gap: 12, background: "var(--theme-primary)08", padding: 14, borderRadius: 16, border: "1px dashed var(--theme-primary)33", alignItems: "flex-end" }}>
                 <div style={{ display: "flex", flexDirection: "column", gap: 6, flex: "none", width: 160 }}>
-                  <label style={{ fontSize: 11, fontWeight: 700, color: "var(--theme-primary)" }}>Pilih Tanggal</label>
+                  <label style={{ fontSize: 11, fontWeight: 700, color: "var(--theme-primary)" }}>" + (lang === 'id' ? 'Pilih Tanggal' : 'Select Date') + "</label>
                   <input 
                     type="date" 
                     value={newHKey} 
@@ -722,7 +772,7 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
                   />
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 6, flex: 1 }}>
-                  <label style={{ fontSize: 11, fontWeight: 700, color: "var(--theme-primary)" }}>Nama Hari Besar / Event</label>
+                  <label style={{ fontSize: 11, fontWeight: 700, color: "var(--theme-primary)" }}>" + (lang === 'id' ? 'Nama Hari Besar / Event' : 'Holiday / Event Name') + "</label>
                   <input 
                     value={newHVal} 
                     onChange={(e: any) => setNewHVal(e.target.value)} 
@@ -756,8 +806,8 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
                   {getSectionIcon("customEvents", 20)}
                 </div>
                 <div>
-                  <h3 style={{ fontSize: 18, margin: 0, color: "#2C2016" }}>Event Kustom & Promo</h3>
-                  <p style={{ fontSize: 12, color: "rgba(44,32,22,0.5)", margin: "4px 0 0" }}>Misal: Pay Day Sale, Twin Date, atau Peluncuran Produk.</p>
+                  <h3 style={{ fontSize: 18, margin: 0, color: "#2C2016" }}>{lang === 'id' ? 'Event Kustom & Promo' : 'Custom Events & Promos'}</h3>
+                  <p style={{ fontSize: 12, color: "rgba(44,32,22,0.5)", margin: "4px 0 0" }}>{lang === 'id' ? 'Misal: Pay Day Sale, Twin Date, atau Peluncuran Produk.' : 'E.g., Pay Day Sale, Twin Date, or Product Launch.'}</p>
                 </div>
               </div>
               
@@ -813,7 +863,7 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
                    <input type="checkbox" checked={newEvMonthly} onChange={e=>setNewEvMonthly(e.target.checked)} style={{width: 18, height: 18, accentColor: "var(--theme-primary)"}} />
                    Ulangi Setiap Bulan (Berdasarkan Tgl)
                 </label>
-                <button className="hover-scale" onClick={addCustomEvent} style={{ ...B(true, "var(--theme-primary)"), height: 44, borderRadius: 12, fontSize:14, fontWeight: 800, marginTop: 4, color: "white", border: "none" }}>Tambah Event Kustom</button>
+                <button className="hover-scale" onClick={addCustomEvent} style={{ ...B(true, "var(--theme-primary)"), height: 44, borderRadius: 12, fontSize:14, fontWeight: 800, marginTop: 4, color: "white", border: "none" }}>" + (lang === 'id' ? 'Tambah Event Kustom' : 'Add Custom Event') + "</button>
                 
                 {addEventAttempted && (!newEvName.trim() || !newEvStart || !newEvEnd) && (
                   <span style={{ fontSize: 11, color: "#9C2B4E", fontWeight: 700, marginTop: 4, display: "block" }}>
@@ -877,8 +927,8 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
                            Ulangi Setiap Bulan (Berdasarkan Tgl)
                         </label>
                         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 8 }}>
-                          <button onClick={() => setEditingEvId(null)} style={{ ...B(false), fontSize: 13, padding: "8px 16px", height: "auto", borderRadius: 10 }}>Batal</button>
-                          <button onClick={() => saveEditedCustomEvent(ev.id)} style={{ ...B(true, "var(--theme-primary)"), fontSize: 13, padding: "8px 24px", height: "auto", borderRadius: 10, color: "white", border: "none", fontWeight: 800 }}>Simpan</button>
+                          <button onClick={() => setEditingEvId(null)} style={{ ...B(false), fontSize: 13, padding: "8px 16px", height: "auto", borderRadius: 10 }}>{lang === 'id' ? 'Batal' : 'Cancel'}</button>
+                          <button onClick={() => saveEditedCustomEvent(ev.id)} style={{ ...B(true, "var(--theme-primary)"), fontSize: 13, padding: "8px 24px", height: "auto", borderRadius: 10, color: "white", border: "none", fontWeight: 800 }}>{lang === 'id' ? 'Simpan' : 'Save'}</button>
                         </div>
                         {editEventAttempted && (!editEvName.trim() || !editEvStart || !editEvEnd) && (
                           <span style={{ fontSize: 11, color: "#9C2B4E", fontWeight: 700, marginTop: 4, display: "block" }}>
@@ -900,8 +950,8 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
                         </div>
                       </div>
                       <div style={{ display: "flex", gap: 8 }}>
-                        <button onClick={() => startEditCustomEvent(ev)} style={{ background: "rgba(44,32,22,0.05)", border: "none", borderRadius: 8, padding: "8px 14px", fontSize: 12, cursor: "pointer", color: "#2C2016", fontWeight: 700 }} className="hover:bg-black/10">Edit</button>
-                        <button onClick={() => delCustomEvent(ev.id)} style={{ background: "rgba(156,43,78,0.05)", border: "none", borderRadius: 8, padding: "8px 14px", fontSize: 12, cursor: "pointer", color: "#9C2B4E", fontWeight: 700 }} className="hover:bg-[#9C2B4E] hover:text-white transition-colors">Hapus</button>
+                        <button onClick={() => startEditCustomEvent(ev)} style={{ background: "rgba(44,32,22,0.05)", border: "none", borderRadius: 8, padding: "8px 14px", fontSize: 12, cursor: "pointer", color: "#2C2016", fontWeight: 700 }} className="hover:bg-black/10">{lang === "id" ? "Edit" : "Edit"}</button>
+                        <button onClick={() => delCustomEvent(ev.id)} style={{ background: "rgba(156,43,78,0.05)", border: "none", borderRadius: 8, padding: "8px 14px", fontSize: 12, cursor: "pointer", color: "#9C2B4E", fontWeight: 700 }} className="hover:bg-[#9C2B4E] hover:text-white transition-colors">{lang === 'id' ? 'Hapus' : 'Delete'}</button>
                       </div>
                     </div>
                   );
@@ -917,13 +967,13 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
                   {getSectionIcon("workspace", 20)}
                 </div>
                 <div>
-                  <h3 style={{ fontSize: 18, margin: 0, color: "#2C2016" }}>Manajemen Workspace</h3>
-                  <p style={{ fontSize: 12, color: "rgba(44,32,22,0.5)", margin: "4px 0 0", maxWidth: 500 }}>Kelola status Anda di workspace ini. Anda dapat keluar dari workspace jika diundang, atau menghapus workspace jika Anda adalah pemiliknya.</p>
+                  <h3 style={{ fontSize: 18, margin: 0, color: "#2C2016" }}>{lang === 'id' ? 'Manajemen Workspace' : 'Workspace Management'}</h3>
+                  <p style={{ fontSize: 12, color: "rgba(44,32,22,0.5)", margin: "4px 0 0", maxWidth: 500 }}>{lang === 'id' ? 'Kelola status Anda di workspace ini. Anda dapat keluar dari workspace jika diundang, atau menghapus workspace jika Anda adalah pemiliknya.' : 'Manage your status in this workspace. You can leave the workspace if you were invited, or delete the workspace if you are the owner.'}</p>
                 </div>
               </div>
               
               <div style={{ background: "#FDF5F8", border: "1.5px solid rgba(156,43,78,0.15)", borderRadius: 20, padding: 24, boxShadow: "0 4px 12px rgba(156,43,78,0.05)", marginTop: 24 }}>
-                <h4 style={{ fontSize: 16, fontWeight: 800, color: "#9C2B4E", marginBottom: 8 }}>{isOwner ? "Hapus Workspace Ini" : "Tinggalkan Workspace Ini"}</h4>
+                <h4 style={{ fontSize: 16, fontWeight: 800, color: "#9C2B4E", marginBottom: 8 }}>{isOwner ? lang === "id" ? "Hapus Workspace Ini" : "Delete This Workspace" : lang === "id" ? "Tinggalkan Workspace Ini" : "Leave This Workspace"}</h4>
                 <p style={{ fontSize: 13, color: "rgba(156,43,78,0.7)", marginBottom: 24, lineHeight: 1.5 }}>
                   {isOwner 
                     ? "Menghapus workspace akan menghilangkan seluruh data konten, platform, dan anggota di dalamnya secara permanen. Tindakan ini tidak dapat dibatalkan!" 
@@ -939,7 +989,7 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
                       padding: "12px 28px", borderRadius: 12, fontSize: 14, fontWeight: 800, background: "#9C2B4E", border: "none", color: "white"
                     }}
                   >
-                    {isOwner ? "Hapus Workspace" : "Tinggalkan Workspace"}
+                    {isOwner ? lang === "id" ? "Hapus Workspace" : "Delete Workspace" : lang === "id" ? "Tinggalkan Workspace" : "Leave Workspace"}
                   </button>
                 </div>
               </div>
@@ -952,8 +1002,8 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
                   {getSectionIcon("general", 20)}
                 </div>
                 <div>
-                  <h3 style={{ fontSize: 18, margin: 0, color: "#2C2016" }}>General & Debug</h3>
-                  <p style={{ fontSize: 12, color: "rgba(44,32,22,0.5)", margin: "4px 0 0" }}>Pengaturan lanjutan dan alat pengembangan</p>
+                  <h3 style={{ fontSize: 18, margin: 0, color: "#2C2016" }}>{lang === 'id' ? 'General & Debug' : 'General & Debug'}</h3>
+                  <p style={{ fontSize: 12, color: "rgba(44,32,22,0.5)", margin: "4px 0 0" }}>{lang === 'id' ? 'Pengaturan lanjutan dan alat pengembangan' : 'Advanced settings and development tools'}</p>
                 </div>
               </div>
               
@@ -961,8 +1011,8 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
                 <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 20 }}>
                    <div style={{marginTop: 2, color: "var(--theme-primary)", display: "flex", alignItems: "center"}}><Cloud size={18} /></div>
                    <div>
-                     <strong style={{ fontSize: 14, color: "#2C2016", display: "block", marginBottom: 4 }}>Sinkronisasi Cloud Firestore</strong>
-                     <p style={{ fontSize: 13, color: "rgba(44,32,22,0.6)", margin: 0, lineHeight: 1.5 }}>Setiap perubahan yang Anda buat disinkronkan secara aman ke Google Firebase Cloud Firestore setelah Anda menekan tombol simpan.</p>
+                     <strong style={{ fontSize: 14, color: "#2C2016", display: "block", marginBottom: 4 }}>" + (lang === 'id' ? 'Sinkronisasi Cloud Firestore' : 'Cloud Firestore Sync') + "</strong>
+                     <p style={{ fontSize: 13, color: "rgba(44,32,22,0.6)", margin: 0, lineHeight: 1.5 }}>" + (lang === 'id' ? 'Setiap perubahan yang Anda buat disinkronkan secara aman ke Google Firebase Cloud Firestore setelah Anda menekan tombol simpan.' : 'Every change you make is securely synced to Google Firebase Cloud Firestore after you press the save button.') + "</p>
                    </div>
                 </div>
                 
@@ -971,8 +1021,8 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
                     <h4 style={{ fontSize: 14, margin: "0 0 6px", color: "var(--theme-primary)", display: "flex", alignItems: "center", gap: 6 }}>
                       <span style={{ display: "flex", alignItems: "center" }}><FlaskConical size={16} /></span> Testing Mode
                     </h4>
-                    <p style={{ fontSize: 12, color: "rgba(44,32,22,0.6)", marginBottom: 14, lineHeight: 1.4 }}>Gunakan data dummy untuk melihat bagaimana dashboard ini bekerja dengan banyak data. Berguna untuk menguji performa dan tampilan.</p>
-                    <button onClick={onSeed} className="hover-scale" style={{ ...B(false), background: "var(--theme-primary)", color: "white", border: "none", fontWeight: 700, padding: "10px 20px", borderRadius: 10 }}>✨ Generate Data Dummy (Seed)</button>
+                    <p style={{ fontSize: 12, color: "rgba(44,32,22,0.6)", marginBottom: 14, lineHeight: 1.4 }}>" + (lang === 'id' ? 'Gunakan data dummy untuk melihat bagaimana dashboard ini bekerja dengan banyak data. Berguna untuk menguji performa dan tampilan.' : 'Use dummy data to see how this dashboard works with large amounts of data. Useful for testing performance and layout.') + "</p>
+                    <button onClick={onSeed} className="hover-scale" style={{ ...B(false), background: "var(--theme-primary)", color: "white", border: "none", fontWeight: 700, padding: "10px 20px", borderRadius: 10 }}>" + (lang === 'id' ? '✨ Generate Data Dummy (Seed)' : '✨ Generate Dummy Data (Seed)') + "</button>
                   </div>
                 </div>
               </div>
@@ -984,11 +1034,11 @@ export function SettingsPanel({ initialSettings, onSave, onSeed, isRestricted, p
       {pendingSection && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(5px)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <div style={{ background: "white", padding: 32, borderRadius: 24, width: 380, textAlign: "center", boxShadow: "0 20px 50px rgba(0,0,0,0.1)" }}>
-            <h3 style={{ fontSize: 20, fontWeight: 800, color: "#2C2016", marginBottom: 12 }}>Simpan Perubahan?</h3>
-            <p style={{ fontSize: 14, color: "rgba(44,32,22,0.6)", marginBottom: 24, lineHeight: 1.5 }}>Ada perubahan yang belum disimpan. Ingin menyimpannya sekarang sebelum pindah bagian?</p>
+            <h3 style={{ fontSize: 20, fontWeight: 800, color: "#2C2016", marginBottom: 12 }}>{lang === 'id' ? 'Simpan Perubahan?' : 'Save Changes?'}</h3>
+            <p style={{ fontSize: 14, color: "rgba(44,32,22,0.6)", marginBottom: 24, lineHeight: 1.5 }}>{lang === 'id' ? 'Ada perubahan yang belum disimpan. Ingin menyimpannya sekarang sebelum pindah bagian?' : 'There are unsaved changes. Do you want to save them now before leaving this section?'}</p>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              <button onClick={() => setPendingSection(null)} style={{ ...B(true, "#2C2016"), width: "100%", height: 48, borderRadius: 12 }}>Tetap di Sini</button>
-              <button onClick={() => { setSection(pendingSection); setPendingSection(null); }} style={{ background: "none", border: "none", color: "#9C2B4E", fontSize: 13, fontWeight: 700, cursor: "pointer", padding: "10px" }}>Tinggalkan Tanpa Menyimpan</button>
+              <button onClick={() => setPendingSection(null)} style={{ ...B(true, "#2C2016"), width: "100%", height: 48, borderRadius: 12 }}>{lang === 'id' ? 'Tetap di Sini' : 'Stay Here'}</button>
+              <button onClick={() => { setSection(pendingSection); setPendingSection(null); }} style={{ background: "none", border: "none", color: "#9C2B4E", fontSize: 13, fontWeight: 700, cursor: "pointer", padding: "10px" }}>{lang === 'id' ? 'Tinggalkan Tanpa Menyimpan' : 'Leave without Saving'}</button>
             </div>
           </div>
         </div>

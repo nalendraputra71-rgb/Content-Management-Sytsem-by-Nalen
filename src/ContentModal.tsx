@@ -1,3 +1,4 @@
+import { useI18n } from "./i18n";
 import { useState, useRef, useEffect } from "react";
 import { auth, callAiWithQuota, db } from "./firebase";
 import { doc, updateDoc, onSnapshot, collection, query, where, getDocs, limit } from "firebase/firestore";
@@ -207,7 +208,58 @@ const getFieldIcon = (iconName: string, size = 14) => {
   }
 };
 
+const getFieldTranslation = (id: string, type: "label" | "placeholder", lang: string) => {
+  const translations: any = {
+    objective: {
+      label: lang === "id" ? "Objective" : "Objective",
+      placeholder: lang === "id" ? "Tujuan atau target output dari konten ini..." : "Goal or target output of this content..."
+    },
+    hook: {
+      label: lang === "id" ? "Hook" : "Hook",
+      placeholder: lang === "id" ? "Skenario pembuka konten yang bisa mengundang atensi dalam 3 detik pertama..." : "Opening hook to grab attention in the first 3 seconds..."
+    },
+    briefCopywriting: {
+      label: lang === "id" ? "Brief Utama" : "Main Brief",
+      placeholder: lang === "id" ? "Arah konten, tone of voice, call to action, poin kata kunci utama..." : "Content direction, tone of voice, call to action, key talking points..."
+    },
+    cta: {
+      label: lang === "id" ? "Call to Action (CTA)" : "Call to Action (CTA)",
+      placeholder: lang === "id" ? "Ajak audiens melakukan sesuatu (Contoh: Klik link di bio, komen, dll)..." : "Ask audience to take action (e.g. click link in bio, comment, etc.)..."
+    },
+    caption: {
+      label: lang === "id" ? "Caption" : "Caption",
+      placeholder: lang === "id" ? "Salinan caption social media yang sudah siap diposting..." : "Ready-to-post social media caption copy..."
+    },
+    targetAudience: {
+      label: lang === "id" ? "Target Audien" : "Target Audience",
+      placeholder: lang === "id" ? "Spesifik target demografi, persona, atau minat audiens..." : "Specific demographic target, persona, or audience interests..."
+    },
+    keyAngle: {
+      label: lang === "id" ? "Key Angle / Message" : "Key Angle / Message",
+      placeholder: lang === "id" ? "Sudut pandang unik atau pesan utama yang ingin ditekankan..." : "Unique angle or key message to highlight..."
+    },
+    visualConcept: {
+      label: lang === "id" ? "Visual Concept / Art Direction" : "Visual Concept / Art Direction",
+      placeholder: lang === "id" ? "Gaya visual, estetika, referensi transisi, atau moodboard..." : "Visual style, aesthetics, transitions, or moodboard..."
+    },
+    audioBgm: {
+      label: lang === "id" ? "Rekomendasi Audio & BGM" : "Audio & BGM Recommendation",
+      placeholder: lang === "id" ? "Suara latar, lagu tren, ketukan, atau instruksi Voice Over (VO)..." : "Background music, trending audio, beats, or voiceover (VO) instructions..."
+    },
+    outro: {
+      label: lang === "id" ? "Outro / End Card" : "Outro / End Card",
+      placeholder: lang === "id" ? "Elemen visual/teks akhir sebelum video selesai..." : "Visual/text element right before the content ends..."
+    },
+    hashtags: {
+      label: lang === "id" ? "Hashtags" : "Hashtags",
+      placeholder: lang === "id" ? "Rekomendasi hashtag untuk meningkatkan jangkauan algoritmik..." : "Hashtag recommendations to boost algorithmic reach..."
+    }
+  };
+  return translations[id]?.[type] || "";
+};
+
 export function ContentModal({modal, workspace, onSave,onClose,onArchive,onRestore,onDelete,onDuplicate,pillars,platforms,contentTypes,pics,statuses,onSettingUpdate}: any) {
+  const { lang } = useI18n();
   const [d,setD] = useState({...modal.data,metrics:{...(modal.data.metrics||{})},adsMetrics:{...(modal.data.adsMetrics||{views:0,reach:0,likes:0,comments:0,reposts:0,shares:0,saves:0,profileVisits:0,bioLinkTaps:0,follows:0,clicks:0,conversions:0,msgConvStarted:0,threeSecPlays:0,spendBudget:0,dailyBudget:0,duration:0,cprProfileVisit:0,audience:""})},referenceLinks:modal.data.referenceLinks||[],customFields:modal.data.customFields||[]});
   const [aiResult, setAiResult] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
@@ -1019,14 +1071,14 @@ export function ContentModal({modal, workspace, onSave,onClose,onArchive,onResto
         Berikan evaluasi singkat dan 3 poin saran perbaikan untuk meningkatkan engagement. Format dalam Bahasa Indonesia, singkat, padat, dan teknis.`;
         
         const data = await callAiWithQuota(auth.currentUser?.uid || 'anon', undefined, { prompt, model: "gemini-2.0-flash" });
-        setAiResult(data.text || "Tidak ada respon dari AI.");
+        setAiResult(data.text || lang === "id" ? "Tidak ada respon dari AI." : "No response from AI.");
     } catch (e: any) {
         console.error("AI Error:", e);
         const errMsg = e.message || "";
         if (errMsg.includes("habis")) {
           setAiResult(errMsg);
         } else if (errMsg.includes("429") || errMsg.includes("RESOURCE_EXHAUSTED") || errMsg.includes("Quota exceeded")) {
-          setAiResult("Gagal menganalisis konten: Terlalu banyak permintaan saat ini (Quota Exceeded). Silakan tunggu sekitar 30 detik lalu coba lagi, atau update akun Google AI Studio Anda ke Pay-as-you-go.");
+          setAiResult(lang === "id" ? "Gagal menganalisis konten: Terlalu banyak permintaan saat ini (Quota Exceeded). Silakan tunggu sekitar 30 detik lalu coba lagi, atau update akun Google AI Studio Anda ke Pay-as-you-go." : "Failed to analyze content: Too many requests at this time (Quota Exceeded). Please wait about 30 seconds and try again, or upgrade your Google AI Studio account to Pay-as-you-go.");
         } else {
           setAiResult("Gagal menganalisis konten: " + errMsg + ".\n\nPastikan VITE_GEMINI_API_KEY sudah diset di Settings > Secrets.");
         }
@@ -1145,7 +1197,7 @@ export function ContentModal({modal, workspace, onSave,onClose,onArchive,onResto
 
         {/* Quick Presets Bar */}
         <div style={{ display: "flex", flexDirection: "column", gap: 8, background: "rgba(255,255,255,0.45)", border: "1px solid rgba(44,32,22,0.06)", padding: "12px 14px", borderRadius: 12, marginBottom: 16 }}>
-          <span style={{ fontSize: 10, fontWeight: 800, color: "rgba(44,32,22,0.5)", textTransform: "uppercase", letterSpacing: "0.5px" }}>Pilih Preset Cepat:</span>
+          <span style={{ fontSize: 10, fontWeight: 800, color: "rgba(44,32,22,0.5)", textTransform: "uppercase", letterSpacing: "0.5px" }}>{lang === "id" ? "Pilih Preset Cepat:" : "Select Quick Preset:"}</span>
           <div style={{ display: "flex", gap: 8 }}>
             <button
               onClick={() => applyPreset("sederhana")}
@@ -1243,7 +1295,7 @@ export function ContentModal({modal, workspace, onSave,onClose,onArchive,onResto
                       {getFieldIcon(field.icon, 14)}
                     </span>
                     <span style={{ fontSize: 13, fontWeight: 700, color: isFieldVisible ? "#2C2016" : "rgba(44,32,22,0.4)" }}>
-                      {field.label}
+                      {getFieldTranslation(field.id, "label", lang) || field.label}
                     </span>
                     {/* Status Badge */}
                     <span style={{
@@ -1445,6 +1497,8 @@ export function ContentModal({modal, workspace, onSave,onClose,onArchive,onResto
 
   const renderDynamicField = (field: any) => {
     const { id, label, icon, placeholder, minRows = 3 } = field;
+    const translatedLabel = getFieldTranslation(id, "label", lang) || label;
+    const translatedPlaceholder = getFieldTranslation(id, "placeholder", lang) || placeholder;
     const fieldValue = d[id] || "";
     const isEditing = editingFieldRight === id;
 
@@ -1486,7 +1540,7 @@ export function ContentModal({modal, workspace, onSave,onClose,onArchive,onResto
         <div key={id} ref={activeFieldRef} style={{ background: "#ffffff", border: "1px solid rgba(44, 32, 22, 0.08)", borderRadius: 16, padding: "16px 20px", boxShadow: "0 8px 32px rgba(0, 0, 0, 0.04)", display: "flex", flexDirection: "column" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
             <label style={{ fontSize: 12, fontWeight: 600, color: "rgba(44,32,22,0.6)", display: "flex", alignItems: "center", gap: 6, margin: 0 }}>
-              {getFieldIcon(icon, 14)} {label}
+              {getFieldIcon(icon, 14)} {translatedLabel}
             </label>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               {renderAiButton()}
@@ -1499,7 +1553,7 @@ export function ContentModal({modal, workspace, onSave,onClose,onArchive,onResto
               value={fieldValue} 
               onChange={(val) => set(id, val)} 
               minRows={id === "briefCopywriting" ? 6 : id === "caption" ? 8 : minRows} 
-              placeholder={placeholder} 
+              placeholder={translatedPlaceholder} 
             />
           </div>
           {renderInlineCommentThread(id)}
@@ -1511,11 +1565,11 @@ export function ContentModal({modal, workspace, onSave,onClose,onArchive,onResto
           key={id}
           onClick={() => setEditingFieldRight(id)}
           style={{ background: "#ffffff", border: "1px solid rgba(44, 32, 22, 0.08)", borderRadius: 16, padding: "16px 20px", boxShadow: "0 8px 32px rgba(0, 0, 0, 0.04)", cursor: "pointer", display: "flex", flexDirection: "column" }}
-          title={`Klik untuk mengedit ${label}`}
+          title={lang === "id" ? `Klik untuk mengedit ${translatedLabel}` : `Click to edit ${translatedLabel}`}
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
             <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(44,32,22,0.4)", textTransform: "uppercase", display: "flex", alignItems: "center", gap: 6, letterSpacing: "0.5px" }}>
-              {getFieldIcon(icon, 14)} {label}
+              {getFieldIcon(icon, 14)} {translatedLabel}
               {renderSectionCommentBadge(id)}
             </span>
             {fieldValue && (
@@ -1523,12 +1577,12 @@ export function ContentModal({modal, workspace, onSave,onClose,onArchive,onResto
                 onClick={handleCopy} 
                 style={{ background: isCopied ? "rgba(46,125,50,0.1)" : "rgba(59,130,246,0.08)", border: "none", color: isCopied ? "#2E7D32" : "#3B82F6", padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 750, cursor: isCopied ? "default" : "pointer", display: "flex", alignItems: "center", transition: "all 0.3s ease" }}
               >
-                {isCopied ? <>Berhasil disalin</> : <><Copy size={12} style={{marginRight: 4}} /> Salin {label}</>}
+                {isCopied ? (lang === "id" ? <>Berhasil disalin</> : <>Copied</>) : <><Copy size={12} style={{marginRight: 4}} /> {lang === "id" ? `Salin ${translatedLabel}` : `Copy ${translatedLabel}`}</>}
               </button>
             )}
           </div>
           <div style={{ fontSize: 13, color: "#2C2016", lineHeight: 1.5, background: id === "briefCopywriting" ? "#FCFAF7" : id === "caption" ? "#FAFDFB" : "rgba(44,32,22,0.02)", padding: "12px 16px", borderRadius: 10, border: "1px solid rgba(44, 32, 22, 0.03)" }}>
-            {fieldValue ? <div className="tiptap-prose" dangerouslySetInnerHTML={{ __html: fieldValue }} /> : <span style={{ color: "rgba(44,32,22,0.4)", fontStyle: "italic" }}>Belum ada {label.toLowerCase()}. Klik di sini untuk mengedit.</span>}
+            {fieldValue ? <div className="tiptap-prose" dangerouslySetInnerHTML={{ __html: fieldValue }} /> : <span style={{ color: "rgba(44,32,22,0.4)", fontStyle: "italic" }}>{lang === "id" ? `Belum ada ${translatedLabel.toLowerCase()}. Klik di sini untuk mengedit.` : `No ${translatedLabel.toLowerCase()} yet. Click here to edit.`}</span>}
           </div>
           {renderInlineCommentThread(id)}
         </div>
@@ -1563,7 +1617,7 @@ export function ContentModal({modal, workspace, onSave,onClose,onArchive,onResto
         if (errMsg.includes("habis")) {
           showToast(errMsg, "error");
         } else if (errMsg.includes("429") || errMsg.includes("RESOURCE_EXHAUSTED") || errMsg.includes("Quota exceeded")) {
-          showToast("Gagal menggenerate caption: Terlalu banyak permintaan AI. Silakan tunggu sekitar 30 detik lalu coba lagi.", "error");
+          showToast(lang === "id" ? "Gagal menggenerate caption: Terlalu banyak permintaan AI. Silakan tunggu sekitar 30 detik lalu coba lagi." : "Failed to generate caption: Too many AI requests. Please wait about 30 seconds and try again.", "error");
         } else {
           showToast("Gagal menggenerate caption: " + errMsg, "error");
         }
@@ -1718,7 +1772,7 @@ export function ContentModal({modal, workspace, onSave,onClose,onArchive,onResto
                         onChange={(e)=>set("title",e.target.value)} 
                         minRows={1}
                         style={{background:"transparent",border:"none",fontSize:40,fontWeight:900, letterSpacing:"-1.2px",color:"#111827",width:"100%",outline:"none",padding:0, resize: "none", overflow: "hidden", lineHeight: 1.1, wordBreak: "break-word", whiteSpace: "pre-wrap"}} 
-                        placeholder="Ketik Judul Konten..."/>
+                        placeholder={lang === "id" ? "Ketik Judul Konten..." : "Type Content Title..."}/>
                   </motion.div>
               </div>
 
@@ -1746,7 +1800,7 @@ export function ContentModal({modal, workspace, onSave,onClose,onArchive,onResto
                         className="hover:bg-black/5"
                       >
                         <span style={{fontSize: 12, fontWeight: 700, color: activeStatusColor, background: getTranslucentColor(activeStatusColor, "20"), padding: "4px 10px", borderRadius: 6, display: "inline-block"}}>
-                          {d.status || <span style={{color: "rgba(44,32,22,0.4)", fontStyle: "italic", fontWeight: 400}}>Pilih Status...</span>}
+                          {d.status || <span style={{color: "rgba(44,32,22,0.4)", fontStyle: "italic", fontWeight: 400}}>{lang === "id" ? "Pilih Status..." : "Select Status..."}</span>}
                         </span>
                       </div>
                     )}
@@ -1755,7 +1809,7 @@ export function ContentModal({modal, workspace, onSave,onClose,onArchive,onResto
                  {/* Item: PIC / Assign */}
                  <div style={{display: "flex", minHeight: 28, alignItems: "center"}}>
                     <div style={{width: 140, display: "flex", alignItems: "center", gap: 8, color: "#6b7280", fontSize: 13, fontWeight: 500, flexShrink: 0}}>
-                        <Users size={14}/> Assign
+                        <Users size={14}/> PIC / Assign
                     </div>
                     {editingFieldLeft === "pic" ? (
                       <div ref={activeFieldRef} style={{flex: 1}}>
@@ -1773,7 +1827,7 @@ export function ContentModal({modal, workspace, onSave,onClose,onArchive,onResto
                         className="hover:bg-black/5"
                       >
                         <span style={{fontSize: 13, fontWeight: 600, color: "#111827", display: "inline-block", maxWidth: "100%", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap"}}>
-                          {d.pic || <span style={{color: "rgba(44,32,22,0.4)", fontStyle: "italic", fontWeight: 400}}>Ketik atau pilih PIC...</span>}
+                          {d.pic || <span style={{color: "rgba(44,32,22,0.4)", fontStyle: "italic", fontWeight: 400}}>{lang === "id" ? "Ketik atau pilih PIC..." : "Type or select PIC..."}</span>}
                         </span>
                       </div>
                     )}
@@ -1782,7 +1836,7 @@ export function ContentModal({modal, workspace, onSave,onClose,onArchive,onResto
                  {/* Item: Jadwal Produksi */}
                  <div style={{display: "flex", minHeight: 28, alignItems: "center"}}>
                     <div style={{width: 140, display: "flex", alignItems: "center", gap: 8, color: "#6b7280", fontSize: 13, fontWeight: 500, flexShrink: 0}}>
-                        <Calendar size={14}/> Jadwal Produksi
+                        <Calendar size={14}/> {lang === "id" ? "Jadwal Produksi" : "Production Schedule"}
                     </div>
                     {editingFieldLeft === "productionDate" ? (
                       <div ref={activeFieldRef} style={{flex: 1, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap"}}>
@@ -1814,7 +1868,7 @@ export function ContentModal({modal, workspace, onSave,onClose,onArchive,onResto
                         className="hover:bg-black/5"
                       >
                         <span style={{fontSize: 13, fontWeight: 500, color: (d.productionDay && d.productionMonth && d.productionYear) ? "#4b5563" : "rgba(44,32,22,0.4)"}}>
-                          {d.productionDay && d.productionMonth && d.productionYear ? `${String(d.productionDay).padStart(2,'0')}/${String(d.productionMonth).padStart(2,'0')}/${d.productionYear} (${String(d.productionHour !== undefined && d.productionHour !== null ? d.productionHour : 0).padStart(2,'0')}:${String(d.productionMinute !== undefined && d.productionMinute !== null ? d.productionMinute : 0).padStart(2,'0')})` : <span style={{fontStyle: "italic"}}>Atur tanggal produksi...</span>}
+                          {d.productionDay && d.productionMonth && d.productionYear ? `${String(d.productionDay).padStart(2,'0')}/${String(d.productionMonth).padStart(2,'0')}/${d.productionYear} (${String(d.productionHour !== undefined && d.productionHour !== null ? d.productionHour : 0).padStart(2,'0')}:${String(d.productionMinute !== undefined && d.productionMinute !== null ? d.productionMinute : 0).padStart(2,'0')})` : <span style={{fontStyle: "italic"}}>{lang === "id" ? "Atur tanggal produksi..." : "Set production date..."}</span>}
                         </span>
                       </div>
                     )}
@@ -1823,7 +1877,7 @@ export function ContentModal({modal, workspace, onSave,onClose,onArchive,onResto
                  {/* Item: Jadwal Upload */}
                  <div style={{display: "flex", minHeight: 28, alignItems: "center"}}>
                     <div style={{width: 140, display: "flex", alignItems: "center", gap: 8, color: "#6b7280", fontSize: 13, fontWeight: 500, flexShrink: 0}}>
-                        <Calendar size={14}/> Jadwal Upload
+                        <Calendar size={14}/> {lang === "id" ? "Jadwal Upload" : "Publish Schedule"}
                     </div>
                     {editingFieldLeft === "uploadDate" ? (
                       <div ref={activeFieldRef} style={{flex: 1, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap"}}>
@@ -1855,7 +1909,7 @@ export function ContentModal({modal, workspace, onSave,onClose,onArchive,onResto
                         className="hover:bg-black/5"
                       >
                         <span style={{fontSize: 13, fontWeight: 500, color: (d.day && d.month && d.year) ? "#4b5563" : "rgba(44,32,22,0.4)"}}>
-                          {d.day && d.month && d.year ? `${String(d.day).padStart(2,'0')}/${String(d.month).padStart(2,'0')}/${d.year} (${String(d.uploadHour !== undefined && d.uploadHour !== null ? d.uploadHour : 0).padStart(2,'0')}:${String(d.uploadMinute !== undefined && d.uploadMinute !== null ? d.uploadMinute : 0).padStart(2,'0')})` : <span style={{fontStyle: "italic"}}>Atur tanggal upload...</span>}
+                          {d.day && d.month && d.year ? `${String(d.day).padStart(2,'0')}/${String(d.month).padStart(2,'0')}/${d.year} (${String(d.uploadHour !== undefined && d.uploadHour !== null ? d.uploadHour : 0).padStart(2,'0')}:${String(d.uploadMinute !== undefined && d.uploadMinute !== null ? d.uploadMinute : 0).padStart(2,'0')})` : <span style={{fontStyle: "italic"}}>{lang === "id" ? "Atur tanggal upload..." : "Set publish date..."}</span>}
                         </span>
                       </div>
                     )}
@@ -1882,7 +1936,7 @@ export function ContentModal({modal, workspace, onSave,onClose,onArchive,onResto
                         className="hover:bg-black/5"
                       >
                         <span style={{fontSize: 12, fontWeight: 600, color: "#4b5563", background: "rgba(0,0,0,0.06)", padding: "4px 10px", borderRadius: 6, display: "inline-block"}}>
-                          {d.pillar || <span style={{color: "rgba(44,32,22,0.4)", fontStyle: "italic", fontWeight: 400}}>Pilih pillar...</span>}
+                          {d.pillar || <span style={{color: "rgba(44,32,22,0.4)", fontStyle: "italic", fontWeight: 400}}>{lang === "id" ? "Pilih pillar..." : "Select pillar..."}</span>}
                         </span>
                       </div>
                     )}
@@ -1909,7 +1963,7 @@ export function ContentModal({modal, workspace, onSave,onClose,onArchive,onResto
                         className="hover:bg-black/5"
                       >
                         <span style={{fontSize: 12, fontWeight: 600, color: "#4b5563", display: "inline-block"}}>
-                          {d.platform || <span style={{color: "rgba(44,32,22,0.4)", fontStyle: "italic", fontWeight: 400}}>Pilih platform...</span>}
+                          {d.platform || <span style={{color: "rgba(44,32,22,0.4)", fontStyle: "italic", fontWeight: 400}}>{lang === "id" ? "Pilih platform..." : "Select platform..."}</span>}
                         </span>
                       </div>
                     )}
@@ -1918,7 +1972,7 @@ export function ContentModal({modal, workspace, onSave,onClose,onArchive,onResto
                  {/* Item: Content Type / Type */}
                  <div style={{display: "flex", minHeight: 28, alignItems: "center"}}>
                     <div style={{width: 140, display: "flex", alignItems: "center", gap: 8, color: "#6b7280", fontSize: 13, fontWeight: 500, flexShrink: 0}}>
-                        <FileText size={14}/> Type
+                        <FileText size={14}/> {lang === "id" ? "Tipe Konten" : "Content Type"}
                     </div>
                     {editingFieldLeft === "contentType" ? (
                       <div ref={activeFieldRef} style={{flex: 1}}>
@@ -1936,7 +1990,7 @@ export function ContentModal({modal, workspace, onSave,onClose,onArchive,onResto
                         className="hover:bg-black/5"
                       >
                         <span style={{fontSize: 12, fontWeight: 700, color: activeContentTypeColor, background: getTranslucentColor(activeContentTypeColor, "20"), padding: "4px 10px", borderRadius: 6, display: "inline-block"}}>
-                          {d.contentType || <span style={{color: "rgba(44,32,22,0.4)", fontStyle: "italic", fontWeight: 400}}>Pilih tipe...</span>}
+                          {d.contentType || <span style={{color: "rgba(44,32,22,0.4)", fontStyle: "italic", fontWeight: 400}}>{lang === "id" ? "Pilih tipe..." : "Select type..."}</span>}
                         </span>
                       </div>
                     )}
@@ -1945,11 +1999,11 @@ export function ContentModal({modal, workspace, onSave,onClose,onArchive,onResto
                  {/* Item: Referensi */}
                  <div style={{display: "flex", minHeight: 28, alignItems: "center"}}>
                     <div style={{width: 140, display: "flex", alignItems: "center", gap: 8, color: "#6b7280", fontSize: 13, fontWeight: 500, flexShrink: 0}}>
-                        <Link size={14}/> Referensi
+                        <Link size={14}/> {lang === "id" ? "Referensi" : "Reference"}
                     </div>
                     {editingFieldLeft === "assetLink" ? (
                       <div ref={activeFieldRef} style={{flex: 1, display: "flex", alignItems: "center", gap: 6}}>
-                        <input type="text" value={d.assetLink || ""} onChange={(e:any)=>set("assetLink", e.target.value)} placeholder="Tautkan link referensi..." style={{background: "#FFF", border: "1px solid rgba(44,32,22,0.15)", borderRadius: 6, outline: "none", fontSize: 13, fontWeight: 500, color: "#111827", width: "100%", padding: "4px 8px"}} autoFocus />
+                        <input type="text" value={d.assetLink || ""} onChange={(e:any)=>set("assetLink", e.target.value)} placeholder={lang === "id" ? "Tautkan link referensi..." : "Link reference..."} style={{background: "#FFF", border: "1px solid rgba(44,32,22,0.15)", borderRadius: 6, outline: "none", fontSize: 13, fontWeight: 500, color: "#111827", width: "100%", padding: "4px 8px"}} autoFocus />
                       </div>
                     ) : (
                       <div 
@@ -1964,14 +2018,14 @@ export function ContentModal({modal, workspace, onSave,onClose,onArchive,onResto
                         {d.assetLink ? (
                           <>
                             <span style={{fontSize: 13, fontWeight: 600, color: "#2563eb", textDecoration: "underline", display: "inline-block", maxWidth: "100%", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap"}}>
-                              Link Referensi
+                              {lang === "id" ? "Link Referensi" : "Reference Link"}
                             </span>
                             <a href={d.assetLink} target="_blank" rel="noopener noreferrer" style={{color: "#2563eb", display: "flex", alignItems: "center"}} onClick={(e) => e.stopPropagation()}>
                               <ExternalLink size={14} />
                             </a>
                           </>
                         ) : (
-                          <span style={{color: "rgba(44,32,22,0.4)", fontStyle: "italic", fontSize: 13}}>Tautkan referensi...</span>
+                          <span style={{color: "rgba(44,32,22,0.4)", fontStyle: "italic", fontSize: 13}}>{lang === "id" ? "Tautkan referensi..." : "Link reference..."}</span>
                         )}
                       </div>
                     )}
@@ -2046,9 +2100,9 @@ export function ContentModal({modal, workspace, onSave,onClose,onArchive,onResto
               }}
             />
             {[
-              { id: "draft", label: "Brief & Konten" },
-              { id: "refs", label: "Aset & Referensi" },
-              { id: "metrics", label: "Metrik & Ads" }
+              { id: "draft", label: lang === "id" ? "Brief & Konten" : "Brief & Content" },
+              { id: "refs", label: lang === "id" ? "Aset & Referensi" : "Assets & Reference" },
+              { id: "metrics", label: lang === "id" ? "Metrik & Ads" : "Metrics & Ads" }
             ].map(({ id, label }) => (
               <button 
                 key={id}
@@ -2101,7 +2155,7 @@ export function ContentModal({modal, workspace, onSave,onClose,onArchive,onResto
                   {/* CONFIG BUTTON BAR */}
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(44,32,22,0.4)", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                      Panduan & Salinan Konten
+                      {lang === "id" ? "Panduan & Salinan Konten" : "Guidelines & Copy"}
                     </span>
                     <button
                       onClick={() => setShowLayoutConfig(!showLayoutConfig)}
@@ -2121,7 +2175,7 @@ export function ContentModal({modal, workspace, onSave,onClose,onArchive,onResto
                       }}
                     >
                       <Settings size={12} />
-                      {showLayoutConfig ? "Tutup Pengaturan" : "Atur Kolom"}
+                      {showLayoutConfig ? (lang === "id" ? "Tutup Pengaturan" : "Close Layout") : (lang === "id" ? "Atur Kolom" : "Configure Columns")}
                     </button>
                   </div>
 
@@ -2153,13 +2207,13 @@ export function ContentModal({modal, workspace, onSave,onClose,onArchive,onResto
                   }}>
                     <div style={GRP}>
                       <label style={{ fontSize: 12, fontWeight: 600, color: "rgba(44,32,22,0.6)", display: "flex", alignItems: "center", gap: 6, margin: 0 }}>
-                        <Link size={14} /> Link Aset Final (G-Drive / Dropbox)
+                        <Link size={14} /> {lang === "id" ? "Link Aset Final (G-Drive / Dropbox)" : "Final Asset Link (G-Drive / Dropbox)"}
                       </label>
                       <input value={d.linkAsset||""} onChange={(e:any)=>set("linkAsset",e.target.value)} style={{...I(), border: "1px solid rgba(44,32,22,0.12)", borderRadius: 10 }} placeholder="https://drive.google.com/..."/>
                     </div>
                     <div style={GRP}>
                       <label style={{ fontSize: 12, fontWeight: 600, color: "rgba(44,32,22,0.6)", display: "flex", alignItems: "center", gap: 6, margin: 0 }}>
-                        <Link size={14} /> Link Upload / Postingan Sosmed
+                        <Link size={14} /> {lang === "id" ? "Link Upload / Postingan Sosmed" : "Upload Link / Social Media Post"}
                       </label>
                       <input value={d.linkSosmed||""} onChange={(e:any)=>set("linkSosmed",e.target.value)} style={{...I(), border: "1px solid rgba(44,32,22,0.12)", borderRadius: 10 }} placeholder="https://instagram.com/p/..."/>
                     </div>
@@ -2167,11 +2221,11 @@ export function ContentModal({modal, workspace, onSave,onClose,onArchive,onResto
 
                   {/* Reference Section */}
                   <div style={{background:"rgba(44,32,22,0.03)",border:"1px solid rgba(44,32,22,0.08)",borderRadius:16,padding:"16px 20px",marginBottom:0}}>
-                    <div style={{...L,marginBottom:8}}><Paperclip size={14} /> Referensi Konten</div>
+                    <div style={{...L,marginBottom:8}}><Paperclip size={14} /> {lang === "id" ? "Referensi Konten" : "Content Reference"}</div>
                     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
-                      <div style={GRP}><label style={{...L,marginBottom:2}}>Catatan Referensi</label><TextareaAutosize value={d.referenceText} onChange={(e:any)=>set("referenceText",e.target.value)} style={I({resize:"vertical"})} minRows={3} placeholder="Referensi, mood, arahan visual..."/></div>
+                      <div style={GRP}><label style={{...L,marginBottom:2}}>{lang === "id" ? "Catatan Referensi" : "Reference Notes"}</label><TextareaAutosize value={d.referenceText} onChange={(e:any)=>set("referenceText",e.target.value)} style={I({resize:"vertical"})} minRows={3} placeholder={lang === "id" ? "Referensi, mood, arahan visual..." : "Reference, mood, visual direction..."}/></div>
                       <div style={GRP}>
-                        <label style={{...L,marginBottom:2}}>Link Referensi <button onClick={(e)=>{ e.stopPropagation(); set("referenceLinks",[...(dRef.current.referenceLinks||[]),""]); }} style={{background:"none",border:"none",color:"#3B82F6",cursor:"pointer",fontSize:10}}>(+ Tambah)</button></label>
+                        <label style={{...L,marginBottom:2}}>{lang === "id" ? "Link Referensi" : "Reference Links"} <button onClick={(e)=>{ e.stopPropagation(); set("referenceLinks",[...(dRef.current.referenceLinks||[]),""]); }} style={{background:"none",border:"none",color:"#3B82F6",cursor:"pointer",fontSize:10}}>{lang === "id" ? "(+ Tambah)" : "(+ Add)"}</button></label>
                         {(d.referenceLinks||[]).map((lnk:string,i:number)=>(
                           <div key={i} style={{display:"flex",gap:4,marginBottom:4}}>
                             <input value={lnk} onChange={(e:any)=>set("referenceLinks", dRef.current.referenceLinks.map((l:any,idx:number)=>idx===i?e.target.value:l))} style={I()} placeholder="https://..."/>
@@ -2181,7 +2235,7 @@ export function ContentModal({modal, workspace, onSave,onClose,onArchive,onResto
                       </div>
                     </div>
                     <div style={GRP}>
-                      <label style={{...L,marginBottom:2}}>Upload Gambar Referensi</label>
+                      <label style={{...L,marginBottom:2}}>{lang === "id" ? "Upload Gambar Referensi" : "Upload Reference Image"}</label>
                       <input type="file" accept="image/*" onChange={handleRefImg} style={{fontSize:11,color:"rgba(44,32,22,0.5)"}}/>
                       {d.referenceImage&&<img src={d.referenceImage} alt="ref" style={{maxWidth:200,maxHeight:100,borderRadius:6,marginTop:6,border:"1px solid rgba(44,32,22,0.1)",objectFit:"contain"}}/>}
                     </div>
@@ -2248,21 +2302,21 @@ export function ContentModal({modal, workspace, onSave,onClose,onArchive,onResto
                         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: d.referenceImage ? 8 : 0 }}>
                           {d.referenceLinks.filter((l:string)=>l.trim() !== "").map((lnk:string, idx:number) => (
                             <a key={idx} href={lnk} target="_blank" rel="noreferrer" style={{ textDecoration: "none", fontSize: 11, color: "#3B82F6", background: "rgba(59,130,246,0.06)", padding: "4px 8px", borderRadius: 8, fontWeight: 600 }}>
-                              <Link size={12} style={{marginRight: 4}}/> Link Referensi {idx + 1}
+                              <Link size={12} style={{marginRight: 4}}/> {lang === "id" ? `Link Referensi ${idx + 1}` : `Reference Link ${idx + 1}`}
                             </a>
                           ))}
                         </div>
                       )}
                       {d.referenceImage && (
                         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                          <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(44,32,22,0.5)" }}>Moodboard Inspirasi:</span>
+                          <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(44,32,22,0.5)" }}>{lang === "id" ? "Moodboard Inspirasi:" : "Inspiration Moodboard:"}</span>
                           <img src={d.referenceImage} alt="moodboard" style={{ maxWidth: "100%", maxHeight: 200, borderRadius: 10, border: "1px solid rgba(255, 255, 255, 0.7)", objectFit: "contain" }} />
                         </div>
                       )}
                     </div>
                   ) : (
                     <div style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(44,32,22,0.02)", border: "1px dashed rgba(44,32,22,0.08)", borderRadius: 12, padding: "12px 16px", color: "rgba(44,32,22,0.4)", fontSize: 11 }}>
-                      <Paperclip size={14} style={{ flexShrink: 0 }} /> Belum ada data referensi. Klik untuk menambahkan...
+                      <Paperclip size={14} style={{ flexShrink: 0 }} /> {lang === "id" ? "Belum ada data referensi. Klik untuk menambahkan..." : "No reference data yet. Click to add..."}
                     </div>
                   )}
                 </div>
@@ -2281,12 +2335,12 @@ export function ContentModal({modal, workspace, onSave,onClose,onArchive,onResto
                 }}>
                   <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
                     <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(44,32,22,0.4)", textTransform: "uppercase", letterSpacing: "0.5px", display: "flex", alignItems: "center", gap: 6 }}>
-                      <Plus size={14} /> Bidang Kustom (Custom Fields)
+                      <Plus size={14} /> {lang === "id" ? "Bidang Kustom" : "Custom Fields"}
                     </div>
-                    <button onClick={(e)=>{ e.stopPropagation(); set("customFields",[...(d.customFields||[]),{name:"Label Baru",value:""}]); setEditingFieldRight("customField_"+((d.customFields?.length||0))); }} style={{fontSize:10,padding:"4px 10px", borderRadius: 8, background: "rgba(44,32,22,0.05)", border: "none", color: "#2C2016", fontWeight: 600, cursor: "pointer"}}>+ Tambah Field</button>
+                    <button onClick={(e)=>{ e.stopPropagation(); set("customFields",[...(d.customFields||[]),{name: lang === "id" ? "Label Baru" : "New Field",value:""}]); setEditingFieldRight("customField_"+((d.customFields?.length||0))); }} style={{fontSize:10,padding:"4px 10px", borderRadius: 8, background: "rgba(44,32,22,0.05)", border: "none", color: "#2C2016", fontWeight: 600, cursor: "pointer"}}>{lang === "id" ? "+ Tambah Field" : "+ Add Field"}</button>
                   </div>
                   {(d.customFields||[]).length === 0 ? (
-                    <div style={{ fontSize: 11, color: "rgba(44,32,22,0.4)", textAlign: "center", padding: "10px 0" }}>Belum ada custom fields.</div>
+                    <div style={{ fontSize: 11, color: "rgba(44,32,22,0.4)", textAlign: "center", padding: "10px 0" }}>{lang === "id" ? "Belum ada custom fields." : "No custom fields yet."}</div>
                   ) : (
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                       {(d.customFields||[]).map((cf:any, idx:number)=>(
@@ -2294,14 +2348,14 @@ export function ContentModal({modal, workspace, onSave,onClose,onArchive,onResto
                           {editingFieldRight === "customField_"+idx ? (
                             <div ref={activeFieldRef} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                <input autoFocus value={cf.name} onChange={(e:any)=>set("customFields",d.customFields.map((f:any,i:number)=>i===idx?{...f,name:e.target.value}:f))} style={{ border: "none", background: "transparent", outline: "none", fontSize: 11, fontWeight: 700, color: "rgba(44,32,22,0.5)", textTransform: "uppercase", width: "100%", padding: 0 }} placeholder="Nama Field..."/>
+                                <input autoFocus value={cf.name} onChange={(e:any)=>set("customFields",d.customFields.map((f:any,i:number)=>i===idx?{...f,name:e.target.value}:f))} style={{ border: "none", background: "transparent", outline: "none", fontSize: 11, fontWeight: 700, color: "rgba(44,32,22,0.5)", textTransform: "uppercase", width: "100%", padding: 0 }} placeholder={lang === "id" ? "Nama Field..." : "Field Name..."}/>
                                 <button onClick={(e)=>{ e.stopPropagation(); set("customFields", d.customFields.filter((_:any,i:number)=>i!==idx)); setEditingFieldRight(null); }} style={{background:"none",border:"none",color:"#9C2B4E",cursor:"pointer", padding: "0 4px", fontSize: 14}}>✕</button>
                               </div>
-                              <TextareaAutosize value={cf.value} onChange={(e:any)=>set("customFields",d.customFields.map((f:any,i:number)=>i===idx?{...f,value:e.target.value}:f))} style={{ border: "none", background: "transparent", outline: "none", fontSize: 13, color: "#2C2016", width: "100%", padding: 0, resize: "none" }} minRows={1} placeholder="Isi field..."/>
+                              <TextareaAutosize value={cf.value} onChange={(e:any)=>set("customFields",d.customFields.map((f:any,i:number)=>i===idx?{...f,value:e.target.value}:f))} style={{ border: "none", background: "transparent", outline: "none", fontSize: 13, color: "#2C2016", width: "100%", padding: 0, resize: "none" }} minRows={1} placeholder={lang === "id" ? "Isi field..." : "Field value..."}/>
                             </div>
                           ) : (
                             <>
-                              <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(44,32,22,0.5)", textTransform: "uppercase", marginBottom: 4 }}>{cf.name || `Field ${idx+1}`}</div>
+                              <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(44,32,22,0.5)", textTransform: "uppercase", marginBottom: 4 }}>{cf.name || (lang === "id" ? `Kolom ${idx+1}` : `Field ${idx+1}`)}</div>
                               <div style={{ fontSize: 13, color: "#2C2016", whiteSpace: "pre-wrap" }}>{cf.value || "-"}</div>
                             </>
                           )}
@@ -2319,14 +2373,14 @@ export function ContentModal({modal, workspace, onSave,onClose,onArchive,onResto
                   boxShadow: "0 8px 32px rgba(0, 0, 0, 0.04)"
                 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                    <span style={{ fontSize: 11, fontWeight: 800, color: "rgba(44,32,22,0.4)", textTransform: "uppercase", letterSpacing: "0.5px", display: "flex", alignItems: "center", gap: 6 }}><BarChart2 size={12} /> Laporan Statistik Performa</span>
-                    {d.metricsUpdatedAt && <span style={{ fontSize: 10, color: "rgba(44,32,22,0.4)" }}>Terakhir diupdate: {d.metricsUpdatedAt}</span>}
+                    <span style={{ fontSize: 11, fontWeight: 800, color: "rgba(44,32,22,0.4)", textTransform: "uppercase", letterSpacing: "0.5px", display: "flex", alignItems: "center", gap: 6 }}><BarChart2 size={12} /> {lang === "id" ? "Laporan Statistik Performa" : "Performance Stats Report"}</span>
+                    {d.metricsUpdatedAt && <span style={{ fontSize: 10, color: "rgba(44,32,22,0.4)" }}>{lang === "id" ? "Terakhir diupdate:" : "Last updated:"} {d.metricsUpdatedAt}</span>}
                   </div>
                   
                   <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                     <div style={{ background: "rgba(59,130,246,0.03)", border: "1px solid rgba(59,130,246,0.08)", borderRadius: 12, padding: 14, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
                       <div>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: "#3B82F6", marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}><Leaf size={14} style={{marginRight: 4}} /> Jangkauan Organik</div>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: "#3B82F6", marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}><Leaf size={14} style={{marginRight: 4}} /> {lang === "id" ? "Jangkauan Organik" : "Organic Reach"}</div>
                         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(148px, 1fr))", gap: 8, marginBottom: 10 }}>
                           {MK.map((k:string) => (
                             <div onClick={() => setEditingFieldRight("metric_"+k)} key={k} style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(44,32,22,0.02)", padding: "6px 10px", borderRadius: 8, cursor: "pointer", position: "relative" }}>
@@ -2355,7 +2409,7 @@ export function ContentModal({modal, workspace, onSave,onClose,onArchive,onResto
                       </div>
                       <div style={{ borderTop: "1px dashed rgba(59,130,246,0.15)", paddingTop: 8, display: "flex", flexDirection: "column", gap: 2 }}>
                         <div style={{ fontSize: 11, color: "rgba(44,32,22,0.7)", display: "flex", justifyContent: "space-between" }}>
-                          <span>Total Interaksi:</span>
+                          <span>{lang === "id" ? "Total Interaksi:" : "Total Engagements:"}</span>
                           <strong style={{ color: "#3B82F6" }}>{fmt(eng(d.metrics))}</strong>
                         </div>
                         <div style={{ fontSize: 11, color: "rgba(44,32,22,0.7)", display: "flex", justifyContent: "space-between" }}>
@@ -2370,7 +2424,7 @@ export function ContentModal({modal, workspace, onSave,onClose,onArchive,onResto
                         <>
                           <div>
                             <div style={{ fontSize: 12, fontWeight: 700, color: "#9C2B4E", marginBottom: 10, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                              <div style={{ display: "flex", alignItems: "center", gap: 6 }}><DollarSign size={14} style={{marginRight: 4}} /> Hasil Kampanye Berbayar</div>
+                              <div style={{ display: "flex", alignItems: "center", gap: 6 }}><DollarSign size={14} style={{marginRight: 4}} /> {lang === "id" ? "Hasil Kampanye Berbayar" : "Paid Campaign Results"}</div>
                               <button onClick={(e)=>{ e.stopPropagation(); set("isAds",!d.isAds); }} style={{width:32,height:18,borderRadius:9,border:"none",cursor:"pointer",background:d.isAds?"#9C2B4E":"rgba(44,32,22,0.15)",transition:"background .2s",position:"relative",flexShrink:0}}>
                                 <div style={{width:14,height:14,borderRadius:"50%",background:"white",position:"absolute",top:2,left:d.isAds?16:2,transition:"left .2s"}}/>
                               </button>
@@ -2378,7 +2432,7 @@ export function ContentModal({modal, workspace, onSave,onClose,onArchive,onResto
                             <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 8 }}>
                               {ADS_CATEGORIES.map(cat => (
                                 <div key={cat.title}>
-                                  <div style={{fontSize: 12, fontWeight: 800, color: "#9C2B4E", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.5px", borderBottom: "1px solid rgba(156,43,78,0.15)", paddingBottom: 4}}>{cat.title}</div>
+                                  <div style={{fontSize: 12, fontWeight: 800, color: "#9C2B4E", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.5px", borderBottom: "1px solid rgba(156,43,78,0.15)", paddingBottom: 4}}>{lang === "id" ? (cat.title === "Overview" ? "Ringkasan" : cat.title === "Engagement" ? "Interaksi" : cat.title === "Profile Activity" ? "Aktivitas Profil" : cat.title === "Details" ? "Detail Iklan" : cat.title) : cat.title}</div>
                                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))", gap: 6 }}>
                                     {cat.keys.map(k => (
                                       <div onClick={() => setEditingFieldRight("adsMetric_"+k)} key={k} style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(156,43,78,0.02)", padding: "5px 8px", borderRadius: 8, cursor: "pointer" }}>
@@ -2416,7 +2470,7 @@ export function ContentModal({modal, workspace, onSave,onClose,onArchive,onResto
                               <strong style={{ color: "#9C2B4E" }}>{fmt(d.adsMetrics?.clicks || 0)} / {fmt(d.adsMetrics?.conversions || 0)}</strong>
                             </div>
                             <div style={{ fontSize: 11, color: "rgba(44,32,22,0.7)", display: "flex", justifyContent: "space-between" }}>
-                              <span>Total Engagement Ads:</span>
+                              <span>{lang === "id" ? "Total Interaksi Iklan:" : "Total Ad Engagements:"}</span>
                               <strong style={{ color: "#9C2B4E" }}>{fmt(eng(d.adsMetrics || {}))}</strong>
                             </div>
                           </div>
@@ -2425,7 +2479,7 @@ export function ContentModal({modal, workspace, onSave,onClose,onArchive,onResto
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 6, opacity: 0.5 }}>
                             <DollarSign size={14} />
-                            <span style={{ fontSize: 12, fontWeight: 600 }}>Tidak ada kampanye berbayar</span>
+                            <span style={{ fontSize: 12, fontWeight: 600 }}>{lang === "id" ? "Tidak ada kampanye berbayar" : "No paid campaigns"}</span>
                           </div>
                           <button onClick={(e)=>{ e.stopPropagation(); set("isAds",!d.isAds); }} style={{width:32,height:18,borderRadius:9,border:"none",cursor:"pointer",background:d.isAds?"#9C2B4E":"rgba(44,32,22,0.15)",transition:"background .2s",position:"relative",flexShrink:0}}>
                             <div style={{width:14,height:14,borderRadius:"50%",background:"white",position:"absolute",top:2,left:d.isAds?16:2,transition:"left .2s"}}/>
@@ -2448,20 +2502,20 @@ export function ContentModal({modal, workspace, onSave,onClose,onArchive,onResto
           <div style={{display:"flex", gap:10, alignItems:"center"}}>
             {isSaving && (
               <span style={{ fontSize: 10, color: "#3B82F6", fontWeight: 700, display: "flex", alignItems: "center" }} className="animate-pulse">
-                Menyimpan...
+                {lang === "id" ? "Menyimpan..." : "Saving..."}
               </span>
             )}
           </div>
           <div style={{display:"flex", gap:8}}>
             {onDuplicate && (
-              <button onClick={()=>onDuplicate(d)} title="Duplikasi" className="hover-scale" style={{...B(false), background:"rgba(44,32,22,0.05)", border:"1.5px solid rgba(44,32,22,0.1)", color:"#2C2016", padding:"6px", display: "flex", alignItems: "center", justifyContent: "center"}}><Copy size={14} /></button>
+              <button onClick={()=>onDuplicate(d)} title={lang === "id" ? "Duplikasi" : "Duplicate"} className="hover-scale" style={{...B(false), background:"rgba(44,32,22,0.05)", border:"1.5px solid rgba(44,32,22,0.1)", color:"#2C2016", padding:"6px", display: "flex", alignItems: "center", justifyContent: "center"}}><Copy size={14} /></button>
             )}
             {d.archived ? (
-              <button onClick={()=>onRestore(d.id)} title="Tampilkan Lagi" className="hover-scale" style={{...B(false), background:"#E8F5E9", border:"1.5px solid #2E7D32", color:"#2E7D32", padding:"6px", display: "flex", alignItems: "center", justifyContent: "center"}}><RefreshCcw size={14} /></button>
+              <button onClick={()=>onRestore(d.id)} title={lang === "id" ? "Tampilkan Lagi" : "Restore"} className="hover-scale" style={{...B(false), background:"#E8F5E9", border:"1.5px solid #2E7D32", color:"#2E7D32", padding:"6px", display: "flex", alignItems: "center", justifyContent: "center"}}><RefreshCcw size={14} /></button>
             ) : (
-              canArchive && <button onClick={()=>onArchive(d.id)} title="Arsipkan" className="hover-scale" style={{...B(false), background:"rgba(255, 255, 255, 0.85)", backdropFilter:"blur(32px)", WebkitBackdropFilter:"blur(32px)", border:"1px solid rgba(0,0,0,0.1)", color:"#666", padding:"6px", display: "flex", alignItems: "center", justifyContent: "center"}}><Archive size={14} /></button>
+              canArchive && <button onClick={()=>onArchive(d.id)} title={lang === "id" ? "Arsipkan" : "Archive"} className="hover-scale" style={{...B(false), background:"rgba(255, 255, 255, 0.85)", backdropFilter:"blur(32px)", WebkitBackdropFilter:"blur(32px)", border:"1px solid rgba(0,0,0,0.1)", color:"#666", padding:"6px", display: "flex", alignItems: "center", justifyContent: "center"}}><Archive size={14} /></button>
             )}
-            {canDelete && <button onClick={()=>onDelete(d.id)} title="Hapus" className="hover-scale" style={{...B(false), background:"#FDF5F8", border:"1.5px solid #9C2B4E", color:"#9C2B4E", padding:"6px", display: "flex", alignItems: "center", justifyContent: "center"}}><Trash size={14} /></button>}
+            {canDelete && <button onClick={()=>onDelete(d.id)} title={lang === "id" ? "Hapus" : "Delete"} className="hover-scale" style={{...B(false), background:"#FDF5F8", border:"1.5px solid #9C2B4E", color:"#9C2B4E", padding:"6px", display: "flex", alignItems: "center", justifyContent: "center"}}><Trash size={14} /></button>}
             
             {/* Dropdown Container for Sharing (Google Docs style) */}
             <div ref={shareDropdownRef} style={{ position: "relative" }}>
@@ -2554,7 +2608,7 @@ export function ContentModal({modal, workspace, onSave,onClose,onArchive,onResto
 
                     {!d.id ? (
                       <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", fontStyle: "italic", lineHeight: 1.4 }}>
-                        Simpan/ketik judul terlebih dahulu untuk mengonfigurasi pengaturan berbagi.
+                        {lang === "id" ? "Simpan/ketik judul terlebih dahulu untuk mengonfigurasi pengaturan berbagi." : "Save/type title first to configure sharing settings."}
                       </div>
                     ) : shareTab === "public" ? (
                       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -2837,7 +2891,7 @@ export function ContentModal({modal, workspace, onSave,onClose,onArchive,onResto
               dRef.current = newD;
               await onSave(newD, true);
               onClose();
-            }} className="hover-scale" style={{...B(false), background:"#3B82F6", border:"none", color:"white", padding:"5px 14px", fontSize:12, fontWeight:700}}>Simpan</button>
+            }} className="hover-scale" style={{...B(false), background:"#3B82F6", border:"none", color:"white", padding:"5px 14px", fontSize:12, fontWeight:700}}>{lang === "id" ? "Simpan" : "Save"}</button>
           </div>
         </div>
       </motion.div>

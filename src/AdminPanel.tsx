@@ -1,3 +1,4 @@
+import { useI18n } from "./i18n";
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { 
@@ -11,6 +12,7 @@ import { db, collection, getDocs, doc, updateDoc, setDoc, deleteDoc, onSnapshot,
 import { fmt, B, CARD } from "./data";
 
 export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogout: () => void }) {
+  const { lang } = useI18n();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -298,7 +300,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
     { id: "admins", lb: "Super Admin", ic: <Shield size={18}/> },
     { id: "plans", lb: "Paket & Promo", ic: <Tag size={18}/> },
     { id: "support", lb: "Support & Tiket", ic: <LifeBuoy size={18}/> },
-    { id: "deletion_feedback", lb: "Alasan Hapus Akun", ic: <AlertCircle size={18}/> },
+    { id: "deletion_feedback", lb: lang === "id" ? "Alasan Hapus Akun" : "Account Deletion Reasons", ic: <AlertCircle size={18}/> },
     { id: "broadcasts", lb: "Broadcasts", ic: <Send size={18}/> },
     { id: "settings", lb: "Pengaturan", ic: <Settings size={18}/> }
   ];
@@ -351,7 +353,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
             );
           })}
           <div style={{marginTop:"auto", paddingTop:16, borderTop:"1px solid rgba(0,0,0,0.05)"}}>
-             <button onClick={onLogout} style={{width:"100%", padding:"11px", borderRadius:12, border:"1px solid rgba(0,0,0,0.06)", background:"white", fontSize:12, fontWeight:700, cursor:"pointer", color:"#EF4444", transition:"all 0.2s"}} className="btn-hover">Sign Out</button>
+             <button onClick={onLogout} style={{width:"100%", padding:"11px", borderRadius:12, border:"1px solid rgba(0,0,0,0.06)", background:"white", fontSize:12, fontWeight:700, cursor:"pointer", color:"#EF4444", transition:"all 0.2s"}} className="btn-hover">{lang === "id" ? "Keluar" : "Sign Out"}</button>
           </div>
         </div>
 
@@ -363,8 +365,8 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
             {activeTab === "dashboard" && (
               <motion.div key="db" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0}} style={{maxWidth:1000}}>
                  <div style={{marginBottom:32}}>
-                   <h2 style={{fontSize:28, fontWeight:800, color:"#111827", margin:0, letterSpacing:"-1px"}}>Ringkasan Sistem</h2>
-                   <p style={{fontSize:14, color:"#6B7280", marginTop:4}}>Pantau pertumbuhan dan performa bisnis secara real-time.</p>
+                   <h2 style={{fontSize:28, fontWeight:800, color:"#111827", margin:0, letterSpacing:"-1px"}}>{lang === "id" ? "Ringkasan Sistem" : "System Summary"}</h2>
+                   <p style={{fontSize:14, color:"#6B7280", marginTop:4}}>" + (lang === "id" ? "Pantau pertumbuhan dan performa bisnis secara real-time." : "Monitor business growth and performance in real-time.") + "</p>
                  </div>
 
                  <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(240px, 1fr))", gap: 24, marginBottom:32}}>
@@ -375,7 +377,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                         </div>
                         <div style={{fontSize:11, color:"#10B981", fontWeight:700, background:"rgba(16,185,129,0.08)", padding:"4px 8px", borderRadius:8}}>+12%</div>
                       </div>
-                      <div style={{fontSize:12, color:"#6B7280", fontWeight:600, textTransform:"uppercase", letterSpacing:"0.5px"}}>Total User Terdaftar</div>
+                      <div style={{fontSize:12, color:"#6B7280", fontWeight:600, textTransform:"uppercase", letterSpacing:"0.5px"}}>{lang === "id" ? "Total User Terdaftar" : "Total Registered Users"}</div>
                       <div style={{fontSize:32, fontWeight:800, color:"#111827", marginTop:6}}>{users.length}</div>
                     </div>
                     <div style={{background:"#FFFFFF", borderRadius:20, padding:24, border:"1px solid rgba(0,0,0,0.04)", boxShadow:"0 1px 3px rgba(0,0,0,0.01), 0 10px 30px rgba(0,0,0,0.02)"}}>
@@ -384,7 +386,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                           <Package size={20} color="var(--theme-primary)"/>
                         </div>
                       </div>
-                      <div style={{fontSize:12, color:"#6B7280", fontWeight:600, textTransform:"uppercase", letterSpacing:"0.5px"}}>User Premium (Pro)</div>
+                      <div style={{fontSize:12, color:"#6B7280", fontWeight:600, textTransform:"uppercase", letterSpacing:"0.5px"}}>{lang === "id" ? "User Premium (Pro)" : "Premium Users (Pro)"}</div>
                       <div style={{fontSize:32, fontWeight:800, color:"#111827", marginTop:6}}>{users.filter(u=>u.plan==="pro").length}</div>
                     </div>
                     <div style={{background:"#FFFFFF", borderRadius:20, padding:24, border:"1px solid rgba(0,0,0,0.04)", boxShadow:"0 1px 3px rgba(0,0,0,0.01), 0 10px 30px rgba(0,0,0,0.02)"}}>
@@ -393,7 +395,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                           <DollarSign size={20} color="var(--theme-primary)"/>
                         </div>
                       </div>
-                      <div style={{fontSize:12, color:"#6B7280", fontWeight:600, textTransform:"uppercase", letterSpacing:"0.5px"}}>Total Revenue (Lifetime)</div>
+                      <div style={{fontSize:12, color:"#6B7280", fontWeight:600, textTransform:"uppercase", letterSpacing:"0.5px"}}>{lang === "id" ? "Total Revenue (Lifetime)" : "Total Revenue (Lifetime)"}</div>
                       <div style={{fontSize:32, fontWeight:800, color:"#111827", marginTop:6}}>{fmtRp(transactions.reduce((acc, t) => acc + (Number(t.amount) || 0), 0))}</div>
                     </div>
                  </div>
@@ -401,8 +403,8 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                  <div style={{display:"grid", gridTemplateColumns:"2fr 1fr", gap:24}}>
                     <div style={{background:"#FFFFFF", borderRadius:20, padding:24, border:"1px solid rgba(0,0,0,0.04)", boxShadow:"0 1px 3px rgba(0,0,0,0.01), 0 10px 30px rgba(0,0,0,0.02)"}}>
                        <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20}}>
-                          <h3 style={{fontSize:16, fontWeight:800, color:"#111827", margin:0}}>Tiket Support Terbaru</h3>
-                          <button onClick={()=>setActiveTab("support")} style={{fontSize:12, fontWeight:700, color:"var(--theme-primary)", background:"transparent", border:"none", cursor:"pointer"}}>Lihat Semua</button>
+                          <h3 style={{fontSize:16, fontWeight:800, color:"#111827", margin:0}}>{lang === "id" ? "Tiket Support Terbaru" : "Recent Support Tickets"}</h3>
+                          <button onClick={()=>setActiveTab("support")} style={{fontSize:12, fontWeight:700, color:"var(--theme-primary)", background:"transparent", border:"none", cursor:"pointer"}}>{lang === "id" ? "Lihat Semua" : "View All"}</button>
                        </div>
                        <div style={{display:"flex", flexDirection:"column", gap:12}}>
                           {tickets.slice(0, 5).map(t => (
@@ -418,21 +420,21 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                             </div>
                           ))}
                           {tickets.length === 0 && (
-                            <div style={{textAlign:"center", padding:"30px 0", color:"#9CA3AF", fontSize:13, fontWeight:500}}>Tidak ada tiket support baru.</div>
+                            <div style={{textAlign:"center", padding:"30px 0", color:"#9CA3AF", fontSize:13, fontWeight:500}}>{lang === "id" ? "Tidak ada tiket support baru." : "No new support tickets."}</div>
                           )}
                        </div>
                     </div>
                     <div style={{background:"#FFFFFF", borderRadius:20, padding:24, border:"1px solid rgba(0,0,0,0.04)", boxShadow:"0 1px 3px rgba(0,0,0,0.01), 0 10px 30px rgba(0,0,0,0.02)"}}>
-                       <h3 style={{fontSize:16, fontWeight:800, color:"#111827", margin:0, marginBottom:18}}>Quick Actions</h3>
+                       <h3 style={{fontSize:16, fontWeight:800, color:"#111827", margin:0, marginBottom:18}}>{lang === "id" ? "Aksi Cepat" : "Quick Actions"}</h3>
                        <div style={{display:"flex", flexDirection:"column", gap:16}}>
                           <div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}>
-                             <div style={{fontSize:13, fontWeight:700, color:"#374151"}}>Maintenance Mode</div>
+                             <div style={{fontSize:13, fontWeight:700, color:"#374151"}}>{lang === "id" ? "Mode Perbaikan" : "Maintenance Mode"}</div>
                              <button onClick={()=>updateSystemConfig({maintenanceMode: !systemSettings.maintenanceMode})} style={{background:"transparent", border:"none", cursor:"pointer", color: systemSettings.maintenanceMode ? "#EF4444" : "#9CA3AF", padding:0}}>
                                {systemSettings.maintenanceMode ? <ToggleRight size={36}/> : <ToggleLeft size={36}/>}
                              </button>
                           </div>
                           <div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}>
-                             <div style={{fontSize:13, fontWeight:700, color:"#374151"}}>Pendaftaran Pengguna</div>
+                             <div style={{fontSize:13, fontWeight:700, color:"#374151"}}>{lang === "id" ? "Pendaftaran Pengguna" : "User Registration"}</div>
                              <button onClick={()=>updateSystemConfig({allowRegistration: !systemSettings.allowRegistration})} style={{background:"transparent", border:"none", cursor:"pointer", color: systemSettings.allowRegistration ? "var(--theme-primary)" : "#9CA3AF", padding:0}}>
                                {systemSettings.allowRegistration ? <ToggleRight size={36}/> : <ToggleLeft size={36}/>}
                              </button>
@@ -467,15 +469,15 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
               <motion.div key="users" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0}}>
                 <div style={{display:"flex", justifyContent:"space-between", alignItems:"flex-end", marginBottom:28}}>
                   <div>
-                    <h2 style={{fontSize:28, fontWeight:800, color:"#111827", margin:0, letterSpacing:"-1px"}}>Manajemen User</h2>
-                    <p style={{fontSize:14, color:"#6B7280", marginTop:4}}>Kelola akses, paket, dan data seluruh pengguna sistem.</p>
+                    <h2 style={{fontSize:28, fontWeight:800, color:"#111827", margin:0, letterSpacing:"-1px"}}>{lang === "id" ? "Manajemen User" : "User Management"}</h2>
+                    <p style={{fontSize:14, color:"#6B7280", marginTop:4}}>" + (lang === "id" ? "Kelola akses, paket, dan data seluruh pengguna sistem." : "Manage access, plans, and data for all system users.") + "</p>
                   </div>
                   <div style={{display:"flex", alignItems:"center", gap:12}}>
                     <div style={{display:"flex", alignItems:"center", background:"#FFFFFF", padding:"10px 16px", borderRadius:12, border:"1px solid rgba(0,0,0,0.06)", width: 320, boxShadow:"0 1px 3px rgba(0,0,0,0.01)"}}>
                       <Search size={18} color="#9CA3AF" style={{marginRight:10}}/>
                       <input placeholder="Cari email user..." value={searchEmail} onChange={e=>setSearchEmail(e.target.value)} style={{border:"none", outline:"none", flex:1, fontSize:13, background:"transparent", color:"#111827", fontWeight:600}} />
                     </div>
-                    <button onClick={() => alert("Fitur Tambah User Manual akan segera tersedia.")} style={{background:"var(--theme-primary)", color:"white", border:"none", padding:"12px 20px", borderRadius:12, fontSize:13, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", gap:8}} className="btn-hover">
+                    <button onClick={() => alert(lang === "id" ? "Fitur Tambah User Manual akan segera tersedia." : "Manual Add User feature will be available soon.")} style={{background:"var(--theme-primary)", color:"white", border:"none", padding:"12px 20px", borderRadius:12, fontSize:13, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", gap:8}} className="btn-hover">
                       <UserPlus size={16} /> Tambah User
                     </button>
                   </div>
@@ -485,11 +487,11 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                   <table style={{width:"100%", minWidth: 1000, borderCollapse:"collapse", fontSize:13}}>
                     <thead style={{background:"rgba(0,0,0,0.01)", borderBottom:"1px solid rgba(0,0,0,0.05)"}}>
                       <tr>
-                        <th style={{padding:"18px 24px", textAlign:"left", color:"#4B5563", fontWeight:700, fontSize:11, textTransform:"uppercase", letterSpacing:"0.5px", width:280}}>Email & Identitas</th>
-                        <th style={{padding:"18px 24px", textAlign:"center", color:"#4B5563", fontWeight:700, fontSize:11, textTransform:"uppercase", letterSpacing:"0.5px", width:140}}>Email Verified</th>
-                        <th style={{padding:"18px 24px", textAlign:"center", color:"#4B5563", fontWeight:700, fontSize:11, textTransform:"uppercase", letterSpacing:"0.5px", width:120}}>Paket</th>
-                        <th style={{padding:"18px 24px", textAlign:"center", color:"#4B5563", fontWeight:700, fontSize:11, textTransform:"uppercase", letterSpacing:"0.5px", width:100}}>Role</th>
-                        <th style={{padding:"18px 24px", textAlign:"center", color:"#4B5563", fontWeight:700, fontSize:11, textTransform:"uppercase", letterSpacing:"0.5px", width:120}}>Status</th>
+                        <th style={{padding:"18px 24px", textAlign:"left", color:"#4B5563", fontWeight:700, fontSize:11, textTransform:"uppercase", letterSpacing:"0.5px", width:280}}>{lang === "id" ? "Email & Identitas" : "Email & Identity"}</th>
+                        <th style={{padding:"18px 24px", textAlign:"center", color:"#4B5563", fontWeight:700, fontSize:11, textTransform:"uppercase", letterSpacing:"0.5px", width:140}}>{lang === "id" ? "Email Terverifikasi" : "Email Verified"}</th>
+                        <th style={{padding:"18px 24px", textAlign:"center", color:"#4B5563", fontWeight:700, fontSize:11, textTransform:"uppercase", letterSpacing:"0.5px", width:120}}>{lang === "id" ? "Paket" : "Plan"}</th>
+                        <th style={{padding:"18px 24px", textAlign:"center", color:"#4B5563", fontWeight:700, fontSize:11, textTransform:"uppercase", letterSpacing:"0.5px", width:100}}>{lang === "id" ? "Peran" : "Role"}</th>
+                        <th style={{padding:"18px 24px", textAlign:"center", color:"#4B5563", fontWeight:700, fontSize:11, textTransform:"uppercase", letterSpacing:"0.5px", width:120}}>{lang === "id" ? "Status" : "Status"}</th>
                         <th style={{padding:"18px 24px", textAlign:"right"}}></th>
                       </tr>
                     </thead>
@@ -529,8 +531,8 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                           </td>
                           <td style={{padding:"16px 24px", textAlign:"right"}}>
                              <div style={{display:"flex", gap:8, justifyContent:"flex-end"}}>
-                               <button onClick={() => setSelectedUser(u)} style={{background:"var(--theme-primary)", border:"none", padding:"8px 16px", borderRadius:10, fontSize:11, fontWeight:800, cursor:"pointer", color:"white"}} className="btn-hover">Manage</button>
-                               <button onClick={() => setDeletingItem({id: u.id, type:"users", name: u.email})} style={{background:"white", border:"1px solid rgba(239,68,68,0.15)", color:"#EF4444", borderRadius:10, padding:"8px 16px", fontSize:11, fontWeight:800, cursor:"pointer"}} className="btn-hover">Delete</button>
+                               <button onClick={() => setSelectedUser(u)} style={{background:"var(--theme-primary)", border:"none", padding:"8px 16px", borderRadius:10, fontSize:11, fontWeight:800, cursor:"pointer", color:"white"}} className="btn-hover">{lang === "id" ? "Kelola" : "Manage"}</button>
+                               <button onClick={() => setDeletingItem({id: u.id, type:"users", name: u.email})} style={{background:"white", border:"1px solid rgba(239,68,68,0.15)", color:"#EF4444", borderRadius:10, padding:"8px 16px", fontSize:11, fontWeight:800, cursor:"pointer"}} className="btn-hover">{lang === "id" ? "Hapus" : "Delete"}</button>
                              </div>
                           </td>
                         </tr>
@@ -538,7 +540,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                     </tbody>
                   </table>
                   {filteredUsers.length === 0 && (
-                    <div style={{padding:60, textAlign:"center", color:"#9CA3AF", fontWeight:600}}>Tidak ada user ditemukan.</div>
+                    <div style={{padding:60, textAlign:"center", color:"#9CA3AF", fontWeight:600}}>{lang === "id" ? "Tidak ada user ditemukan." : "No users found."}</div>
                   )}
                 </div>
               </motion.div>
@@ -557,24 +559,24 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                          <Users size={40} color="var(--theme-primary)"/>
                       </div>
                       <h3 style={{textAlign:"center", margin:0, fontSize:18, fontWeight:800, color:"#111827", wordBreak:"break-all"}}>{selectedUser.email}</h3>
-                      <div style={{textAlign:"center", fontSize:12, color:"#6B7280", marginTop:4}}>Joined: {new Date(selectedUser.createdAt||Date.now()).toLocaleDateString()}</div>
+                      <div style={{textAlign:"center", fontSize:12, color:"#6B7280", marginTop:4}}>{lang === "id" ? "Bergabung: " : "Joined: "}{new Date(selectedUser.createdAt||Date.now()).toLocaleDateString()}</div>
                       
                       <div style={{marginTop:24, paddingTop:24, borderTop:"1px solid rgba(0,0,0,0.05)"}}>
-                         <div style={{fontSize:11, fontWeight:700, color:"#4B5563", textTransform:"uppercase", marginBottom:12}}>Status Berlangganan</div>
+                         <div style={{fontSize:11, fontWeight:700, color:"#4B5563", textTransform:"uppercase", marginBottom:12}}>{lang === "id" ? "Status Berlangganan" : "Subscription Status"}</div>
                          <div style={{background:"rgba(0,0,0,0.01)", padding:14, borderRadius:12, border:"1px solid rgba(0,0,0,0.04)"}}>
                             <div style={{display:"flex", justifyContent:"space-between", marginBottom:6}}>
-                               <span style={{fontSize:12, fontWeight:600, color:"#4B5563"}}>Plan:</span>
+                               <span style={{fontSize:12, fontWeight:600, color:"#4B5563"}}>{lang === "id" ? "Paket:" : "Plan:"}</span>
                                <span style={{fontSize:13, fontWeight:800, color:"var(--theme-primary)"}}>{selectedUser.plan || "Free"}</span>
                             </div>
                             <div style={{display:"flex", justifyContent:"space-between"}}>
-                               <span style={{fontSize:12, fontWeight:600, color:"#4B5563"}}>Active Until:</span>
+                               <span style={{fontSize:12, fontWeight:600, color:"#4B5563"}}>{lang === "id" ? "Aktif Hingga:" : "Active Until:"}</span>
                                <span style={{fontSize:12, fontWeight:700, color:"#111827"}}>{selectedUser.activeUntil ? new Date(selectedUser.activeUntil).toLocaleDateString() : "-"}</span>
                             </div>
                          </div>
                       </div>
                       
                       <div style={{marginTop:24, paddingTop:24, borderTop:"1px solid rgba(0,0,0,0.05)"}}>
-                         <div style={{fontSize:11, fontWeight:700, color:"#4B5563", textTransform:"uppercase", marginBottom:12}}>Keamanan & Akses</div>
+                         <div style={{fontSize:11, fontWeight:700, color:"#4B5563", textTransform:"uppercase", marginBottom:12}}>{lang === "id" ? "Keamanan & Akses" : "Security & Access"}</div>
                          <button onClick={()=>handleResetPassword(selectedUser.email)} style={{background:"#FFFFFF", color:"#374151", border:"1px solid rgba(0,0,0,0.08)", padding:"12px", borderRadius:12, fontSize:12, fontWeight:700, cursor:"pointer", width:"100%", display:"flex", alignItems:"center", justifyContent:"center", gap:8}} className="btn-hover">
                              <CheckCircle size={16} /> Kirim Link Reset Password
                          </button>
@@ -583,16 +585,16 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
 
                    <div style={{display:"flex", flexDirection:"column", gap:24}}>
                       <div style={{background:"#FFFFFF", borderRadius:24, padding:24, border:"1px solid rgba(0,0,0,0.04)", boxShadow:"0 1px 3px rgba(0,0,0,0.01), 0 10px 30px rgba(0,0,0,0.02)"}}>
-                         <h3 style={{fontSize:16, fontWeight:800, color:"#111827", marginBottom:16}}>Ubah Paket Manual</h3>
+                         <h3 style={{fontSize:16, fontWeight:800, color:"#111827", marginBottom:16}}>{lang === "id" ? "Ubah Paket Manual" : "Manual Plan Change"}</h3>
                          <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:12}}>
-                            <button onClick={()=>handleUpdatePlan(selectedUser.id, "pro", 30)} style={{background:"var(--theme-primary)", color:"white", border:"none", padding:12, borderRadius:12, fontWeight:700, cursor:"pointer"}} className="btn-hover">Set PRO (30 Hari)</button>
-                            <button onClick={()=>handleUpdatePlan(selectedUser.id, "free", 0)} style={{background:"transparent", border:"1px solid rgba(239,68,68,0.15)", color:"#EF4444", padding:12, borderRadius:12, fontWeight:700, cursor:"pointer"}} className="btn-hover">Set FREE (Revoke)</button>
+                            <button onClick={()=>handleUpdatePlan(selectedUser.id, "pro", 30)} style={{background:"var(--theme-primary)", color:"white", border:"none", padding:12, borderRadius:12, fontWeight:700, cursor:"pointer"}} className="btn-hover">{lang === "id" ? "Atur PRO (30 Hari)" : "Set PRO (30 Days)"}</button>
+                            <button onClick={()=>handleUpdatePlan(selectedUser.id, "free", 0)} style={{background:"transparent", border:"1px solid rgba(239,68,68,0.15)", color:"#EF4444", padding:12, borderRadius:12, fontWeight:700, cursor:"pointer"}} className="btn-hover">{lang === "id" ? "Atur GRATIS (Cabut)" : "Set FREE (Revoke)"}</button>
                          </div>
                          
                          <div style={{marginTop:18, paddingTop:18, borderTop:"1px solid rgba(0,0,0,0.05)"}}>
-                            <div style={{fontSize:12, fontWeight:700, marginBottom:12, color:"#374151"}}>Assign VIP (Riset / User Testing)</div>
+                            <div style={{fontSize:12, fontWeight:700, marginBottom:12, color:"#374151"}}>{lang === "id" ? "Berikan VIP (Riset / Pengujian)" : "Assign VIP (Research / Testing)"}</div>
                             <div style={{display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8}}>
-                               <button onClick={()=>handleUpdatePlan(selectedUser.id, "vip", 30)} style={{background:"rgba(59,130,246,0.05)", color:"var(--theme-primary)", border:"none", padding:10, borderRadius:10, fontSize:11, fontWeight:700, cursor:"pointer"}} className="btn-hover">1 Bln</button>
+                               <button onClick={()=>handleUpdatePlan(selectedUser.id, "vip", 30)} style={{background:"rgba(59,130,246,0.05)", color:"var(--theme-primary)", border:"none", padding:10, borderRadius:10, fontSize:11, fontWeight:700, cursor:"pointer"}} className="btn-hover">{lang === "id" ? "1 Bln" : "1 Mo"}</button>
                                <button onClick={()=>handleUpdatePlan(selectedUser.id, "vip", 90)} style={{background:"rgba(59,130,246,0.05)", color:"var(--theme-primary)", border:"none", padding:10, borderRadius:10, fontSize:11, fontWeight:700, cursor:"pointer"}} className="btn-hover">3 Bln</button>
                                <button onClick={()=>handleUpdatePlan(selectedUser.id, "vip", 180)} style={{background:"rgba(59,130,246,0.05)", color:"var(--theme-primary)", border:"none", padding:10, borderRadius:10, fontSize:11, fontWeight:700, cursor:"pointer"}} className="btn-hover">6 Bln</button>
                             </div>
@@ -808,7 +810,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                        </div>
                        <div style={{display:"flex", gap:10}}>
                           <button onClick={() => { setEditingPlan(p); setShowPlanModal(true); }} style={{flex:1, padding:10, borderRadius:12, border:"1px solid #EEE", background:"white", fontWeight:700, cursor:"pointer", fontSize:12}} className="hover-bg-light">Edit Settings</button>
-                          <button onClick={() => setDeletingItem({id: p.id, type:"plans", name: p.name})} style={{background:"rgba(156,43,78,0.1)", color:"#9C2B4E", border:"1px solid rgba(156,43,78,0.1)", padding:10, borderRadius:12, fontWeight:700, cursor:"pointer", fontSize:12}}>Delete</button>
+                          <button onClick={() => setDeletingItem({id: p.id, type:"plans", name: p.name})} style={{background:"rgba(156,43,78,0.1)", color:"#9C2B4E", border:"1px solid rgba(156,43,78,0.1)", padding:10, borderRadius:12, fontWeight:700, cursor:"pointer", fontSize:12}}>{lang === "id" ? "Hapus" : "Delete"}</button>
                        </div>
                     </div>
                   ))}
@@ -826,7 +828,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                           <th style={{padding:16, textAlign:"center", fontSize:11, fontWeight:700, textTransform:"uppercase", color:"#999"}}>Diskon</th>
                           <th style={{padding:16, textAlign:"center", fontSize:11, fontWeight:700, textTransform:"uppercase", color:"#999"}}>Pemakaian</th>
                           <th style={{padding:16, textAlign:"center", fontSize:11, fontWeight:700, textTransform:"uppercase", color:"#999", minWidth:150}}>Validity Period</th>
-                          <th style={{padding:16, textAlign:"center", fontSize:11, fontWeight:700, textTransform:"uppercase", color:"#999"}}>Status</th>
+                          <th style={{padding:16, textAlign:"center", fontSize:11, fontWeight:700, textTransform:"uppercase", color:"#999"}}>{lang === "id" ? "Status" : "Status"}</th>
                           <th style={{padding:16, textAlign:"right"}}></th>
                         </tr>
                       </thead>
@@ -853,8 +855,8 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                              </td>
                              <td style={{padding:16, textAlign:"right"}}>
                                 <div style={{display:"flex", gap:10, justifyContent:"flex-end"}}>
-                                   <button onClick={() => { setEditingPromo(p); setShowPromoModal(true); }} style={{color:"var(--theme-primary)", background:"transparent", border:"none", fontWeight:800, cursor:"pointer", fontSize:12}}>Edit</button>
-                                   <button onClick={() => setDeletingItem({id: p.id, type:"promos", name: p.code})} style={{color:"#9C2B4E", background:"transparent", border:"none", fontWeight:800, cursor:"pointer", fontSize:12}}>Delete</button>
+                                   <button onClick={() => { setEditingPromo(p); setShowPromoModal(true); }} style={{color:"var(--theme-primary)", background:"transparent", border:"none", fontWeight:800, cursor:"pointer", fontSize:12}}>{lang === "id" ? "Edit" : "Edit"}</button>
+                                   <button onClick={() => setDeletingItem({id: p.id, type:"promos", name: p.code})} style={{color:"#9C2B4E", background:"transparent", border:"none", fontWeight:800, cursor:"pointer", fontSize:12}}>{lang === "id" ? "Hapus" : "Delete"}</button>
                                 </div>
                              </td>
                           </tr>
@@ -949,7 +951,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                         ) : (
                           <div style={{flex:1, display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:16, opacity:0.3}}>
                              <LifeBuoy size={64}/>
-                             <div style={{fontWeight:800}}>Pilih tiket untuk membaca percakapan</div>
+                             <div style={{fontWeight:800}}>{lang === "id" ? "Pilih tiket untuk membaca percakapan" : "Select a ticket to read the conversation"}</div>
                           </div>
                         )}
                     </div>
@@ -960,7 +962,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
             {/* DELETION FEEDBACK */}
             {activeTab === "deletion_feedback" && (
               <motion.div key="deletion_feedback" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0}}>
-                <h2 style={{fontSize:28, fontWeight:800, marginBottom:24, letterSpacing:"-1px"}}>Alasan Hapus Akun</h2>
+                <h2 style={{fontSize:28, fontWeight:800, marginBottom:24, letterSpacing:"-1px"}}>{lang === "id" ? "Alasan Hapus Akun" : "Account Deletion Reasons"}</h2>
                 <div style={CARD({padding:24, borderRadius:24})}>
                   <div style={{display:"flex", flexDirection:"column", gap:16}}>
                     {deletionReasons.length === 0 ? (
@@ -1047,7 +1049,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                        <div style={{display:"flex", flexDirection:"column", gap:16}}>
                           <div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}>
                              <div>
-                                <div style={{fontSize:14, fontWeight:700}}>Maintenance Mode</div>
+                                <div style={{fontSize:14, fontWeight:700}}>{lang === "id" ? "Mode Perbaikan" : "Maintenance Mode"}</div>
                                 <div style={{fontSize:12, color:"#999"}}>Tampilkan halaman maintenance ke semua user.</div>
                              </div>
                              <button onClick={()=>updateSystemConfig({maintenanceMode: !systemSettings.maintenanceMode})} style={{background:"transparent", border:"none", cursor:"pointer"}}>
@@ -1233,7 +1235,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                     <input name="addMonths" type="number" placeholder="1" defaultValue={editingPlan.addMonths} required style={{width:"100%", padding:12, borderRadius:12, border:"1px solid #EEE", fontSize:14}} />
                   </div>
                   <div>
-                    <label style={{display:"block", fontSize:11, fontWeight:800, color:"#999", textTransform:"uppercase", marginBottom:6}}>Fitur Paket (Pilih yang termasuk)</label>
+                    <label style={{display:"block", fontSize:11, fontWeight:800, color:"#999", textTransform:"uppercase", marginBottom:6}}>{lang === "id" ? "Fitur Paket (Pilih yang termasuk)" : "Plan Features (Select included)"}</label>
                     <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, maxHeight: 150, overflowY:"auto", padding: 12, border: "1px solid #EEE", borderRadius: 12}}>
                       {[
                         "Calendar", 
@@ -1261,7 +1263,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                   </label>
                </div>
                <div style={{display:"flex", gap:12}}>
-                 <button type="submit" style={{flex:1, background:"var(--theme-primary)", color:"white", border:"none", padding:14, borderRadius:16, fontWeight:800, cursor:"pointer"}}>Simpan Perubahan</button>
+                 <button type="submit" style={{flex:1, background:"var(--theme-primary)", color:"white", border:"none", padding:14, borderRadius:16, fontWeight:800, cursor:"pointer"}}>{lang === "id" ? "Simpan Perubahan" : "Save Changes"}</button>
                </div>
             </motion.form>
           </motion.div>
@@ -1330,7 +1332,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
               <div style={{width:80, height:80, background:"rgba(156,43,78,0.1)", borderRadius:30, display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 24px"}}>
                 <AlertCircle color="#9C2B4E" size={48} />
               </div>
-              <h3 style={{fontSize:22, fontWeight:800, color:"#2C2016", margin:0, letterSpacing:"-0.5px"}}>Konfirmasi Hapus</h3>
+              <h3 style={{fontSize:22, fontWeight:800, color:"#2C2016", margin:0, letterSpacing:"-0.5px"}}>{lang === "id" ? "Konfirmasi Hapus" : "Confirm Delete"}</h3>
               <p style={{fontSize:14, color:"rgba(44,32,22,0.6)", margin:"16px 0 32px", lineHeight:1.6}}>
                 Apakah Anda yakin ingin menghapus <b>{deletingItem.type}</b> dengan nama <br/>
                 <span style={{color:"#9C2B4E", fontWeight:800}}>"{deletingItem.name}"</span>? <br/>
@@ -1339,7 +1341,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
               <div style={{display:"flex", gap:14}}>
                 <button onClick={() => setDeletingItem(null)} 
                   style={{flex:1, padding:"16px", borderRadius:16, border:"1px solid #EEE", background:"white", fontWeight:800, fontSize:14, cursor:"pointer"}} 
-                  className="hover-bg-light">Batal</button>
+                  className="hover-bg-light">{lang === "id" ? "Batal" : "Cancel"}</button>
                 <button onClick={async () => {
                    try {
                      await deleteDoc(doc(db, deletingItem.type, deletingItem.id));
@@ -1348,7 +1350,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                      setDeletingItem(null);
                      alert("Gagal menghapus: " + e.message); 
                    }
-                }} style={{flex:1, background:"#9C2B4E", color:"white", border:"none", padding:"16px", borderRadius:16, fontWeight:800, fontSize:14, cursor:"pointer", boxShadow:"0 8px 16px rgba(156,43,78,0.2)"}}>Hapus Permanen</button>
+                }} style={{flex:1, background:"#9C2B4E", color:"white", border:"none", padding:"16px", borderRadius:16, fontWeight:800, fontSize:14, cursor:"pointer", boxShadow:"0 8px 16px rgba(156,43,78,0.2)"}}>{lang === "id" ? "Hapus Permanen" : "Delete Permanently"}</button>
               </div>
             </motion.div>
           </motion.div>
@@ -1367,7 +1369,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                 {confirmAction.msg}
               </p>
               <div style={{display:"flex", gap:12}}>
-                <button type="button" onClick={()=>setConfirmAction(null)} style={{flex:1, padding:"16px 0", borderRadius:20, border:"none", background:"#FAF7F2", color:"#2C2016", fontSize:14, fontWeight:800, cursor:"pointer"}}>Batal</button>
+                <button type="button" onClick={()=>setConfirmAction(null)} style={{flex:1, padding:"16px 0", borderRadius:20, border:"none", background:"#FAF7F2", color:"#2C2016", fontSize:14, fontWeight:800, cursor:"pointer"}}>{lang === "id" ? "Batal" : "Cancel"}</button>
                 <button type="button" onClick={()=>{ confirmAction.onConfirm(); setConfirmAction(null); }} style={{flex:1, padding:"16px 0", borderRadius:20, border:"none", background:"var(--theme-primary)", color:"white", fontSize:14, fontWeight:800, cursor:"pointer"}}>Konfirmasi</button>
               </div>
             </motion.div>

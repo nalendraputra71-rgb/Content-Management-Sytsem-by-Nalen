@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
+import { useI18n } from "./i18n";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid } from "recharts";
 import { motion, AnimatePresence } from "motion/react";
 import { ChevronDown, Pencil, Plus, Trash2, Instagram, Facebook, Linkedin, AtSign, Music, Globe, Save } from "lucide-react";
@@ -420,9 +421,13 @@ export const THEMES = [
 ];
 
 export const MONTHS = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+export const MONTHS_EN = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 export const MS = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
+export const MS_EN = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 export const DAYS_ID = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
+export const DAYS_EN = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 export const DAYS_S = ["Min","Sen","Sel","Rab","Kam","Jum","Sab"];
+export const DAYS_S_EN = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 export const YEARS = [2024,2025,2026,2027,2028];
 export const MK = ["views","reach","likes","comments","reposts","shares","saves","profileVisits","bioLinkTaps","follows"];
 export const MC: any = {views:"#2C2016",reach:"#3B82F6",likes:"#9C2B4E",comments:"#2B4C7E",reposts:"#A67C1C",shares:"#2D7A5E",saves:"#723680",profileVisits:"#059669",bioLinkTaps:"#2563EB",follows:"#D97706"};
@@ -479,7 +484,12 @@ export const DH: any = {
 export const gid  = () => `${Date.now()}-${Math.random().toString(36).slice(2,7)}`;
 export const eng  = (m: any)  => m ? (m.likes||0)+(m.comments||0)+(m.shares||0)+(m.reposts||0)+(m.saves||0) : 0;
 export const fmt  = (n: any)  => Number(n||0).toLocaleString('id-ID');
-export const fmtD = (y: any,mo: any,d: any) => { const w=new Date(y,mo-1,d).getDay(); return `${DAYS_ID[w]}, ${String(d).padStart(2,"0")}/${String(mo).padStart(2,"0")}/${y}`; };
+export const fmtD = (y: any,mo: any,d: any) => { 
+  const w=new Date(y,mo-1,d).getDay(); 
+  const lang = useI18n.getState().lang;
+  const days = lang === "id" ? DAYS_ID : DAYS_EN;
+  return `${days[w]}, ${String(d).padStart(2,"0")}/${String(mo).padStart(2,"0")}/${y}`; 
+};
 export const fmtT = (h: any, m: any, format?: string) => {
   const hh = String(h !== undefined && h !== null ? h : 9).padStart(2,"0");
   const mm = String(m !== undefined && m !== null ? m : 0).padStart(2,"0");

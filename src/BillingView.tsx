@@ -48,8 +48,8 @@ export function BillingView({ userProfile, onUpdate }: { userProfile: any, activ
         "Auto-Publishing",
         "Analitik Lanjutan"
       ],
-      priceMonthly: 99000,
-      priceAnnual: 79000,
+      priceMonthly: 1000,
+      priceAnnual: 1000,
       popular: false
     },
     {

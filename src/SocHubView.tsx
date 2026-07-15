@@ -1,3 +1,4 @@
+import { useI18n } from "./i18n";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { db, collection, query, orderBy, onSnapshot, doc, setDoc, updateDoc, deleteDoc, serverTimestamp, getDoc, where, limit } from "./firebase";
@@ -44,6 +45,7 @@ function FormattedText({ text }: { text: string }) {
 }
 
 function PostItem({ post, currentUser, onReply, onLike, onRepost, onShare, onProfile, onVote, onOpenPost, onDelete, onEdit, onArchive }: any) {
+  const { lang } = useI18n();
   const isLiked = post.likes?.includes(currentUser.uid);
   const isReposted = post.reposts?.includes(currentUser.uid);
   const [showMenu, setShowMenu] = useState(false);
@@ -85,7 +87,7 @@ function PostItem({ post, currentUser, onReply, onLike, onRepost, onShare, onPro
                     </div>
                   </>
                 ) : (
-                  <div className="px-4 py-3 text-sm text-gray-400">Tidak ada aksi</div>
+                  <div className="px-4 py-3 text-sm text-gray-400">{lang === "id" ? "Tidak ada aksi" : "No actions"}</div>
                 )}
               </motion.div>
             )}
@@ -132,6 +134,7 @@ function PostItem({ post, currentUser, onReply, onLike, onRepost, onShare, onPro
 }
 
 export function SocHubView({ user, profile }: any) {
+  const { lang } = useI18n();
   const [selectedInboxMsg, setSelectedInboxMsg] = useState<any>(null);
   const [posts, setPosts] = useState<any[]>([]);
   const [content, setContent] = useState("");
@@ -742,8 +745,8 @@ export function SocHubView({ user, profile }: any) {
                            placeholder="Tulis bio tentang kamu..."
                          />
                          <div className="flex gap-2 justify-end">
-                           <button onClick={() => setIsEditingBio(false)} className="px-4 py-1.5 rounded-full bg-gray-100 text-gray-700 text-sm font-bold">Batal</button>
-                           <button onClick={handleSaveBio} className="px-4 py-1.5 rounded-full bg-[var(--theme-primary)] text-white text-sm font-bold">Simpan</button>
+                           <button onClick={() => setIsEditingBio(false)} className="px-4 py-1.5 rounded-full bg-gray-100 text-gray-700 text-sm font-bold">{lang === "id" ? "Batal" : "Cancel"}</button>
+                           <button onClick={handleSaveBio} className="px-4 py-1.5 rounded-full bg-[var(--theme-primary)] text-white text-sm font-bold">{lang === "id" ? "Simpan" : "Save"}</button>
                          </div>
                        </div>
                      ) : (
@@ -975,7 +978,7 @@ export function SocHubView({ user, profile }: any) {
                        </div>
                        <button onClick={(e) => { e.stopPropagation(); onProfileClick(s.id); }} style={{ background: "none", border: "none", color: "var(--theme-primary)", fontWeight: 700, fontSize: 13, cursor: "pointer", flexShrink:0 }}>View</button>
                      </div>
-                   )) : <div style={{ fontSize: 13, color: "#9CA3AF" }}>Tidak ada saran.</div>}
+                   )) : <div style={{ fontSize: 13, color: "#9CA3AF" }}>{lang === "id" ? "Tidak ada saran." : "No suggestions."}</div>}
                </div>
              </div>
           </div>
@@ -995,8 +998,8 @@ export function SocHubView({ user, profile }: any) {
                 placeholder="Tulis sesuatu..."
               />
               <div className="flex justify-end gap-3">
-                <button onClick={() => setEditingPost(null)} className="px-6 py-2 rounded-full font-bold text-sm bg-gray-100 text-gray-700">Batal</button>
-                <button onClick={confirmEdit} disabled={!editContent.trim()} className="px-6 py-2 rounded-full font-bold text-sm bg-[var(--theme-primary)] text-white disabled:opacity-50">Simpan</button>
+                <button onClick={() => setEditingPost(null)} className="px-6 py-2 rounded-full font-bold text-sm bg-gray-100 text-gray-700">{lang === "id" ? "Batal" : "Cancel"}</button>
+                <button onClick={confirmEdit} disabled={!editContent.trim()} className="px-6 py-2 rounded-full font-bold text-sm bg-[var(--theme-primary)] text-white disabled:opacity-50">{lang === "id" ? "Simpan" : "Save"}</button>
               </div>
             </motion.div>
           </motion.div>
@@ -1008,12 +1011,12 @@ export function SocHubView({ user, profile }: any) {
               <div className="w-16 h-16 rounded-full bg-red-100 text-red-500 mx-auto flex items-center justify-center mb-4">
                 <Trash2 size={32} />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Hapus Postingan</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">{lang === "id" ? "Hapus Postingan" : "Delete Post"}</h3>
               <p className="text-gray-500 mb-6 text-sm">Apakah Anda yakin ingin menghapus postingan ini? Tindakan ini tidak dapat dibatalkan.</p>
               
               <div className="flex flex-col gap-3 w-full">
-                <button onClick={confirmDelete} className="w-full px-6 py-3 rounded-full font-bold text-sm bg-red-500 text-white">Ya, Hapus</button>
-                <button onClick={() => setDeletingPost(null)} className="w-full px-6 py-3 rounded-full font-bold text-sm bg-gray-100 text-gray-700">Batal</button>
+                <button onClick={confirmDelete} className="w-full px-6 py-3 rounded-full font-bold text-sm bg-red-500 text-white">Ya, {lang === "id" ? "Hapus" : "Delete"}</button>
+                <button onClick={() => setDeletingPost(null)} className="w-full px-6 py-3 rounded-full font-bold text-sm bg-gray-100 text-gray-700">{lang === "id" ? "Batal" : "Cancel"}</button>
               </div>
             </motion.div>
           </motion.div>

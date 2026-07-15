@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from "react";
+import { useI18n } from "./i18n";
 import { auth, callAiWithQuota } from "./firebase";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid, Cell, PieChart as RPieChart, Pie } from "recharts";
 import { DemoEditModal } from "./components/DemoEditModal";
@@ -34,17 +35,20 @@ const GeminiIcon = ({ size = 18 }: { size?: number }) => (
   </svg>
 );
 
-const LoadingDots = () => (
+const LoadingDots = () => {
+  const { lang } = useI18n();
+  return (
   <span>
-    Menganalisis data
+    {lang === "id" ? "Menganalisis data" : "Analyzing data"}
     <motion.span animate={{opacity: [0, 1, 0]}} transition={{repeat: Infinity, duration: 1.5}}>.</motion.span>
     <motion.span animate={{opacity: [0, 1, 0]}} transition={{repeat: Infinity, duration: 1.5, delay: 0.2}}>.</motion.span>
     <motion.span animate={{opacity: [0, 1, 0]}} transition={{repeat: Infinity, duration: 1.5, delay: 0.4}}>.</motion.span>
   </span>
-);
+  );
+};
 
 import { 
-  MONTHS, MS, DAYS_S, DAYS_ID, YEARS, MK, MC,
+  MONTHS, MS, DAYS_S, DAYS_S_EN, DAYS_ID, DAYS_EN, YEARS, MK, MC,
   eng, fmt, gps,
   I, B, CARD, PBadge, htmlToPlainText 
 } from "./data";
@@ -124,6 +128,7 @@ function CustomDropdown({ value, options = [], onChange, style }: { value: strin
 }
 
 function PlatformFilterPopover({ platformFilter, setPlatformFilter, platforms }: any) {
+  const { lang } = useI18n();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -137,7 +142,7 @@ function PlatformFilterPopover({ platformFilter, setPlatformFilter, platforms }:
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const activeLabel = platformFilter === "all" ? "Semua Platform" : platformFilter;
+  const activeLabel = platformFilter === "all" ? (lang === "id" ? "Semua Platform" : "All Platforms") : platformFilter;
 
   return (
     <div ref={ref} className="relative">
@@ -157,7 +162,7 @@ function PlatformFilterPopover({ platformFilter, setPlatformFilter, platforms }:
                <div className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center bg-white ${platformFilter === "all" ? 'border-blue-500' : 'border-gray-300'}`}>
                  {platformFilter === "all" && <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>}
                </div>
-               <span className="text-sm font-semibold text-gray-700">Semua Platform</span>
+               <span className="text-sm font-semibold text-gray-700">{lang === 'id' ? 'Semua Platform' : 'All Platforms'}</span>
                <input type="radio" className="hidden" value="all" checked={platformFilter === "all"} onChange={() => { setPlatformFilter("all"); setOpen(false); }} />
              </label>
              {platforms?.map((p: any) => {
@@ -180,6 +185,7 @@ function PlatformFilterPopover({ platformFilter, setPlatformFilter, platforms }:
 }
 
 function DateFilterPopover({ dateFilt, setDateFilt, customS, setCustomS, customE, setCustomE }: any) {
+  const { lang } = useI18n();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -196,7 +202,7 @@ function DateFilterPopover({ dateFilt, setDateFilt, customS, setCustomS, customE
     {id:"custom", label:"Custom"},
   ];
 
-  let activeLabel = OPTIONS.find(o => o.id === dateFilt)?.label || "Sepanjang Waktu";
+  let activeLabel = OPTIONS.find(o => o.id === dateFilt)?.label || (lang === "id" ? "Sepanjang Waktu" : "All Time");
   if (dateFilt === "custom") {
     const formatDate = (dStr: string) => {
       if (!dStr) return "";
@@ -822,6 +828,7 @@ export function AnalyticsView({
   activeSubTab: activeSubTabProp,
   setActiveSubTab: setActiveSubTabProp
 }: any) {
+  const { lang } = useI18n();
   const content = useMemo(() => {
     if (isTutorialActive) {
       // Generate dummy content for the tutorial. 
@@ -998,7 +1005,7 @@ export function AnalyticsView({
 
         const pages = container.querySelectorAll(".print-page");
         if (pages.length === 0) {
-          alert("Tidak ada halaman laporan untuk disimpan.");
+          alert(lang === "id" ? "Tidak ada halaman laporan untuk disimpan." : "No report pages to save.");
           setIsGeneratingPDF(false);
           setIsPrintReady(false);
           return;
@@ -1193,11 +1200,11 @@ export function AnalyticsView({
         "28d": "28 Hari Terakhir",
         "90d": "90 Hari Terakhir",
         tw: "Minggu Ini",
-        tm: "Bulan Ini",
+        tm: lang === "id" ? "Bulan Ini" : "This Month",
         ty: "Tahun Ini",
         lw: "Minggu Lalu",
-        lm: "Bulan Lalu",
-        all: "Semua Waktu"
+        lm: lang === "id" ? "Bulan Lalu" : "Last Month",
+        all: lang === "id" ? "Semua Waktu" : "All Time"
       };
       originalRangeLabel = labelsMap[printDateRange] || "Periode Laporan";
       rangeLabel = `${originalRangeLabel} (${rangeLabel})`;
@@ -1385,9 +1392,9 @@ export function AnalyticsView({
 
   const getPeriodText = () => {
     if(dateFilt==="all") return "";
-    if(dateFilt==="yesterday") return "vs prev day";
-    if(dateFilt==="ty") return "vs last year";
-    return "vs prev period";
+    if(dateFilt==="yesterday") return lang === "id" ? "vs hari sebelumnya" : "vs prev day";
+    if(dateFilt==="ty") return lang === "id" ? "vs tahun lalu" : "vs last year";
+    return lang === "id" ? "vs periode sebelumnya" : "vs prev period";
   }
 
   const pTotal = calcPct(total, prevTotal);
@@ -1613,7 +1620,9 @@ export function AnalyticsView({
           if(engValue > maxEng) { maxEng = engValue; bestDay = dIdx; bestHour = hIdx; }
         });
       });
-      const bestTimeStr = maxEng > 0 ? `${DAYS_ID[bestDay]} pukul ${bestHour}:00` : "Belum cukup data";
+      const bestTimeStr = maxEng > 0 
+        ? `${(lang === "id" ? DAYS_ID : DAYS_EN)[bestDay]} ${lang === "id" ? "pukul" : "at"} ${bestHour}:00` 
+        : (lang === "id" ? "Belum cukup data" : "Not enough data");
       const picDataStr = picData.map((p:any)=>`${p.name} (${p.total})`).join(", ");
 
       const prompt = `Anda adalah ahli Social Media Analyst. Buatlah Executive Summary yang profesional dan actionable berdasarkan data kinerja konten berikut:
@@ -1640,14 +1649,14 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
 3. Next Step Pengembangan Konten: Berikan 3-5 saran konkrit dan actionable untuk pembuatan konten berikutnya berdasarkan data di atas.`;
 
       const data = await callAiWithQuota(auth.currentUser?.uid || 'anon', undefined, { prompt, model: "gemini-2.0-flash" });
-      setAiInsight(data.text || "Tidak ada respon dari AI.");
+      setAiInsight(data.text || lang === "id" ? "Tidak ada respon dari AI." : "No response from AI.");
     } catch(e:any) {
       console.error("AI Error:", e);
       const errMsg = e.message || "";
       if (errMsg.includes("habis")) {
         setAiInsight(errMsg);
       } else if (errMsg.includes("429") || errMsg.includes("RESOURCE_EXHAUSTED") || errMsg.includes("Quota exceeded")) {
-        setAiInsight("Gagal mendapatkan Executive Summary: Terlalu banyak permintaan AI secara bersamaan (Quota Exceeded). Silakan tunggu sekitar 30 detik lalu coba lagi.");
+        setAiInsight(lang === "id" ? "Gagal mendapatkan Executive Summary: Terlalu banyak permintaan AI secara bersamaan (Quota Exceeded). Silakan tunggu sekitar 30 detik lalu coba lagi." : "Failed to get Executive Summary: Too many AI requests at the same time (Quota Exceeded). Please wait about 30 seconds and try again.");
       } else {
         setAiInsight("Gagal mendapatkan Executive Summary: " + errMsg + ".\n\nPastikan VITE_GEMINI_API_KEY sudah diset di Settings > Secrets.");
       }
@@ -1660,7 +1669,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
       <div className="flex justify-between items-center mb-4">
         <h4 className="text-base font-bold text-gray-900 m-0 tracking-tight">{title}</h4>
       </div>
-      {list.length===0 && <p className="text-sm text-gray-500 text-center py-5">Data tidak tersedia untuk filter saat ini.</p>}
+      {list.length===0 && <p className="text-sm text-gray-500 text-center py-5">{lang === "id" ? "Data tidak tersedia untuk filter saat ini." : "No data available for the current filters."}</p>}
       <div className="flex flex-col gap-2.5">
         {list.map((item:any,i:number)=>{
           const e=getEng(item),ps=gps(pillars,item.pillar);
@@ -1680,9 +1689,9 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
               </div>
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-bold flex items-center gap-2 text-gray-900 mb-1">
-                  <span onClick={()=>openEdit(item)} className="cursor-pointer truncate" title="Buka Detail Brief">{item.title||"(Tanpa judul)"}</span>
-                  {item.linkSosmed && <a href={item.linkSosmed} target="_blank" rel="noreferrer" className="no-underline text-sm" title="Buka Postingan">🔗</a>}
-                  {item.linkUpload && <a href={item.linkUpload} target="_blank" rel="noreferrer" className="no-underline text-sm" title="Akses Upload/Aset">📤</a>}
+                  <span onClick={()=>openEdit(item)} className="cursor-pointer truncate" title={lang === "id" ? "Buka Detail Brief" : "Open Brief Detail"}>{item.title||(lang === "id" ? "(Tanpa judul)" : "(No title)")}</span>
+                  {item.linkSosmed && <a href={item.linkSosmed} target="_blank" rel="noreferrer" className="no-underline text-sm" title={lang === "id" ? "Buka Postingan" : "Open Post"}>🔗</a>}
+                  {item.linkUpload && <a href={item.linkUpload} target="_blank" rel="noreferrer" className="no-underline text-sm" title={lang === "id" ? "Akses Upload/Aset" : "Access Upload/Asset"}>📤</a>}
                 </div>
                 <div className="flex gap-1.5 flex-wrap items-center">
                   <PBadge name={item.platform} platforms={platforms}/>
@@ -1780,7 +1789,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
             <div className="w-px h-6 bg-black/[0.06] shrink-0"/>
 
             <div className="flex gap-0.5 bg-black/[0.03] p-1 rounded-full border border-black/[0.01]">
-              {[["all","Semua Data"],["organic","Organic"],["ads","Ads Only"]].map(([k,l])=>(
+              {[["all",lang === "id" ? "Semua Data" : "All Data"],["organic","Organic"],["ads","Ads Only"]].map(([k,l])=>(
                 <button key={k} onClick={()=>setAdsFilter(k)} className={`text-xs font-bold px-4 py-1.5 rounded-full border-none cursor-pointer transition-colors ${adsFilter===k ? "bg-white text-gray-900 shadow-sm" : "bg-transparent text-gray-500 hover:text-gray-900"}`}>{l}</button>
               ))}
             </div>
@@ -1815,13 +1824,13 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
             <>
               {/* Metrics Row */}
               <div id="analytics-metrics-row" className="flex flex-wrap gap-4 w-[calc(100%+48px)] -mx-6 px-6 mb-1 pb-2" style={{ scrollMarginTop: 100 }}>
-                <div className="flex flex-col flex-1 min-w-[200px]"><MCard label="Total Konten" val={total} sub={`Dipublikasikan: ${pub}`} colorTheme="blue" icon={PieChart} pctStr={calcPct(total, prevTotal)} /></div>
-                <div className="flex flex-col flex-1 min-w-[200px]"><MCard label="Views (Impresi)" val={fmt(tV)} pctStr={calcPct(tV, prevTV)} colorTheme="amber" icon={Activity}/></div>
-                <div className="flex flex-col flex-1 min-w-[200px]"><MCard label="Reach" val={fmt(tR)} pctStr={calcPct(tR, prevTR)} colorTheme="purple" icon={Users}/></div>
-                <div className="flex flex-col flex-1 min-w-[200px]"><MCard label="Engagement" val={fmt(tE)} sub={`Tingkat Interaksi: ${er}% (vs ${(prevER).toFixed(2)}%)`} pctStr={calcPct(tE, prevTE)} colorTheme="emerald" icon={Target}/></div>
+                <div className="flex flex-col flex-1 min-w-[200px]"><MCard label={lang === "id" ? "Total Konten" : "Total Content"} val={total} sub={lang === "id" ? `Dipublikasikan: ${pub}` : `Published: ${pub}`} colorTheme="blue" icon={PieChart} pctStr={calcPct(total, prevTotal)} /></div>
+                <div className="flex flex-col flex-1 min-w-[200px]"><MCard label={lang === "id" ? "Views (Impresi)" : "Views (Impressions)"} val={fmt(tV)} pctStr={calcPct(tV, prevTV)} colorTheme="amber" icon={Activity}/></div>
+                <div className="flex flex-col flex-1 min-w-[200px]"><MCard label={lang === "id" ? "Reach" : "Reach"} val={fmt(tR)} pctStr={calcPct(tR, prevTR)} colorTheme="purple" icon={Users}/></div>
+                <div className="flex flex-col flex-1 min-w-[200px]"><MCard label={lang === "id" ? "Engagement" : "Engagement"} val={fmt(tE)} sub={lang === "id" ? `Tingkat Interaksi: ${er}% (vs ${(prevER).toFixed(2)}%)` : `Engagement Rate: ${er}% (vs ${(prevER).toFixed(2)}%)`} pctStr={calcPct(tE, prevTE)} colorTheme="emerald" icon={Target}/></div>
                 {(adsFilter==="all"||adsFilter==="ads") && <>
-                  <div className="flex flex-col flex-1 min-w-[200px]"><MCard label="Ad Clicks" val={fmt(tClicks)} colorTheme="rose" icon={Zap} pctStr={calcPct(tClicks, prevTClicks)}/></div>
-                  <div className="flex flex-col flex-1 min-w-[200px]"><MCard label="Ad Conversions" val={fmt(tConv)} colorTheme="cyan" icon={Star} pctStr={calcPct(tConv, prevTConv)}/></div>
+                  <div className="flex flex-col flex-1 min-w-[200px]"><MCard label={lang === "id" ? "Klik Iklan" : "Ad Clicks"} val={fmt(tClicks)} colorTheme="rose" icon={Zap} pctStr={calcPct(tClicks, prevTClicks)}/></div>
+                  <div className="flex flex-col flex-1 min-w-[200px]"><MCard label={lang === "id" ? "Konversi Iklan" : "Ad Conversions"} val={fmt(tConv)} colorTheme="cyan" icon={Star} pctStr={calcPct(tConv, prevTConv)}/></div>
                 </>}
               </div>
 
@@ -1830,25 +1839,25 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex items-center gap-2">
                     <div className="bg-blue-50 p-2 rounded-lg text-blue-600"><GeminiIcon size={16} /></div>
-                    <h4 className="text-[15px] font-extrabold m-0 text-gray-900 tracking-tight">Ringkasan Eksekutif & Insight AI</h4>
+                    <h4 className="text-[15px] font-extrabold m-0 text-gray-900 tracking-tight">{lang === "id" ? "Ringkasan Eksekutif & Insight AI" : "Executive Summary & AI Insights"}</h4>
                   </div>
                 </div>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4 border-b border-black/[0.03] pb-4">
                   <div className="bg-black/[0.01] p-3.5 rounded-xl border border-black/[0.02]">
-                    <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">Total Konten</div>
-                    <div className="text-lg font-extrabold text-gray-900">{total} <span className="text-xs font-normal text-gray-500">({pub} Published)</span></div>
+                    <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">{lang === "id" ? "Total Konten" : "Total Content"}</div>
+                    <div className="text-lg font-extrabold text-gray-900">{total} <span className="text-xs font-normal text-gray-500">({pub} {lang === "id" ? "Dipublikasikan" : "Published"})</span></div>
                   </div>
                   <div className="bg-black/[0.01] p-3.5 rounded-xl border border-black/[0.02]">
-                    <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">Total Views & Impresi</div>
+                    <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">{lang === "id" ? "Total Views & Impresi" : "Total Views & Impressions"}</div>
                     <div className="text-lg font-extrabold text-gray-900 text-blue-600">{fmt(tV)} <span className="text-xs font-normal text-gray-500">Views</span></div>
                   </div>
                   <div className="bg-black/[0.01] p-3.5 rounded-xl border border-black/[0.02]">
-                    <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">Total Reach</div>
+                    <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">{lang === "id" ? "Total Reach" : "Total Reach"}</div>
                     <div className="text-lg font-extrabold text-gray-900 text-purple-600">{fmt(tR)} <span className="text-xs font-normal text-gray-500">Reach</span></div>
                   </div>
                   <div className="bg-black/[0.01] p-3.5 rounded-xl border border-black/[0.02]">
-                    <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">Total Engagement</div>
+                    <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">{lang === "id" ? "Total Engagement" : "Total Engagement"}</div>
                     <div className="text-lg font-extrabold text-emerald-600">{fmt(tE)} <span className="text-xs font-normal text-gray-500">(ER: {er}%)</span></div>
                   </div>
                 </div>
@@ -1861,7 +1870,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                         onClick={() => setShowAiInsight(!showAiInsight)}
                       >
                         <div className="text-xs font-bold text-blue-700 flex items-center gap-2">
-                          ✨ Insight & Rekomendasi Pintar AI
+                          {lang === "id" ? "✨ Insight & Rekomendasi Pintar AI" : "✨ AI Smart Insights & Recommendations"}
                         </div>
                         <ChevronDown size={16} className="text-blue-700 transition-transform duration-300" style={{transform: showAiInsight ? "rotate(180deg)" : "none"}} />
                       </div>
@@ -1874,7 +1883,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                   ) : (
                     <button onClick={fetchAiInsight} disabled={aiLoading} className="hover-scale w-full bg-gray-900 hover:bg-black text-white border-none py-3 px-5 rounded-xl font-bold text-xs cursor-pointer flex items-center justify-center gap-2 shadow-sm disabled:cursor-wait transition-colors">
                       <GeminiIcon size={14} />
-                      {aiLoading ? <LoadingDots /> : "Generate AI Insights & Rekomendasi"}
+                      {aiLoading ? <LoadingDots /> : (lang === "id" ? "Generate AI Insights & Rekomendasi" : "Generate AI Insights & Recommendations")}
                     </button>
                   )}
                 </div>
@@ -1887,7 +1896,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                   <div className="flex justify-between items-start mb-5 gap-3 flex-wrap">
                     <div className="flex items-center gap-2">
                       <div className="bg-amber-50 p-2 rounded-lg text-amber-600"><PieChart size={18} /></div>
-                      <h4 className="font-extrabold text-gray-900 text-[15px] m-0 tracking-tight">Distribusi Platform</h4>
+                      <h4 className="font-extrabold text-gray-900 text-[15px] m-0 tracking-tight">{lang === "id" ? "Distribusi Platform" : "Platform Distribution"}</h4>
                     </div>
                     <div className="flex gap-2 items-center flex-wrap">
                       <div className="flex bg-black/[0.03] rounded-lg p-0.5 border border-black/[0.01]">
@@ -1898,9 +1907,9 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                         value={platformMetric} 
                         onChange={setPlatformMetric} 
                         options={[
-                          {id:"engagement", label:"Engagement"},
-                          {id:"views", label:"Views"},
-                          {id:"reach", label:"Reach"}
+                          {id:"engagement", label: lang === "id" ? "Interaksi" : "Engagement"},
+                          {id:"views", label: lang === "id" ? "Tayangan" : "Views"},
+                          {id:"reach", label: lang === "id" ? "Jangkauan" : "Reach"}
                         ]} 
                         style={{ width: 120 }} 
                       />
@@ -1943,17 +1952,17 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                   <div className="flex justify-between items-start mb-5 gap-3 flex-wrap">
                     <div className="flex items-center gap-2">
                       <div className="bg-emerald-50 p-2 rounded-lg text-emerald-600"><PieChart size={18} /></div>
-                      <h4 className="font-extrabold text-gray-900 text-[15px] m-0 tracking-tight">Distribusi Pilar Konten</h4>
+                      <h4 className="font-extrabold text-gray-900 text-[15px] m-0 tracking-tight">{lang === "id" ? "Distribusi Pilar Konten" : "Content Pillar Distribution"}</h4>
                     </div>
                     <div className="flex gap-2 items-center flex-wrap">
                       <CustomDropdown 
                         value={pillarMetric} 
                         onChange={setPillarMetric} 
                         options={[
-                          {id:"engagement", label:"Engagement"},
-                          {id:"views", label:"Views"},
-                          {id:"reach", label:"Reach"},
-                          {id:"total", label:"Total Item"}
+                          {id:"engagement", label: lang === "id" ? "Interaksi" : "Engagement"},
+                          {id:"views", label: lang === "id" ? "Tayangan" : "Views"},
+                          {id:"reach", label: lang === "id" ? "Jangkauan" : "Reach"},
+                          {id:"total", label: lang === "id" ? "Total Item" : "Total Items"}
                         ]} 
                         style={{ width: 120 }} 
                       />
@@ -1988,21 +1997,21 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
               {/* Header Sort & Filter for rankings */}
               <div className="flex gap-4 items-center bg-white rounded-2xl border border-black/[0.03] shadow-sm px-5 py-4 flex-wrap min-w-0">
                 <div className="flex gap-3 items-center flex-wrap">
-                  <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Urutkan Konten:</div>
+                  <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">{lang === "id" ? "Urutkan Konten:" : "Sort Content:"}</div>
                   <div className="flex gap-0.5 bg-black/[0.03] p-1 rounded-xl border border-black/[0.01]">
-                    {[["engagement","Interaksi"],["reach","Jangkauan"],["views","Tayangan"]].map(([k,l])=>(
+                    {[[ "engagement", lang === "id" ? "Interaksi" : "Engagement" ], [ "reach", lang === "id" ? "Jangkauan" : "Reach" ], [ "views", lang === "id" ? "Tayangan" : "Views" ]].map(([k,l])=>(
                       <button key={k} onClick={()=>setTopSort(k)} className={`px-4 py-2 rounded-lg border-none font-bold text-xs cursor-pointer transition-all ${topSort===k ? "bg-white text-gray-900 shadow-sm" : "bg-transparent text-gray-500 hover:text-gray-900"}`}>{l}</button>
                     ))}
                   </div>
                 </div>
                 <div className="hidden sm:block w-px h-7 bg-black/[0.06] shrink-0"/>
                 <div className="flex gap-3 items-center flex-wrap">
-                  <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Filter Platform:</div>
+                  <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">{lang === "id" ? "Filter Platform:" : "Platform Filter:"}</div>
                   <CustomDropdown 
                     value={topPlatform} 
                     onChange={setTopPlatform} 
                     options={[
-                      {id:"All", label:"Semua Platform"},
+                      {id:"All", label:(lang === "id" ? "Semua Platform" : "All Platforms")},
                       ...platforms.map((p:any)=>({id:p.name, label:p.name}))
                     ]} 
                     style={{ width: 180 }} 
@@ -2014,7 +2023,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
               <div id="analytics-content-rankings" className="grid gap-6 grid-cols-1 md:grid-cols-2" style={{ scrollMarginTop: 100 }}>
                 <div>
                   <CDataList 
-                    title={`🏆 Top 10 Konten Terbaik${topPlatform!=="All"?" ("+topPlatform+")":""}`} 
+                    title={lang === "id" ? `🏆 Top 10 Konten Terbaik${topPlatform!=="All"?" ("+topPlatform+")":""}` : `🏆 Top 10 Best Content${topPlatform!=="All"?" ("+topPlatform+")":""}`} 
                     list={base.filter((c:any)=>c.status==="Published" && getV(c)>0 && (topPlatform==="All" || (c.platform && c.platform.includes(topPlatform)))).sort((a:any,b:any)=>{
                       if(topSort==="engagement") return getEng(b)-getEng(a);
                       if(topSort==="reach") return getR(b)-getR(a);
@@ -2025,7 +2034,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                 </div>
                 <div>
                   <CDataList 
-                    title={`⚠️ 10 Konten Terendah${topPlatform!=="All"?" ("+topPlatform+")":""}`}
+                    title={lang === "id" ? `⚠️ 10 Konten Terendah${topPlatform!=="All"?" ("+topPlatform+")":""}` : `⚠️ 10 Lowest Content${topPlatform!=="All"?" ("+topPlatform+")":""}`}
                     list={base.filter((c:any)=>c.status==="Published" && getV(c)>0 && (topPlatform==="All" || (c.platform && c.platform.includes(topPlatform))))
                       .sort((a:any,b:any)=>{
                       if(topSort==="engagement") return getEng(a)-getEng(b);
@@ -2044,17 +2053,17 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                   <div className="flex justify-between items-start mb-5 gap-3 flex-wrap">
                     <div className="flex items-center gap-2">
                       <div className="bg-pink-50 p-2 rounded-lg text-pink-600"><PieChart size={18} /></div>
-                      <h4 className="font-extrabold text-gray-900 text-[15px] m-0 tracking-tight">Tipe Konten</h4>
+                      <h4 className="font-extrabold text-gray-900 text-[15px] m-0 tracking-tight">{lang === "id" ? "Tipe Konten" : "Content Type"}</h4>
                     </div>
                     <div className="flex gap-2 items-center flex-wrap">
                       <CustomDropdown 
                         value={typeMetric} 
                         onChange={setTypeMetric} 
                         options={[
-                          {id:"engagement", label:"Engagement"},
-                          {id:"views", label:"Views"},
-                          {id:"reach", label:"Reach"},
-                          {id:"total", label:"Total Item"}
+                          {id:"engagement", label: lang === "id" ? "Interaksi" : "Engagement"},
+                          {id:"views", label: lang === "id" ? "Tayangan" : "Views"},
+                          {id:"reach", label: lang === "id" ? "Jangkauan" : "Reach"},
+                          {id:"total", label: lang === "id" ? "Total Item" : "Total Items"}
                         ]} 
                         style={{ width: 120 }} 
                       />
@@ -2066,7 +2075,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                         <XAxis dataKey="name" tick={{fontSize:11,fill:"rgba(0,0,0,0.4)"}} tickLine={false} axisLine={false} dy={10}/>
                         <YAxis tick={{fontSize:11,fill:"rgba(0,0,0,0.4)"}} tickLine={false} axisLine={false} tickFormatter={fmt} width={45}/>
                         <Tooltip cursor={{fill:"rgba(0,0,0,0.02)"}} contentStyle={{borderRadius:12,fontSize:12,border:"1px solid rgba(0,0,0,0.04)",boxShadow:"0 10px 30px rgba(0,0,0,0.04)"}} itemStyle={{color:"#111827",fontWeight:700}} labelStyle={{color:"rgba(0,0,0,0.4)",marginBottom:4}} formatter={(v:any, n:any, props:any)=>[fmt(v), props?.payload?.name || n]}/>
-                        <Bar dataKey="value" name="Total" radius={[6,6,0,0]} maxBarSize={48}>
+                        <Bar dataKey="value" name={lang === "id" ? "Total" : "Total"} radius={[6,6,0,0]} maxBarSize={48}>
                           {typeData.map((entry:any, index:number) => <Cell key={`cell-${index}`} fill={entry.color || ["#DB2777", "#EC4899", "#F472B6", "#FBCFE8"][index % 4]} />)}
                         </Bar>
                       </BarChart>
@@ -2078,7 +2087,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                   <div className="flex items-center gap-2.5 mb-5 justify-between flex-wrap">
                     <div className="flex items-center gap-2">
                       <div className="bg-indigo-50 p-2 rounded-lg text-indigo-600"><Users size={18} /></div>
-                      <h4 className="font-extrabold text-gray-900 text-[15px] m-0 tracking-tight">Distribusi Konten PIC</h4>
+                      <h4 className="font-extrabold text-gray-900 text-[15px] m-0 tracking-tight">{lang === "id" ? "Distribusi Konten PIC" : "PIC Content Distribution"}</h4>
                     </div>
                     <div className="flex bg-black/[0.03] rounded-lg p-0.5 border border-black/[0.01]">
                       <button onClick={()=>setPicChartType("doughnut")} className={`border-none rounded-md px-3 py-1.5 text-[10px] font-bold cursor-pointer transition-all ${picChartType==="doughnut" ? "bg-white text-gray-900 shadow-sm" : "bg-transparent text-gray-500 hover:text-gray-900"}`}>Doughnut</button>
@@ -2109,7 +2118,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                         <XAxis dataKey="name" tick={{fontSize:11,fill:"rgba(0,0,0,0.4)"}} tickLine={false} axisLine={false} dy={10}/>
                         <YAxis tick={{fontSize:11,fill:"rgba(0,0,0,0.4)"}} tickLine={false} axisLine={false} tickFormatter={fmt} width={45}/>
                         <Tooltip cursor={{fill:"rgba(0,0,0,0.02)"}} contentStyle={{borderRadius:12,fontSize:12,border:"1px solid rgba(0,0,0,0.04)",boxShadow:"0 10px 30px rgba(0,0,0,0.04)"}} itemStyle={{color:"#111827",fontWeight:700}} labelStyle={{color:"rgba(0,0,0,0.4)",marginBottom:4}} formatter={(v:any, n:any, props:any)=>[fmt(v), props?.payload?.name || n]}/>
-                        <Bar dataKey="total" name="Jumlah Konten" radius={[6,6,0,0]} maxBarSize={48}>
+                        <Bar dataKey="total" name={lang === "id" ? "Jumlah Konten" : "Total Content"} radius={[6,6,0,0]} maxBarSize={48}>
                           {picData.map((entry:any, index:number) => <Cell key={`cell-${index}`} fill={entry.color || ["#8B5CF6", "#3B82F6", "#10B981", "#F59E0B", "#EC4899", "#6366F1"][index % 6]} />)}
                         </Bar>
                       </BarChart>
@@ -2139,7 +2148,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                     className="flex items-center gap-2 bg-white hover:bg-gray-50 border border-black/[0.08] px-3.5 py-1.5 rounded-full shadow-sm cursor-pointer transition-all text-xs font-extrabold text-gray-800 hover:scale-[1.02] active:scale-95 shrink-0"
                   >
                     <SlidersHorizontal size={13} className="text-gray-500" />
-                    <span>Pilih Metrik</span>
+                    <span>{lang === "id" ? "Pilih Metrik" : "Select Metric"}</span>
                     {activeMetrics.length > 0 && (
                       <span className="bg-blue-600 text-white px-1.5 py-0.5 rounded-full text-[10px] font-black min-w-[18px] h-[18px] flex items-center justify-center leading-none">
                         {activeMetrics.length}
@@ -2290,19 +2299,19 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
               {base.length === 0 ? (
                 <div className="py-12 text-center text-gray-400 bg-black/[0.01] rounded-2xl border border-dashed border-black/[0.06] flex flex-col items-center justify-center">
                   <TrendingUp size={36} className="text-gray-300 mb-2 opacity-50" />
-                  <p className="text-sm font-semibold">Tidak ada data untuk periode ini.</p>
+                  <p className="text-sm font-semibold">{lang === "id" ? "Tidak ada data untuk periode ini." : "No data for this period."}</p>
                   <p className="text-xs text-gray-400 mt-1 mb-4">Silakan ubah filter tanggal, platform, atau tipe konten untuk melihat tren data.</p>
                 </div>
               ) : activeMetrics.length === 0 ? (
                 <div className="py-12 text-center text-gray-400 bg-black/[0.01] rounded-2xl border border-dashed border-black/[0.06] flex flex-col items-center justify-center">
                   <TrendingUp size={36} className="text-gray-300 mb-2 animate-bounce" />
-                  <p className="text-sm font-semibold">Tidak ada metrik terpilih.</p>
-                  <p className="text-xs text-gray-400 mt-1 mb-4">Pilih metrik melalui tombol 'Pilih Metrik' di atas untuk menampilkan grafik.</p>
+                  <p className="text-sm font-semibold">{lang === "id" ? "Tidak ada metrik terpilih." : "No metric selected."}</p>
+                  <p className="text-xs text-gray-400 mt-1 mb-4">{lang === "id" ? "Pilih metrik melalui tombol 'Pilih Metrik' di atas untuk menampilkan grafik." : "Select metrics via the 'Select Metric' button above to display chart."}</p>
                   <button 
                     onClick={openMetricSetting} 
                     className="px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-xl hover:bg-blue-700 shadow-sm transition-colors cursor-pointer"
                   >
-                    Pilih Metrik
+                    {lang === "id" ? "Pilih Metrik" : "Select Metric"}
                   </button>
                 </div>
               ) : (
@@ -2422,9 +2431,9 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                     const rowMax = Math.max(...row, 1);
                     return (
                       <div key={di} className="flex gap-[1%] mb-1.5 items-center">
-                        <div className="w-6 text-[10px] font-bold text-gray-900 shrink-0">{DAYS_S[di]}</div>
+                        <div className="w-6 text-[10px] font-bold text-gray-900 shrink-0">{(lang === "id" ? DAYS_S : DAYS_S_EN)[di]}</div>
                         {row.map((val,hi) => (
-                          <div key={hi} title={`${DAYS_ID[di]} Jam ${hi} - ${fmt(val)} ${heatmapMetric==="engagement"?"Eng":heatmapMetric==="reach"?"Reach":"Views"}`} className="flex-1 h-7 rounded-sm transition-all duration-200" style={{background:val===0?'#F3F4F6':(heatmapMetric==="engagement"?`#3B82F6`:`#8B5CF6`) , opacity: val===0 ? 1 : Math.max(0.15, val/rowMax)}}/>
+                          <div key={hi} title={`${(lang === "id" ? DAYS_ID : DAYS_EN)[di]} ${lang === "id" ? "Jam" : "Hour"} ${hi} - ${fmt(val)} ${heatmapMetric==="engagement"?"Eng":heatmapMetric==="reach"?"Reach":"Views"}`} className="flex-1 h-7 rounded-sm transition-all duration-200" style={{background:val===0?'#F3F4F6':(heatmapMetric==="engagement"?`#3B82F6`:`#8B5CF6`) , opacity: val===0 ? 1 : Math.max(0.15, val/rowMax)}}/>
                         ))}
                       </div>
                     );
@@ -2444,7 +2453,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                       {/* Interactive Active Platform Badge synced with navbar */}
                       <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-blue-50 text-blue-600 border border-blue-100 flex items-center gap-1">
                         <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-                        {platformFilter === "all" ? "Semua Platform" : platformFilter}
+                        {platformFilter === "all" ? (lang === "id" ? "Semua Platform" : "All Platforms") : platformFilter}
                       </span>
                     </div>
                     <p className="text-xs text-gray-400 mt-1">Persebaran umur, jenis kelamin, lokasi, dan preferensi minat berdasarkan tiap platform yang difilter.</p>
@@ -2607,14 +2616,14 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                             <h5 className="font-extrabold text-gray-900 text-sm tracking-tight m-0">Tidak Ada Data Demografi</h5>
                             <p className="text-xs text-gray-500 mt-2 mb-4 leading-relaxed max-w-xs">
                               {isAll 
-                                ? "Belum ada data demografi yang diisi di platform manapun. Klik tombol di bawah untuk mulai mengisi data demografi Anda."
-                                : `Belum ada data demografi yang diisi untuk platform ${platformFilter}. Silakan isi data secara manual menggunakan tombol di bawah.`}
+                                ? lang === "id" ? "Belum ada data demografi yang diisi di platform manapun. Klik tombol di bawah untuk mulai mengisi data demografi Anda." : "No demographic data entered on any platform. Click the button below to start entering your demographic data."
+                                : `${lang === "id" ? "Belum ada data demografi yang diisi untuk platform " + platformFilter + ". Silakan isi data secara manual menggunakan tombol di bawah." : "No demographic data entered for " + platformFilter + " platform. Please enter data manually using the button below."}`}
                             </p>
                             <button 
                               onClick={() => setIsDemoModalOpen(true)}
                               className="px-4.5 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl cursor-pointer transition-all shadow-md hover:shadow-lg border-none"
                             >
-                              Isi Data Demografi
+                              {lang === "id" ? "Isi Data Demografi" : "Fill Demographic Data"}
                             </button>
                           </div>
                         </div>
@@ -2657,9 +2666,9 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                 <div>
                   <h3 className="text-lg font-extrabold text-gray-950 m-0 tracking-tight flex items-center gap-2">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-blue-600"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect><polyline points="6 9 6 2 18 2 18 9"></polyline></svg>
-                    <span>Studio Konfigurasi & Simpan PDF</span>
+                    <span>{lang === "id" ? "Studio Konfigurasi & Simpan PDF" : "Configuration Studio & Save PDF"}</span>
                   </h3>
-                  <p className="text-xs text-gray-500 mt-1">Atur preferensi laporan dan unduh dokumen PDF secara real-time.</p>
+                  <p className="text-xs text-gray-500 mt-1">{lang === "id" ? "Atur preferensi laporan dan unduh dokumen PDF secara real-time." : "Set report preferences and download PDF document in real-time."}</p>
                 </div>
                 <button
                   onClick={() => setIsPrintModalOpen(false)}
@@ -2676,7 +2685,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                   {/* 1. Platforms */}
                   <div>
                     <div className="flex justify-between items-center mb-2">
-                      <label className="text-[11px] font-extrabold text-gray-800 uppercase tracking-wider">1. Pilih Platform</label>
+                      <label className="text-[11px] font-extrabold text-gray-800 uppercase tracking-wider">{lang === "id" ? "1. Pilih Platform" : "1. Select Platforms"}</label>
                       <button
                         onClick={() => {
                           if (printPlatforms.length === platformNames.length) {
@@ -2687,7 +2696,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                         }}
                         className="text-[11px] font-bold text-blue-600 hover:text-blue-700 bg-transparent border-none cursor-pointer"
                       >
-                        {printPlatforms.length === platformNames.length ? "Hapus Semua" : "Pilih Semua"}
+                        {printPlatforms.length === platformNames.length ? (lang === "id" ? "Hapus Semua" : "Clear All") : (lang === "id" ? "Pilih Semua" : "Select All")}
                       </button>
                     </div>
                     <div className="flex flex-wrap gap-1.5">
@@ -2869,7 +2878,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                         ) : (
                           <>
                             <Download size={14} className="text-white" />
-                            <span>Simpan PDF</span>
+                            <span>{lang === "id" ? "Simpan PDF" : "Save PDF"}</span>
                           </>
                         )}
                       </button>
@@ -3033,7 +3042,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                                       <tbody>
                                         {printData.topPosts.length === 0 ? (
                                           <tr>
-                                            <td colSpan={4} className="py-6 text-center text-gray-400">Tidak ada konten di periode ini.</td>
+                                            <td colSpan={4} className="py-6 text-center text-gray-400">{lang === "id" ? "Tidak ada konten di periode ini." : "No content in this period."}</td>
                                           </tr>
                                         ) : (
                                           printData.topPosts.slice(0, 4).map((post: any, index: number) => {
@@ -3371,7 +3380,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                     <tbody>
                       {printData.topPosts.length === 0 ? (
                         <tr>
-                          <td colSpan={6} className="py-8 text-center text-gray-400">Tidak ada konten yang diterbitkan di periode ini.</td>
+                          <td colSpan={6} className="py-8 text-center text-gray-400">{lang === "id" ? "Tidak ada konten yang diterbitkan di periode ini." : "No content published in this period."}</td>
                         </tr>
                       ) : (
                         printData.topPosts.map((post: any, index: number) => {

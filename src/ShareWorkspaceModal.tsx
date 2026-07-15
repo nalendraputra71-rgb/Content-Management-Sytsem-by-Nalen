@@ -1,3 +1,4 @@
+import { useI18n } from "./i18n";
 import React, { useState, useEffect } from "react";
 import { db, collection, query, where, getDocs, doc, setDoc, deleteDoc, updateDoc, limit } from "./firebase";
 import { Users, Mail, Shield, Trash2, Link, Copy, Check, Search, AtSign } from "lucide-react";
@@ -5,6 +6,7 @@ import { I, B, CARD } from "./data";
 import { motion, AnimatePresence } from "motion/react";
 
 export const ShareWorkspaceModal: React.FC<{ workspace: any, userProfile: any, onClose: () => void }> = ({ workspace, userProfile, onClose }) => {
+  const { lang } = useI18n();
 
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("viewer");
@@ -193,7 +195,7 @@ export const ShareWorkspaceModal: React.FC<{ workspace: any, userProfile: any, o
                     Apakah Anda yakin ingin menghapus <b>{memberToRemove.username ? `@${memberToRemove.username}` : memberToRemove.email}</b> dari workspace ini?
                   </p>
                   <div style={{display:"flex", gap:12}}>
-                     <button onClick={()=>setMemberToRemove(null)} style={{flex:1, padding:12, borderRadius:12, background:"#FAFAFA", border:"1px solid rgba(44,32,22,0.1)", fontWeight:600, color:"#2C2016", cursor:"pointer"}}>Batal</button>
+                     <button onClick={()=>setMemberToRemove(null)} style={{flex:1, padding:12, borderRadius:12, background:"#FAFAFA", border:"1px solid rgba(44,32,22,0.1)", fontWeight:600, color:"#2C2016", cursor:"pointer"}}>{lang === "id" ? "Batal" : "Cancel"}</button>
                      <button onClick={confirmRemoveMember} style={{flex:1, padding:12, borderRadius:12, background:"#E11D48", border:"none", fontWeight:600, color:"white", cursor:"pointer"}}>Hapus Akses</button>
                   </div>
                </motion.div>

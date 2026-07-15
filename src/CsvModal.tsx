@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { useI18n } from "./i18n";
 import { emptyItem, gid, B, CARD } from "./data";
 import { motion } from "motion/react";
 import { Upload } from "lucide-react";
@@ -9,6 +10,7 @@ export function CsvModal({onClose, onImport, pillars, platforms, contentTypes, p
   const [step, setStep] = useState(1);
   const [showConfirm, setShowConfirm] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { lang } = useI18n();
 
   // Utility to clean encoding issues (like â instead of quotes/dashes)
   const cleanStr = (str: any) => {
@@ -77,7 +79,7 @@ export function CsvModal({onClose, onImport, pillars, platforms, contentTypes, p
             const json: any[] = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
             
             if (json.length < 2) {
-                setErrorMsg("File CSV kosong atau tidak memiliki data.");
+                setErrorMsg(lang === "id" ? "File CSV kosong atau tidak memiliki data." : "CSV file is empty or has no data.");
                 return;
             }
 
@@ -174,7 +176,7 @@ export function CsvModal({onClose, onImport, pillars, platforms, contentTypes, p
             setStep(2);
                     });
         } catch (err) {
-            setErrorMsg("Gagal membaca file. Pastikan format CSV sesuai template.");
+            setErrorMsg(lang === "id" ? "Gagal membaca file. Pastikan format CSV sesuai template." : "Failed to read file. Please make sure the CSV format matches the template.");
         }
     };
     reader.readAsArrayBuffer(file);
@@ -190,20 +192,21 @@ export function CsvModal({onClose, onImport, pillars, platforms, contentTypes, p
     <motion.div key="csvImportOverlay" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} transition={{ duration: 0.15 }} onClick={onClose} style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.8)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center", padding:16}}>
       <motion.div key="csvImportCard" initial={{scale:0.95, opacity:0, y:20}} animate={{scale:1, opacity:1, y:0}} exit={{scale:0.95, opacity:0, y:20}} transition={{ type: "spring", damping: 25, stiffness: 300 }} onClick={e=>e.stopPropagation()} style={{...CARD({width:"100%", maxWidth:600, padding:32, borderRadius:24, boxShadow:"0 20px 40px rgba(0,0,0,0.2)", position:"relative"}), background: "#FFFFFF", backdropFilter: "none", WebkitBackdropFilter: "none"}}>
         <button className="hover-scale" onClick={onClose} style={{position:"absolute",top:20,right:20,background:"rgba(44,32,22,0.05)",border:"none",borderRadius:"50%",width:32,height:32,cursor:"pointer",fontSize:18,color:"#2C2016",display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
-        <h2 style={{fontSize:20, fontWeight:700, margin:"0 0 16px", color:"#2C2016", display:"flex", alignItems:"center", gap:8}}><Upload size={20} /> Bulk Import via CSV</h2>
+        <h2 style={{fontSize:20, fontWeight:700, margin:"0 0 16px", color:"#2C2016", display:"flex", alignItems:"center", gap:8}}><Upload size={20} /> {lang === "id" ? "Bulk Import via CSV" : "Bulk Import via CSV"}</h2>
         
         {step===1 && (
             <div>
                 <p style={{fontSize:14,color:"rgba(44,32,22,0.6)",marginBottom:16,lineHeight:1.5}}>
-                    Gunakan template CSV kami untuk memastikan format data sesuai. 
-                    Anda dapat mengunggah ratusan konten sekaligus ke dalam kalender.
+                    {lang === "id" 
+                      ? "Gunakan template CSV kami untuk memastikan format data sesuai. Anda dapat mengunggah ratusan konten sekaligus ke dalam kalender." 
+                      : "Use our CSV template to ensure the correct data format. You can upload hundreds of content items at once to the calendar."}
                 </p>
                 <div style={{display:"flex",gap:12,marginBottom:24,flexWrap:"wrap"}}>
                     <button className="hover-scale" onClick={handleDownloadTemplate} style={{...B(false), flex: 1, padding:"8px 16px", borderRadius:24, fontSize:14, height:48}}>
-                        Download Template CSV
+                        {lang === "id" ? "Download Template CSV" : "Download CSV Template"}
                     </button>
                     <label className="hover-scale btn-hover" style={{...B(true, "var(--theme-primary)"), flex: 1, padding:"8px 16px", borderRadius:24, display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, height:48, cursor:"pointer"}}>
-                        Pilih File CSV / Excel
+                        {lang === "id" ? "Pilih File CSV / Excel" : "Choose CSV / Excel File"}
                         <input type="file" accept=".csv, .xlsx" onChange={handleFile} ref={fileInputRef} style={{display:"none"}}/>
                     </label>
                 </div>
@@ -214,16 +217,19 @@ export function CsvModal({onClose, onImport, pillars, platforms, contentTypes, p
         {step===2 && (
             <div>
                 <p style={{fontSize:14,color:"rgba(44,32,22,0.6)",marginBottom:16, lineHeight:1.5}}>
-                    Berhasil membaca <strong>{dataPreview.length}</strong> baris data. 
-                    Periksa kembali pratinjau data di bawah ini sebelum melanjutkan.
+                    {lang === "id" ? (
+                      <>Berhasil membaca <strong>{dataPreview.length}</strong> baris data. Periksa kembali pratinjau data di bawah ini sebelum melanjutkan.</>
+                    ) : (
+                      <>Successfully read <strong>{dataPreview.length}</strong> rows of data. Please review the data preview below before continuing.</>
+                    )}
                 </p>
                 <div style={{background:"rgba(44,32,22,0.02)",border:"1px solid rgba(44,32,22,0.06)",borderRadius:12,maxHeight:240,overflow:"auto",marginBottom:24}}>
                     <table style={{width:"100%",fontSize:12,borderCollapse:"collapse"}}>
                         <thead style={{background:"rgba(44,32,22,0.04)",position:"sticky",top:0,backdropFilter:"blur(4px)"}}>
                             <tr>
-                                <th style={{padding:"10px 12px",textAlign:"left",fontWeight:700,color:"#2C2016",borderBottom:"1px solid rgba(44,32,22,0.06)"}}>Judul</th>
-                                <th style={{padding:"10px 12px",textAlign:"left",fontWeight:700,color:"#2C2016",borderBottom:"1px solid rgba(44,32,22,0.06)"}}>Tanggal</th>
-                                <th style={{padding:"10px 12px",textAlign:"left",fontWeight:700,color:"#2C2016",borderBottom:"1px solid rgba(44,32,22,0.06)"}}>Pillar / Platform</th>
+                                <th style={{padding:"10px 12px",textAlign:"left",fontWeight:700,color:"#2C2016",borderBottom:"1px solid rgba(44,32,22,0.06)"}}>{lang === "id" ? "Judul" : "Title"}</th>
+                                <th style={{padding:"10px 12px",textAlign:"left",fontWeight:700,color:"#2C2016",borderBottom:"1px solid rgba(44,32,22,0.06)"}}>{lang === "id" ? "Tanggal" : "Date"}</th>
+                                <th style={{padding:"10px 12px",textAlign:"left",fontWeight:700,color:"#2C2016",borderBottom:"1px solid rgba(44,32,22,0.06)"}}>{lang === "id" ? "Pillar / Platform" : "Pillar / Platform"}</th>
                                 <th style={{padding:"10px 12px",textAlign:"left",fontWeight:700,color:"#2C2016",borderBottom:"1px solid rgba(44,32,22,0.06)"}}>Caption</th>
                             </tr>
                         </thead>
@@ -238,15 +244,15 @@ export function CsvModal({onClose, onImport, pillars, platforms, contentTypes, p
                             ))}
                             {dataPreview.length > 10 && (
                                 <tr>
-                                    <td colSpan={4} style={{padding:"12px",textAlign:"center",color:"rgba(44,32,22,0.4)",fontSize:12,fontWeight:600,fontStyle:"italic"}}>... {dataPreview.length - 10} baris lainnya ...</td>
+                                    <td colSpan={4} style={{padding:"12px",textAlign:"center",color:"rgba(44,32,22,0.4)",fontSize:12,fontWeight:600,fontStyle:"italic"}}>... {dataPreview.length - 10} {lang === "id" ? "baris lainnya" : "more rows"} ...</td>
                                 </tr>
                             )}
                         </tbody>
                     </table>
                 </div>
                 <div style={{display:"flex",gap:12}}>
-                    <button className="hover-scale" onClick={redo} style={{...B(false), flex: 1, padding:"8px 16px", borderRadius:24, fontSize:14, height:48}}>Ulangi</button>
-                    <button className="hover-scale btn-hover" onClick={handleImportClick} style={{...B(true, "var(--theme-primary)"), flex: 1, padding:"8px 16px", borderRadius:24, fontSize:14, height:48}}>Mulai Import</button>
+                    <button className="hover-scale" onClick={redo} style={{...B(false), flex: 1, padding:"8px 16px", borderRadius:24, fontSize:14, height:48}}>{lang === "id" ? "Ulangi" : "Retry"}</button>
+                    <button className="hover-scale btn-hover" onClick={handleImportClick} style={{...B(true, "var(--theme-primary)"), flex: 1, padding:"8px 16px", borderRadius:24, fontSize:14, height:48}}>{lang === "id" ? "Mulai Import" : "Start Import"}</button>
                 </div>
             </div>
         )}
@@ -254,20 +260,22 @@ export function CsvModal({onClose, onImport, pillars, platforms, contentTypes, p
         {showConfirm && (
           <div style={{position:"absolute",inset:0,background:"rgba(255,255,255,0.9)",display:"flex",alignItems:"center",justifyContent:"center",borderRadius:24,zIndex:100,padding:24}}>
             <div style={{...CARD({width:"100%", maxWidth:400, padding:32, borderRadius:24, boxShadow:"0 20px 40px rgba(0,0,0,0.15)", textAlign:"center"})}}>
-              <h3 style={{fontSize:20,color:"#9C2B4E",fontWeight:700,marginBottom:16}}>Data duplikat terdeteksi</h3>
+              <h3 style={{fontSize:20,color:"#9C2B4E",fontWeight:700,marginBottom:16}}>{lang === "id" ? "Data duplikat terdeteksi" : "Duplicate data detected"}</h3>
               <p style={{fontSize:14,color:"rgba(44,32,22,0.6)",marginBottom:24,lineHeight:1.5}}>
-                Beberapa konten memiliki judul dan tanggal yang sama dengan data yang sudah ada. Bagaimana memprosesnya?
+                {lang === "id" 
+                  ? "Beberapa konten memiliki judul dan tanggal yang sama dengan data yang sudah ada. Bagaimana memprosesnya?" 
+                  : "Some content items have the same title and date as existing data. How do you want to handle them?"}
               </p>
               <div style={{display:"flex",flexDirection:"column",gap:12}}>
                 <button className="hover-scale btn-hover" onClick={()=>{
                   const filtered = dataPreview.filter(d => !existingContent?.some((ec:any) => ec.id !== d.id && ec.title === d.title && ec.year === d.year && ec.month === d.month && ec.day === d.day));
                   onImport(filtered);
                   onClose();
-                }} style={{...B(true, "var(--theme-primary)"), width:"100%", height:48, fontSize:14, borderRadius:24}}>Hanya Baru (Abaikan Duplikat)</button>
+                }} style={{...B(true, "var(--theme-primary)"), width:"100%", height:48, fontSize:14, borderRadius:24}}>{lang === "id" ? "Hanya Baru (Abaikan Duplikat)" : "New Only (Ignore Duplicates)"}</button>
                 
-                <button className="hover-scale btn-hover" onClick={()=>{onImport(dataPreview); onClose();}} style={{...B(true, "#9C2B4E"), width:"100%", height:48, fontSize:14, borderRadius:24}}>Timpa / Tetap Impor</button>
+                <button className="hover-scale btn-hover" onClick={()=>{onImport(dataPreview); onClose();}} style={{...B(true, "#9C2B4E"), width:"100%", height:48, fontSize:14, borderRadius:24}}>{lang === "id" ? "Timpa / Tetap Impor" : "Overwrite / Import Anyway"}</button>
                 
-                <button className="hover-scale" onClick={()=>setShowConfirm(false)} style={{...B(false), width:"100%", height:48, fontSize:14, borderRadius:24}}>Batal</button>
+                <button className="hover-scale" onClick={()=>setShowConfirm(false)} style={{...B(false), width:"100%", height:48, fontSize:14, borderRadius:24}}>{lang === "id" ? "Batal" : "Cancel"}</button>
               </div>
             </div>
           </div>
