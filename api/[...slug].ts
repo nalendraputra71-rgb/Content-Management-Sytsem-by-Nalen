@@ -1,4 +1,5 @@
 export const config = {
+  runtime: "nodejs",
   api: {
     bodyParser: false,
   },
@@ -6,9 +7,9 @@ export const config = {
 
 let app;
 try {
-  app = require("../server").default || require("../server");
+  app = require("../dist/server.cjs").default || require("../dist/server.cjs");
 } catch (error) {
-  console.error("Failed to load server.ts:", error);
+  console.error("Failed to load server.cjs:", error);
   const express = require("express");
   app = express();
   app.all("*", (req, res) => {
