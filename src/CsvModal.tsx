@@ -48,19 +48,62 @@ export function CsvModal({onClose, onImport, pillars, platforms, contentTypes, p
     ["Contoh Konten Instagram", "15", "5", "2025", "10", "30", pillars[0]?.name||"Pillar Utama", platforms[0]?.name||"Instagram", contentTypes?.[0]?.name||"Video Pendek", pics[0]||"PIC 1", statuses[0]||"Draft", "N", "100", "80", "10", "2", "1", "5", "Meningkatkan brand awareness", "Tahukah kamu bahwa...", "Gunakan nada bicara santai", "Klik link di bio!", "Contoh referensi tone: kasual", "Keren banget nih!", "https://drive.google.com/...", "https://instagram.com/...", "https://contoh.com, https://contoh2.com"]
   ];
 
-  const handleDownloadTemplate = () => {
-    import("xlsx").then((XLSX) => {
-    const ws = XLSX.utils.aoa_to_sheet(template);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Template");
-    const csv = XLSX.utils.sheet_to_csv(ws);
-    // Adding BOM for better Excel compatibility (fixes encoding issues on some systems)
-    const csvWithBom = "\uFEFF" + csv;
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(new Blob([csvWithBom], { type: "text/csv;charset=utf-8;" }));
-    a.download = "template.csv";
-    a.click();
-    });
+  const handleDownloadTemplate = async () => {
+    try {
+      const ExcelJS = (await import("exceljs")).default || await import("exceljs");
+      const { saveAs } = await import("file-saver");
+
+      const workbook = new ExcelJS.Workbook();
+      const sheet = workbook.addWorksheet("Template");
+      const dataSheet = workbook.addWorksheet("DataLists", { state: "hidden" });
+
+      // Add data lists
+      pillars.forEach((p: any, i: number) => dataSheet.getCell(`A${i + 1}`).value = p.name);
+      platforms.forEach((p: any, i: number) => dataSheet.getCell(`B${i + 1}`).value = p.name);
+      contentTypes.forEach((p: any, i: number) => dataSheet.getCell(`C${i + 1}`).value = p.name);
+      pics.forEach((p: any, i: number) => dataSheet.getCell(`D${i + 1}`).value = p);
+      statuses.forEach((p: any, i: number) => dataSheet.getCell(`E${i + 1}`).value = p);
+
+      sheet.addRow(template[0]);
+      sheet.addRow(template[1]);
+
+      // Style header
+      const headerRow = sheet.getRow(1);
+      headerRow.font = { bold: true, color: { argb: "FFFFFFFF" } };
+      headerRow.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF2563EB" } };
+      
+      // Adjust column width
+      sheet.columns.forEach((c) => {
+        if (c) c.width = 22;
+      });
+
+      // Apply Data Validation (max 1000 rows)
+      const applyValidation = (col: string, dataCol: string, count: number) => {
+        if (count > 0) {
+          for (let i = 2; i <= 1000; i++) {
+            sheet.getCell(`${col}${i}`).dataValidation = {
+              type: "list",
+              allowBlank: true,
+              formulae: [`DataLists!$${dataCol}$1:$${dataCol}$${count}`]
+            };
+          }
+        }
+      };
+
+      // Col G=Pillar, H=Platform, I=Tipe Konten, J=PIC, K=Status Konten
+      applyValidation("G", "A", pillars.length);
+      applyValidation("H", "B", platforms.length);
+      applyValidation("I", "C", contentTypes.length);
+      applyValidation("J", "D", pics.length);
+      applyValidation("K", "E", statuses.length);
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      saveAs(blob, "Template_Impor_Konten.xlsx");
+    } catch (err) {
+      console.error("Failed to generate Excel template", err);
+      setErrorMsg(lang === "id" ? "Gagal mengunduh template Excel." : "Failed to download Excel template.");
+    }
   };
 
   const handleFile = (e: any) => {
@@ -192,21 +235,21 @@ export function CsvModal({onClose, onImport, pillars, platforms, contentTypes, p
     <motion.div key="csvImportOverlay" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} transition={{ duration: 0.15 }} onClick={onClose} style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.8)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center", padding:16}}>
       <motion.div key="csvImportCard" initial={{scale:0.95, opacity:0, y:20}} animate={{scale:1, opacity:1, y:0}} exit={{scale:0.95, opacity:0, y:20}} transition={{ type: "spring", damping: 25, stiffness: 300 }} onClick={e=>e.stopPropagation()} style={{...CARD({width:"100%", maxWidth:600, padding:32, borderRadius:24, boxShadow:"0 20px 40px rgba(0,0,0,0.2)", position:"relative"}), background: "#FFFFFF", backdropFilter: "none", WebkitBackdropFilter: "none"}}>
         <button className="hover-scale" onClick={onClose} style={{position:"absolute",top:20,right:20,background:"rgba(44,32,22,0.05)",border:"none",borderRadius:"50%",width:32,height:32,cursor:"pointer",fontSize:18,color:"#2C2016",display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
-        <h2 style={{fontSize:20, fontWeight:700, margin:"0 0 16px", color:"#2C2016", display:"flex", alignItems:"center", gap:8}}><Upload size={20} /> {lang === "id" ? "Bulk Import via CSV" : "Bulk Import via CSV"}</h2>
+        <h2 style={{fontSize:20, fontWeight:700, margin:"0 0 16px", color:"#2C2016", display:"flex", alignItems:"center", gap:8}}><Upload size={20} /> {lang === "id" ? "Bulk Import via Excel / CSV" : "Bulk Import via Excel / CSV"}</h2>
         
         {step===1 && (
             <div>
                 <p style={{fontSize:14,color:"rgba(44,32,22,0.6)",marginBottom:16,lineHeight:1.5}}>
                     {lang === "id" 
-                      ? "Gunakan template CSV kami untuk memastikan format data sesuai. Anda dapat mengunggah ratusan konten sekaligus ke dalam kalender." 
-                      : "Use our CSV template to ensure the correct data format. You can upload hundreds of content items at once to the calendar."}
+                      ? "Gunakan template Excel kami untuk memastikan format data sesuai. Opsi dropdown sudah tersedia di dalam file! Anda dapat mengunggah ratusan konten sekaligus ke dalam kalender." 
+                      : "Use our Excel template to ensure the correct data format. Dropdown options are already available inside the file! You can upload hundreds of content items at once to the calendar."}
                 </p>
                 <div style={{display:"flex",gap:12,marginBottom:24,flexWrap:"wrap"}}>
                     <button className="hover-scale" onClick={handleDownloadTemplate} style={{...B(false), flex: 1, padding:"8px 16px", borderRadius:24, fontSize:14, height:48}}>
-                        {lang === "id" ? "Download Template CSV" : "Download CSV Template"}
+                        {lang === "id" ? "Download Template Excel" : "Download Excel Template"}
                     </button>
                     <label className="hover-scale btn-hover" style={{...B(true, "var(--theme-primary)"), flex: 1, padding:"8px 16px", borderRadius:24, display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, height:48, cursor:"pointer"}}>
-                        {lang === "id" ? "Pilih File CSV / Excel" : "Choose CSV / Excel File"}
+                        {lang === "id" ? "Pilih File Excel / CSV" : "Choose Excel / CSV File"}
                         <input type="file" accept=".csv, .xlsx" onChange={handleFile} ref={fileInputRef} style={{display:"none"}}/>
                     </label>
                 </div>

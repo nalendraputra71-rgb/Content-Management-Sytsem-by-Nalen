@@ -4,6 +4,7 @@ import {
   X, ChevronLeft, ChevronRight, Play, RefreshCw, 
   HelpCircle, MessageSquare, ExternalLink, Sparkles 
 } from "lucide-react";
+import { useI18n } from "../i18n";
 
 interface HubyTutorialProps {
   profile: any;
@@ -23,7 +24,7 @@ interface TutorialStep {
   highlightSelector?: string;
 }
 
-const TUTORIAL_STEPS: TutorialStep[] = [
+const TUTORIAL_STEPS_ID: TutorialStep[] = [
   {
     title: "Halo! Aku Huby! 🐧✨",
     text: "Kenalin, aku **Huby**, asisten personal-mu yang siap menemani keliling Hubify Social. Aplikasi ini didesain biar hidup sebagai content creator jadi jauh lebih mudah, terstruktur, dan asyik! Yuk, ikuti tur singkat bersamaku!",
@@ -108,6 +109,91 @@ const TUTORIAL_STEPS: TutorialStep[] = [
   }
 ];
 
+const TUTORIAL_STEPS_EN: TutorialStep[] = [
+  {
+    title: "Hello! I'm Huby! 🐧✨",
+    text: "Nice to meet you, I'm **Huby**, your personal assistant ready to guide you around Hubify Social. This app is designed to make life as a content creator much easier, structured, and fun! Let's take a quick tour together!",
+    image: "/Assets/Huby/huby-wave.png",
+    tabTarget: "dashboard"
+  },
+  {
+    title: "Monthly Targets & KPI Goals 🌤️📌",
+    text: "This **Monthly KPI & Goals** widget helps you monitor your monthly content targets and detailed metric achievements at a single glance!",
+    image: "/Assets/Huby/huby-excited.png",
+    tabTarget: "dashboard",
+    highlightSelector: "dashboard-monthly-goals"
+  },
+  {
+    title: "Main Dashboard 🏠🌟",
+    text: "This is the main **Dashboard** area! Here, all important interactive bento widgets gather, ranging from to-do lists, quick draft memos, to team collaboration status at a glance!",
+    image: "/Assets/Huby/huby-enjoy.png",
+    tabTarget: "dashboard",
+    highlightSelector: "dashboard-main-grid"
+  },
+  {
+    title: "Interactive Content Calendar 📅✨",
+    text: "This is the interactive **Monthly Content Calendar**! In this visual calendar, you can easily plan agendas, schedule drafts, view holiday events, and drag-and-drop content draft schedules!",
+    image: "/Assets/Huby/huby-love.png",
+    tabTarget: "content_planner",
+    highlightSelector: "content-planner-calendar"
+  },
+  {
+    title: "Add New Brief Button ➕✍️",
+    text: "Need to quickly draft a new content brief? Just click this **Add New** button in the top right to start a tidy and organized content brief worksheet!",
+    image: "/Assets/Huby/huby-wave.png",
+    tabTarget: "content_planner",
+    highlightSelector: "navbar-tambah-baru"
+  },
+  {
+    title: "Content Brief Worksheet 📄💡",
+    text: "This is the general **Content Brief** worksheet! Here, you have options to define platforms, content pillars, core ideas, copywriting/captions, and even get AI generator assistance to perfect your writing—all in a single pop-up!",
+    image: "/Assets/Huby/huby-enjoy.png",
+    tabTarget: "content_planner",
+    highlightSelector: "content-brief-modal-card"
+  },
+  {
+    title: "Hub.ai Content Generator Panel 🤖💡",
+    text: "This is the **Hub.ai** smart assistant workspace! Here you can chat directly, brainstorm content ideas, generate viral copywriting/captions, and find tactical references instantly!",
+    image: "/Assets/Huby/huby-side eye.png",
+    tabTarget: "social-hub-ai",
+    highlightSelector: "social-hub-ai-panel"
+  },
+  {
+    title: "Performance Summary (KPI) 📈",
+    text: "On the **Overview** page, you can see the **Performance Summary** of all your content. These summary figures are crucial for measuring views, reach, and engagement quickly!",
+    image: "/Assets/Huby/huby-excited.png",
+    tabTarget: "analytics-overview",
+    highlightSelector: "analytics-metrics-row"
+  },
+  {
+    title: "Top & Bottom Content Rankings 🏆⚠️",
+    text: "The **Content** page showcases **Top 10 & Bottom 10 Content** performance data. This is extremely helpful for analyzing which content formats your audience loves the most!",
+    image: "/Assets/Huby/huby-excited.png",
+    tabTarget: "analytics-content",
+    highlightSelector: "analytics-content-rankings"
+  },
+  {
+    title: "Interactive Growth Trend Chart 📈🚀",
+    text: "Track your follower growth and engagement curves in **Growth Trends**. Here, performance metrics can be dynamically selected and filtered to devise your next viral strategy!",
+    image: "/Assets/Huby/huby-love.png",
+    tabTarget: "analytics-trends",
+    highlightSelector: "analytics-trends-chart"
+  },
+  {
+    title: "Best Time to Post Heatmap 👥⏰",
+    text: "Want your posts to always get high traction? On the **Audience** page, the **Activity Heatmap** shows the exact hours and days your audience is most active, based on real interaction history!",
+    image: "/Assets/Huby/huby-side eye.png",
+    tabTarget: "analytics-activity",
+    highlightSelector: "analytics-audience-heatmap"
+  },
+  {
+    title: "Hooray! Ready to Go Viral! 🎉🔥",
+    text: "Yeeay! Our tour is complete. Now it's time to set off and explore every corner of Hubify Social to create extraordinary content. Happy creating! 🐧💪",
+    image: "/Assets/Huby/huby-dab.png",
+    tabTarget: "dashboard"
+  }
+];
+
 export function HubyTutorial({ 
   profile, 
   onUpdateProfile, 
@@ -117,6 +203,9 @@ export function HubyTutorial({
   setSidebarOpen,
   onActiveChange
 }: HubyTutorialProps) {
+  const { lang } = useI18n();
+  const TUTORIAL_STEPS = lang === "id" ? TUTORIAL_STEPS_ID : TUTORIAL_STEPS_EN;
+
   const [isActive, setIsActive] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [showHelperMenu, setShowHelperMenu] = useState(false);
@@ -600,7 +689,7 @@ export function HubyTutorial({
                           }}
                           className="hover:bg-slate-50 transition-all active:scale-95"
                         >
-                          Kembali
+                          {lang === "id" ? "Kembali" : "Back"}
                         </button>
                       )}
                       
@@ -619,7 +708,7 @@ export function HubyTutorial({
                         }}
                         className="hover:opacity-90 active:scale-95 transition-all"
                       >
-                        {currentStep === TUTORIAL_STEPS.length - 1 ? "Ayo Mulai! 🚀" : "Lanjut"}
+                        {currentStep === TUTORIAL_STEPS.length - 1 ? (lang === "id" ? "Ayo Mulai! 🚀" : "Let's Go! 🚀") : (lang === "id" ? "Lanjut" : "Next")}
                       </button>
                     </div>
                   </div>
@@ -653,7 +742,10 @@ export function HubyTutorial({
                       width: 14,
                       height: 14,
                       background: "#FFFFFF",
-                      border: "1px solid rgba(37, 99, 235, 0.15)",
+                      borderTop: "1px solid rgba(37, 99, 235, 0.15)",
+                      borderRight: "1px solid rgba(37, 99, 235, 0.15)",
+                      borderBottom: "1px solid rgba(37, 99, 235, 0.15)",
+                      borderLeft: "1px solid rgba(37, 99, 235, 0.15)",
                       zIndex: -1,
                       transform: "rotate(45deg)",
                       ...placement.arrowStyle
@@ -673,7 +765,7 @@ export function HubyTutorial({
                   }}
                 >
                   <span style={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.2, color: "var(--theme-primary)", background: "rgba(var(--theme-primary-rgb), 0.08)", padding: "3px 8px", borderRadius: 8 }}>
-                    TUR KELILING 🐧
+                    {lang === "id" ? "TUR KELILING 🐧" : "WALKTHROUGH TOUR 🐧"}
                   </span>
                   <button 
                     onClick={handleSkip}
@@ -778,7 +870,7 @@ export function HubyTutorial({
                         }}
                         className="hover:bg-slate-50 transition-all"
                       >
-                        Kembali
+                        {lang === "id" ? "Kembali" : "Back"}
                       </button>
                     )}
                     
@@ -797,7 +889,7 @@ export function HubyTutorial({
                       }}
                       className="hover:opacity-90 active:scale-95 transition-all"
                     >
-                      {currentStep === TUTORIAL_STEPS.length - 1 ? "Mulai! 🎉" : "Lanjut"}
+                      {currentStep === TUTORIAL_STEPS.length - 1 ? (lang === "id" ? "Mulai! 🎉" : "Start! 🎉") : (lang === "id" ? "Lanjut" : "Next")}
                     </button>
                   </div>
                 </div>
@@ -844,9 +936,13 @@ export function HubyTutorial({
                 style={{ width: 110, height: 110, margin: "0 auto 16px", objectFit: "contain" }}
                 referrerPolicy="no-referrer"
               />
-              <h4 style={{ fontSize: 18, fontWeight: 800, color: "#1E293B", marginBottom: 10 }}>Yah, mau skip turnya? 🥺</h4>
+              <h4 style={{ fontSize: 18, fontWeight: 800, color: "#1E293B", marginBottom: 10 }}>
+                {lang === "id" ? "Yah, mau skip turnya? 🥺" : "Oh, skip the tour? 🥺"}
+              </h4>
               <p style={{ fontSize: 13.5, color: "#475569", lineHeight: 1.5, marginBottom: 24 }}>
-                Huby baru aja mau berteman baik. Yakin tidak mau keliling sebentar bersamaku?
+                {lang === "id" 
+                  ? "Huby baru aja mau berteman baik. Yakin tidak mau keliling sebentar bersamaku?" 
+                  : "Huby just wanted to be good friends. Are you sure you don't want to look around with me for a bit?"}
               </p>
               <div style={{ display: "flex", gap: 10 }}>
                 <button 
@@ -864,7 +960,7 @@ export function HubyTutorial({
                   }}
                   className="hover:bg-slate-50 transition-all"
                 >
-                  Lanjut Tur
+                  {lang === "id" ? "Lanjut Tur" : "Continue Tour"}
                 </button>
                 <button 
                   onClick={confirmSkip}
@@ -882,7 +978,7 @@ export function HubyTutorial({
                   }}
                   className="hover:opacity-90 active:scale-95 transition-all"
                 >
-                  Skip Aja, Huby
+                  {lang === "id" ? "Skip Aja, Huby" : "Skip It, Huby"}
                 </button>
               </div>
             </motion.div>
@@ -891,11 +987,12 @@ export function HubyTutorial({
       </AnimatePresence>
 
       {/* 3. Floating Companion Badge Button */}
+      {(isActive || tab === "dashboard") && (
       <div 
         style={{
           position: "fixed",
-          bottom: 24,
-          right: 24,
+          bottom: isMobile ? 80 : 24,
+          right: isMobile ? 16 : 24,
           zIndex: 9999,
           display: "flex",
           flexDirection: "column",
@@ -927,7 +1024,7 @@ export function HubyTutorial({
             >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                 <span style={{ fontSize: 11, fontWeight: 800, color: "var(--theme-primary)", letterSpacing: 0.5, background: "rgba(var(--theme-primary-rgb), 0.08)", padding: "2px 6px", borderRadius: 6 }}>
-                  ASSISTANT HUBY 🐧
+                  {lang === "id" ? "ASSISTANT HUBY 🐧" : "HUBY ASSISTANT 🐧"}
                 </span>
                 <button 
                   onClick={() => setShowHelperMenu(false)}
@@ -937,7 +1034,9 @@ export function HubyTutorial({
                 </button>
               </div>
               <p style={{ fontSize: 13, color: "#475569", margin: 0, lineHeight: 1.5 }}>
-                Halo! Butuh bantuan atau mau mengulang tur keliling Hubify Social bersamaku?
+                {lang === "id" 
+                  ? "Halo! Butuh bantuan atau mau mengulang tur keliling Hubify Social bersamaku?" 
+                  : "Hello! Need help or want to replay the walkthrough tour of Hubify Social with me?"}
               </p>
               
               <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 4 }}>
@@ -960,7 +1059,7 @@ export function HubyTutorial({
                   }}
                   className="hover:opacity-90 active:scale-95 transition-all"
                 >
-                  <RefreshCw size={14} /> Ulangi Tur Keliling
+                  <RefreshCw size={14} /> {lang === "id" ? "Ulangi Tur Keliling" : "Replay Tour"}
                 </button>
 
                 <button
@@ -984,7 +1083,7 @@ export function HubyTutorial({
                   }}
                   className="hover:bg-slate-50 transition-all"
                 >
-                  <Sparkles size={14} color="var(--theme-primary)" /> Tanya Social Hub AI
+                  <Sparkles size={14} color="var(--theme-primary)" /> {lang === "id" ? "Tanya Social Hub AI" : "Ask Social Hub AI"}
                 </button>
               </div>
             </motion.div>
@@ -1018,7 +1117,7 @@ export function HubyTutorial({
             overflow: "visible",
             padding: 0
           }}
-          title="Tanya Huby"
+          title={lang === "id" ? "Tanya Huby" : "Ask Huby"}
         >
           {/* Notification Ping Badge if they haven't completed the tour */}
           {profile && profile.completedTour !== true && !isActive && (
@@ -1070,6 +1169,7 @@ export function HubyTutorial({
           `}</style>
         </motion.button>
       </div>
+      )}
     </>
   );
 }

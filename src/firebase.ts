@@ -40,7 +40,10 @@ import firebaseConfig from '../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-export const db = initializeFirestore(app, { experimentalForceLongPolling: true }, firebaseConfig.firestoreDatabaseId);
+export const db = initializeFirestore(app, { 
+  experimentalForceLongPolling: true,
+  useFetchStreams: false
+} as any, firebaseConfig.firestoreDatabaseId);
 export const googleProvider = new GoogleAuthProvider();
 
 export { 
@@ -91,7 +94,26 @@ export interface FirestoreErrorInfo {
   }
 }
 
+export function checkAndNotifyQuotaError(error: any): boolean {
+  if (!error) return false;
+  const errMsg = error.message || String(error);
+  if (
+    errMsg.includes("Quota limit exceeded") || 
+    errMsg.includes("Quota exceeded") || 
+    errMsg.includes("RESOURCE_EXHAUSTED") || 
+    errMsg.includes("quota limit exceeded") || 
+    errMsg.includes("quota metric") ||
+    errMsg.includes("daily read units") ||
+    errMsg.includes("quota checks")
+  ) {
+    window.dispatchEvent(new CustomEvent("firestore-quota-exceeded", { detail: errMsg }));
+    return true;
+  }
+  return false;
+}
+
 export function handleFirestoreError(error: any, op: FirestoreErrorInfo['operationType'], path: string | null = null): void {
+  checkAndNotifyQuotaError(error);
   const user = auth.currentUser;
   const errorInfo: FirestoreErrorInfo = {
     error: error.message || String(error),
@@ -128,7 +150,7 @@ export async function testFirestoreConnection() {
 }
 
 // Request AI processing, incrementing quota usage in Firestore
-export async function callAiWithQuota(uid: string, plan: string | undefined, payload: any): Promise<any> {
+export async function callAiWithQuota(uid: string, plan: string | undefined, payload: any, maxAiGenerations: number = 50): Promise<any> {
     const userDocRef = doc(db, 'users', uid);
     const userSnap = await getDoc(userDocRef);
     let aiTokensUsed = 0;
@@ -153,10 +175,10 @@ export async function callAiWithQuota(uid: string, plan: string | undefined, pay
         aiRequestsToday = 0;
     }
 
-    const MAX_REQUESTS = (plan === 'vip' || plan === 'pro') ? 100 : 50; // Increased for testing
+    const MAX_REQUESTS = isAdmin ? 99999 : (plan === 'vip' ? 99999 : (maxAiGenerations || 50));
     
     if (!isAdmin && aiRequestsToday >= MAX_REQUESTS) {
-        throw new Error(`Limit AI harian habis (${aiRequestsToday}/${MAX_REQUESTS} request). Silakan coba lagi besok hari atau upgrade plan Anda.`);
+        throw new Error(`Limit AI habis (${aiRequestsToday}/${MAX_REQUESTS} request). Silakan upgrade plan Anda.`);
     }
 
     // Dapatkan ID Token untuk verifikasi di sisi server

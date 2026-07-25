@@ -1,7 +1,7 @@
 import { useI18n } from "./i18n";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { db, collection, query, orderBy, onSnapshot, doc, setDoc, updateDoc, deleteDoc, serverTimestamp, getDoc, where, limit } from "./firebase";
+import { db, collection, query, orderBy, onSnapshot, doc, setDoc, updateDoc, deleteDoc, serverTimestamp, getDoc, getDocs, where, limit } from "./firebase";
 import { Heart, MessageCircle, Repeat2, Share, Send, MoreHorizontal, MessageSquare, ArrowLeft, Image as ImageIcon, Home, PlusSquare, User as UserIcon, Bell, BarChart2, ChevronDown, Trash2, Edit2, Archive as ArchiveIcon } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { id as dfnsId } from "date-fns/locale";
@@ -206,46 +206,51 @@ export function SocHubView({ user, profile }: any) {
       setSearchResults([]);
       return;
     }
-    const q = query(collection(db, "users")); // Simplified search, no complex text search in firestore
-    const unsub = onSnapshot(q, (snap) => {
-      const allUsers = snap.docs.map(d => ({uid: d.id, ...(d.data() as any)}));
-      const lowerQuery = searchQuery.toLowerCase();
-      setSearchResults(allUsers.filter((u: any) => 
-        (u.fullName && u.fullName.toLowerCase().includes(lowerQuery)) || 
-        (u.nickname && u.nickname.toLowerCase().includes(lowerQuery)) ||
-        (u.username && u.username.toLowerCase().includes(lowerQuery))
-      ));
-    }, (error) => { 
-      console.warn("Pencarian global dibatasi demi keamanan privasi. Harap gunakan pencarian spesifik nanti."); 
-      setSearchResults([]); 
-    });
-    return () => unsub();
+    const q = query(collection(db, "users"), limit(100)); // Simplified search, no complex text search in firestore
+    
+    // Add simple debounce
+    const timeoutId = setTimeout(() => {
+      getDocs(q).then((snap) => {
+        const allUsers = snap.docs.map(d => ({uid: d.id, ...(d.data() as any)}));
+        const lowerQuery = searchQuery.toLowerCase();
+        setSearchResults(allUsers.filter((u: any) => 
+          (u.fullName && u.fullName.toLowerCase().includes(lowerQuery)) || 
+          (u.nickname && u.nickname.toLowerCase().includes(lowerQuery)) ||
+          (u.username && u.username.toLowerCase().includes(lowerQuery))
+        ));
+      }).catch((error) => { 
+        console.warn("Pencarian global dibatasi demi keamanan privasi. Harap gunakan pencarian spesifik nanti.");
+        setSearchResults([]); 
+      });
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
   }, [searchQuery]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || view !== "feed") return;
     // Fetch some recent users (up to 5 for suggestions)
     const q = query(collection(db, "users"), limit(5));
-    const unsub = onSnapshot(q, (snap) => {
+    getDocs(q).then((snap) => {
       setSuggestedUsers(snap.docs.map(d => ({id: d.id, ...d.data()})).filter(u => u.id !== user.uid));
-    }, (error) => { 
+    }).catch((error) => { 
       // Supress error text since we disabled list access for standard users for privacy
       setSuggestedUsers([]); 
     });
-    return () => unsub();
   }, [user]);
 
   useEffect(() => {
-    const q = query(collection(db, "soc_posts"), where("replyTo", "==", null), orderBy("createdAt", "desc"));
+    if (view !== "post" && view !== "feed") return;
+    const q = query(collection(db, "soc_posts"), where("replyTo", "==", null), orderBy("createdAt", "desc"), limit(20));
     const unsub = onSnapshot(q, (snap) => {
       setPosts(snap.docs.map(d => ({id: d.id, ...d.data()})));
     }, (error) => { console.error("Snapshot error on", "q", error); });
     return () => unsub();
-  }, []);
+  }, [view]);
 
   useEffect(() => {
     if (view !== "post" || !selectedPost) return;
-    const q = query(collection(db, "soc_posts"), where("replyTo", "==", selectedPost.id), orderBy("createdAt", "asc"));
+    const q = query(collection(db, "soc_posts"), where("replyTo", "==", selectedPost.id), orderBy("createdAt", "asc"), limit(100));
     const unsub = onSnapshot(q, (snap) => {
       setReplies(snap.docs.map(d => ({id: d.id, ...d.data()})));
     }, (error) => { console.error("Snapshot error on", "q", error); });
@@ -254,27 +259,27 @@ export function SocHubView({ user, profile }: any) {
 
   
   useEffect(() => {
-    if (!user) return;
-    const q = query(collection(db, "soc_chats"), where("participants", "array-contains", user.uid), orderBy("updatedAt", "desc"));
+    if (!user || view !== "chats") return;
+    const q = query(collection(db, "soc_chats"), where("participants", "array-contains", user.uid), orderBy("updatedAt", "desc"), limit(50));
     const unsub = onSnapshot(q, (snap) => {
       setChats(snap.docs.map(d => ({id: d.id, ...d.data()})));
     }, (error) => { console.error("Snapshot error on", "q", error); });
     return () => unsub();
-  }, [user]);
+  }, [user, view]);
 
   useEffect(() => {
-    if (!user) return;
-    const q = query(collection(db, "notifications"), where("userId", "==", user.uid), orderBy("createdAt", "desc"));
+    if (!user || view !== "activity") return;
+    const q = query(collection(db, "notifications"), where("userId", "==", user.uid), orderBy("createdAt", "desc"), limit(50));
     const unsub = onSnapshot(q, (snap) => {
       setActivities(snap.docs.map(d => ({id: d.id, ...d.data()})));
     }, (error) => { console.error("Snapshot error on", "q", error); });
     return () => unsub();
-  }, [user]);
+  }, [user, view]);
 
   useEffect(() => {
     if (!chatUser || !user) return;
     let chatId = user.uid < chatUser.uid ? `${user.uid}_${chatUser.uid}` : `${chatUser.uid}_${user.uid}`;
-    const q = query(collection(db, "soc_messages"), where("chatId", "==", chatId), orderBy("createdAt", "asc"));
+    const q = query(collection(db, "soc_messages"), where("chatId", "==", chatId), orderBy("createdAt", "asc"), limit(100));
     const unsub = onSnapshot(q, (snap) => {
       setMessages(snap.docs.map(d => ({id: d.id, ...d.data()})));
     }, (error) => { console.error("Snapshot error on", "q", error); });
@@ -342,7 +347,7 @@ export function SocHubView({ user, profile }: any) {
   };
 
   const handleLike = async (post: any) => {
-    if (!user) return;
+    if (!user || view !== "feed") return;
     const ref = doc(db, "soc_posts", post.id);
     const likes = post.likes || [];
     const hasLiked = likes.includes(user.uid);
@@ -359,7 +364,7 @@ export function SocHubView({ user, profile }: any) {
   };
 
   const handleRepost = async (post: any) => {
-    if (!user) return;
+    if (!user || view !== "feed") return;
     const ref = doc(db, "soc_posts", post.id);
     const reposts = post.reposts || [];
     const hasReposted = reposts.includes(user.uid);
@@ -376,7 +381,7 @@ export function SocHubView({ user, profile }: any) {
   };
   
   const handleVote = async (postId: string, optionId: string) => {
-    if (!user) return;
+    if (!user || view !== "feed") return;
     const postRef = doc(db, "soc_posts", postId);
     const postSnap = await getDoc(postRef);
     if (!postSnap.exists()) return;
@@ -531,7 +536,7 @@ export function SocHubView({ user, profile }: any) {
   };
 
   const handleSaveBio = async () => {
-    if (!user) return;
+    if (!user || view !== "feed") return;
     try {
       await updateDoc(doc(db, "users", user.uid), { bio: bioInput.trim() });
       setIsEditingBio(false);

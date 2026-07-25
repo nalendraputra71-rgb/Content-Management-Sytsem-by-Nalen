@@ -4,8 +4,15 @@ const app = initializeApp({ projectId: 'ai-studio-5bedb408-30a3-4e2a-885f-effd20
 const db = getFirestore(app);
 
 async function test() {
-  const wsDoc = await db.collection('workspaces').doc('ws-1776929737702').collection('connectedAccounts').get();
-  wsDoc.forEach(doc => {
+  const plansSnap = await db.collection('plans').get();
+  console.log("--- PLANS ---");
+  plansSnap.forEach(doc => {
+    console.log(doc.id, doc.data());
+  });
+
+  const promosSnap = await db.collection('promos').get();
+  console.log("--- PROMOS ---");
+  promosSnap.forEach(doc => {
     console.log(doc.id, doc.data());
   });
 }

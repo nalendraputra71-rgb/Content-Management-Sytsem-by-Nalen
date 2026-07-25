@@ -1,8 +1,23 @@
 import { useI18n } from "./i18n";
 import { PlatformPreview } from "./components/PlatformPreview";
-import { db, callAiWithQuota, handleFirestoreError, collection, onSnapshot, addDoc, serverTimestamp, setDoc, doc, updateDoc, deleteDoc } from "./firebase";
+import {
+  db,
+  callAiWithQuota,
+  handleFirestoreError,
+  collection,
+  onSnapshot,
+  addDoc,
+  serverTimestamp,
+  setDoc,
+  doc,
+  updateDoc,
+  deleteDoc,
+  query,
+  where,
+} from "./firebase";
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { DynamicPlatformIcon } from "./components/DynamicPlatformIcon";
 import {
   CopyPlus,
   MessageSquare,
@@ -68,6 +83,7 @@ import {
   Video,
   AtSign,
   Music,
+  Smartphone,
 } from "lucide-react";
 import Markdown from "react-markdown";
 import { PlatformIntegrationModal } from "./PlatformIntegrationModal";
@@ -126,32 +142,35 @@ function SimulatedStreamMarkdown({
 }
 
 function getPlatformIcon(platformIdentifier: string, size = 16) {
-  const name = String(platformIdentifier || "").trim().toLowerCase();
-  if (name.includes("instagram") || name === "ig") {
-    return <Instagram size={size} color="#E1306C" />;
-  }
-  if (name.includes("tiktok") || name === "tt") {
-    return <Music size={size} color="#000000" />;
-  }
-  if (name.includes("facebook") || name === "fb" || name === "meta") {
-    return <Facebook size={size} color="#1877F2" />;
-  }
-  if (name.includes("threads")) {
-    return <AtSign size={size} color="#111111" />;
-  }
-  if (name === "x" || name.includes("twitter")) {
-    return <span style={{ fontWeight: 900, fontSize: size, fontFamily: "sans-serif", color: "#111111", display: "inline-flex", alignItems: "center", justifyContent: "center", width: size, height: size, lineHeight: 1 }}>𝕏</span>;
-  }
-  if (name.includes("linkedin")) {
-    return <Linkedin size={size} color="#0077B5" />;
-  }
-  if (name.includes("youtube") || name === "yt") {
-    return <Youtube size={size} color="#FF0000" />;
-  }
+  const name = String(platformIdentifier || "")
+    .trim()
+    .toLowerCase();
+
+  const exactMatches = ["ig", "tt", "fb", "meta", "x", "li", "yt"];
+  const includesMatches = [
+    "instagram",
+    "tiktok",
+    "facebook",
+    "threads",
+    "twitter",
+    "linkedin",
+    "youtube",
+  ];
+  const isKnown =
+    exactMatches.includes(name) ||
+    includesMatches.some((k) => name.includes(k));
+
   if (name.includes("semua") || name === "all" || name.includes("globe")) {
     return <Globe size={size} color="#888888" />;
   }
-  return <Globe size={size} color="#2D5A86" />;
+
+  if (isKnown) {
+    return (
+      <DynamicPlatformIcon platformName={platformIdentifier} size={size} />
+    );
+  }
+
+  return null;
 }
 
 function CustomDropdown({
@@ -189,19 +208,23 @@ function CustomDropdown({
     : value;
 
   return (
-    <div ref={ref} style={{ position: "relative", minWidth: 160 }}>
+    <div
+      ref={ref}
+      className="relative w-full md:w-auto md:min-w-[160px] flex-1 md:flex-initial"
+    >
       <button
         onClick={() => setOpen(!open)}
-        className="hover-scale"
+        className="hover-scale w-full flex items-center justify-between transition-all"
         style={{
-          width: "100%",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          gap: 12,
-          padding: pill ? "10px 20px" : "10px 16px",
+          gap: 10,
+          padding: pill ? "8px 16px" : "8px 12px",
           borderRadius: pill ? "9999px" : "12px",
-          borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(44,32,22,0.1)",
+          borderWidth: "1px",
+          borderStyle: "solid",
+          borderColor: "rgba(44,32,22,0.06)",
           background: "white",
           fontSize: 13,
           fontWeight: 700,
@@ -218,8 +241,16 @@ function CustomDropdown({
             <span style={{ display: "flex", alignItems: "center" }}>
               {getPlatformIcon(value, 16)}
             </span>
-          ) : activeOption && typeof activeOption !== "string" && activeOption.icon ? (
-            <span style={{ display: "flex", alignItems: "center", color: activeOption.color || "inherit" }}>
+          ) : activeOption &&
+            typeof activeOption !== "string" &&
+            activeOption.icon ? (
+            <span
+              style={{
+                display: "flex",
+                alignItems: "center",
+                color: activeOption.color || "inherit",
+              }}
+            >
               {React.isValidElement(activeOption.icon)
                 ? React.cloneElement(activeOption.icon as any, { size: 16 })
                 : activeOption.icon}
@@ -250,7 +281,9 @@ function CustomDropdown({
               right: 0,
               marginTop: 8,
               background: "white",
-              borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(44,32,22,0.1)",
+              borderWidth: "1px",
+              borderStyle: "solid",
+              borderColor: "rgba(44,32,22,0.1)",
               borderRadius: 12,
               padding: 8,
               zIndex: 100,
@@ -290,30 +323,176 @@ function CustomDropdown({
                       e.currentTarget.style.background = "transparent";
                   }}
                 >
-                  {renderOption
-                    ? renderOption(o)
-                    : (
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        {getPlatformIcon(typeof o === "string" ? o : o.label || o.name || o.id) ? (
-                          <span style={{ display: "flex", alignItems: "center" }}>
-                            {getPlatformIcon(typeof o === "string" ? o : o.label || o.name || o.id, 16)}
-                          </span>
-                        ) : (typeof o !== "string" && o.icon) ? (
-                          <span style={{ display: "flex", alignItems: "center", color: o.color || "inherit" }}>
-                            {React.isValidElement(o.icon)
-                              ? React.cloneElement(o.icon as any, { size: 16 })
-                              : o.icon}
-                          </span>
-                        ) : null}
-                        <span>{typeof o === "string" ? o : o.label || o.name}</span>
-                      </div>
-                    )}
+                  {renderOption ? (
+                    renderOption(o)
+                  ) : (
+                    <div
+                      style={{ display: "flex", alignItems: "center", gap: 8 }}
+                    >
+                      {getPlatformIcon(
+                        typeof o === "string" ? o : o.label || o.name || o.id,
+                      ) ? (
+                        <span style={{ display: "flex", alignItems: "center" }}>
+                          {getPlatformIcon(
+                            typeof o === "string"
+                              ? o
+                              : o.label || o.name || o.id,
+                            16,
+                          )}
+                        </span>
+                      ) : typeof o !== "string" && o.icon ? (
+                        <span
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            color: o.color || "inherit",
+                          }}
+                        >
+                          {React.isValidElement(o.icon)
+                            ? React.cloneElement(o.icon as any, { size: 16 })
+                            : o.icon}
+                        </span>
+                      ) : null}
+                      <span>
+                        {typeof o === "string" ? o : o.label || o.name}
+                      </span>
+                    </div>
+                  )}
                 </div>
               );
             })}
           </motion.div>
         )}
       </AnimatePresence>
+    </div>
+  );
+}
+
+function MobileStepper({
+  value,
+  options,
+  onChange,
+  prefix = "",
+}: {
+  value: string;
+  options: any[];
+  onChange: (val: string) => void;
+  prefix?: string;
+}) {
+  const currentIndex = options.findIndex(
+    (o) => (typeof o === "string" ? o : o.id) === value,
+  );
+
+  const handlePrev = () => {
+    if (currentIndex === -1) return;
+    const nextIdx = (currentIndex - 1 + options.length) % options.length;
+    const option = options[nextIdx];
+    onChange(typeof option === "string" ? option : option.id);
+  };
+
+  const handleNext = () => {
+    if (currentIndex === -1) return;
+    const nextIdx = (currentIndex + 1) % options.length;
+    const option = options[nextIdx];
+    onChange(typeof option === "string" ? option : option.id);
+  };
+
+  const activeOption = options[currentIndex];
+  const displayLabel = activeOption
+    ? typeof activeOption === "string"
+      ? activeOption
+      : activeOption.label || activeOption.name
+    : value;
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        background: "white",
+        borderWidth: "1px",
+        borderStyle: "solid",
+        borderColor: "rgba(44,32,22,0.1)",
+        borderRadius: 12,
+        padding: "4px 8px",
+        width: "100%",
+        justifyContent: "space-between",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.02)",
+      }}
+    >
+      <button
+        onClick={handlePrev}
+        className="hover-scale"
+        style={{
+          background: "transparent",
+          borderWidth: 0,
+          borderStyle: "none",
+          padding: 8,
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "rgba(44,32,22,0.6)",
+        }}
+      >
+        <ChevronLeft size={16} />
+      </button>
+      <div
+        style={{
+          fontWeight: 800,
+          fontSize: 13,
+          color: "#2C2016",
+          textAlign: "center",
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          flex: 1,
+          justifyContent: "center",
+        }}
+      >
+        {prefix && (
+          <span style={{ opacity: 0.5, fontWeight: 500 }}>{prefix}:</span>
+        )}
+        {getPlatformIcon(
+          typeof activeOption === "string"
+            ? activeOption
+            : activeOption?.label || activeOption?.name || value,
+          16,
+        ) ||
+          (activeOption &&
+          typeof activeOption !== "string" &&
+          activeOption.icon ? (
+            <span
+              style={{
+                display: "flex",
+                alignItems: "center",
+                color: activeOption.color || "inherit",
+              }}
+            >
+              {React.isValidElement(activeOption.icon)
+                ? React.cloneElement(activeOption.icon as any, { size: 16 })
+                : activeOption.icon}
+            </span>
+          ) : null)}
+        <span>{displayLabel}</span>
+      </div>
+      <button
+        onClick={handleNext}
+        className="hover-scale"
+        style={{
+          background: "transparent",
+          borderWidth: 0,
+          borderStyle: "none",
+          padding: 8,
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "rgba(44,32,22,0.6)",
+        }}
+      >
+        <ChevronRight size={16} />
+      </button>
     </div>
   );
 }
@@ -386,7 +565,11 @@ const PLATFORMS = [
   {
     id: "x",
     name: "X",
-    icon: <span style={{ fontWeight: 900, fontSize: 15, fontFamily: "sans-serif" }}>𝕏</span>,
+    icon: (
+      <span style={{ fontWeight: 900, fontSize: 15, fontFamily: "sans-serif" }}>
+        𝕏
+      </span>
+    ),
     color: "#000000",
     contentTypes: [
       { id: "post", label: "Post" },
@@ -412,7 +595,9 @@ export function SocialStudioView({
   workspace,
   user,
   profile,
+  planDetails,
   onOpenModal,
+  setTab,
 }: {
   tab: string;
   workspaceId?: string;
@@ -420,9 +605,44 @@ export function SocialStudioView({
   workspace?: any;
   user?: any;
   profile?: any;
+  planDetails?: any;
   onOpenModal?: (data: any) => void;
+  setTab?: (tab: string) => void;
 }) {
-  const [inboxMessages, setInboxMessages] = useState<any[]>([]);
+  const [inboxMessages, setInboxMessages] = useState<any[]>([
+    {
+      id: "inbox_1",
+      platform: "instagram",
+      senderName: "Budi Santoso",
+      content: "Halo kak, apakah produk jaket Corduroy-nya masih ready stock?",
+      createdAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
+      replies: [
+        {
+          content:
+            "Halo Budi! Masih ready stock ya untuk warna Hitam dan Navy. Silakan bisa langsung diorder melalui link di bio kami ya kak. 😊",
+          createdAt: new Date(Date.now() - 1000 * 60 * 20).toISOString(),
+        },
+      ],
+    },
+    {
+      id: "inbox_2",
+      platform: "tiktok",
+      senderName: "Siti Rahma",
+      content:
+        "Kak, saya mau tanya ukuran XL untuk hoodie cream LD-nya berapa ya?",
+      createdAt: new Date(Date.now() - 1000 * 60 * 120).toISOString(),
+      replies: [],
+    },
+    {
+      id: "inbox_3",
+      platform: "instagram",
+      senderName: "Andi Wijaya",
+      content:
+        "Pesanan saya dengan nomor #9482 belum sampai ya kak? Bisa tolong dicek?",
+      createdAt: new Date(Date.now() - 1000 * 60 * 300).toISOString(),
+      replies: [],
+    },
+  ]);
   const [rawSelectedInboxMsg, setRawSelectedInboxMsg] = useState<any>(null);
   const [msgContent, setMsgContent] = useState("");
   const [inboxFilter, setInboxFilter] = useState("all");
@@ -437,15 +657,39 @@ export function SocialStudioView({
 
   const [activeTab, setActiveTab] = useState("social-dashboard");
 
+  const [isMobileHubAi, setIsMobileHubAi] = useState(false);
+  const [mobileHubAiView, setMobileHubAiView] = useState<"chat" | "history">(
+    "chat",
+  );
 
-  const [chatHistory, setChatHistory] = useState<any[]>([]);
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobileHubAi(window.innerWidth < 768);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const [chatHistory, setChatHistory] = useState<any[]>([
+    {
+      role: "assistant",
+      content:
+        "Halo! Saya HUB.AI, asisten khusus untuk content creator. Apa yang bisa saya bantu hari ini?",
+    },
+  ]);
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
+  const [selectedAiModel, setSelectedAiModel] = useState("gemini-3.5-flash");
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [chatSessions, setChatSessions] = useState<any[]>([]);
   const [activeConfigId, setActiveConfigId] = useState<string | null>(null);
-  const [activeHistoryMenuId, setActiveHistoryMenuId] = useState<string | null>(null);
-  const [activePreviewPlatform, setActivePreviewPlatform] = useState<string | null>(null);
+  const [activeHistoryMenuId, setActiveHistoryMenuId] = useState<string | null>(
+    null,
+  );
+  const [activePreviewPlatform, setActivePreviewPlatform] = useState<
+    string | null
+  >(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiReport, setAiReport] = useState("");
   const [analyticsMetric, setAnalyticsMetric] = useState("reach");
@@ -463,16 +707,22 @@ export function SocialStudioView({
   const [compLoading, setCompLoading] = useState(false);
   const configDropdownRef = useRef<HTMLDivElement>(null);
   const configPanelRef = useRef<HTMLDivElement>(null);
-  const [connectedAccountsData, setConnectedAccountsData] = useState<Record<string, any>>({});
+  const [connectedAccountsData, setConnectedAccountsData] = useState<
+    Record<string, any>
+  >({});
   const [connectedPlatforms, setConnectedPlatforms] = useState<string[]>([]);
   const [contentPlatform, setContentPlatform] = useState("all");
   const [contentSort, setContentSort] = useState("newest");
   const [createPostCaption, setCreatePostCaption] = useState("");
   const [createPostDate, setCreatePostDate] = useState("");
   const [createPostMedia, setCreatePostMedia] = useState<any[]>([]);
-  const [createPostMode, setCreatePostMode] = useState<"now"|"schedule">("now");
+  const [createPostMode, setCreatePostMode] = useState<"now" | "schedule">(
+    "now",
+  );
   const [createPostPlatforms, setCreatePostPlatforms] = useState<string[]>([]);
-  const [createPostPlatformTypes, setCreatePostPlatformTypes] = useState<Record<string, string>>({});
+  const [createPostPlatformTypes, setCreatePostPlatformTypes] = useState<
+    Record<string, string>
+  >({});
   const [createPostTime, setCreatePostTime] = useState("");
   const [currentAnalysisIndex, setCurrentAnalysisIndex] = useState(0);
   const [currentPromptIndex, setCurrentPromptIndex] = useState(0);
@@ -481,56 +731,106 @@ export function SocialStudioView({
   const [dataSource, setDataSource] = useState("all");
   const dataSourceDropdownRef = useRef<HTMLDivElement>(null);
   const DEFAULT_CONFIG_ITEM = { id: "", title: "", prompt: "" };
-  const [disconnectPrompt, setDisconnectPrompt] = useState<{open: boolean, platform: string|null}>({open: false, platform: null});
+  const [disconnectPrompt, setDisconnectPrompt] = useState<{
+    open: boolean;
+    platform: string | null;
+  }>({ open: false, platform: null });
   const [editingConfig, setEditingConfig] = useState<any>({});
   const [editingConfigId, setEditingConfigId] = useState<string | null>(null);
   const [editSessionId, setEditSessionId] = useState<string | null>(null);
   const [editSessionTitle, setEditSessionTitle] = useState("");
-  const [expandedEditPlatforms, setExpandedEditPlatforms] = useState<Record<string, boolean>>({});
-  
-  
+  const [expandedEditPlatforms, setExpandedEditPlatforms] = useState<
+    Record<string, boolean>
+  >({});
+
+  useEffect(() => {
+    const handleOpen = () => setShowCreatePostPopup(true);
+    window.addEventListener("open-social-studio-create-post", handleOpen);
+    return () =>
+      window.removeEventListener("open-social-studio-create-post", handleOpen);
+  }, []);
+
   useEffect(() => {
     if (!workspaceId) return;
-    
+
     // Auto-sync backend secrets to this workspace
-    fetch('/api/meta/sync-secrets', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ workspaceId })
+    fetch("/api/meta/sync-secrets", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ workspaceId }),
     }).catch(console.error);
-    
-    const accountsRef = collection(db, "workspaces", workspaceId, "connectedAccounts");
-    const unsubscribe = onSnapshot(accountsRef, (snapshot) => {
-      const accounts: Record<string, any> = {};
-      const platforms: string[] = [];
-      snapshot.forEach((doc) => {
-        accounts[doc.id] = doc.data();
-        platforms.push(doc.id);
-      });
-      setConnectedAccountsData(accounts);
-      setConnectedPlatforms(platforms);
-    }, (err) => {
-      console.error("Failed to subscribe to connectedAccounts", err);
-    });
+
+    const accountsRef = collection(
+      db,
+      "workspaces",
+      workspaceId,
+      "connectedAccounts",
+    );
+    const unsubscribe = onSnapshot(
+      accountsRef,
+      (snapshot) => {
+        const accounts: Record<string, any> = {};
+        const platforms: string[] = [];
+        snapshot.forEach((doc) => {
+          accounts[doc.id] = doc.data();
+          platforms.push(doc.id);
+        });
+        setConnectedAccountsData(accounts);
+        setConnectedPlatforms(platforms);
+      },
+      (err) => {
+        console.error("Failed to subscribe to connectedAccounts", err);
+      },
+    );
     return () => unsubscribe();
   }, [workspaceId]);
 
   useEffect(() => {
+    if (!user?.uid || !workspaceId) return;
+    const q = query(
+      collection(db, "users", user.uid, "aiChats"),
+      where("workspaceId", "==", workspaceId),
+    );
+    const unsub = onSnapshot(
+      q,
+      (snapshot) => {
+        const sessions: any[] = [];
+        snapshot.forEach((doc) => {
+          sessions.push({ id: doc.id, ...doc.data() });
+        });
+        // Sort by updatedAt descending
+        sessions.sort((a, b) => {
+          const timeA = a.updatedAt?.toMillis ? a.updatedAt.toMillis() : 0;
+          const timeB = b.updatedAt?.toMillis ? b.updatedAt.toMillis() : 0;
+          return timeB - timeA;
+        });
+        setChatSessions(sessions);
+      },
+      (err) => {
+        console.error("Failed to fetch chat sessions:", err);
+      },
+    );
+    return () => unsub();
+  }, [user?.uid, workspaceId]);
+
+  useEffect(() => {
     if (!workspaceId || connectedPlatforms.length === 0) return;
-    
+
     const fetchApiData = async () => {
       try {
         let allPosts: any[] = [];
         let allComments: any[] = [];
         let apiErrors: string[] = [];
-        
-        for (const platform of ['meta', 'instagram']) {
+
+        for (const platform of ["meta", "instagram"]) {
           if (connectedAccountsData[platform]) {
             try {
-              const accToken = connectedAccountsData[platform].accessToken; 
-              const accId = connectedAccountsData[platform].accountId; 
-              
-              const postsRes = await fetch(`/api/meta/data?workspaceId=${workspaceId}&platform=${platform}&type=posts&clientAccessToken=${accToken}&clientAccountId=${accId}`);
+              const accToken = connectedAccountsData[platform].accessToken;
+              const accId = connectedAccountsData[platform].accountId;
+
+              const postsRes = await fetch(
+                `/api/meta/data?workspaceId=${workspaceId}&platform=${platform}&type=posts&clientAccessToken=${accToken}&clientAccountId=${accId}`,
+              );
               const postsData = await postsRes.json().catch(() => ({}));
               if (postsRes.ok && !postsData.error) {
                 if (postsData.data) {
@@ -538,121 +838,362 @@ export function SocialStudioView({
                     id: p.id,
                     platform: platform,
                     content: p.message || p.caption || "No content",
-                    date: new Date(p.created_time || p.timestamp).toLocaleDateString(),
+                    date: new Date(
+                      p.created_time || p.timestamp,
+                    ).toLocaleDateString(),
                     status: "published",
                     likes: p.likes?.summary?.total_count || p.like_count || 0,
-                    comments: p.comments?.summary?.total_count || p.comments_count || 0,
-                    media: p.media_url || p.attachments?.data?.[0]?.media?.image?.src || "",
-                    author: connectedAccountsData[platform].accountName || platform
+                    comments:
+                      p.comments?.summary?.total_count || p.comments_count || 0,
+                    media:
+                      p.media_url ||
+                      p.attachments?.data?.[0]?.media?.image?.src ||
+                      "",
+                    author:
+                      connectedAccountsData[platform].accountName || platform,
                   }));
                   allPosts = [...allPosts, ...mappedPosts];
                 }
               } else {
-                apiErrors.push(`${platform} (posts): ${postsData.error?.message || postsData.error || postsRes.statusText}`);
+                apiErrors.push(
+                  `${platform} (posts): ${postsData.error?.message || postsData.error || postsRes.statusText}`,
+                );
               }
-              
             } catch (err: any) {
-              apiErrors.push(`${platform}: ${err.message || 'Unknown error'}`);
+              apiErrors.push(`${platform}: ${err.message || "Unknown error"}`);
             }
           }
         }
-        
+
         if (apiErrors.length > 0) {
-          setMetaApiError(apiErrors.join(' | '));
+          setMetaApiError(apiErrors.join(" | "));
         } else {
           setMetaApiError(null);
         }
-        
+
         setRealPosts(allPosts);
       } catch (e) {
         console.error("fetchApiData err:", e);
       }
     };
-    
+
     fetchApiData();
   }, [workspaceId, connectedPlatforms, connectedAccountsData]);
 
-  const [diagnosticResult, setDiagnosticResult] = useState<Record<string, any>>({});
+  const [diagnosticResult, setDiagnosticResult] = useState<Record<string, any>>(
+    {},
+  );
   const [isDiagnosing, setIsDiagnosing] = useState(false);
 
   const runDiagnostic = async () => {
     setIsDiagnosing(true);
     setDiagnosticResult({});
     const results: Record<string, any> = {};
-    
+
     if (connectedPlatforms.length === 0) {
-      results["all"] = { status: "error", message: "Belum ada platform yang terkoneksi di Workspace ini." };
+      results["all"] = {
+        status: "error",
+        message: "Belum ada platform yang terkoneksi di Workspace ini.",
+      };
       setDiagnosticResult(results);
       setIsDiagnosing(false);
       return;
     }
-    
+
     for (const platform of connectedPlatforms) {
       try {
         const accToken = connectedAccountsData[platform]?.accessToken;
         const accId = connectedAccountsData[platform]?.accountId;
-        
+
         if (!accToken || !accId) {
-          results[platform] = { status: "error", message: "Akses Token atau Account ID tidak ditemukan di database." };
+          results[platform] = {
+            status: "error",
+            message: "Akses Token atau Account ID tidak ditemukan di database.",
+          };
           continue;
         }
-        
-        const res = await fetch(`/api/meta/data?workspaceId=${workspaceId}&platform=${platform}&type=posts&clientAccessToken=${accToken}&clientAccountId=${accId}`);
+
+        const res = await fetch(
+          `/api/meta/data?workspaceId=${workspaceId}&platform=${platform}&type=posts&clientAccessToken=${accToken}&clientAccountId=${accId}`,
+        );
         const data = await res.json().catch(() => ({}));
-        
+
         if (res.ok && !data.error) {
-          results[platform] = { status: "success", message: "Koneksi berhasil, token valid!" };
+          results[platform] = {
+            status: "success",
+            message: "Koneksi berhasil, token valid!",
+          };
         } else {
-          results[platform] = { status: "error", message: `Gagal: ${data.error?.message || data.error || res.statusText}` };
+          results[platform] = {
+            status: "error",
+            message: `Gagal: ${data.error?.message || data.error || res.statusText}`,
+          };
         }
       } catch (err: any) {
-         results[platform] = { status: "error", message: `Error jaringan/sistem: ${err.message}` };
+        results[platform] = {
+          status: "error",
+          message: `Error jaringan/sistem: ${err.message}`,
+        };
       }
     }
-    
+
     setDiagnosticResult(results);
     setIsDiagnosing(false);
   };
 
-  const handleChatSubmit = async (...args: any[]) => {};
-  const handleCloseConfigPanel = (...args: any[]) => {};
-  const handleCreatePost = async (...args: any[]) => {};
-  const handleDiscardConfigs = (...args: any[]) => {};
-  const handleToggleConfigPanel = (...args: any[]) => {};
-  
+  const handleChatSubmit = async (customMsg?: string) => {
+    await handleSendMessage(customMsg);
+  };
+
+  const handleToggleConfigPanel = () => {
+    setShowConfigPanel((prev) => !prev);
+  };
+
+  const handleCloseConfigPanel = () => {
+    setShowConfigPanel(false);
+  };
+
+  const handleDiscardConfigs = () => {
+    setShowDiscardModal(false);
+    setShowConfigPanel(false);
+  };
+
+  const handleCreatePost = async () => {
+    if (!workspaceId) return;
+
+    try {
+      let targetYear = new Date().getFullYear();
+      let targetMonth = new Date().getMonth() + 1;
+      let targetDay = new Date().getDate();
+      let targetHour = 9;
+      let targetMinute = 0;
+
+      if (createPostMode === "schedule" && createPostDate) {
+        const parts = createPostDate.split("-");
+        if (parts.length === 3) {
+          targetYear = parseInt(parts[0], 10);
+          targetMonth = parseInt(parts[1], 10);
+          targetDay = parseInt(parts[2], 10);
+        }
+        if (createPostTime) {
+          const tParts = createPostTime.split(":");
+          if (tParts.length >= 2) {
+            targetHour = parseInt(tParts[0], 10);
+            targetMinute = parseInt(tParts[1], 10);
+          }
+        }
+      }
+
+      const selectedPlatforms =
+        createPostPlatforms.length > 0 ? createPostPlatforms : ["instagram"];
+
+      for (const plat of selectedPlatforms) {
+        const itemId = "post_" + Math.random().toString(36).substring(2, 11);
+        const captionText =
+          platformOverrides[plat]?.caption ?? createPostCaption;
+        const mediaList = platformOverrides[plat]?.media ?? createPostMedia;
+
+        const newItem = {
+          id: itemId,
+          year: targetYear,
+          month: targetMonth,
+          day: targetDay,
+          uploadHour: targetHour,
+          uploadMinute: targetMinute,
+          pillar: "General",
+          platform: plat,
+          contentType: createPostPlatformTypes[plat] || "feed",
+          pic: profile?.fullName || "HUB.AI",
+          status: createPostMode === "schedule" ? "Scheduled" : "Publishing",
+          title: "Created via HUB.AI",
+          caption: captionText,
+          briefCopywriting: "",
+          objective: "Generated automatically by HUB.AI assistant",
+          hook: "",
+          cta: "",
+          referenceText: "",
+          referenceLinks: [],
+          referenceImage: mediaList?.[0] || "",
+          customFields: [],
+          linkAsset: "",
+          linkSosmed: "",
+          isAds: false,
+          archived: false,
+          metricsUpdatedAt: null,
+          metrics: {
+            views: 0,
+            reach: 0,
+            likes: 0,
+            comments: 0,
+            reposts: 0,
+            shares: 0,
+            saves: 0,
+            profileVisits: 0,
+            bioLinkTaps: 0,
+            follows: 0,
+          },
+          adsMetrics: {
+            views: 0,
+            reach: 0,
+            likes: 0,
+            comments: 0,
+            reposts: 0,
+            shares: 0,
+            saves: 0,
+            profileVisits: 0,
+            bioLinkTaps: 0,
+            follows: 0,
+            clicks: 0,
+            conversions: 0,
+            msgConvStarted: 0,
+            threeSecPlays: 0,
+            spendBudget: 0,
+            dailyBudget: 0,
+            duration: 0,
+            cprProfileVisit: 0,
+            audience: "",
+          },
+        };
+
+        await setDoc(
+          doc(db, "workspaces", workspaceId, "content", itemId),
+          newItem,
+        );
+      }
+
+      setShowCreatePostPopup(false);
+      if (tab === "social-studio" && setTab) {
+        setTab("social-dashboard");
+      }
+      setCreatePostCaption("");
+      setCreatePostMedia([]);
+      setPlatformOverrides({});
+
+      alert(
+        lang === "id"
+          ? "Konten berhasil disimpan/dijadwalkan!"
+          : "Content successfully saved/scheduled!",
+      );
+    } catch (error: any) {
+      console.error("Error creating post:", error);
+      alert("Error: " + error.message);
+    }
+  };
+
   const [heatmapMetric, setHeatmapMetric] = useState("engagement");
   const [hubaiConfigs, setHubaiConfigs] = useState<any[]>([]);
-  const HUBAI_TIPS = lang === "id"
-    ? [
-        "Gunakan hook yang menarik di 3 detik pertama video Anda untuk meningkatkan retention rate secara signifikan.",
-        "Konsistensi posting lebih penting daripada kuantitas. Buat jadwal yang realistis dan patuhi itu.",
-        "Selalu sertakan Call to Action (CTA) yang jelas di setiap akhir postingan untuk mengarahkan audiens."
-      ]
-    : [
-        "Use an engaging hook in the first 3 seconds of your video to significantly increase retention rate.",
-        "Consistency in posting is more important than quantity. Create a realistic schedule and stick to it.",
-        "Always include a clear Call to Action (CTA) at the end of each post to guide your audience."
-      ];
+  const HUBAI_TIPS =
+    lang === "id"
+      ? [
+          "Gunakan hook yang menarik di 3 detik pertama video Anda untuk meningkatkan retention rate secara signifikan.",
+          "Konsistensi posting lebih penting daripada kuantitas. Buat jadwal yang realistis dan patuhi itu.",
+          "Selalu sertakan Call to Action (CTA) yang jelas di setiap akhir postingan untuk mengarahkan audiens.",
+        ]
+      : [
+          "Use an engaging hook in the first 3 seconds of your video to significantly increase retention rate.",
+          "Consistency in posting is more important than quantity. Create a realistic schedule and stick to it.",
+          "Always include a clear Call to Action (CTA) at the end of each post to guide your audience.",
+        ];
   const inboxChatScrollRef = useRef<HTMLDivElement>(null);
-  const [integrationModal, setIntegrationModal] = useState<{open: boolean, platform: string|null}>({open: false, platform: null});
+  const [integrationModal, setIntegrationModal] = useState<{
+    open: boolean;
+    platform: string | null;
+  }>({ open: false, platform: null });
   const [isSearchMode, setIsSearchMode] = useState(false);
-  const [mergedComments, setMergedComments] = useState<any[]>([]);
+  const [mergedComments, setMergedComments] = useState<any[]>([
+    {
+      id: "comment_1",
+      platform: "instagram",
+      postThumbnail:
+        "https://images.unsplash.com/photo-1515347619362-67396c01e523?w=120&h=120&fit=crop",
+      postMedia:
+        "https://images.unsplash.com/photo-1515347619362-67396c01e523?w=300&h=300&fit=crop",
+      postCaption:
+        "New Release: Corduroy Overcoat Series! Style modern, bahan premium yang super nyaman untuk daily wear.",
+      postLikes: 1240,
+      postCommentCount: 2,
+      postTime: "2 hari yang lalu",
+      senderName: "Agus Pratama",
+      createdAt: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
+      postComments: [
+        {
+          id: "pc_1",
+          avatar:
+            "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop",
+          username: "agus_pratama",
+          text: "Bahannya tebal ga kak? Ada panduan ukurannya?",
+          time: "15m",
+          isLiked: true,
+          replies: [
+            {
+              id: "pcr_1",
+              avatar:
+                "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&h=100&fit=crop",
+              username: "fadkhera_id",
+              text: "Bahan corduroy premium tebal tapi tetap adem kak! Panduan ukuran lengkap ada di slide terakhir ya kak. 😊",
+              time: "10m",
+            },
+          ],
+        },
+        {
+          id: "pc_2",
+          avatar:
+            "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop",
+          username: "rudi_hermawan",
+          text: "Keren banget overcoat-nya! 🔥 Langsung checkout satu warna sage green.",
+          time: "1j",
+          isLiked: false,
+          replies: [],
+        },
+      ],
+    },
+    {
+      id: "comment_2",
+      platform: "tiktok",
+      postThumbnail:
+        "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=120&h=120&fit=crop",
+      postMedia:
+        "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=300&h=300&fit=crop",
+      postCaption:
+        "OOTD Simple tapi tetap stylish buat nongkrong sore ini! Tap link di bio untuk catalog lengkap.",
+      postLikes: 3500,
+      postCommentCount: 1,
+      postTime: "5 hari yang lalu",
+      senderName: "Lia Kartika",
+      createdAt: new Date(Date.now() - 1000 * 60 * 80).toISOString(),
+      postComments: [
+        {
+          id: "pc_3",
+          avatar:
+            "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop",
+          username: "lia_kartika",
+          text: "Spill celana kulot-nya dong kak beli di mana?",
+          time: "1j",
+          isLiked: false,
+          replies: [],
+        },
+      ],
+    },
+  ]);
   const [metaApiError, setMetaApiError] = useState<string | null>(null);
-  const [platformOverrides, setPlatformOverrides] = useState<Record<string, any>>({});
-  const PROMPT_IDEAS = lang === "id"
-    ? [
-        "Buat rancangan konten Reels Instagram tentang cara jualan online untuk pemula agar langsung closing.",
-        "Berikan 5 ide konten Carousel TikTok yang mengedukasi tentang personal branding.",
-        "Tulis caption LinkedIn yang profesional dan persuasif untuk mempromosikan produk SaaS."
-      ]
-    : [
-        "Create an Instagram Reels content draft about how to sell online for beginners to close deals instantly.",
-        "Give 5 educational TikTok Carousel content ideas about personal branding.",
-        "Write a professional and persuasive LinkedIn caption to promote a SaaS product."
-      ];
+  const [platformOverrides, setPlatformOverrides] = useState<
+    Record<string, any>
+  >({});
+  const PROMPT_IDEAS =
+    lang === "id"
+      ? [
+          "Buat rancangan konten Reels Instagram tentang cara jualan online untuk pemula agar langsung closing.",
+          "Berikan 5 ide konten Carousel TikTok yang mengedukasi tentang personal branding.",
+          "Tulis caption LinkedIn yang profesional dan persuasif untuk mempromosikan produk SaaS.",
+        ]
+      : [
+          "Create an Instagram Reels content draft about how to sell online for beginners to close deals instantly.",
+          "Give 5 educational TikTok Carousel content ideas about personal branding.",
+          "Write a professional and persuasive LinkedIn caption to promote a SaaS product.",
+        ];
   const [realInsights, setRealInsights] = useState<any>(null);
   const [realPosts, setRealPosts] = useState<any[]>([]);
-  
+
   const renderHighlightedText = (text: string, query?: string) => <>{text}</>;
   const [replyingTo, setReplyingTo] = useState<any>(null);
   const saveConfig = async (...args: any[]) => {};
@@ -661,34 +1202,142 @@ export function SocialStudioView({
   const selectedComment = rawSelectedComment;
   const [selectedContent, setSelectedContent] = useState<any>(null);
   const selectedInboxMsg = rawSelectedInboxMsg;
-  const sendCommentReply = async (...args: any[]) => {};
-  const sendDMMessage = async (...args: any[]) => {};
-  
+  const sendCommentReply = async (content: string) => {
+    if (!content.trim() || !rawSelectedComment) return;
+
+    const authorName = "fadkhera_id";
+    const authorAvatar =
+      "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&h=100&fit=crop";
+
+    if (replyingTo) {
+      const newReply = {
+        id: "pcr_" + Math.random().toString(36).substring(2, 9),
+        avatar: authorAvatar,
+        username: authorName,
+        text: content.trim(),
+        time: "Just now",
+      };
+
+      setMergedComments((prev) =>
+        prev.map((post) => {
+          if (post.id !== rawSelectedComment.id) return post;
+          const updatedComments = post.postComments.map((pc: any) => {
+            if (pc.id !== replyingTo.id) return pc;
+            return {
+              ...pc,
+              replies: [...(pc.replies || []), newReply],
+            };
+          });
+          return {
+            ...post,
+            postComments: updatedComments,
+            postCommentCount: post.postCommentCount + 1,
+          };
+        }),
+      );
+
+      setRawSelectedComment((prev: any) => {
+        if (!prev) return null;
+        const updatedComments = prev.postComments.map((pc: any) => {
+          if (pc.id !== replyingTo.id) return pc;
+          return {
+            ...pc,
+            replies: [...(pc.replies || []), newReply],
+          };
+        });
+        return {
+          ...prev,
+          postComments: updatedComments,
+          postCommentCount: prev.postCommentCount + 1,
+        };
+      });
+
+      setReplyingTo(null);
+    } else {
+      const newComment = {
+        id: "pc_" + Math.random().toString(36).substring(2, 9),
+        avatar: authorAvatar,
+        username: authorName,
+        text: content.trim(),
+        time: "Just now",
+        isLiked: false,
+        replies: [],
+      };
+
+      setMergedComments((prev) =>
+        prev.map((post) =>
+          post.id === rawSelectedComment.id
+            ? {
+                ...post,
+                postComments: [...(post.postComments || []), newComment],
+                postCommentCount: post.postCommentCount + 1,
+              }
+            : post,
+        ),
+      );
+
+      setRawSelectedComment((prev: any) => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          postComments: [...(prev.postComments || []), newComment],
+          postCommentCount: prev.postCommentCount + 1,
+        };
+      });
+    }
+  };
+
+  const sendDMMessage = async (content: string) => {
+    if (!content.trim() || !rawSelectedInboxMsg) return;
+    const newReply = {
+      content: content.trim(),
+      createdAt: new Date().toISOString(),
+    };
+
+    setInboxMessages((prev) =>
+      prev.map((msg) =>
+        msg.id === rawSelectedInboxMsg.id
+          ? { ...msg, replies: [...(msg.replies || []), newReply] }
+          : msg,
+      ),
+    );
+
+    setRawSelectedInboxMsg((prev: any) => {
+      if (!prev) return null;
+      return { ...prev, replies: [...(prev.replies || []), newReply] };
+    });
+  };
+
   const [showConfigDropdown, setShowConfigDropdown] = useState(false);
   const [showConfigPanel, setShowConfigPanel] = useState(false);
   const [showCreatePostPopup, setShowCreatePostPopup] = useState(false);
+  const [createPostMobileTab, setCreatePostMobileTab] = useState<
+    "editor" | "preview"
+  >("editor");
   const [showDataSourceDropdown, setShowDataSourceDropdown] = useState(false);
   const [showDiscardModal, setShowDiscardModal] = useState(false);
-  
-  const updateEditingConfig = (key: string, value: any) => setEditingConfig((prev: any) => ({...prev, [key]: value}));
+
+  const updateEditingConfig = (key: string, value: any) =>
+    setEditingConfig((prev: any) => ({ ...prev, [key]: value }));
   const [targetMessageIndex, setTargetMessageIndex] = useState(-1);
-  const ANALYSIS_IDEAS = lang === "id"
-    ? [
-        "Analisis performa konten saya minggu lalu dan berikan rekomendasi peningkatan interaksi.",
-        "Evaluasi strategi kompetitor di platform Instagram berdasarkan data terbaru.",
-        "Rancang jadwal posting konten terbaik untuk audiens saya bulan ini."
-      ]
-    : [
-        "Analyze my content performance last week and provide recommendations to increase interaction.",
-        "Evaluate competitor strategy on Instagram based on the latest data.",
-        "Design the best content posting schedule for my audience this month."
-      ];
+  const ANALYSIS_IDEAS =
+    lang === "id"
+      ? [
+          "Analisis performa konten saya minggu lalu dan berikan rekomendasi peningkatan interaksi.",
+          "Evaluasi strategi kompetitor di platform Instagram berdasarkan data terbaru.",
+          "Rancang jadwal posting konten terbaik untuk audiens saya bulan ini.",
+        ]
+      : [
+          "Analyze my content performance last week and provide recommendations to increase interaction.",
+          "Evaluate competitor strategy on Instagram based on the latest data.",
+          "Design the best content posting schedule for my audience this month.",
+        ];
 
+  const handleSendMessage = async (customMsg?: string) => {
+    const msgToSend = customMsg || chatInput;
+    if (!msgToSend.trim()) return;
 
-  const handleSendMessage = async () => {
-    if (!chatInput.trim()) return;
-
-    const userMsg = chatInput;
+    const userMsg = msgToSend;
     const newHistory = [...chatHistory, { role: "user", content: userMsg }];
     let currentSessionId = activeSessionId;
 
@@ -705,6 +1354,7 @@ export function SocialStudioView({
               title:
                 userMsg.substring(0, 30) + (userMsg.length > 30 ? "..." : ""),
               messages: newHistory,
+              workspaceId: workspaceId,
               updatedAt: serverTimestamp(),
             },
           );
@@ -728,9 +1378,122 @@ export function SocialStudioView({
         }
       }
 
-      const recentContent = [...(content || [])]
-        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-        .slice(0, 10);
+      const msgLower = userMsg.toLowerCase();
+
+      let filteredContent = [...(content || [])];
+      let filteredContentPerf = DISPLAY_CONTENT;
+      let filteredAnalytics = MOCK_CHART_DATA;
+
+      // Deteksi niat pengguna untuk memfilter data berdasarkan bulan
+      if (msgLower.includes("juni") || msgLower.includes("june")) {
+        filteredContent = filteredContent.filter(
+          (c) =>
+            c.date?.includes("-06-") ||
+            c.date?.includes("/6/") ||
+            c.date?.includes("/06/") ||
+            c.date?.toLowerCase().includes("jun"),
+        );
+        filteredContentPerf = DISPLAY_CONTENT.filter(
+          (c) =>
+            c.time?.toLowerCase().includes("jun") || c.time?.includes("/6/"),
+        );
+        filteredAnalytics = MOCK_CHART_DATA.filter(
+          (c) =>
+            c.date?.toLowerCase().includes("jun") || c.date?.includes("/6/"),
+        );
+      } else if (msgLower.includes("juli") || msgLower.includes("july")) {
+        filteredContent = filteredContent.filter(
+          (c) =>
+            c.date?.includes("-07-") ||
+            c.date?.includes("/7/") ||
+            c.date?.includes("/07/") ||
+            c.date?.toLowerCase().includes("jul"),
+        );
+        filteredContentPerf = DISPLAY_CONTENT.filter(
+          (c) =>
+            c.time?.toLowerCase().includes("jul") || c.time?.includes("/7/"),
+        );
+        filteredAnalytics = MOCK_CHART_DATA.filter(
+          (c) =>
+            c.date?.toLowerCase().includes("jul") || c.date?.includes("/7/"),
+        );
+      } else if (msgLower.includes("agustus") || msgLower.includes("august")) {
+        filteredContent = filteredContent.filter(
+          (c) =>
+            c.date?.includes("-08-") ||
+            c.date?.includes("/8/") ||
+            c.date?.includes("/08/") ||
+            c.date?.toLowerCase().includes("agu") ||
+            c.date?.toLowerCase().includes("aug"),
+        );
+        filteredContentPerf = DISPLAY_CONTENT.filter(
+          (c) =>
+            c.time?.toLowerCase().includes("agu") ||
+            c.time?.toLowerCase().includes("aug") ||
+            c.time?.includes("/8/"),
+        );
+        filteredAnalytics = MOCK_CHART_DATA.filter(
+          (c) =>
+            c.date?.toLowerCase().includes("agu") ||
+            c.date?.toLowerCase().includes("aug") ||
+            c.date?.includes("/8/"),
+        );
+      } else if (msgLower.includes("mei") || msgLower.includes("may")) {
+        filteredContent = filteredContent.filter(
+          (c) =>
+            c.date?.includes("-05-") ||
+            c.date?.includes("/5/") ||
+            c.date?.includes("/05/") ||
+            c.date?.toLowerCase().includes("mei") ||
+            c.date?.toLowerCase().includes("may"),
+        );
+        filteredContentPerf = DISPLAY_CONTENT.filter(
+          (c) =>
+            c.time?.toLowerCase().includes("mei") ||
+            c.time?.toLowerCase().includes("may") ||
+            c.time?.includes("/5/"),
+        );
+        filteredAnalytics = MOCK_CHART_DATA.filter(
+          (c) =>
+            c.date?.toLowerCase().includes("mei") ||
+            c.date?.toLowerCase().includes("may") ||
+            c.date?.includes("/5/"),
+        );
+      } else if (msgLower.includes("april")) {
+        filteredContent = filteredContent.filter(
+          (c) =>
+            c.date?.includes("-04-") ||
+            c.date?.includes("/4/") ||
+            c.date?.includes("/04/") ||
+            c.date?.toLowerCase().includes("apr"),
+        );
+        filteredContentPerf = DISPLAY_CONTENT.filter(
+          (c) =>
+            c.time?.toLowerCase().includes("apr") || c.time?.includes("/4/"),
+        );
+        filteredAnalytics = MOCK_CHART_DATA.filter(
+          (c) =>
+            c.date?.toLowerCase().includes("apr") || c.date?.includes("/4/"),
+        );
+      }
+
+      const recentContent = filteredContent.sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+      );
+
+      // Jika user bertanya tentang performa tertinggi
+      if (
+        msgLower.includes("tertinggi") ||
+        msgLower.includes("tinggi") ||
+        msgLower.includes("top") ||
+        msgLower.includes("terbaik") ||
+        msgLower.includes("terbanyak")
+      ) {
+        filteredContentPerf = [...filteredContentPerf].sort(
+          (a, b) => Number(b.er) - Number(a.er),
+        );
+      }
+
       const contextData: any = {
         workspaceName: workspace?.name,
         userName: profile?.name || user?.displayName || "Creator",
@@ -739,28 +1502,68 @@ export function SocialStudioView({
         platformConnections: connectedPlatforms,
       };
 
+      const contentByPlatform = (content || []).reduce((acc: any, c: any) => {
+        const platforms = Array.isArray(c.platform)
+          ? c.platform
+          : [c.platform || "unknown"];
+        platforms.forEach((p: string) => {
+          acc[p] = (acc[p] || 0) + 1;
+        });
+        return acc;
+      }, {});
+
       if (dataSource === "all" || dataSource === "social_management") {
         contextData.socialManagement = {
           totalContentPlanned: (content || []).length,
-          recentContent: recentContent.map((c) => ({
+          contentPlannedByPlatform: contentByPlatform,
+          filteredContent: recentContent.map((c) => {
+            const metrics = c.metrics || {};
+            const adsMetrics = c.adsMetrics || {};
+            const totalEng =
+              (metrics.likes || 0) +
+              (metrics.comments || 0) +
+              (metrics.shares || 0) +
+              (metrics.saves || 0) +
+              (adsMetrics.likes || 0) +
+              (adsMetrics.comments || 0) +
+              (adsMetrics.shares || 0) +
+              (adsMetrics.saves || 0);
+            const totalReach = (metrics.reach || 0) + (adsMetrics.reach || 0);
+            const totalViews = (metrics.views || 0) + (adsMetrics.views || 0);
+            const er =
+              totalReach > 0 ? ((totalEng / totalReach) * 100).toFixed(2) : 0;
+            return {
+              title: c.title,
+              date: c.date,
+              type: c.type,
+              status: c.status,
+              platform: Array.isArray(c.platform)
+                ? c.platform.join(",")
+                : c.platform || "",
+              views: totalViews,
+              reach: totalReach,
+              engRate: er,
+              likes: (metrics.likes || 0) + (adsMetrics.likes || 0),
+              comments: (metrics.comments || 0) + (adsMetrics.comments || 0),
+            };
+          }),
+          analyticsData: filteredAnalytics.map((d) => ({
+            date: d.date,
+            views: d.views,
+            er: d.er,
+          })),
+          contentPerf: filteredContentPerf.map((c) => ({
             title: c.title,
-            date: c.date,
-            type: c.type,
-            status: c.status,
-            platform: Array.isArray(c.platform)
-              ? c.platform.join(",")
-              : c.platform || "",
+            plat: c.type,
+            views: c.views,
+            er: c.er,
+            date: c.time,
           })),
         };
       }
 
       if (dataSource === "all" || dataSource === "social_studio") {
         contextData.socialStudio = {
-          analyticsData: MOCK_CHART_DATA.slice(-7).map((d) => ({
-            date: d.date,
-            views: d.views,
-            er: d.er,
-          })),
           competitors: competitors
             .slice(0, 3)
             .map((c) => ({ user: c.username, er: c.er })),
@@ -768,12 +1571,6 @@ export function SocialStudioView({
             from: m.senderName || `User ${m.senderId || "?"}`,
             msg: m.content,
             plat: m.platform,
-          })),
-          contentPerf: DISPLAY_CONTENT.slice(0, 5).map((c) => ({
-            title: c.title,
-            plat: c.type,
-            views: c.views,
-            er: c.er,
           })),
         };
       }
@@ -789,9 +1586,8 @@ export function SocialStudioView({
           hubaiConfigs.find((c) => c.id === activeConfigId) ||
           hubaiConfigs[0] ||
           DEFAULT_CONFIG_ITEM;
-        const strContext = JSON.stringify(contextData);
-        const configStr = `
-Profil Personalisasi HUB.AI:
+
+        const configStr = `Profil Personalisasi HUB.AI:
 - Posisi Pekerjaan: ${activeConfig.jobRole || "Tidak disebutkan"}
 - Gaya Bahasa (Tone of Voice): ${activeConfig.toneOfVoice || "Asik, praktis, profesional"}
 - Nama Brand: ${activeConfig.brandName || "Tidak disebutkan"}
@@ -803,98 +1599,42 @@ Profil Personalisasi HUB.AI:
 - Kompetitor: ${activeConfig.competitors || "Tidak disebutkan"}
 - Info Tambahan: ${activeConfig.additionalInfo || "Tidak disebutkan"}
 - Kamus Brand (Glossary): ${activeConfig.brandGlossary || "Tidak disebutkan"}
-- Contoh Konten (Reference): ${activeConfig.contentExamples || "Tidak disebutkan"}
-`;
-        const sysPrompt = `Anda adalah HUB.AI, Expert Social Media Manager & Creative Director kelas dunia yang bekerja di dalam platform Hubify. Anda memiliki spesialisasi dalam merancang strategi media sosial yang berfokus pada retention rate, tingginya engagement, dan konversi audience, bukan sekadar membuat teks basa-basi.
+- Contoh Konten (Reference): ${activeConfig.contentExamples || "Tidak disebutkan"}`;
+
+        const sysPrompt = `Anda adalah HUB.AI, Expert Social Media Manager & Creative Director kelas dunia yang bekerja di dalam platform Hubify. Anda memiliki spesialisasi dalam merancang strategi media sosial yang berfokus pada retention rate, tingginya engagement, dan konversi audience.
+Tanggal hari ini: ${new Date().toLocaleDateString("id-ID", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
 
 ${configStr}
 
-Data Platform Real-Time:
-Anda saat ini terhubung langsung dengan data referensi user dari platform Hubify.
-Data Source yang terbuka untuk Anda analisis saat ini adalah: ${dataSource === "all" ? "Semua Platform (Social Management & Social Studio)" : dataSource === "social_management" ? "Hanya Tab Social Management (Calendar dsb)" : "Hanya Tab Social Studio (Real-time Analytics, Inbox, Kompetitor)"}.
-Data User:
-${strContext}
+PENTING:
+- Anda memiliki alat (Tools / Function Calling) bernama 'fetch_workspace_data' yang dapat dipanggil secara otomatis oleh sistem untuk mengambil data dari Workspace pengguna.
+- Jika pengguna menanyakan data performa, jadwal, metrik analitik, atau konten spesifik (misal: "tolong buatkan analisis dari data bulan Januari 2025" atau "apa konten dengan likes terbanyak"), ANDA WAJIB memanggil tool tersebut dengan parameter yang sesuai.
+- JANGAN PERNAH berasumsi data kosong, JANGAN menyuruh pengguna melihat dashboard sendiri.
+- Gunakan gaya bahasa yang asik, cerdas, natural, layaknya manusia. JANGAN pernah menyebutkan format JSON, array, function calling, atau hal teknis programming lainnya. Berbicaralah layaknya manusia.
+- Jika user meminta untuk membuat draf konten, WAJIB gunakan format tag berikut:
+**[JUDUL]** (isi judul)
+**[PLATFORM]** (isi platform)
+**[TIPE KONTEN]** (isi tipe konten)
+**[OBJECTIVE]** (isi objektif)
+**[HOOK]** (isi hook copywriting)
+**[CTA]** (isi call to action)
+**[CAPTION]** (isi caption)
+**[BRIEF]** (berikan instruksi visual dan audio)`;
 
-Tugas Utama Anda:
-1. Menjawab pertanyaan mendalam mengenai social media marketing, tren, copywriting, dan strategi. Anda dapat membagikan wawasan Anda dari pengetahuan AI umum Anda secara luas. Gunakan Tone of Voice sesuai konfigurasi Personalisi.
-2. Menganalisis dan membuat laporan singkat berdasarkan data 'analyticsData', 'competitors', atau performa rill setiap post di 'contentPerf' jika ada.
-3. Memberikan ide konten dan mereview kalender yang sudah diisi di 'recentContent'. Anda juga dapat merancang draft caption yang disesuaikan profil brand.
-4. Memberikan saran balasan untuk pesan masuk berdasarkan data 'inbox'.
+        const data = await callAiWithQuota(
+          user.uid,
+          profile?.plan,
+          {
+            prompt: userMsg,
+            history: optimizedHistory,
+            system: sysPrompt,
+            useSearchGrounding: false,
+            model: selectedAiModel,
+            workspaceId: workspaceId,
+          },
+          planDetails?.maxAiGenerations || 50,
+        );
 
-Panduan Komunikasi:
-- Selalu pastikan pilihan kata, Hook, CTA, dan arahan visual yang Anda berikan tertuju pada metrik yang penting (retention rate, engagement, konversi) dan bukan sekadar kata-kata manis.
-- **Copywriting Framework:** Selalu gunakan framework copywriting yang terbukti sukses, seperti AIDA (Attention, Interest, Desire, Action) atau PAS (Problem, Agitate, Solution) dalam merancang alur konten, terutama untuk Hook 3 detik pertama agar benar-benar menangkap audiens, yang dilanjutkan dengan struktur logis sampai ke CTA.
-- **Wajib Menggunakan Bank Formula Hook:** Untuk setiap pembuatan teks / konten, Anda HARUS menggunakan (atau mengadaptasi) salah satu dari formula hook berikut agar ampuh menangkap atensi, dan sesuaikan tipenya berdasarkan format konten:
-  - **(Video/Story/Reels) Negatif / Peringatan:** "Jangan [Kata Kerja] [Hal] sebelum kamu tahu rahasia ini!" atau "Kesalahan terbesar saat [Mencoba Sesuatu] yang bikin kamu [Dampak Buruk]."
-  - **(Video/Story/Reels) Eksklusivitas / Rahasia:** "Ini dia rahasia [Hasil] tanpa harus [Pain Point]!" atau "Cara [Orang Sukses] mendapatkan [Hasil] dalam [Waktu]."
-  - **(Video/Story/Reels) Relatable / Validasi Emosi:** "Siapa di sini yang ngerasa [Pain Point]? Ternyata alasannya..." atau "Capek sama [Masalah]? Coba lakukan ini."
-  - **(Video/Story/Reels) Challenge / Tantangan:** "Coba deh lakukan [Tindakan] ini selama [Waktu], dan lihat apa yang terjadi." atau "Berani nggak kamu berhenti [Kebiasaan Buruk] mulai hari ini?"
-  - **(Video/Story/Reels) Unpopular Opinion:** "Mungkin banyak yang nggak setuju, tapi [Fakta Menarik/Pandangan Berbeda]." atau "[Hal yang Dipercaya Banyak Orang] itu ternyata salah besar!"
-  - **(Video/Story/Reels) Storytelling & Curiosity:** "Gimana caranya gue bisa [Pencapaian] padahal dulu [Keadaan Sulit]." atau "Pernah kepikiran nggak kenapa [Fenomena Aneh] bisa terjadi?"
-  - **(Carousel Edukasi) Listicle / Langkah:** "[Angka] Cara Ampuh untuk [Mencapai Goal] Tanpa [Pain Point] (Geser 👉)" atau "Step-by-step [Selesaikan Masalah] Buat Kamu yang [Kondisi Spesifik]."
-  - **(Carousel Edukasi) Visual Roadmap / Before-After:** "Dari [Kondisi Buruk] Jadi [Kondisi Ideal]. Ini Roadmap-nya (Save Biar Ga Lupa!)"
-  - **(Carousel Edukasi) Mistakes / Checklist:** "Ceklis Wajib Sebelum [Tindakan Penting] Biar Nggak Menyesal!" atau "[Angka] Kesalahan Fatal Paling Sering Saat [Melakukan Sesuatu]."
-  - **(Carousel Produk) Transformasi Fitur:** "Lelah dengan [Masalah Fokus]? Ini Solusi yang Bikin [Hasil Menarik] dalam [Waktu]." atau "Wajah [Kondisi Awal]? Cukup Pakai [Produk] Bisa Langsung [Hasil Akhir]."
-  - **(Carousel Produk) Alasan Rasional (Why Us):** "Kenapa [Nama Produk] Selalu Sold Out? (Geser untuk Tahu Jawabannya)" atau "5 Alasan Kenapa [Tipe Pelanggan] Harus Punya [Nama Produk] Ini."
-  - **(Carousel Produk) Bongkar Fakta / Anatomi:** "Bedah Tuntas Rahasia di Balik [Nama Produk]. Pantesan [Benefit]!" atau "Apa Aja Sih Isi [Nama Produk] Terlaris Ini? Yuk Intip!"
-  - **(Carousel Produk) Social Proof / Review:** "Kata Mereka yang Udah Cobain [Nama Produk]..." atau "Rating [Produk] Ini [Angka]! Beneran Bagus atau Cuma Hype?"
-- **Kecerdasan Spesifik Platform:** Sesuaikan gaya dan arahan visual dengan karakteristik platform:
-  - **TikTok:** Buat brief yang kasual, fast-paced, raw, dan trend-driven.
-  - **Instagram Reels:** Arahkan pada estetika visual tinggi, transisi yang smooth, dan kualitas gambar.
-  - **LinkedIn:** Gunakan bahasa profesional, informatif, dan berbobot.
-- **Interaktivitas (WAJIB DILAKUKAN):** Setiap kali user meminta dibuatkan brief konten, rancangan konten, atau draft (sepanjang apa pun prompt mereka), JANGAN langsung membuatkan hasilnya jika mereka belum menjelaskan 6 hal pokok berikut secara spesifik: (1) Isi detail konten/USP, (2) Target audiens, (3) Tujuan konten, (4) Platform yang dituju, (5) Tipe konten (Reels, Carousel, dll), dan (6) Durasi/Panjang konten (Pendek, Standar, Panjang). Jika informasi ini belum lengkap, Anda WAJIB bertanya balik secara ramah poin mana saja yang kurang. Jangan eksekusi brief sebelum spesifikasinya jelas!
-- Berbicaralah dalam bahasa Indonesia yang selaras dengan Tone of Voice di atas, apabila tidak disebutkan tetap gunakan tone yang asik, praktis, profesional, dan to the point.
-- Jadikan Profil Personalisasi sebagai landasan saat Anda memberikan ide atau draft tulisan.
-- Jika user bertanya terkait metrik atau kalender mereka, gunakan data JSON di atas untuk menjawab. Jika datanya tidak ada, katakan Anda belum melihat data tersebut.
-- Jangan sebut format 'JSON' dalam balasan. Berikan langsung wawasannya atau hasilnya.
-- Jika user meminta untuk membuat laporan, buatkan rangkuman bullet point yang rapi.
-- JIKA user meminta untuk membuat brief konten, rancangan konten, atau draft konten (dan Anda sudah memiliki informasi yang cukup), WAJIB gunakan format tag berikut di dalam respons Anda agar sistem dapat membacanya:
-
-**[JUDUL]** 
-(isi judul konten yang spesifik dan menarik)
-
-**[PLATFORM]** 
-(isi platform target seperti Instagram, TikTok, LinkedIn, dll)
-
-**[TIPE KONTEN]** 
-(isi tipe konten seperti Reels, Feed, Story, dll)
-
-**[OBJECTIVE]** 
-(jelaskan tujuan spesifik konten ini dibuat)
-
-**[HOOK]** 
-(berikan kalimat pancingan 3 detik pertama yang kuat)
-
-**[CTA]** 
-(isi call to action yang spesifik dan mengarahkan konversi)
-
-**[CAPTION]** 
-(tuliskan caption lengkap dengan gaya bahasa yang sesuai. Buat paragraf yang rapi dan mudah dibaca. Sertakan hashtag yang relevan)
-
-**[BRIEF]** 
-(Berikan panduan visual dan eksekusi yang komprehensif dalam bentuk bullet points. Jelaskan dengan detail aspek-aspek berikut:
-- **Visual & Angle:** (Jelaskan urutan scene, framing kamera, dan komposisi)
-- **Audio & Musik:** (Sebutkan mood musik yang cocok, efek suara, atau gaya Voice Over)
-- **Teks On-Screen:** (Detailkan teks yang perlu muncul dalam video/grafis)
-- **Mood & Tone:** (Gambarkan nuansa visual dan emosi yang ingin disampaikan)
-- **Properti & Talent:** (Sebutkan jika ada kebutuhan spesifik untuk model atau properti)
-)
-
-PENTING UNTUK DIPERHATIKAN SEPUTAR FORMAT:
-- STRICT FORMATTING: Jangan mengubah nama tag yang berada di dalam tanda kurung siku (seperti tidak boleh menjadi [JUDUL KONTEN], harus tetap [JUDUL]). Harus sama persis dengan template di atas.
-- Pisahkan setiap tag dan isinya HANYA dengan enter ganda (baris kosong baru).
-- JANGAN PERNAH menambahkan karakter khusus untuk membungkus kode atau teks (hindari penggunaan code blocks seperti \`\`\` tanpa alasan yang jelas).
-- JANGAN PERNAH memberikan garis pemisah panjang (seperti --- atau ===) antar bagian.
-- Gunakan teks tebal (**bold**) hanya pada judul tag atau sub-judul poin untuk kerapian.
-- Pastikan isi dari setiap tag langsung ditulis di bawah tag tersebut tanpa awalan titik dua (:).
-Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
-
-        const data = await callAiWithQuota(user.uid, profile?.plan, {
-          prompt: userMsg,
-          history: optimizedHistory,
-          system: sysPrompt,
-          useSearchGrounding: true,
-        });
         updatedHistory.push({ role: "assistant", content: data.text });
       } catch (err: any) {
         updatedHistory.push({
@@ -1077,10 +1817,24 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
     }, 1500);
   };
 
+  const removeCompetitor = (index: number) => {
+    setCompetitors((prev) => prev.filter((_, idx) => idx !== index));
+  };
+
   const toggleConnection = async (id: string) => {
     if (connectedPlatforms.includes(id)) {
       setDisconnectPrompt({ open: true, platform: id });
     } else {
+      const maxSocialAccounts = planDetails?.maxSocialAccounts || 10;
+      if (
+        connectedPlatforms.length >= maxSocialAccounts &&
+        profile?.plan !== "vip"
+      ) {
+        alert(
+          `Batas maksimal Akun Sosmed untuk paket Anda adalah ${maxSocialAccounts}. Silakan upgrade paket untuk menghubungkan lebih banyak akun.`,
+        );
+        return;
+      }
       setIntegrationModal({ open: true, platform: id });
     }
   };
@@ -1110,12 +1864,17 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
   const generateReport = async () => {
     setAiLoading(true);
     try {
-      const data = await callAiWithQuota(user.uid, profile?.plan, {
-        prompt:
-          "Anda adalah pakar Social Media Analytics. Berdasarkan data berikut, berikan ringkasan performa yang mudah dibaca (dalam 3 paragraf pendek) dan 3 poin 'Rekomendasi Langkah Selanjutnya'. Data: Views 1.2M (+15%), Reach 980K (+10%), ER 5.2% (+1.2%), Komentar 4.1K, Likes 88.3K, Share 10.2K.",
-        system:
-          "Output dalam Markdown yang bersih, profesional, dan to the point.",
-      });
+      const data = await callAiWithQuota(
+        user.uid,
+        profile?.plan,
+        {
+          prompt:
+            "Anda adalah pakar Social Media Analytics. Berdasarkan data berikut, berikan ringkasan performa yang mudah dibaca (dalam 3 paragraf pendek) dan 3 poin 'Rekomendasi Langkah Selanjutnya'. Data: Views 1.2M (+15%), Reach 980K (+10%), ER 5.2% (+1.2%), Komentar 4.1K, Likes 88.3K, Share 10.2K.",
+          system:
+            "Output dalam Markdown yang bersih, profesional, dan to the point.",
+        },
+        planDetails?.maxAiGenerations || 50,
+      );
       setAiReport(data.text);
     } catch (err: any) {
       setAiReport(err.message || "Gagal mengambil laporan dari AI.");
@@ -1127,22 +1886,28 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
     if (realInsights && Object.keys(realInsights).length > 0) {
       // Just map some basic data from insights for the chart if we have it
       // Let's create a 14-day array mapping the values if available, or just mock it cleanly
-      const dataToUse = realInsights[analyticsPlatform] || realInsights['meta'] || realInsights['instagram'];
+      const dataToUse =
+        realInsights[analyticsPlatform] ||
+        realInsights["meta"] ||
+        realInsights["instagram"];
       if (dataToUse) {
         // Typically insights have {name: 'page_impressions', values: [{value, end_time}]}
         // We'll extract the first metric's values for dates.
         const metric = dataToUse[0];
         if (metric && metric.values) {
           return metric.values.map((v: any, i: number) => ({
-             date: new Date(v.end_time).toLocaleDateString(undefined, {month: 'short', day: 'numeric'}),
-             views: v.value || 0,
-             reach: v.value || 0,
-             likes: 0,
-             comments: 0,
-             shares: 0,
-             er: 0,
-             reposts: 0,
-             saves: 0
+            date: new Date(v.end_time).toLocaleDateString(undefined, {
+              month: "short",
+              day: "numeric",
+            }),
+            views: v.value || 0,
+            reach: v.value || 0,
+            likes: 0,
+            comments: 0,
+            shares: 0,
+            er: 0,
+            reposts: 0,
+            saves: 0,
           }));
         }
       }
@@ -1155,17 +1920,21 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
     else if (analyticsPlatform === "meta") multiplier = 0.8;
     else if (analyticsPlatform === "all") multiplier = 4.3;
 
-    return Array.from({ length: 14 }).map((_, i) => ({
-      date: `Day ${i + 1}`,
-      views: Math.floor((((i * 678) % 5000) + 1000) * multiplier),
-      reach: Math.floor((((i * 345) % 3000) + 500) * multiplier),
-      likes: Math.floor((((i * 123) % 1000) + 100) * multiplier),
-      comments: Math.floor((((i * 45) % 200) + 10) * multiplier),
-      shares: Math.floor((((i * 89) % 100) + 5) * multiplier),
-      er: Number((((i * 1.5) % 3) + 1 + multiplier * 0.5).toFixed(1)),
-      reposts: Math.floor((((i * 12) % 50) + 1) * multiplier),
-      saves: Math.floor((((i * 56) % 300) + 20) * multiplier),
-    }));
+    return Array.from({ length: 14 }).map((_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (13 - i));
+      return {
+        date: d.toLocaleDateString("id-ID", { day: "numeric", month: "short" }),
+        views: Math.floor((((i * 678) % 5000) + 1000) * multiplier),
+        reach: Math.floor((((i * 345) % 3000) + 500) * multiplier),
+        likes: Math.floor((((i * 123) % 1000) + 100) * multiplier),
+        comments: Math.floor((((i * 45) % 200) + 10) * multiplier),
+        shares: Math.floor((((i * 89) % 100) + 5) * multiplier),
+        er: Number((((i * 1.5) % 3) + 1 + multiplier * 0.5).toFixed(1)),
+        reposts: Math.floor((((i * 12) % 50) + 1) * multiplier),
+        saves: Math.floor((((i * 56) % 300) + 20) * multiplier),
+      };
+    });
   }, [analyticsPlatform]);
 
   const SORT_OPTIONS = [
@@ -1176,23 +1945,27 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
   ];
 
   const DISPLAY_CONTENT = React.useMemo(() => {
-    let list = realPosts ? realPosts.map((p: any) => ({
-      id: p.id,
-      title: p.content ? p.content.slice(0, 40) + '...' : 'Post',
-      captionSnippet: p.content ? p.content.slice(0, 60) + '...' : '',
-      postTypeLabel: 'Post',
-      accountName: p.author || 'Account',
-      time: p.date ? new Date(p.date).toLocaleString() : '',
-      type: p.platform || 'instagram',
-      views: p.views || 0,
-      reach: p.reach || 0,
-      likes: p.likes || 0,
-      er: p.er || '0.0',
-      comments: p.comments || 0,
-      shares: p.shares || 0,
-      saves: p.saves || 0,
-      thumbnail: p.media || "https://images.unsplash.com/photo-1515347619362-67396c01e523?w=100&h=100&fit=crop"
-    })) : [];
+    let list = realPosts
+      ? realPosts.map((p: any) => ({
+          id: p.id,
+          title: p.content ? p.content.slice(0, 40) + "..." : "Post",
+          captionSnippet: p.content ? p.content.slice(0, 60) + "..." : "",
+          postTypeLabel: "Post",
+          accountName: p.author || "Account",
+          time: p.date ? new Date(p.date).toLocaleString() : "",
+          type: p.platform || "instagram",
+          views: p.views || 0,
+          reach: p.reach || 0,
+          likes: p.likes || 0,
+          er: p.er || "0.0",
+          comments: p.comments || 0,
+          shares: p.shares || 0,
+          saves: p.saves || 0,
+          thumbnail:
+            p.media ||
+            "https://images.unsplash.com/photo-1515347619362-67396c01e523?w=100&h=100&fit=crop",
+        }))
+      : [];
 
     if (contentPlatform !== "all") {
       list = list.filter((c) => c.type === contentPlatform);
@@ -1283,7 +2056,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
       return {
         ...c,
         day,
-        type: Array.isArray(c.platform) ? c.platform[0] : (c.platform || "ig"),
+        type: Array.isArray(c.platform) ? c.platform[0] : c.platform || "ig",
       };
     });
     const mergedPosts = [...calendarPosts, ...realCalendarPosts];
@@ -1298,7 +2071,10 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
           marginTop: 24,
         }}
       >
-        {(lang === "id" ? ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"] : ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]).map((d) => (
+        {(lang === "id"
+          ? ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"]
+          : ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+        ).map((d) => (
           <div
             key={d}
             style={{
@@ -1323,19 +2099,52 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
         ))}
         {days.map((d) => {
           const posts = mergedPosts.filter((p: any) => p.day === d);
+          const isToday = d === new Date().getDate();
           return (
             <div
               key={d}
               style={{
                 padding: "12px 12px 40px",
-                background: "white",
-                borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(44,32,22,0.1)",
+                background: isToday ? "rgba(37, 99, 235, 0.08)" : "white",
+                borderWidth: isToday ? "2px" : "1px",
+                borderStyle: "solid",
+                borderColor: isToday
+                  ? "var(--theme-primary)"
+                  : "rgba(44,32,22,0.1)",
                 borderRadius: 12,
                 minHeight: 100,
                 position: "relative",
+                boxShadow: isToday
+                  ? "0 8px 24px rgba(37, 99, 235, 0.12)"
+                  : "none",
               }}
             >
-              <div style={{ fontWeight: 800, fontSize: 14 }}>{d}</div>
+              <div
+                style={{
+                  fontWeight: 800,
+                  fontSize: 14,
+                  color: isToday ? "var(--theme-primary)" : "inherit",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 4,
+                }}
+              >
+                {d}
+                {isToday && (
+                  <span
+                    style={{
+                      fontSize: 9,
+                      padding: "2px 6px",
+                      background: "var(--theme-primary)",
+                      color: "white",
+                      borderRadius: 9999,
+                      fontWeight: 800,
+                    }}
+                  >
+                    {lang === "id" ? "Hari Ini" : "Today"}
+                  </span>
+                )}
+              </div>
               <div
                 style={{
                   marginTop: 8,
@@ -1345,14 +2154,20 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                 }}
               >
                 {posts.map((p: any, i) => {
-                  const pType = String(p.type || "").trim().toLowerCase();
+                  const pType = String(p.type || "")
+                    .trim()
+                    .toLowerCase();
                   let blockColor = "#2D5A86";
                   let blockBg = "#F0F4F8";
-                  
+
                   if (pType === "ig" || pType === "instagram") {
                     blockColor = "#E1306C";
                     blockBg = "#FDF0F5";
-                  } else if (pType === "fb" || pType === "facebook" || pType === "meta") {
+                  } else if (
+                    pType === "fb" ||
+                    pType === "facebook" ||
+                    pType === "meta"
+                  ) {
                     blockColor = "#1877F2";
                     blockBg = "#EBF3FC";
                   } else if (pType === "tt" || pType === "tiktok") {
@@ -1364,7 +2179,11 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                   } else if (pType === "yt" || pType === "youtube") {
                     blockColor = "#FF0000";
                     blockBg = "#FFF0F0";
-                  } else if (pType === "x" || pType === "twitter" || pType === "threads") {
+                  } else if (
+                    pType === "x" ||
+                    pType === "twitter" ||
+                    pType === "threads"
+                  ) {
                     blockColor = "#111111";
                     blockBg = "#F3F3F3";
                   }
@@ -1405,7 +2224,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                         {p.title}
                       </div>
                       {p.time && (
-                        <div style={{ fontSize: 9, opacity: 0.7, flexShrink: 0 }}>
+                        <div
+                          style={{ fontSize: 9, opacity: 0.7, flexShrink: 0 }}
+                        >
                           {p.time}
                         </div>
                       )}
@@ -1512,7 +2333,8 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                 className="hover-scale"
                 style={{
                   background: "rgba(44,32,22,0.05)",
-                  borderWidth: 0, borderStyle: "none",
+                  borderWidth: 0,
+                  borderStyle: "none",
                   cursor: "pointer",
                   width: 32,
                   height: 32,
@@ -1566,7 +2388,19 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                           marginBottom: 4,
                         }}
                       >
-                        {m === "Komen" ? (lang === "id" ? "Komen" : "Comments") : m === "Save" ? (lang === "id" ? "Simpan" : "Saves") : m === "Share" ? (lang === "id" ? "Share" : "Shares") : m}
+                        {m === "Komen"
+                          ? lang === "id"
+                            ? "Komen"
+                            : "Comments"
+                          : m === "Save"
+                            ? lang === "id"
+                              ? "Simpan"
+                              : "Saves"
+                            : m === "Share"
+                              ? lang === "id"
+                                ? "Share"
+                                : "Shares"
+                              : m}
                       </div>
                       <div
                         style={{
@@ -1609,14 +2443,17 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                   width: "100%",
                   background: "var(--theme-primary)",
                   color: "white",
-                  borderWidth: 0, borderStyle: "none",
+                  borderWidth: 0,
+                  borderStyle: "none",
                   padding: "12px",
                   borderRadius: 12,
                   fontWeight: 700,
                   cursor: "pointer",
                 }}
               >
-                {lang === "id" ? "Buka di Platform Asli" : "Open in Native Platform"}
+                {lang === "id"
+                  ? "Buka di Platform Asli"
+                  : "Open in Native Platform"}
               </button>
             </div>
           </div>
@@ -1633,6 +2470,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
           setActiveSessionId(s.id);
           setChatHistory(s.messages || []);
           setIsSearchMode(false);
+          setMobileHubAiView("chat");
         }}
         className="hover-bg"
         style={{
@@ -1674,7 +2512,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
               padding: "4px 8px",
               fontSize: 12,
               borderRadius: 6,
-              borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(27,127,220,0.3)",
+              borderWidth: "1px",
+              borderStyle: "solid",
+              borderColor: "rgba(27,127,220,0.3)",
               background: "white",
               outline: "none",
             }}
@@ -1747,7 +2587,8 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                   }}
                   style={{
                     background: "transparent",
-                    borderWidth: 0, borderStyle: "none",
+                    borderWidth: 0,
+                    borderStyle: "none",
                     display: "flex",
                     alignItems: "center",
                     gap: 8,
@@ -1771,7 +2612,8 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                   }}
                   style={{
                     background: "transparent",
-                    borderWidth: 0, borderStyle: "none",
+                    borderWidth: 0,
+                    borderStyle: "none",
                     display: "flex",
                     alignItems: "center",
                     gap: 8,
@@ -1790,7 +2632,11 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                   onClick={async (e) => {
                     e.stopPropagation();
                     if (
-                      confirm(lang === "id" ? "Yakin ingin menghapus histori percakapan ini?" : "Are you sure you want to delete this conversation history?")
+                      confirm(
+                        lang === "id"
+                          ? "Yakin ingin menghapus histori percakapan ini?"
+                          : "Are you sure you want to delete this conversation history?",
+                      )
                     ) {
                       await deleteDoc(
                         doc(db, "users", user.uid, "aiChats", s.id),
@@ -1812,7 +2658,8 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                   }}
                   style={{
                     background: "transparent",
-                    borderWidth: 0, borderStyle: "none",
+                    borderWidth: 0,
+                    borderStyle: "none",
                     display: "flex",
                     alignItems: "center",
                     gap: 8,
@@ -1870,7 +2717,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
           display: "flex",
           flexDirection: "column",
           gap: 24,
-          padding: pId ? 20 : 0,
+          padding: pId ? (isMobileHubAi ? "12px 2px" : 20) : 0,
         }}
       >
         {pId && pInfo?.contentTypes && (
@@ -1900,7 +2747,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                     cursor: "pointer",
                     borderWidth: "1px",
                     borderStyle: "solid",
-                    borderColor: isActive ? "var(--theme-primary)" : "transparent",
+                    borderColor: isActive
+                      ? "var(--theme-primary)"
+                      : "transparent",
                   }}
                   className={isActive ? "" : "hover-bg"}
                 >
@@ -1937,7 +2786,8 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
               style={{
                 background: "transparent",
                 color: "var(--theme-primary)",
-                borderWidth: 0, borderStyle: "none",
+                borderWidth: 0,
+                borderStyle: "none",
                 padding: 0,
                 fontSize: 12,
                 fontWeight: 800,
@@ -1959,7 +2809,8 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
               width: "100%",
               minHeight: 120,
               borderRadius: 16,
-              borderWidth: 0, borderStyle: "none",
+              borderWidth: 0,
+              borderStyle: "none",
               background: "rgba(44,32,22,0.03)",
               padding: "16px",
               fontSize: 14,
@@ -1994,7 +2845,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
               width: "100%",
               minHeight: 140,
               borderRadius: 16,
-              borderWidth: "2px", borderStyle: "dashed", borderColor: "rgba(44,32,22,0.1)",
+              borderWidth: "2px",
+              borderStyle: "dashed",
+              borderColor: "rgba(44,32,22,0.1)",
               background: "rgba(44,32,22,0.02)",
               display: "flex",
               flexDirection: "column",
@@ -2124,7 +2977,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                   style={{
                     aspectRatio: "1",
                     borderRadius: 12,
-                    borderWidth: "2px", borderStyle: "dashed", borderColor: "rgba(44,32,22,0.1)",
+                    borderWidth: "2px",
+                    borderStyle: "dashed",
+                    borderColor: "rgba(44,32,22,0.1)",
                     display: "flex",
                     flexDirection: "column",
                     alignItems: "center",
@@ -2207,7 +3062,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                     padding: 12,
                     background: "rgba(239,68,68,0.1)",
                     borderRadius: 12,
-                    borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(239,68,68,0.2)",
+                    borderWidth: "1px",
+                    borderStyle: "solid",
+                    borderColor: "rgba(239,68,68,0.2)",
                   }}
                 >
                   <div
@@ -2288,11 +3145,17 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                   }
                   ?
                 </h3>
-                {disconnectPrompt.platform && connectedAccountsData[disconnectPrompt.platform]?.accountName && (
-                  <p className="text-sm font-semibold text-[#111827]/80 mb-2">
-                    Account: {connectedAccountsData[disconnectPrompt.platform].accountName}
-                  </p>
-                )}
+                {disconnectPrompt.platform &&
+                  connectedAccountsData[disconnectPrompt.platform]
+                    ?.accountName && (
+                    <p className="text-sm font-semibold text-[#111827]/80 mb-2">
+                      Account:{" "}
+                      {
+                        connectedAccountsData[disconnectPrompt.platform]
+                          .accountName
+                      }
+                    </p>
+                  )}
                 <p className="text-sm text-[#111827]/60 mb-6">
                   Are you sure you want to disconnect this platform? You will
                   need to re-authenticate to connect it again.
@@ -2338,7 +3201,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
           </div>
         )}
       </AnimatePresence>
-      {!showCreatePostPopup ? (
+      {!showCreatePostPopup && tab !== "social-studio" ? (
         <div
           className={
             tab === "social-hub-ai"
@@ -2358,25 +3221,45 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                 <h2 className="text-2xl md:text-[28px] font-extrabold text-[#2C2016] m-0">
                   Home
                 </h2>
-                <div className="flex flex-wrap gap-3 w-full md:w-auto">
-                  <CustomDropdown
-                    value={dashboardPlatform}
-                    options={PLATFORMS}
-                    onChange={setDashboardPlatform}
-                    pill
-                  />
-                  <CustomDropdown
-                    value={dashTimeRange}
-                    options={DASHBOARD_TIME_RANGES}
-                    onChange={setDashTimeRange}
-                    pill
-                  />
+                <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
+                  {isMobileHubAi ? (
+                    <>
+                      <MobileStepper
+                        value={dashboardPlatform}
+                        options={PLATFORMS}
+                        onChange={setDashboardPlatform}
+                        prefix="Platform"
+                      />
+                      <MobileStepper
+                        value={dashTimeRange}
+                        options={DASHBOARD_TIME_RANGES}
+                        onChange={setDashTimeRange}
+                        prefix="Rentang"
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <CustomDropdown
+                        value={dashboardPlatform}
+                        options={PLATFORMS}
+                        onChange={setDashboardPlatform}
+                        pill
+                      />
+                      <CustomDropdown
+                        value={dashTimeRange}
+                        options={DASHBOARD_TIME_RANGES}
+                        onChange={setDashTimeRange}
+                        pill
+                      />
+                    </>
+                  )}
                   <button
                     className="hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
                     onClick={() => setShowCreatePostPopup(true)}
                     style={{
                       background: "var(--theme-primary)",
-                      borderWidth: 0, borderStyle: "none",
+                      borderWidth: 0,
+                      borderStyle: "none",
                       borderRadius: 9999,
                       padding: "10px 24px",
                       cursor: "pointer",
@@ -2396,44 +3279,177 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
               {metaApiError && (
                 <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-100 flex items-start gap-3">
                   <div className="mt-0.5 text-red-500">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="12" y1="8" x2="12" y2="12"></line>
+                      <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <span className="font-bold text-red-800 text-sm">Meta API Error</span>
-                    <span className="text-red-600 text-sm leading-relaxed">{metaApiError}</span>
+                    <span className="font-bold text-red-800 text-sm">
+                      Meta API Error
+                    </span>
+                    <span className="text-red-600 text-sm leading-relaxed">
+                      {metaApiError}
+                    </span>
                   </div>
                 </div>
               )}
 
               {/* KONEKSI PLATFORM - Minimalist Pills */}
               <div className="flex flex-col gap-3 mb-8">
-                <span className="text-xs font-bold text-[#111827]/40 uppercase tracking-wider">
-                  Platform Integrations
-                </span>
-                <div className="flex items-center gap-3 flex-wrap">
-                  {PLATFORMS.filter((p) => p.id !== "all").map((p) => {
-                    const isConn = connectedPlatforms.includes(p.id);
-                    return (
-                      <div
-                        key={p.id}
-                        onClick={() => toggleConnection(p.id)}
-                        className={`group relative flex items-center gap-3 p-1.5 pr-4 rounded-full cursor-pointer transition-all duration-300 ${
-                          isConn
-                            ? "bg-white border border-black/5 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:border-red-200 hover:shadow-md hover:bg-red-50/50"
-                            : "bg-black/[0.02] border border-black/5 hover:bg-black/[0.04] hover:border-black/10"
-                        }`}
-                      >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-[#111827]/40 uppercase tracking-wider">
+                    {lang === "id"
+                      ? "Integrasi Platform"
+                      : "Platform Integrations"}
+                  </span>
+                  {isMobileHubAi && (
+                    <span className="text-[10px] font-bold text-gray-400">
+                      {connectedPlatforms.length} /{" "}
+                      {PLATFORMS.filter((p) => p.id !== "all").length} Connected
+                    </span>
+                  )}
+                </div>
+
+                {isMobileHubAi ? (
+                  /* BEAUTIFUL MOBILE GRID - 2 columns, clean, elegant cards with perfect touch height and clear connection states */
+                  <div className="grid grid-cols-2 gap-3">
+                    {PLATFORMS.filter((p) => p.id !== "all").map((p) => {
+                      const isConn = connectedPlatforms.includes(p.id);
+                      return (
                         <div
-                          className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors duration-300 ${
+                          key={p.id}
+                          onClick={() => toggleConnection(p.id)}
+                          className={`relative flex flex-col justify-between p-4 rounded-2xl cursor-pointer transition-all duration-300 active:scale-95 select-none border min-h-[105px] ${
                             isConn
-                              ? "text-white group-hover:!bg-red-500 group-hover:text-white"
-                              : "bg-white text-[#111827]/40 shadow-sm"
+                              ? "bg-white border-black/[0.04] shadow-[0_4px_16px_rgba(0,0,0,0.03)]"
+                              : "bg-black/[0.02] border-black/[0.03]"
                           }`}
-                          style={isConn ? { backgroundColor: p.color } : {}}
                         >
-                          {isConn ? (
-                            <>
-                              <div className="group-hover:hidden flex items-center justify-center w-full h-full">
+                          {/* Top row: Icon & Connection Status Dot */}
+                          <div className="flex items-center justify-between w-full">
+                            <div
+                              className="w-9 h-9 rounded-full flex items-center justify-center text-white shadow-sm"
+                              style={{
+                                backgroundColor: isConn
+                                  ? p.color
+                                  : "rgba(17,24,39,0.06)",
+                              }}
+                            >
+                              <div className="flex items-center justify-center text-white">
+                                {typeof p.icon === "string" ? (
+                                  <span className="text-[10px] font-extrabold text-white">
+                                    {p.icon}
+                                  </span>
+                                ) : (
+                                  React.cloneElement(
+                                    p.icon as React.ReactElement<any>,
+                                    {
+                                      size: 16,
+                                      color: isConn ? "#FFFFFF" : "#4B5563",
+                                    },
+                                  )
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Status indicator badge/dot */}
+                            <span
+                              className={`text-[9px] font-extrabold px-2 py-0.5 rounded-full ${
+                                isConn
+                                  ? "bg-green-50 text-green-600 border border-green-100/30"
+                                  : "bg-gray-100 text-gray-500"
+                              }`}
+                            >
+                              {isConn
+                                ? lang === "id"
+                                  ? "Aktif"
+                                  : "Connected"
+                                : lang === "id"
+                                  ? "Hubungkan"
+                                  : "Connect"}
+                            </span>
+                          </div>
+
+                          {/* Bottom part: Platform Name & Account Details */}
+                          <div className="mt-3 min-w-0">
+                            <div className="text-xs font-extrabold text-[#111827] truncate">
+                              {p.name}
+                            </div>
+                            <div className="text-[10px] text-gray-400 font-medium mt-0.5 truncate leading-tight">
+                              {isConn
+                                ? connectedAccountsData[p.id]?.accountName ||
+                                  "@" + p.id
+                                : lang === "id"
+                                  ? "Belum terhubung"
+                                  : "Not integrated"}
+                            </div>
+                          </div>
+
+                          {/* Action overlay text for disconnecting on tap if connected */}
+                          {isConn && (
+                            <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-red-50 flex items-center justify-center text-red-500 border border-red-100 opacity-0 active:opacity-100 transition-opacity">
+                              <X size={10} strokeWidth={3} />
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  /* DESKTOP VIEW - Kept exactly as original to satisfy strict constraints */
+                  <div className="flex items-center gap-3 flex-wrap">
+                    {PLATFORMS.filter((p) => p.id !== "all").map((p) => {
+                      const isConn = connectedPlatforms.includes(p.id);
+                      return (
+                        <div
+                          key={p.id}
+                          onClick={() => toggleConnection(p.id)}
+                          className={`group relative flex items-center gap-3 p-1.5 pr-4 rounded-full cursor-pointer transition-all duration-300 ${
+                            isConn
+                              ? "bg-white border border-black/5 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:border-red-200 hover:shadow-md hover:bg-red-50/50"
+                              : "bg-black/[0.02] border border-black/5 hover:bg-black/[0.04] hover:border-black/10"
+                          }`}
+                        >
+                          <div
+                            className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors duration-300 ${
+                              isConn
+                                ? "text-white group-hover:!bg-red-500 group-hover:text-white"
+                                : "bg-white text-[#111827]/40 shadow-sm"
+                            }`}
+                            style={isConn ? { backgroundColor: p.color } : {}}
+                          >
+                            {isConn ? (
+                              <>
+                                <div className="group-hover:hidden flex items-center justify-center w-full h-full">
+                                  {typeof p.icon === "string" ? (
+                                    <span className="text-[10px] font-extrabold">
+                                      {p.icon}
+                                    </span>
+                                  ) : (
+                                    React.cloneElement(
+                                      p.icon as React.ReactElement<any>,
+                                      { size: 14 },
+                                    )
+                                  )}
+                                </div>
+                                <div className="hidden group-hover:flex items-center justify-center w-full h-full">
+                                  <X size={14} strokeWidth={3} />
+                                </div>
+                              </>
+                            ) : (
+                              <div className="flex items-center justify-center w-full h-full">
                                 {typeof p.icon === "string" ? (
                                   <span className="text-[10px] font-extrabold">
                                     {p.icon}
@@ -2445,55 +3461,66 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                                   )
                                 )}
                               </div>
-                              <div className="hidden group-hover:flex items-center justify-center w-full h-full">
-                                <X size={14} strokeWidth={3} />
-                              </div>
-                            </>
-                          ) : (
-                            <div className="flex items-center justify-center w-full h-full">
-                              {typeof p.icon === "string" ? (
-                                <span className="text-[10px] font-extrabold">
-                                  {p.icon}
-                                </span>
-                              ) : (
-                                React.cloneElement(
-                                  p.icon as React.ReactElement<any>,
-                                  { size: 14 },
-                                )
-                              )}
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex flex-col justify-center">
-                          <span
-                            className={`text-sm font-semibold transition-colors duration-300 ${
-                              isConn
-                                ? "text-[#111827] group-hover:text-red-600"
-                                : "text-[#111827]/60 group-hover:text-[#111827]/90"
-                            }`}
-                          >
-                            {isConn ? (connectedAccountsData[p.id]?.accountName || p.name) : `Connect ${p.name}`}
-                          </span>
-                          {isConn && connectedAccountsData[p.id]?.accountName && (
-                            <span className="text-[10px] text-[#111827]/50 font-medium -mt-0.5 group-hover:text-red-400 transition-colors">
-                              {p.name}
+                            )}
+                          </div>
+                          <div className="flex flex-col justify-center">
+                            <span
+                              className={`text-sm font-semibold transition-colors duration-300 ${
+                                isConn
+                                  ? "text-[#111827] group-hover:text-red-600"
+                                  : "text-[#111827]/60 group-hover:text-[#111827]/90"
+                              }`}
+                            >
+                              {isConn
+                                ? connectedAccountsData[p.id]?.accountName ||
+                                  p.name
+                                : `Connect ${p.name}`}
                             </span>
-                          )}
+                            {isConn &&
+                              connectedAccountsData[p.id]?.accountName && (
+                                <span className="text-[10px] text-[#111827]/50 font-medium -mt-0.5 group-hover:text-red-400 transition-colors">
+                                  {p.name}
+                                </span>
+                              )}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               <div className="flex flex-col gap-3 mb-8 bg-blue-50/50 p-5 rounded-2xl border border-blue-100">
                 <div className="flex items-center justify-between">
                   <div className="flex flex-col">
                     <span className="text-sm font-bold text-[#111827] flex items-center gap-2">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={isDiagnosing ? "animate-spin text-blue-600" : "text-blue-600"}><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21v-5h5"/></svg>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className={
+                          isDiagnosing
+                            ? "animate-spin text-blue-600"
+                            : "text-blue-600"
+                        }
+                      >
+                        <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                        <path d="M3 3v5h5" />
+                        <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+                        <path d="M16 21v-5h5" />
+                      </svg>
                       System Connection Diagnostic
                     </span>
-                    <span className="text-xs text-[#111827]/60">Cek apakah token akses sosial media Anda masih valid atau sudah expired</span>
+                    <span className="text-xs text-[#111827]/60">
+                      Cek apakah token akses sosial media Anda masih valid atau
+                      sudah expired
+                    </span>
                   </div>
                   <button
                     onClick={runDiagnostic}
@@ -2503,20 +3530,34 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                     {isDiagnosing ? "Memeriksa..." : "Test Koneksi"}
                   </button>
                 </div>
-                
+
                 {Object.keys(diagnosticResult).length > 0 && (
                   <div className="flex flex-col gap-2 mt-2">
-                    {Object.entries(diagnosticResult).map(([plat, res]: [string, any]) => (
-                      <div key={plat} className={`text-xs p-3 rounded-lg border ${res.status === 'success' ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'}`}>
-                        <span className="font-bold capitalize">{plat === 'all' ? 'System' : plat}: </span>
-                        <span>{res.message}</span>
-                        {res.status === 'error' && res.message.includes('token') && (
-                          <div className="mt-2 font-semibold text-red-900 bg-red-100/50 p-2 rounded-md">
-                            {lang === "id" ? "💡 Solusi: Token otorisasi sudah kadaluarsa (expired) atau tidak valid. Silakan klik icon " + plat + " di atas untuk \"Disconnect\", lalu klik lagi untuk \"Connect\" ulang agar mendapatkan token yang baru." : "💡 Solution: Authorization token is expired or invalid. Please click the " + plat + " icon above to \"Disconnect\", then click again to \"Connect\" to get a new token."}
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                    {Object.entries(diagnosticResult).map(
+                      ([plat, res]: [string, any]) => (
+                        <div
+                          key={plat}
+                          className={`text-xs p-3 rounded-lg border ${res.status === "success" ? "bg-green-50 border-green-200 text-green-800" : "bg-red-50 border-red-200 text-red-800"}`}
+                        >
+                          <span className="font-bold capitalize">
+                            {plat === "all" ? "System" : plat}:{" "}
+                          </span>
+                          <span>{res.message}</span>
+                          {res.status === "error" &&
+                            res.message.includes("token") && (
+                              <div className="mt-2 font-semibold text-red-900 bg-red-100/50 p-2 rounded-md">
+                                {lang === "id"
+                                  ? "💡 Solusi: Token otorisasi sudah kadaluarsa (expired) atau tidak valid. Silakan klik icon " +
+                                    plat +
+                                    ' di atas untuk "Disconnect", lalu klik lagi untuk "Connect" ulang agar mendapatkan token yang baru.'
+                                  : "💡 Solution: Authorization token is expired or invalid. Please click the " +
+                                    plat +
+                                    ' icon above to "Disconnect", then click again to "Connect" to get a new token.'}
+                              </div>
+                            )}
+                        </div>
+                      ),
+                    )}
                   </div>
                 )}
               </div>
@@ -2532,15 +3573,17 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
               <div
                 style={{
                   display: "flex",
+                  flexDirection: isMobileHubAi ? "column" : "row",
                   justifyContent: "space-between",
-                  alignItems: "center",
+                  alignItems: isMobileHubAi ? "stretch" : "center",
+                  gap: isMobileHubAi ? 16 : 24,
                   marginBottom: 24,
                 }}
               >
                 <div>
                   <h2
                     style={{
-                      fontSize: 28,
+                      fontSize: isMobileHubAi ? 24 : 28,
                       fontWeight: 800,
                       color: "#2C2016",
                       margin: 0,
@@ -2550,7 +3593,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                   </h2>
                   <p
                     style={{
-                      fontSize: 14,
+                      fontSize: isMobileHubAi ? 13 : 14,
                       color: "rgba(44,32,22,0.5)",
                       margin: "4px 0 0",
                       fontWeight: 600,
@@ -2559,19 +3602,45 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                     Data mendalam dengan AI Analysis.
                   </p>
                 </div>
-                <div style={{ display: "flex", gap: 12 }}>
-                  <CustomDropdown
-                    value={analyticsPlatform}
-                    options={PLATFORMS}
-                    onChange={setAnalyticsPlatform}
-                    pill={true}
-                  />
-                  <CustomDropdown
-                    value={analyticsTimeRange}
-                    options={DASHBOARD_TIME_RANGES}
-                    onChange={setAnalyticsTimeRange}
-                    pill={true}
-                  />
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: isMobileHubAi ? "column" : "row",
+                    gap: isMobileHubAi ? 8 : 12,
+                    width: isMobileHubAi ? "100%" : "auto",
+                  }}
+                >
+                  {isMobileHubAi ? (
+                    <>
+                      <MobileStepper
+                        value={analyticsPlatform}
+                        options={PLATFORMS}
+                        onChange={setAnalyticsPlatform}
+                        prefix="Platform"
+                      />
+                      <MobileStepper
+                        value={analyticsTimeRange}
+                        options={DASHBOARD_TIME_RANGES}
+                        onChange={setAnalyticsTimeRange}
+                        prefix="Rentang"
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <CustomDropdown
+                        value={analyticsPlatform}
+                        options={PLATFORMS}
+                        onChange={setAnalyticsPlatform}
+                        pill={true}
+                      />
+                      <CustomDropdown
+                        value={analyticsTimeRange}
+                        options={DASHBOARD_TIME_RANGES}
+                        onChange={setAnalyticsTimeRange}
+                        pill={true}
+                      />
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -2648,7 +3717,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                       background: "rgba(255,255,255,0.8)",
                       borderRadius: 24,
                       padding: 24,
-                      borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(0,0,0,0.03)",
+                      borderWidth: "1px",
+                      borderStyle: "solid",
+                      borderColor: "rgba(0,0,0,0.03)",
                       boxShadow: "0 4px 16px rgba(0,0,0,0.02)",
                     }}
                   >
@@ -2695,18 +3766,22 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
               <div
                 style={{
                   background: "rgba(255,255,255,0.8)",
-                  borderRadius: 32,
-                  borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(0,0,0,0.03)",
+                  borderRadius: isMobileHubAi ? 16 : 32,
+                  borderWidth: "1px",
+                  borderStyle: "solid",
+                  borderColor: "rgba(0,0,0,0.03)",
                   boxShadow: "0 8px 32px rgba(0,0,0,0.02)",
-                  padding: 32,
+                  padding: isMobileHubAi ? 16 : 32,
                   marginBottom: 24,
                 }}
               >
                 <div
                   style={{
                     display: "flex",
+                    flexDirection: isMobileHubAi ? "column" : "row",
                     justifyContent: "space-between",
-                    alignItems: "center",
+                    alignItems: isMobileHubAi ? "stretch" : "center",
+                    gap: isMobileHubAi ? 12 : 24,
                     marginBottom: 24,
                   }}
                 >
@@ -2717,11 +3792,27 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                         ?.label
                     }
                   </h3>
-                  <CustomDropdown
-                    value={analyticsMetric}
-                    options={ANALYTICS_METRICS}
-                    onChange={setAnalyticsMetric}
-                  />
+                  <div
+                    style={{
+                      width: isMobileHubAi ? "100%" : "auto",
+                      display: "flex",
+                    }}
+                  >
+                    {isMobileHubAi ? (
+                      <MobileStepper
+                        value={analyticsMetric}
+                        options={ANALYTICS_METRICS}
+                        onChange={setAnalyticsMetric}
+                        prefix="Metrik"
+                      />
+                    ) : (
+                      <CustomDropdown
+                        value={analyticsMetric}
+                        options={ANALYTICS_METRICS}
+                        onChange={setAnalyticsMetric}
+                      />
+                    )}
+                  </div>
                 </div>
                 <div style={{ height: 300, width: "100%" }}>
                   <ResponsiveContainer>
@@ -2756,7 +3847,8 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                       <RechartsTooltip
                         contentStyle={{
                           borderRadius: 12,
-                          borderWidth: 0, borderStyle: "none",
+                          borderWidth: 0,
+                          borderStyle: "none",
                           boxShadow: "0 5px 20px rgba(0,0,0,0.1)",
                           fontWeight: 700,
                         }}
@@ -2838,7 +3930,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "2fr 1fr",
+                  gridTemplateColumns: isMobileHubAi ? "1fr" : "2fr 1fr",
                   gap: 20,
                   marginBottom: 24,
                 }}
@@ -2846,28 +3938,48 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                 <div
                   style={{
                     background: "rgba(255,255,255,0.8)",
-                    borderRadius: 32,
-                    padding: 32,
-                    borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(0,0,0,0.03)",
+                    borderRadius: isMobileHubAi ? 16 : 32,
+                    padding: isMobileHubAi ? 16 : 32,
+                    borderWidth: "1px",
+                    borderStyle: "solid",
+                    borderColor: "rgba(0,0,0,0.03)",
                     boxShadow: "0 8px 32px rgba(0,0,0,0.02)",
                   }}
                 >
                   <div
                     style={{
                       display: "flex",
+                      flexDirection: isMobileHubAi ? "column" : "row",
                       justifyContent: "space-between",
-                      alignItems: "center",
+                      alignItems: isMobileHubAi ? "stretch" : "center",
+                      gap: isMobileHubAi ? 12 : 20,
                       marginBottom: 20,
                     }}
                   >
                     <h3 style={{ fontSize: 18, fontWeight: 800, margin: 0 }}>
                       Data Audiens
                     </h3>
-                    <CustomDropdown
-                      value={audiencePlatform}
-                      options={PLATFORMS}
-                      onChange={setAudiencePlatform}
-                    />
+                    <div
+                      style={{
+                        width: isMobileHubAi ? "100%" : "auto",
+                        display: "flex",
+                      }}
+                    >
+                      {isMobileHubAi ? (
+                        <MobileStepper
+                          value={audiencePlatform}
+                          options={PLATFORMS}
+                          onChange={setAudiencePlatform}
+                          prefix="Platform"
+                        />
+                      ) : (
+                        <CustomDropdown
+                          value={audiencePlatform}
+                          options={PLATFORMS}
+                          onChange={setAudiencePlatform}
+                        />
+                      )}
+                    </div>
                   </div>
                   <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
                     <div style={{ flex: 1, minWidth: 200 }}>
@@ -3067,7 +4179,8 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               contentStyle={{
                                 borderRadius: 8,
                                 fontWeight: 700,
-                                borderWidth: 0, borderStyle: "none",
+                                borderWidth: 0,
+                                borderStyle: "none",
                                 boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
                               }}
                             />
@@ -3095,9 +4208,11 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                 <div
                   style={{
                     background: "rgba(var(--theme-primary-rgb), 0.05)",
-                    borderRadius: 32,
-                    padding: 32,
-                    borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(var(--theme-primary-rgb), 0.1)",
+                    borderRadius: isMobileHubAi ? 16 : 32,
+                    padding: isMobileHubAi ? 16 : 32,
+                    borderWidth: "1px",
+                    borderStyle: "solid",
+                    borderColor: "rgba(var(--theme-primary-rgb), 0.1)",
                     display: "flex",
                     flexDirection: "column",
                   }}
@@ -3131,7 +4246,8 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                     style={{
                       background: "var(--theme-primary)",
                       color: "white",
-                      borderWidth: 0, borderStyle: "none",
+                      borderWidth: 0,
+                      borderStyle: "none",
                       padding: "12px 16px",
                       borderRadius: 12,
                       fontSize: 13,
@@ -3181,28 +4297,51 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                   background: "white",
                   borderRadius: 20,
                   padding: 24,
-                  borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(44,32,22,0.05)",
+                  borderWidth: "1px",
+                  borderStyle: "solid",
+                  borderColor: "rgba(44,32,22,0.05)",
                 }}
               >
                 <div
                   style={{
                     display: "flex",
+                    flexDirection: isMobileHubAi ? "column" : "row",
                     justifyContent: "space-between",
-                    alignItems: "center",
+                    alignItems: isMobileHubAi ? "stretch" : "center",
+                    gap: isMobileHubAi ? 12 : 24,
                     marginBottom: 24,
                   }}
                 >
                   <h3 style={{ fontSize: 18, fontWeight: 800, margin: 0 }}>
                     Best Time to Post (Heatmap)
                   </h3>
-                  <CustomDropdown
-                    value={heatmapMetric}
-                    options={[
-                      { id: "views", label: "Berdasarkan Views" },
-                      { id: "engagement", label: "Berdasarkan Engagement" },
-                    ]}
-                    onChange={setHeatmapMetric}
-                  />
+                  <div
+                    style={{
+                      width: isMobileHubAi ? "100%" : "auto",
+                      display: "flex",
+                    }}
+                  >
+                    {isMobileHubAi ? (
+                      <MobileStepper
+                        value={heatmapMetric}
+                        options={[
+                          { id: "views", label: "Berdasarkan Views" },
+                          { id: "engagement", label: "Berdasarkan Engagement" },
+                        ]}
+                        onChange={setHeatmapMetric}
+                        prefix="Metrik"
+                      />
+                    ) : (
+                      <CustomDropdown
+                        value={heatmapMetric}
+                        options={[
+                          { id: "views", label: "Berdasarkan Views" },
+                          { id: "engagement", label: "Berdasarkan Engagement" },
+                        ]}
+                        onChange={setHeatmapMetric}
+                      />
+                    )}
+                  </div>
                 </div>
                 <HeatmapMock />
               </div>
@@ -3254,7 +4393,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                       color: "#111827",
                       borderRadius: 8,
                       padding: "8px 16px",
-                      borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(0,0,0,0.1)",
+                      borderWidth: "1px",
+                      borderStyle: "solid",
+                      borderColor: "rgba(0,0,0,0.1)",
                       fontWeight: 600,
                       cursor: "pointer",
                       display: "flex",
@@ -3271,7 +4412,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                       color: "#111827",
                       borderRadius: 8,
                       padding: "8px 16px",
-                      borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(0,0,0,0.1)",
+                      borderWidth: "1px",
+                      borderStyle: "solid",
+                      borderColor: "rgba(0,0,0,0.1)",
                       fontWeight: 600,
                       cursor: "pointer",
                       display: "flex",
@@ -3288,7 +4431,8 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                       color: "white",
                       borderRadius: 8,
                       padding: "8px 16px",
-                      borderWidth: 0, borderStyle: "none",
+                      borderWidth: 0,
+                      borderStyle: "none",
                       fontWeight: 600,
                       cursor: "pointer",
                       display: "flex",
@@ -3348,22 +4492,56 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                   gap: 16,
                 }}
               >
-                <div style={{ display: "flex", gap: 12 }}>
-                  <CustomDropdown
-                    value={contentPlatform}
-                    options={PLATFORMS}
-                    onChange={setContentPlatform}
-                  />
-                  <CustomDropdown
-                    value={"Post type"}
-                    options={[{ id: "Post type", label: "Post type" }]}
-                    onChange={() => {}}
-                  />
-                  <CustomDropdown
-                    value={"Filter"}
-                    options={[{ id: "Filter", label: "Filter" }]}
-                    onChange={() => {}}
-                  />
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: isMobileHubAi ? "column" : "row",
+                    gap: isMobileHubAi ? 8 : 12,
+                    width: isMobileHubAi ? "100%" : "auto",
+                  }}
+                >
+                  {isMobileHubAi ? (
+                    <MobileStepper
+                      value={contentPlatform}
+                      options={PLATFORMS}
+                      onChange={setContentPlatform}
+                      prefix="Platform"
+                    />
+                  ) : (
+                    <CustomDropdown
+                      value={contentPlatform}
+                      options={PLATFORMS}
+                      onChange={setContentPlatform}
+                    />
+                  )}
+                  {isMobileHubAi ? (
+                    <MobileStepper
+                      value={"Post type"}
+                      options={[{ id: "Post type", label: "Post type" }]}
+                      onChange={() => {}}
+                      prefix="Tipe"
+                    />
+                  ) : (
+                    <CustomDropdown
+                      value={"Post type"}
+                      options={[{ id: "Post type", label: "Post type" }]}
+                      onChange={() => {}}
+                    />
+                  )}
+                  {isMobileHubAi ? (
+                    <MobileStepper
+                      value={"Filter"}
+                      options={[{ id: "Filter", label: "Filter" }]}
+                      onChange={() => {}}
+                      prefix="Filter"
+                    />
+                  ) : (
+                    <CustomDropdown
+                      value={"Filter"}
+                      options={[{ id: "Filter", label: "Filter" }]}
+                      onChange={() => {}}
+                    />
+                  )}
                   <div style={{ position: "relative" }}>
                     <Search
                       size={14}
@@ -3381,7 +4559,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                       style={{
                         padding: "8px 16px 8px 36px",
                         borderRadius: 8,
-                        borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(0,0,0,0.1)",
+                        borderWidth: "1px",
+                        borderStyle: "solid",
+                        borderColor: "rgba(0,0,0,0.1)",
                         fontSize: 13,
                         width: 220,
                       }}
@@ -3393,7 +4573,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                     style={{
                       padding: "8px 16px",
                       background: "white",
-                      borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(0,0,0,0.1)",
+                      borderWidth: "1px",
+                      borderStyle: "solid",
+                      borderColor: "rgba(0,0,0,0.1)",
                       borderRadius: 8,
                       fontSize: 13,
                       fontWeight: 600,
@@ -3409,7 +4591,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                     style={{
                       padding: "8px 16px",
                       background: "white",
-                      borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(0,0,0,0.1)",
+                      borderWidth: "1px",
+                      borderStyle: "solid",
+                      borderColor: "rgba(0,0,0,0.1)",
                       borderRadius: 8,
                       fontSize: 13,
                       fontWeight: 600,
@@ -3427,7 +4611,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                 style={{
                   background: "white",
                   borderRadius: 20,
-                  borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(44,32,22,0.05)",
+                  borderWidth: "1px",
+                  borderStyle: "solid",
+                  borderColor: "rgba(44,32,22,0.05)",
                   overflowX: "auto",
                 }}
               >
@@ -3461,7 +4647,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                             width: 16,
                             height: 16,
                             borderRadius: 4,
-                            borderWidth: "1px", borderStyle: "solid", borderColor: "#ccc",
+                            borderWidth: "1px",
+                            borderStyle: "solid",
+                            borderColor: "#ccc",
                           }}
                         />
                       </th>
@@ -3639,7 +4827,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               width: 16,
                               height: 16,
                               borderRadius: 4,
-                              borderWidth: "1px", borderStyle: "solid", borderColor: "#ccc",
+                              borderWidth: "1px",
+                              borderStyle: "solid",
+                              borderColor: "#ccc",
                             }}
                           />
                         </td>
@@ -3837,7 +5027,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               <button
                                 style={{
                                   background: "white",
-                                  borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(0,0,0,0.1)",
+                                  borderWidth: "1px",
+                                  borderStyle: "solid",
+                                  borderColor: "rgba(0,0,0,0.1)",
                                   borderRadius: 6,
                                   padding: "4px 12px",
                                   fontSize: 13,
@@ -3851,7 +5043,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               <button
                                 style={{
                                   background: "white",
-                                  borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(0,0,0,0.1)",
+                                  borderWidth: "1px",
+                                  borderStyle: "solid",
+                                  borderColor: "rgba(0,0,0,0.1)",
                                   borderRadius: 6,
                                   padding: "4px 8px",
                                   color: "#111827",
@@ -3957,8 +5151,10 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
               <div
                 style={{
                   display: "flex",
+                  flexDirection: isMobileHubAi ? "column" : "row",
                   justifyContent: "space-between",
-                  alignItems: "center",
+                  alignItems: isMobileHubAi ? "stretch" : "center",
+                  gap: isMobileHubAi ? 16 : 24,
                   marginBottom: 24,
                 }}
               >
@@ -3971,7 +5167,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                       margin: 0,
                     }}
                   >
-                    {lang === "id" ? "Kalender Konten Sosial" : "Social Content Calendar"}
+                    {lang === "id"
+                      ? "Kalender Konten Sosial"
+                      : "Social Content Calendar"}
                   </h2>
                   <p
                     style={{
@@ -3981,10 +5179,19 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                       fontWeight: 600,
                     }}
                   >
-                    {lang === "id" ? "Lihat semua postingan yang terpublikasi atau jadwalkan plan." : "View all published posts or schedule a plan."}
+                    {lang === "id"
+                      ? "Lihat semua postingan yang terpublikasi atau jadwalkan plan."
+                      : "View all published posts or schedule a plan."}
                   </p>
                 </div>
-                <div style={{ display: "flex", gap: 12 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: isMobileHubAi ? "column" : "row",
+                    gap: isMobileHubAi ? 8 : 12,
+                    width: isMobileHubAi ? "100%" : "auto",
+                  }}
+                >
                   <button
                     onClick={() => {
                       alert(
@@ -3997,13 +5204,19 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                         {
                           day: Math.floor(Math.random() * 28 + 1),
                           type: "tt",
-                          title: lang === "id" ? "Ide Konten AI 1" : "AI Content Idea 1",
+                          title:
+                            lang === "id"
+                              ? "Ide Konten AI 1"
+                              : "AI Content Idea 1",
                           time: "10:00",
                         },
                         {
                           day: Math.floor(Math.random() * 28 + 1),
                           type: "ig",
-                          title: lang === "id" ? "Ide Konten AI 2" : "AI Content Idea 2",
+                          title:
+                            lang === "id"
+                              ? "Ide Konten AI 2"
+                              : "AI Content Idea 2",
                           time: "15:30",
                         },
                       ]);
@@ -4012,38 +5225,54 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                     style={{
                       background: "var(--theme-primary)",
                       color: "white",
-                      padding: "0 16px",
+                      padding: isMobileHubAi ? "12px 16px" : "0 16px",
                       borderRadius: 12,
                       fontWeight: 800,
-                      borderWidth: 0, borderStyle: "none",
+                      borderWidth: 0,
+                      borderStyle: "none",
                       cursor: "pointer",
                       display: "flex",
                       alignItems: "center",
+                      justifyContent: "center",
                       gap: 8,
                     }}
                   >
                     <Sparkles size={16} /> Auto-Plan AI
                   </button>
-                  <CustomDropdown
-                    value={contentPlatform}
-                    options={PLATFORMS}
-                    onChange={setContentPlatform}
-                  />
+                  {isMobileHubAi ? (
+                    <MobileStepper
+                      value={contentPlatform}
+                      options={PLATFORMS}
+                      onChange={setContentPlatform}
+                      prefix="Platform"
+                    />
+                  ) : (
+                    <CustomDropdown
+                      value={contentPlatform}
+                      options={PLATFORMS}
+                      onChange={setContentPlatform}
+                    />
+                  )}
                   <div
                     style={{
                       display: "flex",
                       alignItems: "center",
                       background: "white",
-                      borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(44,32,22,0.1)",
+                      borderWidth: "1px",
+                      borderStyle: "solid",
+                      borderColor: "rgba(44,32,22,0.1)",
                       borderRadius: 12,
-                      padding: 4,
+                      padding: isMobileHubAi ? "4px 8px" : 4,
+                      justifyContent: "space-between",
+                      width: isMobileHubAi ? "100%" : "auto",
                     }}
                   >
                     <button
                       className="hover-scale"
                       style={{
                         background: "transparent",
-                        borderWidth: 0, borderStyle: "none",
+                        borderWidth: 0,
+                        borderStyle: "none",
                         padding: 6,
                         cursor: "pointer",
                         display: "flex",
@@ -4058,6 +5287,8 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                         fontWeight: 800,
                         fontSize: 13,
                         padding: "0 12px",
+                        textAlign: "center",
+                        flex: isMobileHubAi ? 1 : "none",
                       }}
                     >
                       {lang === "id" ? "Agustus 2026" : "August 2026"}
@@ -4066,7 +5297,8 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                       className="hover-scale"
                       style={{
                         background: "transparent",
-                        borderWidth: 0, borderStyle: "none",
+                        borderWidth: 0,
+                        borderStyle: "none",
                         padding: 6,
                         cursor: "pointer",
                         display: "flex",
@@ -4093,15 +5325,17 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
               <div
                 style={{
                   display: "flex",
+                  flexDirection: isMobileHubAi ? "column" : "row",
                   justifyContent: "space-between",
-                  alignItems: "center",
+                  alignItems: isMobileHubAi ? "stretch" : "center",
+                  gap: isMobileHubAi ? 16 : 24,
                   marginBottom: 24,
                 }}
               >
                 <div>
                   <h2
                     style={{
-                      fontSize: 28,
+                      fontSize: isMobileHubAi ? 22 : 28,
                       fontWeight: 800,
                       color: "#2C2016",
                       margin: 0,
@@ -4111,7 +5345,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                   </h2>
                   <p
                     style={{
-                      fontSize: 14,
+                      fontSize: isMobileHubAi ? 13 : 14,
                       color: "rgba(44,32,22,0.5)",
                       margin: "4px 0 0",
                       fontWeight: 600,
@@ -4121,16 +5355,43 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                     realtime.
                   </p>
                 </div>
-                <CustomDropdown
-                  value={contentPlatform}
-                  options={PLATFORMS}
-                  onChange={setContentPlatform}
-                />
+                <div
+                  style={{
+                    width: isMobileHubAi ? "100%" : "auto",
+                    display: "flex",
+                  }}
+                >
+                  {isMobileHubAi ? (
+                    <MobileStepper
+                      value={contentPlatform}
+                      options={PLATFORMS}
+                      onChange={setContentPlatform}
+                      prefix="Platform"
+                    />
+                  ) : (
+                    <CustomDropdown
+                      value={contentPlatform}
+                      options={PLATFORMS}
+                      onChange={setContentPlatform}
+                    />
+                  )}
+                </div>
               </div>
 
-              <div style={{ display: "flex", gap: 12, marginBottom: 24 }}>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: isMobileHubAi ? "column" : "row",
+                  gap: isMobileHubAi ? 8 : 12,
+                  marginBottom: 24,
+                }}
+              >
                 <input
-                  placeholder="Ketik username kompetitor (contoh: @kompetitor)..."
+                  placeholder={
+                    isMobileHubAi
+                      ? "Username kompetitor (contoh: @kompetitor)..."
+                      : "Ketik username kompetitor (contoh: @kompetitor)..."
+                  }
                   value={compInput}
                   onChange={(e) => setCompInput(e.target.value)}
                   onKeyDown={(e) => {
@@ -4140,10 +5401,13 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                     flex: 1,
                     padding: "12px 16px",
                     borderRadius: 12,
-                    borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(44,32,22,0.1)",
+                    borderWidth: "1px",
+                    borderStyle: "solid",
+                    borderColor: "rgba(44,32,22,0.1)",
                     fontSize: 14,
                     fontFamily: "inherit",
                     fontWeight: 500,
+                    outline: "none",
                   }}
                 />
                 <button
@@ -4153,22 +5417,33 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                   style={{
                     background: compLoading ? "rgba(44,32,22,0.5)" : "#2C2016",
                     color: "white",
-                    borderWidth: 0, borderStyle: "none",
-                    padding: "0 24px",
+                    borderWidth: 0,
+                    borderStyle: "none",
+                    padding: isMobileHubAi ? "12px 24px" : "0 24px",
+                    minHeight: 44,
                     borderRadius: 12,
                     fontWeight: 800,
                     cursor: compLoading ? "not-allowed" : "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
                   }}
                 >
-                  {compLoading ? (lang === "id" ? "Menganalisis..." : "Analyzing...") : (lang === "id" ? "Tambah Kompetitor" : "Add Competitor")}
+                  {compLoading
+                    ? lang === "id"
+                      ? "Menganalisis..."
+                      : "Analyzing..."
+                    : lang === "id"
+                      ? "Tambah Kompetitor"
+                      : "Add Competitor"}
                 </button>
               </div>
 
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: 20,
+                  gridTemplateColumns: isMobileHubAi ? "1fr" : "1fr 1fr",
+                  gap: isMobileHubAi ? 16 : 20,
                 }}
               >
                 {competitors.map((comp: any, idx: number) => (
@@ -4178,8 +5453,10 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                     style={{
                       background: "white",
                       borderRadius: 20,
-                      padding: 24,
-                      borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(44,32,22,0.05)",
+                      padding: isMobileHubAi ? 16 : 24,
+                      borderWidth: "1px",
+                      borderStyle: "solid",
+                      borderColor: "rgba(44,32,22,0.05)",
                     }}
                   >
                     <div
@@ -4187,53 +5464,93 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                         display: "flex",
                         justifyContent: "space-between",
                         alignItems: "center",
-                        marginBottom: 20,
+                        marginBottom: isMobileHubAi ? 12 : 20,
                       }}
                     >
                       <div
                         style={{
                           display: "flex",
                           alignItems: "center",
-                          gap: 12,
+                          gap: isMobileHubAi ? 8 : 12,
+                          minWidth: 0,
                         }}
                       >
                         <div
                           style={{
-                            width: 40,
-                            height: 40,
-                            borderRadius: 20,
+                            width: isMobileHubAi ? 32 : 40,
+                            height: isMobileHubAi ? 32 : 40,
+                            borderRadius: isMobileHubAi ? 16 : 20,
                             background: "#FAFAFA",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
+                            flexShrink: 0,
                           }}
                         >
-                          <User size={20} color="rgba(44,32,22,0.3)" />
+                          <User
+                            size={isMobileHubAi ? 16 : 20}
+                            color="rgba(44,32,22,0.3)"
+                          />
                         </div>
                         <h3
-                          style={{ fontSize: 18, fontWeight: 800, margin: 0 }}
+                          style={{
+                            fontSize: isMobileHubAi ? 15 : 18,
+                            fontWeight: 800,
+                            margin: 0,
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                          }}
+                          title={comp.username}
                         >
                           {comp.username}
                         </h3>
                       </div>
                       <div
                         style={{
-                          fontSize: 12,
-                          fontWeight: 800,
-                          color: "#2D7A5E",
-                          background: "#E5F4EE",
-                          padding: "6px 10px",
-                          borderRadius: 8,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                          flexShrink: 0,
                         }}
                       >
-                        ER: {comp.er}
+                        <div
+                          style={{
+                            fontSize: isMobileHubAi ? 11 : 12,
+                            fontWeight: 800,
+                            color: "#2D7A5E",
+                            background: "#E5F4EE",
+                            padding: isMobileHubAi ? "4px 8px" : "6px 10px",
+                            borderRadius: 8,
+                          }}
+                        >
+                          ER: {comp.er}
+                        </div>
+                        <button
+                          onClick={() => removeCompetitor(idx)}
+                          style={{
+                            background: "rgba(239, 68, 68, 0.05)",
+                            border: "none",
+                            padding: isMobileHubAi ? "6px" : "8px",
+                            borderRadius: 8,
+                            cursor: "pointer",
+                            color: "#EF4444",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            transition: "all 0.2s ease",
+                          }}
+                          title="Hapus Kompetitor"
+                        >
+                          <Trash2 size={isMobileHubAi ? 14 : 15} />
+                        </button>
                       </div>
                     </div>
                     <div
                       style={{
-                        fontSize: 13,
+                        fontSize: isMobileHubAi ? 12 : 13,
                         color: "rgba(44,32,22,0.5)",
-                        marginBottom: 16,
+                        marginBottom: isMobileHubAi ? 12 : 16,
                         fontWeight: 600,
                       }}
                     >
@@ -4244,9 +5561,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                     </div>
                     <h4
                       style={{
-                        fontSize: 14,
+                        fontSize: isMobileHubAi ? 13 : 14,
                         fontWeight: 800,
-                        marginBottom: 12,
+                        marginBottom: isMobileHubAi ? 8 : 12,
                       }}
                     >
                       Top 3 Konten Mereka
@@ -4256,38 +5573,48 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                         key={i}
                         style={{
                           display: "flex",
-                          gap: 12,
-                          marginBottom: 12,
-                          paddingBottom: 12,
+                          gap: isMobileHubAi ? 8 : 12,
+                          marginBottom: isMobileHubAi ? 10 : 12,
+                          paddingBottom: isMobileHubAi ? 10 : 12,
                           borderBottom: "1px solid rgba(44,32,22,0.05)",
                         }}
                       >
                         <div
                           style={{
-                            width: 60,
-                            height: 60,
+                            width: isMobileHubAi ? 50 : 60,
+                            height: isMobileHubAi ? 50 : 60,
                             borderRadius: 8,
                             background: "#f0f0f0",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
+                            flexShrink: 0,
                           }}
                         >
-                          <ImageIcon size={24} color="#ccc" />
+                          <ImageIcon
+                            size={isMobileHubAi ? 20 : 24}
+                            color="#ccc"
+                          />
                         </div>
-                        <div style={{ alignSelf: "center" }}>
+                        <div
+                          style={{ alignSelf: "center", minWidth: 0, flex: 1 }}
+                        >
                           <div
                             style={{
-                              fontSize: 13,
+                              fontSize: isMobileHubAi ? 12 : 13,
                               fontWeight: 800,
-                              marginBottom: 4,
+                              marginBottom: 2,
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
                             }}
+                            title={c.title}
                           >
                             {c.title}
                           </div>
                           <div
                             style={{
-                              fontSize: 11,
+                              fontSize: isMobileHubAi ? 10 : 11,
                               color: "rgba(44,32,22,0.5)",
                               fontWeight: 700,
                             }}
@@ -4304,26 +5631,33 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                     style={{
                       gridColumn: "1 / -1",
                       textAlign: "center",
-                      padding: 40,
+                      padding: isMobileHubAi ? "32px 16px" : 40,
                       background: "white",
                       borderRadius: 20,
-                      borderWidth: "1px", borderStyle: "dashed", borderColor: "rgba(44,32,22,0.2)",
+                      borderWidth: "1px",
+                      borderStyle: "dashed",
+                      borderColor: "rgba(44,32,22,0.2)",
                     }}
                   >
                     <Search
-                      size={48}
-                      style={{ opacity: 0.2, margin: "0 auto 16px" }}
+                      size={isMobileHubAi ? 36 : 48}
+                      style={{ opacity: 0.2, margin: "0 auto 12px" }}
                     />
                     <h3
-                      style={{ fontSize: 18, fontWeight: 800, marginBottom: 8 }}
+                      style={{
+                        fontSize: isMobileHubAi ? 16 : 18,
+                        fontWeight: 800,
+                        marginBottom: 8,
+                      }}
                     >
                       Belum Ada Kompetitor
                     </h3>
                     <p
                       style={{
-                        fontSize: 14,
+                        fontSize: isMobileHubAi ? 12 : 14,
                         color: "rgba(44,32,22,0.6)",
                         fontWeight: 500,
+                        margin: 0,
                       }}
                     >
                       Tambahkan link profile atau username kompetitor Anda untuk
@@ -4340,502 +5674,959 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              style={{ flex: 1, minHeight: 0, display: "flex", gap: 12 }}
+              style={{
+                flex: 1,
+                minHeight: 0,
+                display: "flex",
+                flexDirection: isMobileHubAi ? "column" : "row",
+                gap: isMobileHubAi ? 0 : 12,
+              }}
             >
-              <div
-                style={{
-                  width: 320,
-                  background: "rgba(255,255,255,0.8)",
-                  borderRadius: 32,
-                  borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(0,0,0,0.03)",
-                  boxShadow: "0 8px 32px rgba(0,0,0,0.02)",
-                  display: "flex",
-                  flexDirection: "column",
-                  overflow: "hidden",
-                  flexShrink: 0,
-                }}
-              >
+              {(!isMobileHubAi || (!selectedInboxMsg && !selectedComment)) && (
                 <div
                   style={{
-                    padding: "16px 16px 12px",
-                    borderBottom: "1px solid rgba(44,32,22,0.05)",
+                    width: isMobileHubAi ? "100%" : 320,
+                    background: "rgba(255,255,255,0.8)",
+                    borderRadius: isMobileHubAi ? 16 : 32,
+                    borderWidth: "1px",
+                    borderStyle: "solid",
+                    borderColor: "rgba(0,0,0,0.03)",
+                    boxShadow: "0 8px 32px rgba(0,0,0,0.02)",
+                    display: "flex",
+                    flexDirection: "column",
+                    overflow: "hidden",
+                    flexShrink: 0,
+                    flexGrow: isMobileHubAi ? 1 : 0,
+                    height: "100%",
                   }}
                 >
                   <div
                     style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      marginBottom: 12,
+                      padding: "16px 16px 12px",
+                      borderBottom: "1px solid rgba(44,32,22,0.05)",
                     }}
                   >
-                    <h3 style={{ fontSize: 16, fontWeight: 800, margin: 0 }}>
-                      Inbox
-                    </h3>
                     <div
                       style={{
                         display: "flex",
-                        gap: 4,
-                        background: "rgba(44,32,22,0.04)",
-                        padding: 4,
-                        borderRadius: 12,
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginBottom: 12,
                       }}
                     >
-                      <button
-                        onClick={() => {
-                          setInboxViewMode("dms");
-                          setSelectedComment(null);
-                        }}
+                      <h3 style={{ fontSize: 16, fontWeight: 800, margin: 0 }}>
+                        Inbox
+                      </h3>
+                      <div
                         style={{
-                          padding: "4px 10px",
-                          borderRadius: 8,
-                          fontSize: 11,
-                          fontWeight: 700,
-                          borderWidth: 0, borderStyle: "none",
-                          cursor: "pointer",
-                          background:
-                            inboxViewMode === "dms" ? "white" : "transparent",
-                          color:
-                            inboxViewMode === "dms"
-                              ? "black"
-                              : "rgba(44,32,22,0.6)",
-                          boxShadow:
-                            inboxViewMode === "dms"
-                              ? "0 2px 8px rgba(0,0,0,0.05)"
-                              : "none",
-                          transition: "all 0.2s",
+                          display: "flex",
+                          gap: 4,
+                          background: "rgba(44,32,22,0.04)",
+                          padding: 4,
+                          borderRadius: 12,
                         }}
                       >
-                        Messages
+                        <button
+                          onClick={() => {
+                            setInboxViewMode("dms");
+                            setSelectedComment(null);
+                          }}
+                          style={{
+                            padding: "4px 10px",
+                            borderRadius: 8,
+                            fontSize: 11,
+                            fontWeight: 700,
+                            borderWidth: 0,
+                            borderStyle: "none",
+                            cursor: "pointer",
+                            background:
+                              inboxViewMode === "dms" ? "white" : "transparent",
+                            color:
+                              inboxViewMode === "dms"
+                                ? "black"
+                                : "rgba(44,32,22,0.6)",
+                            boxShadow:
+                              inboxViewMode === "dms"
+                                ? "0 2px 8px rgba(0,0,0,0.05)"
+                                : "none",
+                            transition: "all 0.2s",
+                          }}
+                        >
+                          Messages
+                        </button>
+                        <button
+                          onClick={() => {
+                            setInboxViewMode("comments");
+                            setSelectedInboxMsg(null);
+                          }}
+                          style={{
+                            padding: "4px 10px",
+                            borderRadius: 8,
+                            fontSize: 11,
+                            fontWeight: 700,
+                            borderWidth: 0,
+                            borderStyle: "none",
+                            cursor: "pointer",
+                            background:
+                              inboxViewMode === "comments"
+                                ? "white"
+                                : "transparent",
+                            color:
+                              inboxViewMode === "comments"
+                                ? "black"
+                                : "rgba(44,32,22,0.6)",
+                            boxShadow:
+                              inboxViewMode === "comments"
+                                ? "0 2px 8px rgba(0,0,0,0.05)"
+                                : "none",
+                            transition: "all 0.2s",
+                          }}
+                        >
+                          Comments
+                        </button>
+                      </div>
+                    </div>
+
+                    <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+                      <button
+                        onClick={() => setInboxFilter("all")}
+                        className={`px-2.5 py-1 rounded-full text-[11px] font-bold transition-colors ${inboxFilter === "all" ? "bg-blue-50 text-blue-600" : "bg-transparent text-gray-600 hover:bg-gray-50"}`}
+                      >
+                        All messages
                       </button>
                       <button
-                        onClick={() => {
-                          setInboxViewMode("comments");
-                          setSelectedInboxMsg(null);
-                        }}
-                        style={{
-                          padding: "4px 10px",
-                          borderRadius: 8,
-                          fontSize: 11,
-                          fontWeight: 700,
-                          borderWidth: 0, borderStyle: "none",
-                          cursor: "pointer",
-                          background:
-                            inboxViewMode === "comments"
-                              ? "white"
-                              : "transparent",
-                          color:
-                            inboxViewMode === "comments"
-                              ? "black"
-                              : "rgba(44,32,22,0.6)",
-                          boxShadow:
-                            inboxViewMode === "comments"
-                              ? "0 2px 8px rgba(0,0,0,0.05)"
-                              : "none",
-                          transition: "all 0.2s",
-                        }}
+                        onClick={() => setInboxFilter("instagram")}
+                        className={`px-2.5 py-1 rounded-full text-[11px] font-bold transition-colors ${inboxFilter === "instagram" ? "bg-blue-50 text-blue-600" : "bg-transparent text-gray-600 hover:bg-gray-50"}`}
                       >
-                        Comments
+                        Instagram
+                      </button>
+                      <button
+                        onClick={() => setInboxFilter("tiktok")}
+                        className={`px-2.5 py-1 rounded-full text-[11px] font-bold transition-colors ${inboxFilter === "tiktok" ? "bg-blue-50 text-blue-600" : "bg-transparent text-gray-600 hover:bg-gray-50"}`}
+                      >
+                        TikTok
+                      </button>
+                    </div>
+
+                    <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+                      <div style={{ flex: 1, position: "relative" }}>
+                        <Search
+                          size={14}
+                          color="rgba(44,32,22,0.4)"
+                          style={{
+                            position: "absolute",
+                            left: 10,
+                            top: "50%",
+                            transform: "translateY(-50%)",
+                          }}
+                        />
+                        <input
+                          placeholder="Search"
+                          style={{
+                            width: "100%",
+                            padding: "6px 10px 6px 28px",
+                            borderRadius: 6,
+                            borderWidth: "1px",
+                            borderStyle: "solid",
+                            borderColor: "rgba(44,32,22,0.15)",
+                            fontSize: 12,
+                            fontFamily: "inherit",
+                            outline: "none",
+                          }}
+                        />
+                      </div>
+                      <button className="px-2 py-1 rounded-md border border-gray-200 text-xs font-semibold flex items-center gap-1.5 hover:bg-gray-50 text-gray-700">
+                        <Settings size={12} /> Manage
+                      </button>
+                    </div>
+
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: 12,
+                        alignItems: "center",
+                        borderBottom: "1px solid rgba(44,32,22,0.05)",
+                        paddingBottom: 8,
+                      }}
+                    >
+                      <span className="text-[11px] font-semibold text-gray-500 cursor-pointer hover:text-gray-800">
+                        Unread
+                      </span>
+                      <span className="text-[11px] font-semibold text-gray-500 cursor-pointer hover:text-gray-800">
+                        Priority
+                      </span>
+                      <span className="text-[11px] font-semibold text-gray-500 cursor-pointer hover:text-gray-800">
+                        Ad replies
+                      </span>
+                      <span className="text-[11px] font-semibold text-gray-500 cursor-pointer hover:text-gray-800">
+                        Follow up
+                      </span>
+                      <div style={{ flex: 1 }} />
+                      <button className="text-gray-500 hover:bg-gray-100 p-0.5 rounded-md cursor-pointer">
+                        <List size={12} />
                       </button>
                     </div>
                   </div>
-
-                  <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
-                    <button
-                      onClick={() => setInboxFilter("all")}
-                      className={`px-2.5 py-1 rounded-full text-[11px] font-bold transition-colors ${inboxFilter === "all" ? "bg-blue-50 text-blue-600" : "bg-transparent text-gray-600 hover:bg-gray-50"}`}
-                    >
-                      All messages
-                    </button>
-                    <button
-                      onClick={() => setInboxFilter("instagram")}
-                      className={`px-2.5 py-1 rounded-full text-[11px] font-bold transition-colors ${inboxFilter === "instagram" ? "bg-blue-50 text-blue-600" : "bg-transparent text-gray-600 hover:bg-gray-50"}`}
-                    >
-                      Instagram
-                    </button>
-                    <button
-                      onClick={() => setInboxFilter("tiktok")}
-                      className={`px-2.5 py-1 rounded-full text-[11px] font-bold transition-colors ${inboxFilter === "tiktok" ? "bg-blue-50 text-blue-600" : "bg-transparent text-gray-600 hover:bg-gray-50"}`}
-                    >
-                      TikTok
-                    </button>
-                  </div>
-
-                  <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-                    <div style={{ flex: 1, position: "relative" }}>
-                      <Search
-                        size={14}
-                        color="rgba(44,32,22,0.4)"
-                        style={{
-                          position: "absolute",
-                          left: 10,
-                          top: "50%",
-                          transform: "translateY(-50%)",
-                        }}
-                      />
-                      <input
-                        placeholder="Search"
-                        style={{
-                          width: "100%",
-                          padding: "6px 10px 6px 28px",
-                          borderRadius: 6,
-                          borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(44,32,22,0.15)",
-                          fontSize: 12,
-                          fontFamily: "inherit",
-                          outline: "none",
-                        }}
-                      />
-                    </div>
-                    <button className="px-2 py-1 rounded-md border border-gray-200 text-xs font-semibold flex items-center gap-1.5 hover:bg-gray-50 text-gray-700">
-                      <Settings size={12} /> Manage
-                    </button>
-                  </div>
-
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: 12,
-                      alignItems: "center",
-                      borderBottom: "1px solid rgba(44,32,22,0.05)",
-                      paddingBottom: 8,
-                    }}
-                  >
-                    <span className="text-[11px] font-semibold text-gray-500 cursor-pointer hover:text-gray-800">
-                      Unread
-                    </span>
-                    <span className="text-[11px] font-semibold text-gray-500 cursor-pointer hover:text-gray-800">
-                      Priority
-                    </span>
-                    <span className="text-[11px] font-semibold text-gray-500 cursor-pointer hover:text-gray-800">
-                      Ad replies
-                    </span>
-                    <span className="text-[11px] font-semibold text-gray-500 cursor-pointer hover:text-gray-800">
-                      Follow up
-                    </span>
-                    <div style={{ flex: 1 }} />
-                    <button className="text-gray-500 hover:bg-gray-100 p-0.5 rounded-md cursor-pointer">
-                      <List size={12} />
-                    </button>
-                  </div>
-                </div>
-                <div style={{ flex: 1, overflowY: "auto" }}>
-                  {inboxViewMode === "dms" ? (
-                    <>
-                      {inboxMessages.filter((m) =>
-                        inboxFilter === "all"
-                          ? true
-                          : m.platform === inboxFilter ||
-                            m.platform ===
-                              (inboxFilter === "instagram" ? "meta" : ""),
-                      ).length === 0 && (
-                        <div className="p-6 text-center text-gray-400 text-sm font-semibold">
-                          Belum ada pesan di kotak masuk ini.
-                        </div>
-                      )}
-                      {inboxMessages
-                        .filter((m) =>
+                  <div style={{ flex: 1, overflowY: "auto" }}>
+                    {inboxViewMode === "dms" ? (
+                      <>
+                        {inboxMessages.filter((m) =>
                           inboxFilter === "all"
                             ? true
                             : m.platform === inboxFilter ||
                               m.platform ===
                                 (inboxFilter === "instagram" ? "meta" : ""),
-                        )
-                        .map((msg, i) => (
-                          <div
-                            key={msg.id}
-                            onClick={() => setSelectedInboxMsg(msg)}
-                            className="hover-scale"
-                            style={{
-                              padding:
-                                selectedInboxMsg?.id === msg.id
-                                  ? "12px 16px 12px 12px"
-                                  : "12px 16px",
-                              borderBottom: "1px solid rgba(44,32,22,0.05)",
-                              borderLeft:
-                                selectedInboxMsg?.id === msg.id
-                                  ? "4px solid var(--theme-primary)"
-                                  : "4px solid transparent",
-                              cursor: "pointer",
-                              display: "flex",
-                              gap: 12,
-                              background:
-                                selectedInboxMsg?.id === msg.id
-                                  ? "rgba(44,32,22,0.03)"
-                                  : "transparent",
-                            }}
-                          >
+                        ).length === 0 && (
+                          <div className="p-6 text-center text-gray-400 text-sm font-semibold">
+                            Belum ada pesan di kotak masuk ini.
+                          </div>
+                        )}
+                        {inboxMessages
+                          .filter((m) =>
+                            inboxFilter === "all"
+                              ? true
+                              : m.platform === inboxFilter ||
+                                m.platform ===
+                                  (inboxFilter === "instagram" ? "meta" : ""),
+                          )
+                          .map((msg, i) => (
                             <div
-                              className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-white font-bold"
+                              key={msg.id}
+                              onClick={() => setSelectedInboxMsg(msg)}
+                              className="hover-scale"
                               style={{
+                                padding:
+                                  selectedInboxMsg?.id === msg.id
+                                    ? "12px 16px 12px 12px"
+                                    : "12px 16px",
+                                borderBottom: "1px solid rgba(44,32,22,0.05)",
+                                borderLeft:
+                                  selectedInboxMsg?.id === msg.id
+                                    ? "4px solid var(--theme-primary)"
+                                    : "4px solid transparent",
+                                cursor: "pointer",
+                                display: "flex",
+                                gap: 12,
                                 background:
-                                  msg.platform === "meta" ||
-                                  msg.platform === "instagram"
-                                    ? "linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)"
-                                    : "black",
+                                  selectedInboxMsg?.id === msg.id
+                                    ? "rgba(44,32,22,0.03)"
+                                    : "transparent",
                               }}
                             >
-                              {(msg.senderName?.[0] || "U").toUpperCase()}
-                            </div>
-                            <div style={{ overflow: "hidden", flex: 1 }}>
                               <div
+                                className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-white font-bold"
                                 style={{
-                                  fontWeight: 500,
-                                  fontSize: 12,
-                                  marginBottom: 4,
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "space-between",
-                                  gap: 6,
+                                  background:
+                                    msg.platform === "meta" ||
+                                    msg.platform === "instagram"
+                                      ? "linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)"
+                                      : "black",
                                 }}
                               >
+                                {(msg.senderName?.[0] || "U").toUpperCase()}
+                              </div>
+                              <div style={{ overflow: "hidden", flex: 1 }}>
                                 <div
                                   style={{
+                                    fontWeight: 500,
+                                    fontSize: 12,
+                                    marginBottom: 4,
                                     display: "flex",
                                     alignItems: "center",
+                                    justifyContent: "space-between",
                                     gap: 6,
-                                    overflow: "hidden",
                                   }}
                                 >
-                                  <span
+                                  <div
                                     style={{
-                                      whiteSpace: "nowrap",
-                                      textOverflow: "ellipsis",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: 6,
                                       overflow: "hidden",
                                     }}
                                   >
-                                    {msg.senderName || `User ${msg.senderId}`}
-                                  </span>
-                                  <span
+                                    <span
+                                      style={{
+                                        whiteSpace: "nowrap",
+                                        textOverflow: "ellipsis",
+                                        overflow: "hidden",
+                                      }}
+                                    >
+                                      {msg.senderName || `User ${msg.senderId}`}
+                                    </span>
+                                    <span
+                                      style={{
+                                        fontSize: 9,
+                                        background:
+                                          msg.platform === "meta" ||
+                                          msg.platform === "instagram"
+                                            ? "#F8EAF0"
+                                            : "#f0f0f0",
+                                        color:
+                                          msg.platform === "meta" ||
+                                          msg.platform === "instagram"
+                                            ? "#E4405F"
+                                            : "#000",
+                                        padding: "2px 6px",
+                                        borderRadius: 4,
+                                        fontWeight: 800,
+                                      }}
+                                    >
+                                      {msg.platform === "meta" ||
+                                      msg.platform === "instagram"
+                                        ? "IG"
+                                        : "TT"}
+                                    </span>
+                                  </div>
+                                  <div
                                     style={{
-                                      fontSize: 9,
-                                      background:
-                                        msg.platform === "meta" ||
-                                        msg.platform === "instagram"
-                                          ? "#F8EAF0"
-                                          : "#f0f0f0",
-                                      color:
-                                        msg.platform === "meta" ||
-                                        msg.platform === "instagram"
-                                          ? "#E4405F"
-                                          : "#000",
-                                      padding: "2px 6px",
-                                      borderRadius: 4,
-                                      fontWeight: 800,
+                                      fontSize: 11,
+                                      color: "rgba(44,32,22,0.4)",
+                                      fontWeight: 600,
+                                      whiteSpace: "nowrap",
                                     }}
                                   >
-                                    {msg.platform === "meta" ||
-                                    msg.platform === "instagram"
-                                      ? "IG"
-                                      : "TT"}
-                                  </span>
+                                    {msg.createdAt
+                                      ? new Date(
+                                          msg.createdAt,
+                                        ).toLocaleTimeString("id-ID", {
+                                          hour: "2-digit",
+                                          minute: "2-digit",
+                                        })
+                                      : "2j"}
+                                  </div>
                                 </div>
                                 <div
                                   style={{
                                     fontSize: 11,
-                                    color: "rgba(44,32,22,0.4)",
-                                    fontWeight: 600,
+                                    color:
+                                      selectedInboxMsg?.id === msg.id
+                                        ? "#111827"
+                                        : "rgba(44,32,22,0.6)",
                                     whiteSpace: "nowrap",
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                    fontWeight: 400,
                                   }}
                                 >
-                                  {msg.createdAt
-                                    ? new Date(
-                                        msg.createdAt,
-                                      ).toLocaleTimeString("id-ID", {
-                                        hour: "2-digit",
-                                        minute: "2-digit",
-                                      })
-                                    : "2j"}
+                                  {msg.content}
                                 </div>
                               </div>
+                            </div>
+                          ))}
+                      </>
+                    ) : (
+                      <>
+                        {mergedComments.filter((m) =>
+                          inboxFilter === "all"
+                            ? true
+                            : m.platform === inboxFilter ||
+                              m.platform ===
+                                (inboxFilter === "instagram" ? "meta" : ""),
+                        ).length === 0 && (
+                          <div className="p-6 text-center text-gray-400 text-sm font-semibold">
+                            Belum ada komentar untuk saat ini.
+                          </div>
+                        )}
+                        {mergedComments
+                          .filter((m) =>
+                            inboxFilter === "all"
+                              ? true
+                              : m.platform === inboxFilter ||
+                                m.platform ===
+                                  (inboxFilter === "instagram" ? "meta" : ""),
+                          )
+                          .map((msg, i) => (
+                            <div
+                              key={msg.id}
+                              onClick={() => setSelectedComment(msg)}
+                              className="hover-scale"
+                              style={{
+                                padding:
+                                  selectedComment?.id === msg.id
+                                    ? "12px 16px 12px 12px"
+                                    : "12px 16px",
+                                borderBottom: "1px solid rgba(44,32,22,0.05)",
+                                borderLeft:
+                                  selectedComment?.id === msg.id
+                                    ? "4px solid var(--theme-primary)"
+                                    : "4px solid transparent",
+                                cursor: "pointer",
+                                display: "flex",
+                                gap: 12,
+                                background:
+                                  selectedComment?.id === msg.id
+                                    ? "rgba(44,32,22,0.03)"
+                                    : "transparent",
+                              }}
+                            >
                               <div
+                                className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 overflow-hidden relative"
                                 style={{
-                                  fontSize: 11,
-                                  color:
-                                    selectedInboxMsg?.id === msg.id
-                                      ? "#111827"
-                                      : "rgba(44,32,22,0.6)",
-                                  whiteSpace: "nowrap",
-                                  overflow: "hidden",
-                                  textOverflow: "ellipsis",
-                                  fontWeight: 400,
+                                  borderWidth: "1px",
+                                  borderStyle: "solid",
+                                  borderColor: "rgba(44,32,22,0.05)",
                                 }}
                               >
-                                {msg.content}
+                                <img
+                                  src={msg.postThumbnail}
+                                  style={{
+                                    width: "100%",
+                                    height: "100%",
+                                    objectFit: "cover",
+                                  }}
+                                />
+                                {msg.platform === "instagram" && (
+                                  <div
+                                    style={{
+                                      position: "absolute",
+                                      bottom: -2,
+                                      right: -2,
+                                      background: "white",
+                                      borderRadius: "50%",
+                                      padding: 2,
+                                    }}
+                                  >
+                                    <div
+                                      style={{
+                                        background:
+                                          "linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)",
+                                        borderRadius: "50%",
+                                        padding: 2,
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        color: "white",
+                                      }}
+                                    >
+                                      <Instagram size={8} />
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                              <div style={{ overflow: "hidden", flex: 1 }}>
+                                <div
+                                  style={{
+                                    fontWeight: 500,
+                                    fontSize: 12,
+                                    marginBottom: 4,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "space-between",
+                                    gap: 6,
+                                  }}
+                                >
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: 6,
+                                      overflow: "hidden",
+                                    }}
+                                  >
+                                    <span
+                                      style={{
+                                        whiteSpace: "nowrap",
+                                        textOverflow: "ellipsis",
+                                        overflow: "hidden",
+                                        fontWeight: 700,
+                                        fontSize: 13,
+                                      }}
+                                    >
+                                      {msg.postCaption}
+                                    </span>
+                                  </div>
+                                  <div
+                                    style={{
+                                      fontSize: 11,
+                                      color: "rgba(44,32,22,0.4)",
+                                      fontWeight: 600,
+                                      whiteSpace: "nowrap",
+                                    }}
+                                  >
+                                    {msg.createdAt
+                                      ? new Date(
+                                          msg.createdAt,
+                                        ).toLocaleTimeString("id-ID", {
+                                          hour: "2-digit",
+                                          minute: "2-digit",
+                                        })
+                                      : "2j"}
+                                  </div>
+                                </div>
+                                <div
+                                  style={{
+                                    fontSize: 12,
+                                    color:
+                                      selectedComment?.id === msg.id
+                                        ? "#111827"
+                                        : "rgba(44,32,22,0.6)",
+                                    whiteSpace: "nowrap",
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                    fontWeight: 400,
+                                  }}
+                                >
+                                  {msg.senderName} commented
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        ))}
-                    </>
-                  ) : (
-                    <>
-                      {mergedComments.filter((m) =>
-                        inboxFilter === "all"
-                          ? true
-                          : m.platform === inboxFilter ||
-                            m.platform ===
-                              (inboxFilter === "instagram" ? "meta" : ""),
-                      ).length === 0 && (
-                        <div className="p-6 text-center text-gray-400 text-sm font-semibold">
-                          Belum ada komentar untuk saat ini.
-                        </div>
-                      )}
-                      {mergedComments.filter((m) =>
-                        inboxFilter === "all"
-                          ? true
-                          : m.platform === inboxFilter ||
-                            m.platform ===
-                              (inboxFilter === "instagram" ? "meta" : ""),
-                      ).map((msg, i) => (
+                          ))}
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {(!isMobileHubAi || selectedInboxMsg || selectedComment) && (
+                <div
+                  style={{
+                    flex: 1,
+                    background: "rgba(255,255,255,0.8)",
+                    borderRadius: isMobileHubAi ? 16 : 32,
+                    borderWidth: "1px",
+                    borderStyle: "solid",
+                    borderColor: "rgba(0,0,0,0.03)",
+                    boxShadow: "0 8px 32px rgba(0,0,0,0.02)",
+                    display: "flex",
+                    flexDirection: "column",
+                    overflow: "hidden",
+                    height: "100%",
+                  }}
+                >
+                  {inboxViewMode === "dms" ? (
+                    selectedInboxMsg ? (
+                      <>
                         <div
-                          key={msg.id}
-                          onClick={() => setSelectedComment(msg)}
-                          className="hover-scale"
                           style={{
-                            padding:
-                              selectedComment?.id === msg.id
-                                ? "12px 16px 12px 12px"
-                                : "12px 16px",
+                            padding: "16px 24px",
                             borderBottom: "1px solid rgba(44,32,22,0.05)",
-                            borderLeft:
-                              selectedComment?.id === msg.id
-                                ? "4px solid var(--theme-primary)"
-                                : "4px solid transparent",
-                            cursor: "pointer",
                             display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
                             gap: 12,
-                            background:
-                              selectedComment?.id === msg.id
-                                ? "rgba(44,32,22,0.03)"
-                                : "transparent",
                           }}
                         >
                           <div
-                            className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 overflow-hidden relative"
                             style={{
-                              borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(44,32,22,0.05)",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 12,
                             }}
                           >
-                            <img
-                              src={msg.postThumbnail}
-                              style={{
-                                width: "100%",
-                                height: "100%",
-                                objectFit: "cover",
-                              }}
-                            />
-                            {msg.platform === "instagram" && (
-                              <div
-                                style={{
-                                  position: "absolute",
-                                  bottom: -2,
-                                  right: -2,
-                                  background: "white",
-                                  borderRadius: "50%",
-                                  padding: 2,
-                                }}
+                            {isMobileHubAi && (
+                              <button
+                                onClick={() => setSelectedInboxMsg(null)}
+                                className="mr-1 p-1.5 text-gray-500 hover:text-black hover:bg-gray-100 rounded-lg transition-colors flex items-center justify-center"
                               >
-                                <div
-                                  style={{
-                                    background:
-                                      "linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)",
-                                    borderRadius: "50%",
-                                    padding: 2,
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    color: "white",
-                                  }}
-                                >
-                                  <Instagram size={8} />
-                                </div>
-                              </div>
+                                <ChevronLeft size={20} />
+                              </button>
                             )}
-                          </div>
-                          <div style={{ overflow: "hidden", flex: 1 }}>
                             <div
+                              className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
                               style={{
-                                fontWeight: 500,
-                                fontSize: 12,
-                                marginBottom: 4,
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "space-between",
-                                gap: 6,
+                                background:
+                                  selectedInboxMsg.platform === "meta" ||
+                                  selectedInboxMsg.platform === "instagram"
+                                    ? "linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)"
+                                    : "black",
                               }}
                             >
+                              {(
+                                selectedInboxMsg.senderName?.[0] || "U"
+                              ).toUpperCase()}
+                            </div>
+                            <div>
                               <div
                                 style={{
+                                  fontWeight: 800,
+                                  fontSize: 14,
+                                  color: "#111827",
+                                }}
+                              >
+                                {selectedInboxMsg.senderName ||
+                                  `User ${selectedInboxMsg.senderId}`}
+                              </div>
+                              <div
+                                style={{
+                                  fontSize: 12,
+                                  color: "rgba(44,32,22,0.6)",
+                                  fontWeight: 600,
                                   display: "flex",
                                   alignItems: "center",
-                                  gap: 6,
-                                  overflow: "hidden",
+                                  gap: 4,
+                                  cursor: "pointer",
                                 }}
                               >
-                                <span
-                                  style={{
-                                    whiteSpace: "nowrap",
-                                    textOverflow: "ellipsis",
-                                    overflow: "hidden",
-                                    fontWeight: 700,
-                                    fontSize: 13,
-                                  }}
-                                >
-                                  {msg.postCaption}
-                                </span>
+                                Assign this conversation{" "}
+                                <ChevronDown size={12} />
                               </div>
-                              <div
-                                style={{
-                                  fontSize: 11,
-                                  color: "rgba(44,32,22,0.4)",
-                                  fontWeight: 600,
-                                  whiteSpace: "nowrap",
-                                }}
-                              >
-                                {msg.createdAt
-                                  ? new Date(msg.createdAt).toLocaleTimeString(
-                                      "id-ID",
-                                      { hour: "2-digit", minute: "2-digit" },
-                                    )
-                                  : "2j"}
-                              </div>
+                            </div>
+                          </div>
+                          <div style={{ display: "flex", gap: 6 }}>
+                            <button className="w-8 h-8 rounded-lg border border-gray-200 text-gray-600 flex items-center justify-center hover:bg-gray-50 transition-colors">
+                              <AlertTriangle size={14} />
+                            </button>
+                            <button className="w-8 h-8 rounded-lg border border-gray-200 text-gray-600 flex items-center justify-center hover:bg-gray-50 transition-colors">
+                              <Trash2 size={14} />
+                            </button>
+                            <button className="w-8 h-8 rounded-lg border border-gray-200 text-gray-600 flex items-center justify-center hover:bg-gray-50 transition-colors">
+                              <Star size={14} />
+                            </button>
+                            <button className="w-8 h-8 rounded-lg border border-gray-200 text-gray-600 flex items-center justify-center hover:bg-gray-50 transition-colors">
+                              <MessageSquare size={14} />
+                            </button>
+                            <button className="w-8 h-8 rounded-lg border border-gray-200 text-gray-600 flex items-center justify-center hover:bg-gray-50 transition-colors">
+                              <Check size={14} />
+                            </button>
+                          </div>
+                        </div>
+                        <div
+                          ref={inboxChatScrollRef}
+                          style={{
+                            flex: 1,
+                            padding: 24,
+                            overflowY: "auto",
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 16,
+                            background: "#FAFAFA",
+                          }}
+                        >
+                          <div
+                            style={{ textAlign: "center", marginBottom: 16 }}
+                          >
+                            <span
+                              style={{
+                                background: "transparent",
+                                fontSize: 12,
+                                fontWeight: 500,
+                                color: "rgba(44,32,22,0.5)",
+                              }}
+                            >
+                              {selectedInboxMsg.createdAt
+                                ? new Date(
+                                    selectedInboxMsg.createdAt,
+                                  ).toLocaleDateString("en-US", {
+                                    year: "numeric",
+                                    month: "long",
+                                    day: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })
+                                : "May 23, 2026, 1:20 PM"}
+                            </span>
+                          </div>
+                          <div
+                            style={{
+                              background: "white",
+                              borderWidth: "1px",
+                              borderStyle: "solid",
+                              borderColor: "rgba(44,32,22,0.05)",
+                              padding: "12px 16px",
+                              borderRadius: "16px 16px 16px 4px",
+                              maxWidth: "70%",
+                              alignSelf: "flex-start",
+                              boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+                            }}
+                          >
+                            <div
+                              style={{
+                                fontSize: 14,
+                                lineHeight: 1.5,
+                                color: "#111827",
+                                fontWeight: 500,
+                              }}
+                            >
+                              {selectedInboxMsg.content}
                             </div>
                             <div
                               style={{
-                                fontSize: 12,
-                                color:
-                                  selectedComment?.id === msg.id
-                                    ? "#111827"
-                                    : "rgba(44,32,22,0.6)",
-                                whiteSpace: "nowrap",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                fontWeight: 400,
+                                fontSize: 11,
+                                color: "rgba(44,32,22,0.4)",
+                                fontWeight: 500,
+                                marginTop: 4,
+                                textAlign: "left",
                               }}
                             >
-                              {msg.senderName} commented
+                              {selectedInboxMsg.createdAt
+                                ? new Date(
+                                    selectedInboxMsg.createdAt,
+                                  ).toLocaleTimeString("id-ID", {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })
+                                : "13.41"}
+                            </div>
+                          </div>
+                          {selectedInboxMsg.replies &&
+                            selectedInboxMsg.replies.map(
+                              (reply: any, idx: number) => (
+                                <div
+                                  key={idx}
+                                  style={{
+                                    background: "#8b5cf6",
+                                    color: "white",
+                                    padding: "12px 16px",
+                                    borderRadius: "16px 16px 4px 16px",
+                                    maxWidth: "70%",
+                                    alignSelf: "flex-end",
+                                    boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+                                  }}
+                                >
+                                  <div
+                                    style={{
+                                      fontSize: 14,
+                                      lineHeight: 1.5,
+                                      fontWeight: 500,
+                                      whiteSpace: "pre-wrap",
+                                    }}
+                                  >
+                                    {reply.content}
+                                  </div>
+                                  <div
+                                    style={{
+                                      fontSize: 11,
+                                      color: "rgba(255,255,255,0.7)",
+                                      fontWeight: 500,
+                                      marginTop: 4,
+                                      textAlign: "right",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: 4,
+                                      justifyContent: "flex-end",
+                                    }}
+                                  >
+                                    {reply.createdAt
+                                      ? new Date(
+                                          reply.createdAt,
+                                        ).toLocaleTimeString("id-ID", {
+                                          hour: "2-digit",
+                                          minute: "2-digit",
+                                        })
+                                      : "13.41"}
+                                    <Check
+                                      size={12}
+                                      color="rgba(255,255,255,0.7)"
+                                    />
+                                  </div>
+                                </div>
+                              ),
+                            )}
+                        </div>
+                        <div
+                          style={{
+                            padding: 20,
+                            borderTop: "1px solid rgba(44,32,22,0.05)",
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 12,
+                            background: "white",
+                          }}
+                        >
+                          <div
+                            style={{
+                              display: "flex",
+                              gap: 8,
+                              overflowX: "auto",
+                            }}
+                            className="no-scrollbar"
+                          >
+                            <button
+                              onClick={() =>
+                                setMsgContent(
+                                  "Terima kasih atas masukannya kak! Akan kami sampaikan ke tim terkait 🙏",
+                                )
+                              }
+                              className="hover-scale"
+                              style={{
+                                background: "#FDF0EB",
+                                color: "var(--theme-primary)",
+                                padding: "8px 12px",
+                                borderRadius: 16,
+                                fontSize: 12,
+                                fontWeight: 700,
+                                borderWidth: 0,
+                                borderStyle: "none",
+                                cursor: "pointer",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 6,
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              <Sparkles size={12} /> AI: Apresiasi Singkat
+                            </button>
+                            <button
+                              onClick={() =>
+                                setMsgContent(
+                                  `Hi ${selectedInboxMsg.senderName?.split(" ")[0] || "kak"}, maaf atas kendalanya. Boleh info nomor pesanannya agar bisa kami cek?`,
+                                )
+                              }
+                              className="hover-scale"
+                              style={{
+                                background: "#FDF0EB",
+                                color: "var(--theme-primary)",
+                                padding: "8px 12px",
+                                borderRadius: 16,
+                                fontSize: 12,
+                                fontWeight: 700,
+                                borderWidth: 0,
+                                borderStyle: "none",
+                                cursor: "pointer",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 6,
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              <Sparkles size={12} /> AI: Tanya Order ID
+                            </button>
+                            <button
+                              onClick={() =>
+                                setMsgContent(
+                                  `Hi ${selectedInboxMsg.senderName?.split(" ")[0] || "kak"}, sebagai permohonan maaf, ini voucher diskon 10% untuk pesanan berikutnya ya: MAAF10`,
+                                )
+                              }
+                              className="hover-scale"
+                              style={{
+                                background: "#FDF0EB",
+                                color: "var(--theme-primary)",
+                                padding: "8px 12px",
+                                borderRadius: 16,
+                                fontSize: 12,
+                                fontWeight: 700,
+                                borderWidth: 0,
+                                borderStyle: "none",
+                                cursor: "pointer",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 6,
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              <Sparkles size={12} /> AI: Beri Diskon
+                            </button>
+                          </div>
+                          <div
+                            style={{
+                              display: "flex",
+                              gap: 12,
+                              alignItems: "center",
+                              background: "white",
+                              borderWidth: "1px",
+                              borderStyle: "solid",
+                              borderColor: "rgba(44,32,22,0.1)",
+                              borderRadius: 24,
+                              padding: "4px 4px 4px 16px",
+                            }}
+                          >
+                            <div
+                              style={{
+                                flex: 1,
+                                display: "flex",
+                                alignItems: "center",
+                              }}
+                            >
+                              <div
+                                style={{
+                                  marginRight: 8,
+                                  color: "rgba(44,32,22,0.4)",
+                                }}
+                              >
+                                {selectedInboxMsg.platform === "meta" ||
+                                selectedInboxMsg.platform === "instagram" ? (
+                                  <Instagram size={18} />
+                                ) : (
+                                  <MessageCircle size={18} />
+                                )}
+                              </div>
+                              <input
+                                placeholder={`Reply on ${selectedInboxMsg.platform === "tiktok" ? "TikTok" : "Instagram"}...`}
+                                value={msgContent}
+                                onChange={(e) => setMsgContent(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" && msgContent.trim()) {
+                                    sendDMMessage(msgContent);
+                                    setMsgContent("");
+                                  }
+                                }}
+                                style={{
+                                  width: "100%",
+                                  padding: "10px 0",
+                                  borderWidth: 0,
+                                  borderStyle: "none",
+                                  fontSize: 14,
+                                  outline: "none",
+                                  fontFamily: "inherit",
+                                  fontWeight: 500,
+                                  background: "transparent",
+                                }}
+                              />
+                            </div>
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 4,
+                                paddingRight: 8,
+                                color: "rgba(44,32,22,0.5)",
+                              }}
+                            >
+                              <button className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors">
+                                <Paperclip size={18} />
+                              </button>
+                              <button className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors">
+                                <MessageCircle size={18} />
+                              </button>
+                              <button className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors">
+                                <Heart size={18} />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  if (!msgContent.trim()) return;
+                                  sendDMMessage(msgContent);
+                                  setMsgContent("");
+                                }}
+                                className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${msgContent.trim() ? "bg-[var(--theme-primary)] text-white" : "bg-gray-100 text-gray-400"}`}
+                              >
+                                <Send size={14} />
+                              </button>
                             </div>
                           </div>
                         </div>
-                      ))}
-                    </>
-                  )}
-                </div>
-              </div>
-
-              <div
-                style={{
-                  flex: 1,
-                  background: "rgba(255,255,255,0.8)",
-                  borderRadius: 32,
-                  borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(0,0,0,0.03)",
-                  boxShadow: "0 8px 32px rgba(0,0,0,0.02)",
-                  display: "flex",
-                  flexDirection: "column",
-                  overflow: "hidden",
-                }}
-              >
-                {inboxViewMode === "dms" ? (
-                  selectedInboxMsg ? (
+                      </>
+                    ) : (
+                      <div
+                        style={{
+                          flex: 1,
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          color: "#9CA3AF",
+                        }}
+                      >
+                        <MessageSquare
+                          size={48}
+                          style={{ opacity: 0.2, marginBottom: 16 }}
+                        />
+                        <div
+                          style={{
+                            fontWeight: 700,
+                            fontSize: 16,
+                            color: "#4B5563",
+                          }}
+                        >
+                          Pilih Pesan
+                        </div>
+                        <div style={{ fontSize: 14 }}>
+                          Pilih pesan inbox dari Instagram/TikTok di sebelah
+                          kiri.
+                        </div>
+                      </div>
+                    )
+                  ) : selectedComment ? (
                     <>
                       <div
                         style={{
@@ -4854,192 +6645,290 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                             gap: 12,
                           }}
                         >
+                          {isMobileHubAi && (
+                            <button
+                              onClick={() => setSelectedComment(null)}
+                              className="mr-1 p-1.5 text-gray-500 hover:text-black hover:bg-gray-100 rounded-lg transition-colors flex items-center justify-center"
+                            >
+                              <ChevronLeft size={20} />
+                            </button>
+                          )}
                           <div
-                            className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
+                            className="w-12 h-12 rounded-xl flex items-center justify-center text-white overflow-hidden"
                             style={{
-                              background:
-                                selectedInboxMsg.platform === "meta" ||
-                                selectedInboxMsg.platform === "instagram"
-                                  ? "linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)"
-                                  : "black",
+                              borderWidth: "1px",
+                              borderStyle: "solid",
+                              borderColor: "rgba(44,32,22,0.05)",
                             }}
                           >
-                            {(
-                              selectedInboxMsg.senderName?.[0] || "U"
-                            ).toUpperCase()}
+                            <img
+                              src={selectedComment.postThumbnail}
+                              style={{
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "cover",
+                              }}
+                            />
                           </div>
                           <div>
                             <div
                               style={{
-                                fontWeight: 800,
+                                fontWeight: 700,
                                 fontSize: 14,
                                 color: "#111827",
                               }}
                             >
-                              {selectedInboxMsg.senderName ||
-                                `User ${selectedInboxMsg.senderId}`}
+                              {selectedComment.postCaption}
                             </div>
                             <div
                               style={{
                                 fontSize: 12,
                                 color: "rgba(44,32,22,0.6)",
-                                fontWeight: 600,
+                                fontWeight: 500,
                                 display: "flex",
                                 alignItems: "center",
                                 gap: 4,
-                                cursor: "pointer",
                               }}
                             >
-                              Assign this conversation <ChevronDown size={12} />
+                              {selectedComment.postLikes} likes •{" "}
+                              {selectedComment.postCommentCount} comments •{" "}
+                              {selectedComment.postTime}
                             </div>
                           </div>
                         </div>
                         <div style={{ display: "flex", gap: 6 }}>
-                          <button className="w-8 h-8 rounded-lg border border-gray-200 text-gray-600 flex items-center justify-center hover:bg-gray-50 transition-colors">
-                            <AlertTriangle size={14} />
+                          <button
+                            className="px-3 py-1.5 rounded-lg border border-gray-200 text-gray-400 flex items-center justify-center hover:bg-gray-50 transition-colors"
+                            style={{ fontSize: 13, fontWeight: 600 }}
+                          >
+                            Boost unavailable
                           </button>
                           <button className="w-8 h-8 rounded-lg border border-gray-200 text-gray-600 flex items-center justify-center hover:bg-gray-50 transition-colors">
-                            <Trash2 size={14} />
-                          </button>
-                          <button className="w-8 h-8 rounded-lg border border-gray-200 text-gray-600 flex items-center justify-center hover:bg-gray-50 transition-colors">
-                            <Star size={14} />
-                          </button>
-                          <button className="w-8 h-8 rounded-lg border border-gray-200 text-gray-600 flex items-center justify-center hover:bg-gray-50 transition-colors">
-                            <MessageSquare size={14} />
-                          </button>
-                          <button className="w-8 h-8 rounded-lg border border-gray-200 text-gray-600 flex items-center justify-center hover:bg-gray-50 transition-colors">
-                            <Check size={14} />
+                            <MoreHorizontal size={14} />
                           </button>
                         </div>
                       </div>
                       <div
-                        ref={inboxChatScrollRef}
+                        ref={commentChatScrollRef}
                         style={{
                           flex: 1,
-                          padding: 24,
+                          padding: 0,
                           overflowY: "auto",
                           display: "flex",
                           flexDirection: "column",
-                          gap: 16,
-                          background: "#FAFAFA",
+                          background: "white",
                         }}
                       >
-                        <div style={{ textAlign: "center", marginBottom: 16 }}>
-                          <span
-                            style={{
-                              background: "transparent",
-                              fontSize: 12,
-                              fontWeight: 500,
-                              color: "rgba(44,32,22,0.5)",
-                            }}
-                          >
-                            {selectedInboxMsg.createdAt
-                              ? new Date(
-                                  selectedInboxMsg.createdAt,
-                                ).toLocaleDateString("en-US", {
-                                  year: "numeric",
-                                  month: "long",
-                                  day: "numeric",
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                })
-                              : "May 23, 2026, 1:20 PM"}
-                          </span>
-                        </div>
                         <div
                           style={{
-                            background: "white",
-                            borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(44,32,22,0.05)",
-                            padding: "12px 16px",
-                            borderRadius: "16px 16px 16px 4px",
-                            maxWidth: "70%",
-                            alignSelf: "flex-start",
-                            boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+                            padding: "16px 24px",
+                            borderBottom: "1px solid rgba(0,0,0,0.05)",
                           }}
                         >
-                          <div
-                            style={{
-                              fontSize: 14,
-                              lineHeight: 1.5,
-                              color: "#111827",
-                              fontWeight: 500,
-                            }}
-                          >
-                            {selectedInboxMsg.content}
-                          </div>
-                          <div
-                            style={{
-                              fontSize: 11,
-                              color: "rgba(44,32,22,0.4)",
-                              fontWeight: 500,
-                              marginTop: 4,
-                              textAlign: "left",
-                            }}
-                          >
-                            {selectedInboxMsg.createdAt
-                              ? new Date(
-                                  selectedInboxMsg.createdAt,
-                                ).toLocaleTimeString("id-ID", {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                })
-                              : "13.41"}
-                          </div>
-                        </div>
-                        {selectedInboxMsg.replies &&
-                          selectedInboxMsg.replies.map(
-                            (reply: any, idx: number) => (
+                          <div style={{ display: "flex", gap: 12 }}>
+                            <img
+                              src={selectedComment.postThumbnail}
+                              style={{
+                                width: 32,
+                                height: 32,
+                                borderRadius: "50%",
+                                objectFit: "cover",
+                              }}
+                            />
+                            <div style={{ flex: 1 }}>
                               <div
-                                key={idx}
                                 style={{
-                                  background: "#8b5cf6",
-                                  color: "white",
-                                  padding: "12px 16px",
-                                  borderRadius: "16px 16px 4px 16px",
-                                  maxWidth: "70%",
-                                  alignSelf: "flex-end",
-                                  boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+                                  fontSize: 14,
+                                  color: "#111827",
+                                  lineHeight: 1.5,
                                 }}
                               >
+                                <span
+                                  style={{ fontWeight: 700, marginRight: 6 }}
+                                >
+                                  fadkhera_id
+                                </span>
+                                {selectedComment.postCaption}
+                              </div>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 12,
+                                  marginTop: 8,
+                                  fontSize: 13,
+                                  color: "gray",
+                                  fontWeight: 600,
+                                }}
+                              >
+                                <span>{selectedComment.postTime}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {selectedComment.postComments &&
+                          selectedComment.postComments.map((pc: any) => (
+                            <div
+                              key={pc.id}
+                              style={{
+                                display: "flex",
+                                gap: 12,
+                                padding: "16px 24px",
+                              }}
+                            >
+                              <img
+                                src={pc.avatar}
+                                style={{
+                                  width: 32,
+                                  height: 32,
+                                  borderRadius: "50%",
+                                }}
+                              />
+                              <div style={{ flex: 1 }}>
                                 <div
                                   style={{
                                     fontSize: 14,
+                                    color: "#111827",
                                     lineHeight: 1.5,
-                                    fontWeight: 500,
-                                    whiteSpace: "pre-wrap",
                                   }}
                                 >
-                                  {reply.content}
+                                  <span
+                                    style={{ fontWeight: 700, marginRight: 6 }}
+                                  >
+                                    {pc.username}
+                                  </span>
+                                  {pc.text}
                                 </div>
                                 <div
                                   style={{
-                                    fontSize: 11,
-                                    color: "rgba(255,255,255,0.7)",
-                                    fontWeight: 500,
-                                    marginTop: 4,
-                                    textAlign: "right",
                                     display: "flex",
                                     alignItems: "center",
-                                    gap: 4,
-                                    justifyContent: "flex-end",
+                                    gap: 12,
+                                    marginTop: 8,
+                                    fontSize: 13,
+                                    color: "gray",
+                                    fontWeight: 600,
                                   }}
                                 >
-                                  {reply.createdAt
-                                    ? new Date(
-                                        reply.createdAt,
-                                      ).toLocaleTimeString("id-ID", {
-                                        hour: "2-digit",
-                                        minute: "2-digit",
-                                      })
-                                    : "13.41"}
-                                  <Check
-                                    size={12}
-                                    color="rgba(255,255,255,0.7)"
+                                  <span>{pc.time}</span>
+                                  <span
+                                    onClick={() => {
+                                      setReplyingTo(pc);
+                                      setMsgContent(`@${pc.username} `);
+                                    }}
+                                    style={{
+                                      cursor: "pointer",
+                                      color: "rgba(44,32,22,0.6)",
+                                    }}
+                                  >
+                                    Reply
+                                  </span>
+                                  <span
+                                    style={{
+                                      cursor: "pointer",
+                                      color: "var(--theme-primary)",
+                                    }}
+                                  >
+                                    Send message
+                                  </span>
+                                  <MoreHorizontal
+                                    size={14}
+                                    style={{ cursor: "pointer" }}
                                   />
                                 </div>
+
+                                {pc.replies &&
+                                  pc.replies.map((reply: any) => (
+                                    <div
+                                      key={reply.id}
+                                      style={{
+                                        display: "flex",
+                                        gap: 12,
+                                        marginTop: 16,
+                                      }}
+                                    >
+                                      <img
+                                        src={reply.avatar}
+                                        style={{
+                                          width: 28,
+                                          height: 28,
+                                          borderRadius: "50%",
+                                        }}
+                                      />
+                                      <div style={{ flex: 1 }}>
+                                        <div
+                                          style={{
+                                            fontSize: 14,
+                                            color: "#111827",
+                                            lineHeight: 1.5,
+                                          }}
+                                        >
+                                          <span
+                                            style={{
+                                              fontWeight: 700,
+                                              marginRight: 6,
+                                            }}
+                                          >
+                                            {reply.username}
+                                          </span>
+                                          {reply.text}
+                                        </div>
+                                        <div
+                                          style={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: 12,
+                                            marginTop: 8,
+                                            fontSize: 13,
+                                            color: "gray",
+                                            fontWeight: 600,
+                                          }}
+                                        >
+                                          <span>{reply.time}</span>
+                                          <span
+                                            onClick={() => {
+                                              setReplyingTo(pc);
+                                              setMsgContent(
+                                                `@${reply.username} `,
+                                              );
+                                            }}
+                                            style={{
+                                              cursor: "pointer",
+                                              color: "rgba(44,32,22,0.6)",
+                                            }}
+                                          >
+                                            Reply
+                                          </span>
+                                          <span
+                                            style={{
+                                              cursor: "pointer",
+                                              color: "var(--theme-primary)",
+                                            }}
+                                          >
+                                            Send message
+                                          </span>
+                                          <MoreHorizontal
+                                            size={14}
+                                            style={{ cursor: "pointer" }}
+                                          />
+                                        </div>
+                                      </div>
+                                      <button>
+                                        <Heart size={14} color="gray" />
+                                      </button>
+                                    </div>
+                                  ))}
                               </div>
-                            ),
-                          )}
+                              <button>
+                                <Heart
+                                  size={16}
+                                  color={pc.isLiked ? "#E4405F" : "gray"}
+                                  fill={pc.isLiked ? "#E4405F" : "none"}
+                                />
+                              </button>
+                            </div>
+                          ))}
                       </div>
                       <div
                         style={{
@@ -5058,7 +6947,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                           <button
                             onClick={() =>
                               setMsgContent(
-                                "Terima kasih atas masukannya kak! Akan kami sampaikan ke tim terkait 🙏",
+                                lang === "id"
+                                  ? "Halo kak, terima kasih banyak atas responnya! 🙏"
+                                  : "Hi, thank you so much for the response! 🙏",
                               )
                             }
                             className="hover-scale"
@@ -5069,7 +6960,8 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               borderRadius: 16,
                               fontSize: 12,
                               fontWeight: 700,
-                              borderWidth: 0, borderStyle: "none",
+                              borderWidth: 0,
+                              borderStyle: "none",
                               cursor: "pointer",
                               display: "flex",
                               alignItems: "center",
@@ -5077,12 +6969,14 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               whiteSpace: "nowrap",
                             }}
                           >
-                            <Sparkles size={12} /> AI: Apresiasi Singkat
+                            <Sparkles size={12} /> AI: Balasan Ramah
                           </button>
                           <button
                             onClick={() =>
                               setMsgContent(
-                                `Hi ${selectedInboxMsg.senderName?.split(" ")[0] || "kak"}, maaf atas kendalanya. Boleh info nomor pesanannya agar bisa kami cek?`,
+                                lang === "id"
+                                  ? "Halo kak, boleh langsung cek link di bio kita ya untuk info lengkapnya! 😊"
+                                  : "Hi, you can check the link in our bio for full info! 😊",
                               )
                             }
                             className="hover-scale"
@@ -5093,7 +6987,8 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               borderRadius: 16,
                               fontSize: 12,
                               fontWeight: 700,
-                              borderWidth: 0, borderStyle: "none",
+                              borderWidth: 0,
+                              borderStyle: "none",
                               cursor: "pointer",
                               display: "flex",
                               alignItems: "center",
@@ -5101,12 +6996,12 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               whiteSpace: "nowrap",
                             }}
                           >
-                            <Sparkles size={12} /> AI: Tanya Order ID
+                            <Sparkles size={12} /> AI: Arahkan ke Bio
                           </button>
                           <button
                             onClick={() =>
                               setMsgContent(
-                                `Hi ${selectedInboxMsg.senderName?.split(" ")[0] || "kak"}, sebagai permohonan maaf, ini voucher diskon 10% untuk pesanan berikutnya ya: MAAF10`,
+                                "Hi kak, untuk pertanyaan lebih lanjut bisa langsung DM kami ya, terima kasih!",
                               )
                             }
                             className="hover-scale"
@@ -5117,7 +7012,8 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               borderRadius: 16,
                               fontSize: 12,
                               fontWeight: 700,
-                              borderWidth: 0, borderStyle: "none",
+                              borderWidth: 0,
+                              borderStyle: "none",
                               cursor: "pointer",
                               display: "flex",
                               alignItems: "center",
@@ -5125,16 +7021,74 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               whiteSpace: "nowrap",
                             }}
                           >
-                            <Sparkles size={12} /> AI: Beri Diskon
+                            <Sparkles size={12} /> AI: Arahkan ke DM
                           </button>
                         </div>
+                        {replyingTo && (
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              background: "#F9FAFB",
+                              padding: "8px 16px",
+                              borderRadius: 16,
+                              fontSize: 12,
+                              color: "#4B5563",
+                              borderWidth: "1px",
+                              borderStyle: "solid",
+                              borderColor: "rgba(0,0,0,0.05)",
+                            }}
+                          >
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 6,
+                              }}
+                            >
+                              <span
+                                style={{
+                                  display: "inline-block",
+                                  width: 6,
+                                  height: 6,
+                                  borderRadius: "50%",
+                                  background: "var(--theme-primary)",
+                                }}
+                              />
+                              <span>
+                                Membalas komentar{" "}
+                                <strong>@{replyingTo.username}</strong>
+                              </span>
+                            </div>
+                            <button
+                              onClick={() => {
+                                setReplyingTo(null);
+                                setMsgContent("");
+                              }}
+                              style={{
+                                borderWidth: 0,
+                                borderStyle: "none",
+                                background: "none",
+                                color: "#EF4444",
+                                fontWeight: 700,
+                                cursor: "pointer",
+                                fontSize: 12,
+                              }}
+                            >
+                              Batal
+                            </button>
+                          </div>
+                        )}
                         <div
                           style={{
                             display: "flex",
                             gap: 12,
                             alignItems: "center",
                             background: "white",
-                            borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(44,32,22,0.1)",
+                            borderWidth: "1px",
+                            borderStyle: "solid",
+                            borderColor: "rgba(44,32,22,0.1)",
                             borderRadius: 24,
                             padding: "4px 4px 4px 16px",
                           }}
@@ -5152,27 +7106,28 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                                 color: "rgba(44,32,22,0.4)",
                               }}
                             >
-                              {selectedInboxMsg.platform === "meta" ||
-                              selectedInboxMsg.platform === "instagram" ? (
+                              {selectedComment.platform === "meta" ||
+                              selectedComment.platform === "instagram" ? (
                                 <Instagram size={18} />
                               ) : (
                                 <MessageCircle size={18} />
                               )}
                             </div>
                             <input
-                              placeholder={`Reply on ${selectedInboxMsg.platform === "tiktok" ? "TikTok" : "Instagram"}...`}
+                              placeholder={`Add a comment for ${selectedComment.senderName}...`}
                               value={msgContent}
                               onChange={(e) => setMsgContent(e.target.value)}
                               onKeyDown={(e) => {
                                 if (e.key === "Enter" && msgContent.trim()) {
-                                  sendDMMessage(msgContent);
+                                  sendCommentReply(msgContent);
                                   setMsgContent("");
                                 }
                               }}
                               style={{
                                 width: "100%",
                                 padding: "10px 0",
-                                borderWidth: 0, borderStyle: "none",
+                                borderWidth: 0,
+                                borderStyle: "none",
                                 fontSize: 14,
                                 outline: "none",
                                 fontFamily: "inherit",
@@ -5202,7 +7157,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                             <button
                               onClick={() => {
                                 if (!msgContent.trim()) return;
-                                sendDMMessage(msgContent);
+                                sendCommentReply(msgContent);
                                 setMsgContent("");
                               }}
                               className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${msgContent.trim() ? "bg-[var(--theme-primary)] text-white" : "bg-gray-100 text-gray-400"}`}
@@ -5235,550 +7190,26 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                           color: "#4B5563",
                         }}
                       >
-                        Pilih Pesan
+                        Pilih Komentar
                       </div>
                       <div style={{ fontSize: 14 }}>
-                        Pilih pesan inbox dari Instagram/TikTok di sebelah kiri.
+                        Pilih komentar dari Instagram/TikTok di sebelah kiri.
                       </div>
                     </div>
-                  )
-                ) : selectedComment ? (
-                  <>
-                    <div
-                      style={{
-                        padding: "16px 24px",
-                        borderBottom: "1px solid rgba(44,32,22,0.05)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        gap: 12,
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 12,
-                        }}
-                      >
-                        <div
-                          className="w-12 h-12 rounded-xl flex items-center justify-center text-white overflow-hidden"
-                          style={{
-                            borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(44,32,22,0.05)",
-                          }}
-                        >
-                          <img
-                            src={selectedComment.postThumbnail}
-                            style={{
-                              width: "100%",
-                              height: "100%",
-                              objectFit: "cover",
-                            }}
-                          />
-                        </div>
-                        <div>
-                          <div
-                            style={{
-                              fontWeight: 700,
-                              fontSize: 14,
-                              color: "#111827",
-                            }}
-                          >
-                            {selectedComment.postCaption}
-                          </div>
-                          <div
-                            style={{
-                              fontSize: 12,
-                              color: "rgba(44,32,22,0.6)",
-                              fontWeight: 500,
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 4,
-                            }}
-                          >
-                            {selectedComment.postLikes} likes •{" "}
-                            {selectedComment.postCommentCount} comments •{" "}
-                            {selectedComment.postTime}
-                          </div>
-                        </div>
-                      </div>
-                      <div style={{ display: "flex", gap: 6 }}>
-                        <button
-                          className="px-3 py-1.5 rounded-lg border border-gray-200 text-gray-400 flex items-center justify-center hover:bg-gray-50 transition-colors"
-                          style={{ fontSize: 13, fontWeight: 600 }}
-                        >
-                          Boost unavailable
-                        </button>
-                        <button className="w-8 h-8 rounded-lg border border-gray-200 text-gray-600 flex items-center justify-center hover:bg-gray-50 transition-colors">
-                          <MoreHorizontal size={14} />
-                        </button>
-                      </div>
-                    </div>
-                    <div
-                      ref={commentChatScrollRef}
-                      style={{
-                        flex: 1,
-                        padding: 0,
-                        overflowY: "auto",
-                        display: "flex",
-                        flexDirection: "column",
-                        background: "white",
-                      }}
-                    >
-                      <div
-                        style={{
-                          padding: "16px 24px",
-                          borderBottom: "1px solid rgba(0,0,0,0.05)",
-                        }}
-                      >
-                        <div style={{ display: "flex", gap: 12 }}>
-                          <img
-                            src={selectedComment.postThumbnail}
-                            style={{
-                              width: 32,
-                              height: 32,
-                              borderRadius: "50%",
-                              objectFit: "cover",
-                            }}
-                          />
-                          <div style={{ flex: 1 }}>
-                            <div
-                              style={{
-                                fontSize: 14,
-                                color: "#111827",
-                                lineHeight: 1.5,
-                              }}
-                            >
-                              <span style={{ fontWeight: 700, marginRight: 6 }}>
-                                fadkhera_id
-                              </span>
-                              {selectedComment.postCaption}
-                            </div>
-                            <div
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 12,
-                                marginTop: 8,
-                                fontSize: 13,
-                                color: "gray",
-                                fontWeight: 600,
-                              }}
-                            >
-                              <span>{selectedComment.postTime}</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {selectedComment.postComments &&
-                        selectedComment.postComments.map((pc: any) => (
-                          <div
-                            key={pc.id}
-                            style={{
-                              display: "flex",
-                              gap: 12,
-                              padding: "16px 24px",
-                            }}
-                          >
-                            <img
-                              src={pc.avatar}
-                              style={{
-                                width: 32,
-                                height: 32,
-                                borderRadius: "50%",
-                              }}
-                            />
-                            <div style={{ flex: 1 }}>
-                              <div
-                                style={{
-                                  fontSize: 14,
-                                  color: "#111827",
-                                  lineHeight: 1.5,
-                                }}
-                              >
-                                <span
-                                  style={{ fontWeight: 700, marginRight: 6 }}
-                                >
-                                  {pc.username}
-                                </span>
-                                {pc.text}
-                              </div>
-                              <div
-                                style={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: 12,
-                                  marginTop: 8,
-                                  fontSize: 13,
-                                  color: "gray",
-                                  fontWeight: 600,
-                                }}
-                              >
-                                <span>{pc.time}</span>
-                                <span
-                                  onClick={() => {
-                                    setReplyingTo(pc);
-                                    setMsgContent(`@${pc.username} `);
-                                  }}
-                                  style={{
-                                    cursor: "pointer",
-                                    color: "rgba(44,32,22,0.6)",
-                                  }}
-                                >
-                                  Reply
-                                </span>
-                                <span
-                                  style={{
-                                    cursor: "pointer",
-                                    color: "var(--theme-primary)",
-                                  }}
-                                >
-                                  Send message
-                                </span>
-                                <MoreHorizontal
-                                  size={14}
-                                  style={{ cursor: "pointer" }}
-                                />
-                              </div>
-
-                              {pc.replies &&
-                                pc.replies.map((reply: any) => (
-                                  <div
-                                    key={reply.id}
-                                    style={{
-                                      display: "flex",
-                                      gap: 12,
-                                      marginTop: 16,
-                                    }}
-                                  >
-                                    <img
-                                      src={reply.avatar}
-                                      style={{
-                                        width: 28,
-                                        height: 28,
-                                        borderRadius: "50%",
-                                      }}
-                                    />
-                                    <div style={{ flex: 1 }}>
-                                      <div
-                                        style={{
-                                          fontSize: 14,
-                                          color: "#111827",
-                                          lineHeight: 1.5,
-                                        }}
-                                      >
-                                        <span
-                                          style={{
-                                            fontWeight: 700,
-                                            marginRight: 6,
-                                          }}
-                                        >
-                                          {reply.username}
-                                        </span>
-                                        {reply.text}
-                                      </div>
-                                      <div
-                                        style={{
-                                          display: "flex",
-                                          alignItems: "center",
-                                          gap: 12,
-                                          marginTop: 8,
-                                          fontSize: 13,
-                                          color: "gray",
-                                          fontWeight: 600,
-                                        }}
-                                      >
-                                        <span>{reply.time}</span>
-                                        <span
-                                          onClick={() => {
-                                            setReplyingTo(pc);
-                                            setMsgContent(`@${reply.username} `);
-                                          }}
-                                          style={{
-                                            cursor: "pointer",
-                                            color: "rgba(44,32,22,0.6)",
-                                          }}
-                                        >
-                                          Reply
-                                        </span>
-                                        <span
-                                          style={{
-                                            cursor: "pointer",
-                                            color: "var(--theme-primary)",
-                                          }}
-                                        >
-                                          Send message
-                                        </span>
-                                        <MoreHorizontal
-                                          size={14}
-                                          style={{ cursor: "pointer" }}
-                                        />
-                                      </div>
-                                    </div>
-                                    <button>
-                                      <Heart size={14} color="gray" />
-                                    </button>
-                                  </div>
-                                ))}
-                            </div>
-                            <button>
-                              <Heart
-                                size={16}
-                                color={pc.isLiked ? "#E4405F" : "gray"}
-                                fill={pc.isLiked ? "#E4405F" : "none"}
-                              />
-                            </button>
-                          </div>
-                        ))}
-                    </div>
-                    <div
-                      style={{
-                        padding: 20,
-                        borderTop: "1px solid rgba(44,32,22,0.05)",
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 12,
-                        background: "white",
-                      }}
-                    >
-                      <div
-                        style={{ display: "flex", gap: 8, overflowX: "auto" }}
-                        className="no-scrollbar"
-                      >
-                        <button
-                          onClick={() =>
-                            setMsgContent(
-                              lang === "id" ? "Halo kak, terima kasih banyak atas responnya! 🙏" : "Hi, thank you so much for the response! 🙏",
-                            )
-                          }
-                          className="hover-scale"
-                          style={{
-                            background: "#FDF0EB",
-                            color: "var(--theme-primary)",
-                            padding: "8px 12px",
-                            borderRadius: 16,
-                            fontSize: 12,
-                            fontWeight: 700,
-                            borderWidth: 0, borderStyle: "none",
-                            cursor: "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 6,
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          <Sparkles size={12} /> AI: Balasan Ramah
-                        </button>
-                        <button
-                          onClick={() =>
-                            setMsgContent(
-                              lang === "id" ? "Halo kak, boleh langsung cek link di bio kita ya untuk info lengkapnya! 😊" : "Hi, you can check the link in our bio for full info! 😊",
-                            )
-                          }
-                          className="hover-scale"
-                          style={{
-                            background: "#FDF0EB",
-                            color: "var(--theme-primary)",
-                            padding: "8px 12px",
-                            borderRadius: 16,
-                            fontSize: 12,
-                            fontWeight: 700,
-                            borderWidth: 0, borderStyle: "none",
-                            cursor: "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 6,
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          <Sparkles size={12} /> AI: Arahkan ke Bio
-                        </button>
-                        <button
-                          onClick={() =>
-                            setMsgContent(
-                              "Hi kak, untuk pertanyaan lebih lanjut bisa langsung DM kami ya, terima kasih!",
-                            )
-                          }
-                          className="hover-scale"
-                          style={{
-                            background: "#FDF0EB",
-                            color: "var(--theme-primary)",
-                            padding: "8px 12px",
-                            borderRadius: 16,
-                            fontSize: 12,
-                            fontWeight: 700,
-                            borderWidth: 0, borderStyle: "none",
-                            cursor: "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 6,
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          <Sparkles size={12} /> AI: Arahkan ke DM
-                        </button>
-                      </div>
-                      {replyingTo && (
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                            background: "#F9FAFB",
-                            padding: "8px 16px",
-                            borderRadius: 16,
-                            fontSize: 12,
-                            color: "#4B5563",
-                            borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(0,0,0,0.05)",
-                          }}
-                        >
-                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                            <span style={{ display: "inline-block", width: 6, height: 6, borderRadius: "50%", background: "var(--theme-primary)" }} />
-                            <span>Membalas komentar <strong>@{replyingTo.username}</strong></span>
-                          </div>
-                          <button
-                            onClick={() => {
-                              setReplyingTo(null);
-                              setMsgContent("");
-                            }}
-                            style={{
-                              borderWidth: 0, borderStyle: "none",
-                              background: "none",
-                              color: "#EF4444",
-                              fontWeight: 700,
-                              cursor: "pointer",
-                              fontSize: 12,
-                            }}
-                          >
-                            Batal
-                          </button>
-                        </div>
-                      )}
-                      <div
-                        style={{
-                          display: "flex",
-                          gap: 12,
-                          alignItems: "center",
-                          background: "white",
-                          borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(44,32,22,0.1)",
-                          borderRadius: 24,
-                          padding: "4px 4px 4px 16px",
-                        }}
-                      >
-                        <div
-                          style={{
-                            flex: 1,
-                            display: "flex",
-                            alignItems: "center",
-                          }}
-                        >
-                          <div
-                            style={{
-                              marginRight: 8,
-                              color: "rgba(44,32,22,0.4)",
-                            }}
-                          >
-                            {selectedComment.platform === "meta" ||
-                            selectedComment.platform === "instagram" ? (
-                              <Instagram size={18} />
-                            ) : (
-                              <MessageCircle size={18} />
-                            )}
-                          </div>
-                          <input
-                            placeholder={`Add a comment for ${selectedComment.senderName}...`}
-                            value={msgContent}
-                            onChange={(e) => setMsgContent(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" && msgContent.trim()) {
-                                sendCommentReply(msgContent);
-                                setMsgContent("");
-                              }
-                            }}
-                            style={{
-                              width: "100%",
-                              padding: "10px 0",
-                              borderWidth: 0, borderStyle: "none",
-                              fontSize: 14,
-                              outline: "none",
-                              fontFamily: "inherit",
-                              fontWeight: 500,
-                              background: "transparent",
-                            }}
-                          />
-                        </div>
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 4,
-                            paddingRight: 8,
-                            color: "rgba(44,32,22,0.5)",
-                          }}
-                        >
-                          <button className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors">
-                            <Paperclip size={18} />
-                          </button>
-                          <button className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors">
-                            <MessageCircle size={18} />
-                          </button>
-                          <button className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors">
-                            <Heart size={18} />
-                          </button>
-                          <button
-                            onClick={() => {
-                              if (!msgContent.trim()) return;
-                              sendCommentReply(msgContent);
-                              setMsgContent("");
-                            }}
-                            className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${msgContent.trim() ? "bg-[var(--theme-primary)] text-white" : "bg-gray-100 text-gray-400"}`}
-                          >
-                            <Send size={14} />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <div
-                    style={{
-                      flex: 1,
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      color: "#9CA3AF",
-                    }}
-                  >
-                    <MessageSquare
-                      size={48}
-                      style={{ opacity: 0.2, marginBottom: 16 }}
-                    />
-                    <div
-                      style={{
-                        fontWeight: 700,
-                        fontSize: 16,
-                        color: "#4B5563",
-                      }}
-                    >
-                      Pilih Komentar
-                    </div>
-                    <div style={{ fontSize: 14 }}>
-                      Pilih komentar dari Instagram/TikTok di sebelah kiri.
-                    </div>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              )}
 
               {/* Kolom 3: Customer Details (Kanan) */}
-              {(selectedInboxMsg || selectedComment) && (
+              {!isMobileHubAi && (selectedInboxMsg || selectedComment) && (
                 <div
                   style={{
                     width: 280,
                     background: "white",
                     borderRadius: 20,
-                    borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(44,32,22,0.05)",
+                    borderWidth: "1px",
+                    borderStyle: "solid",
+                    borderColor: "rgba(44,32,22,0.05)",
                     display: "flex",
                     flexDirection: "column",
                     overflowY: "auto",
@@ -5793,7 +7224,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                           borderRadius: 16,
                           overflow: "hidden",
                           position: "relative",
-                          borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(0,0,0,0.05)",
+                          borderWidth: "1px",
+                          borderStyle: "solid",
+                          borderColor: "rgba(0,0,0,0.05)",
                           background: "black",
                         }}
                       >
@@ -5877,7 +7310,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                             padding: "6px 10px",
                             borderRadius: 12,
                             background: "white",
-                            borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(44,32,22,0.15)",
+                            borderWidth: "1px",
+                            borderStyle: "solid",
+                            borderColor: "rgba(44,32,22,0.15)",
                             color: "#111827",
                             fontWeight: 700,
                             fontSize: 12,
@@ -6061,7 +7496,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                             padding: "6px 10px",
                             borderRadius: 8,
                             background: "white",
-                            borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(44,32,22,0.15)",
+                            borderWidth: "1px",
+                            borderStyle: "solid",
+                            borderColor: "rgba(44,32,22,0.15)",
                             color: "#111827",
                             fontWeight: 600,
                             fontSize: 12,
@@ -6117,7 +7554,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                             width: "100%",
                             padding: "6px 10px",
                             borderRadius: 8,
-                            borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(44,32,22,0.15)",
+                            borderWidth: "1px",
+                            borderStyle: "solid",
+                            borderColor: "rgba(44,32,22,0.15)",
                             fontSize: 12,
                             fontWeight: 500,
                             color: "#111827",
@@ -6176,7 +7615,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                             width: "100%",
                             padding: "6px 10px",
                             borderRadius: 8,
-                            borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(44,32,22,0.15)",
+                            borderWidth: "1px",
+                            borderStyle: "solid",
+                            borderColor: "rgba(44,32,22,0.15)",
                             fontSize: 12,
                             outline: "none",
                             marginBottom: 12,
@@ -6214,7 +7655,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                                 width: 14,
                                 height: 14,
                                 borderRadius: 4,
-                                borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(44,32,22,0.2)",
+                                borderWidth: "1px",
+                                borderStyle: "solid",
+                                borderColor: "rgba(44,32,22,0.2)",
                               }}
                             />
                             <span
@@ -6243,7 +7686,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                                 width: 14,
                                 height: 14,
                                 borderRadius: 4,
-                                borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(44,32,22,0.2)",
+                                borderWidth: "1px",
+                                borderStyle: "solid",
+                                borderColor: "rgba(44,32,22,0.2)",
                               }}
                             />
                             <span
@@ -6289,7 +7734,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                             width: "100%",
                             padding: "6px 10px",
                             borderRadius: 8,
-                            borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(44,32,22,0.15)",
+                            borderWidth: "1px",
+                            borderStyle: "solid",
+                            borderColor: "rgba(44,32,22,0.15)",
                             fontSize: 12,
                             outline: "none",
                             resize: "none",
@@ -6319,55 +7766,98 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
               {/* LEFT SIDEBAR (Chat History) */}
               <div
                 style={{
-                  width: 260,
-                  display: "flex",
+                  width: isMobileHubAi ? "100%" : 260,
+                  display: isMobileHubAi
+                    ? mobileHubAiView === "history"
+                      ? "flex"
+                      : "none"
+                    : "flex",
                   flexDirection: "column",
                   background: "#F4F7F9",
-                  padding: "20px 16px",
-                  borderRight: "1px solid rgba(6, 91, 152, 0.1)",
+                  padding: isMobileHubAi ? "16px" : "20px 16px",
+                  borderRight: isMobileHubAi
+                    ? "none"
+                    : "1px solid rgba(6, 91, 152, 0.1)",
                   zIndex: 10,
                 }}
               >
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    marginBottom: 24,
-                  }}
-                >
+                {isMobileHubAi ? (
                   <div
-                    style={{ display: "flex", alignItems: "center", gap: 10 }}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                      marginBottom: 24,
+                    }}
                   >
-                    <div
+                    <button
+                      onClick={() => setMobileHubAiView("chat")}
                       style={{
-                        width: 28,
-                        height: 28,
-                        borderRadius: 14,
-                        background:
-                          "linear-gradient(135deg, #0DB8D3 0%, #1B7FDC 100%)",
-                        color: "white",
+                        borderWidth: 0,
+                        cursor: "pointer",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        boxShadow: "0 4px 12px rgba(13, 184, 211, 0.3)",
+                        width: 36,
+                        height: 36,
+                        borderRadius: 18,
+                        background: "rgba(0,0,0,0.05)",
+                        color: "#193546",
                       }}
                     >
-                      <Sparkles size={14} />
-                    </div>
+                      <ChevronLeft size={18} />
+                    </button>
                     <div
                       style={{
                         fontSize: 16,
-                        fontWeight: 600,
+                        fontWeight: 700,
                         color: "#193546",
-                        letterSpacing: "0.2px",
                       }}
                     >
-                      HUB.AI
+                      {lang === "id" ? "Riwayat Percakapan" : "Chat History"}
                     </div>
                   </div>
-                  {/* Tool icons moved below */}
-                </div>
+                ) : (
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: 24,
+                    }}
+                  >
+                    <div
+                      style={{ display: "flex", alignItems: "center", gap: 10 }}
+                    >
+                      <div
+                        style={{
+                          width: 28,
+                          height: 28,
+                          borderRadius: 14,
+                          background:
+                            "linear-gradient(135deg, #0DB8D3 0%, #1B7FDC 100%)",
+                          color: "white",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          boxShadow: "0 4px 12px rgba(13, 184, 211, 0.3)",
+                        }}
+                      >
+                        <Sparkles size={14} />
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 16,
+                          fontWeight: 600,
+                          color: "#193546",
+                          letterSpacing: "0.2px",
+                        }}
+                      >
+                        HUB.AI
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <div
                   style={{
@@ -6394,7 +7884,8 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                     className="hover-bg"
                     style={{
                       background: "transparent",
-                      borderWidth: 0, borderStyle: "none",
+                      borderWidth: 0,
+                      borderStyle: "none",
                       color: "#193546",
                       borderRadius: 8,
                       padding: "10px 12px",
@@ -6407,7 +7898,8 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                       transition: "all 0.2s",
                     }}
                   >
-                    <Edit3 size={16} /> {lang === "id" ? "Percakapan baru" : "New chat"}
+                    <Edit3 size={16} />{" "}
+                    {lang === "id" ? "Percakapan baru" : "New chat"}
                   </button>
                   <button
                     onClick={() => setIsSearchMode(true)}
@@ -6416,7 +7908,8 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                       background: isSearchMode
                         ? "rgba(27,127,220,0.1)"
                         : "transparent",
-                      borderWidth: 0, borderStyle: "none",
+                      borderWidth: 0,
+                      borderStyle: "none",
                       color: isSearchMode ? "#1B7FDC" : "#193546",
                       borderRadius: 8,
                       padding: "10px 12px",
@@ -6429,7 +7922,10 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                       transition: "all 0.2s",
                     }}
                   >
-                    <Search size={16} /> {lang === "id" ? "Telusuri percakapan" : "Search conversations"}
+                    <Search size={16} />{" "}
+                    {lang === "id"
+                      ? "Telusuri percakapan"
+                      : "Search conversations"}
                   </button>
                   <button
                     onClick={handleToggleConfigPanel}
@@ -6438,7 +7934,8 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                       background: showConfigPanel
                         ? "rgba(27,127,220,0.1)"
                         : "transparent",
-                      borderWidth: 0, borderStyle: "none",
+                      borderWidth: 0,
+                      borderStyle: "none",
                       color: showConfigPanel ? "#1B7FDC" : "#193546",
                       borderRadius: 8,
                       padding: "10px 12px",
@@ -6451,7 +7948,8 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                       transition: "all 0.2s",
                     }}
                   >
-                    <Settings size={16} /> {lang === "id" ? "Konfigurasi" : "Configuration"}
+                    <Settings size={16} />{" "}
+                    {lang === "id" ? "Konfigurasi" : "Configuration"}
                   </button>
                 </div>
 
@@ -6514,7 +8012,8 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                           gap: 6,
                         }}
                       >
-                        <Clock size={12} /> {lang === "id" ? "RIWAYAT" : "HISTORY"}
+                        <Clock size={12} />{" "}
+                        {lang === "id" ? "RIWAYAT" : "HISTORY"}
                       </div>
                       <div
                         style={{
@@ -6534,7 +8033,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               color: "rgba(25,53,70,0.4)",
                             }}
                           >
-                            {lang === "id" ? "Belum ada histori." : "No history yet."}
+                            {lang === "id"
+                              ? "Belum ada histori."
+                              : "No history yet."}
                           </div>
                         )}
                       </div>
@@ -6545,7 +8046,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                 <div
                   style={{
                     background: "rgba(13,184,211,0.05)",
-                    borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(13,184,211,0.2)",
+                    borderWidth: "1px",
+                    borderStyle: "solid",
+                    borderColor: "rgba(13,184,211,0.2)",
                     borderRadius: 16,
                     padding: "16px",
                     marginTop: 16,
@@ -6583,10 +8086,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                           user?.email?.toLowerCase() ===
                             "nalendraputra71@gmail.com";
                         if (isSuperAdmin) return "Unlimited";
-                        const maxReq =
-                          profile?.plan === "pro" || profile?.plan === "vip"
-                            ? 100
-                            : 50;
+                        const maxReq = planDetails?.maxAiGenerations || 50;
                         const todayStr = new Date().toISOString().split("T")[0];
                         const usedReq =
                           profile?.lastAiRequestDate === todayStr
@@ -6621,10 +8121,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                             }}
                           />
                         );
-                      const maxReq =
-                        profile?.plan === "pro" || profile?.plan === "vip"
-                          ? 100
-                          : 50;
+                      const maxReq = planDetails?.maxAiGenerations || 50;
                       const todayStr = new Date().toISOString().split("T")[0];
                       const usedReq =
                         profile?.lastAiRequestDate === todayStr
@@ -6657,12 +8154,130 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                   minWidth: 0,
                   minHeight: 0,
                   background: "white",
-                  display: "flex",
+                  display: isMobileHubAi
+                    ? mobileHubAiView === "chat"
+                      ? "flex"
+                      : "none"
+                    : "flex",
                   flexDirection: "column",
                   overflow: "hidden",
                   position: "relative",
                 }}
               >
+                {isMobileHubAi && (
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "12px 16px",
+                      borderBottom: "1px solid rgba(6, 91, 152, 0.08)",
+                      background: "white",
+                      flexShrink: 0,
+                      zIndex: 5,
+                    }}
+                  >
+                    <button
+                      onClick={() => setMobileHubAiView("history")}
+                      style={{
+                        borderWidth: 0,
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                        color: "#193546",
+                        padding: "6px 12px",
+                        borderRadius: 12,
+                        background: "rgba(0,0,0,0.03)",
+                      }}
+                    >
+                      <Clock size={15} />
+                      <span style={{ fontSize: 13, fontWeight: 700 }}>
+                        {lang === "id" ? "Riwayat" : "History"}
+                      </span>
+                    </button>
+
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                        fontSize: 15,
+                        fontWeight: 800,
+                        color: "#193546",
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: 22,
+                          height: 22,
+                          borderRadius: 11,
+                          background:
+                            "linear-gradient(135deg, #0DB8D3 0%, #1B7FDC 100%)",
+                          color: "white",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          boxShadow: "0 2px 6px rgba(13, 184, 211, 0.3)",
+                        }}
+                      >
+                        <Sparkles size={11} />
+                      </div>
+                      HUB.AI
+                    </div>
+
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <button
+                        onClick={() => {
+                          setActiveSessionId(null);
+                          setChatHistory([
+                            {
+                              role: "assistant",
+                              content:
+                                lang === "id"
+                                  ? "Halo! Saya HUB.AI, asisten khusus untuk content creator. Apa yang bisa saya bantu hari ini? Mau brainstorm ide konten atau buat draft caption?"
+                                  : "Hello! I am HUB.AI, a dedicated assistant for content creators. How can I help you today? Would you like to brainstorm content ideas or write a caption draft?",
+                            },
+                          ]);
+                          setIsSearchMode(false);
+                        }}
+                        style={{
+                          borderWidth: 0,
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          width: 32,
+                          height: 32,
+                          borderRadius: 16,
+                          background: "rgba(0,0,0,0.03)",
+                          color: "#193546",
+                        }}
+                        title={lang === "id" ? "Percakapan baru" : "New chat"}
+                      >
+                        <Plus size={16} />
+                      </button>
+                      <button
+                        onClick={handleToggleConfigPanel}
+                        style={{
+                          borderWidth: 0,
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          width: 32,
+                          height: 32,
+                          borderRadius: 16,
+                          background: "rgba(0,0,0,0.03)",
+                          color: "#193546",
+                        }}
+                        title={lang === "id" ? "Konfigurasi" : "Configuration"}
+                      >
+                        <Settings size={16} />
+                      </button>
+                    </div>
+                  </div>
+                )}
                 {/* MESSAGES OR EMPTY STATE */}
                 <div
                   ref={chatScrollContainerRef}
@@ -6701,7 +8316,8 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                           className="hover-bg"
                           style={{
                             background: "transparent",
-                            borderWidth: 0, borderStyle: "none",
+                            borderWidth: 0,
+                            borderStyle: "none",
                             cursor: "pointer",
                             display: "flex",
                             alignItems: "center",
@@ -6721,7 +8337,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                             margin: 0,
                           }}
                         >
-                          {lang === "id" ? "Telusuri Percakapan" : "Search Conversations"}
+                          {lang === "id"
+                            ? "Telusuri Percakapan"
+                            : "Search Conversations"}
                         </h2>
                       </div>
                       <div style={{ position: "relative", marginBottom: 32 }}>
@@ -6739,12 +8357,18 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                           autoFocus
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
-                          placeholder={lang === "id" ? "Cari kata kunci atau judul percakapan..." : "Search keywords or conversation titles..."}
+                          placeholder={
+                            lang === "id"
+                              ? "Cari kata kunci atau judul percakapan..."
+                              : "Search keywords or conversation titles..."
+                          }
                           style={{
                             width: "100%",
                             padding: "16px 48px 16px 48px",
                             borderRadius: 16,
-                            borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(6,91,152,0.2)",
+                            borderWidth: "1px",
+                            borderStyle: "solid",
+                            borderColor: "rgba(6,91,152,0.2)",
                             fontSize: 16,
                             outline: "none",
                             boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
@@ -6759,7 +8383,8 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               top: "50%",
                               transform: "translateY(-50%)",
                               background: "transparent",
-                              borderWidth: 0, borderStyle: "none",
+                              borderWidth: 0,
+                              borderStyle: "none",
                               cursor: "pointer",
                               display: "flex",
                               alignItems: "center",
@@ -6815,7 +8440,10 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                           })
                           .map((s) => {
                             // Determine the best snippet to show
-                            let bestSnippet = lang === "id" ? "Tidak ada pesan pengguna." : "No user message.";
+                            let bestSnippet =
+                              lang === "id"
+                                ? "Tidak ada pesan pengguna."
+                                : "No user message.";
                             if (s.messages && s.messages.length > 0) {
                               // If we have a search query, find the first matching message
                               if (searchQuery) {
@@ -6867,7 +8495,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                                   padding: "16px 20px",
                                   borderRadius: 12,
                                   background: "white",
-                                  borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(6,91,152,0.1)",
+                                  borderWidth: "1px",
+                                  borderStyle: "solid",
+                                  borderColor: "rgba(6,91,152,0.1)",
                                   cursor: "pointer",
                                   display: "flex",
                                   flexDirection: "column",
@@ -6947,12 +8577,16 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               fontSize: 14,
                             }}
                           >
-                            {lang === "id" ? "Tidak ada percakapan yang cocok dengan pencarian." : "No conversations match your search."}
+                            {lang === "id"
+                              ? "Tidak ada percakapan yang cocok dengan pencarian."
+                              : "No conversations match your search."}
                           </div>
                         )}
                       </div>
                     </div>
-                  ) : chatHistory.length <= 1 ? (
+                  ) : chatHistory.length === 0 ||
+                    (chatHistory.length === 1 &&
+                      chatHistory[0].role === "assistant") ? (
                     // EMPTY STATE (GREETING & CARDS)
                     <div
                       style={{
@@ -7006,7 +8640,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                           zIndex: 1,
                         }}
                       >
-                        {lang === "id" ? "Selamat Datang di HUB.AI" : "Welcome to HUB.AI"}
+                        {lang === "id"
+                          ? "Selamat Datang di HUB.AI"
+                          : "Welcome to HUB.AI"}
                       </h2>
                       <p
                         style={{
@@ -7017,7 +8653,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                           zIndex: 1,
                         }}
                       >
-                        {lang === "id" ? "Apa yang bisa saya temukan untuk kontenmu hari ini?" : "What can I find for your content today?"}
+                        {lang === "id"
+                          ? "Apa yang bisa saya temukan untuk kontenmu hari ini?"
+                          : "What can I find for your content today?"}
                       </p>
 
                       <div
@@ -7046,11 +8684,15 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                           className="hover-scale hover-glow"
                           style={{
                             background: "white",
-                            borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(6,91,152,0.1)",
+                            borderWidth: "1px",
+                            borderStyle: "solid",
+                            borderColor: "rgba(6,91,152,0.1)",
                             borderRadius: 16,
                             padding: 16,
-                            width: 250,
-                            height: 140,
+                            width: isMobileHubAi ? "100%" : 250,
+                            maxWidth: isMobileHubAi ? 340 : "none",
+                            height: isMobileHubAi ? "auto" : 140,
+                            minHeight: isMobileHubAi ? 120 : "none",
                             cursor: "pointer",
                             textAlign: "left",
                             display: "flex",
@@ -7109,7 +8751,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                                 letterSpacing: "0.5px",
                               }}
                             >
-                              {lang === "id" ? "IDE KONTEN KREATIF" : "CREATIVE CONTENT IDEAS"}
+                              {lang === "id"
+                                ? "IDE KONTEN KREATIF"
+                                : "CREATIVE CONTENT IDEAS"}
                             </div>
                             <div style={{ display: "flex", gap: 3 }}>
                               {PROMPT_IDEAS.map((_, i) => (
@@ -7150,11 +8794,15 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                           className="hover-scale hover-glow"
                           style={{
                             background: "white",
-                            borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(6,91,152,0.1)",
+                            borderWidth: "1px",
+                            borderStyle: "solid",
+                            borderColor: "rgba(6,91,152,0.1)",
                             borderRadius: 16,
                             padding: 16,
-                            width: 250,
-                            height: 140,
+                            width: isMobileHubAi ? "100%" : 250,
+                            maxWidth: isMobileHubAi ? 340 : "none",
+                            height: isMobileHubAi ? "auto" : 140,
+                            minHeight: isMobileHubAi ? 120 : "none",
                             cursor: "pointer",
                             textAlign: "left",
                             display: "flex",
@@ -7213,7 +8861,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                                 letterSpacing: "0.5px",
                               }}
                             >
-                              {lang === "id" ? "ANALISIS & EVALUASI" : "ANALYSIS & EVALUATION"}
+                              {lang === "id"
+                                ? "ANALISIS & EVALUASI"
+                                : "ANALYSIS & EVALUATION"}
                             </div>
                             <div style={{ display: "flex", gap: 3 }}>
                               {ANALYSIS_IDEAS.map((_, i) => (
@@ -7244,11 +8894,15 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                           className="hover-scale hover-glow"
                           style={{
                             background: "white",
-                            borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(6,91,152,0.1)",
+                            borderWidth: "1px",
+                            borderStyle: "solid",
+                            borderColor: "rgba(6,91,152,0.1)",
                             borderRadius: 16,
                             padding: 16,
-                            width: 250,
-                            height: 140,
+                            width: isMobileHubAi ? "100%" : 250,
+                            maxWidth: isMobileHubAi ? 340 : "none",
+                            height: isMobileHubAi ? "auto" : 140,
+                            minHeight: isMobileHubAi ? 120 : "none",
                             textAlign: "left",
                             display: "flex",
                             flexDirection: "column",
@@ -7306,7 +8960,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                                 letterSpacing: "0.5px",
                               }}
                             >
-                              {lang === "id" ? "TIPS & TRIK HUB.AI" : "HUB.AI TIPS & TRICKS"}
+                              {lang === "id"
+                                ? "TIPS & TRIK HUB.AI"
+                                : "HUB.AI TIPS & TRICKS"}
                             </div>
                             <div style={{ display: "flex", gap: 3 }}>
                               {HUBAI_TIPS.map((_, i) => (
@@ -7350,7 +9006,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                             color: "rgba(25,53,70,0.6)",
                           }}
                         >
-                          {lang === "id" ? "Biar lebih kamu banget:" : "Personalize your AI:"}
+                          {lang === "id"
+                            ? "Biar lebih kamu banget:"
+                            : "Personalize your AI:"}
                         </span>
                       </div>
                       <div
@@ -7383,51 +9041,79 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                           {[
                             {
                               icon: <User size={14} color="#0DB8D3" />,
-                              text: lang === "id" ? "Atur Peran AI" : "Set AI Persona",
+                              text:
+                                lang === "id"
+                                  ? "Atur Peran AI"
+                                  : "Set AI Persona",
                             },
                             {
                               icon: <AlignLeft size={14} color="#1B7FDC" />,
-                              text: lang === "id" ? "Set Pilar Konten" : "Set Content Pillars",
+                              text:
+                                lang === "id"
+                                  ? "Set Pilar Konten"
+                                  : "Set Content Pillars",
                             },
                             {
                               icon: <FileText size={14} color="#10B981" />,
-                              text: lang === "id" ? "Tambah Contoh" : "Add Example",
+                              text:
+                                lang === "id" ? "Tambah Contoh" : "Add Example",
                             },
                             {
                               icon: <Mic size={14} color="#F59E0B" />,
-                              text: lang === "id" ? "Gaya Bahasa" : "Tone of Voice",
+                              text:
+                                lang === "id" ? "Gaya Bahasa" : "Tone of Voice",
                             },
                             {
                               icon: <Users size={14} color="#8B5CF6" />,
-                              text: lang === "id" ? "Target Audiens" : "Target Audience",
+                              text:
+                                lang === "id"
+                                  ? "Target Audiens"
+                                  : "Target Audience",
                             },
                             {
                               icon: <Book size={14} color="#E83A59" />,
-                              text: lang === "id" ? "Kamus Brand" : "Brand Dictionary",
+                              text:
+                                lang === "id"
+                                  ? "Kamus Brand"
+                                  : "Brand Dictionary",
                             },
                             {
                               icon: <User size={14} color="#0DB8D3" />,
-                              text: lang === "id" ? "Atur Peran AI" : "Set AI Persona",
+                              text:
+                                lang === "id"
+                                  ? "Atur Peran AI"
+                                  : "Set AI Persona",
                             },
                             {
                               icon: <AlignLeft size={14} color="#1B7FDC" />,
-                              text: lang === "id" ? "Set Pilar Konten" : "Set Content Pillars",
+                              text:
+                                lang === "id"
+                                  ? "Set Pilar Konten"
+                                  : "Set Content Pillars",
                             },
                             {
                               icon: <FileText size={14} color="#10B981" />,
-                              text: lang === "id" ? "Tambah Contoh" : "Add Example",
+                              text:
+                                lang === "id" ? "Tambah Contoh" : "Add Example",
                             },
                             {
                               icon: <Mic size={14} color="#F59E0B" />,
-                              text: lang === "id" ? "Gaya Bahasa" : "Tone of Voice",
+                              text:
+                                lang === "id" ? "Gaya Bahasa" : "Tone of Voice",
                             },
                             {
                               icon: <Users size={14} color="#8B5CF6" />,
-                              text: lang === "id" ? "Target Audiens" : "Target Audience",
+                              text:
+                                lang === "id"
+                                  ? "Target Audiens"
+                                  : "Target Audience",
                             },
                             {
                               icon: <Book size={14} color="#E83A59" />,
-                              text: lang === "id" ? "Kamus Brand" : "Brand Dictionary",
+                              text:
+                                lang === "id"
+                                  ? "Kamus Brand"
+                                  : "Brand Dictionary",
                             },
                           ].map((item, idx) => (
                             <div
@@ -7439,7 +9125,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                                 background: "white",
                                 padding: "8px 18px",
                                 borderRadius: 24,
-                                borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(6,91,152,0.1)",
+                                borderWidth: "1px",
+                                borderStyle: "solid",
+                                borderColor: "rgba(6,91,152,0.1)",
                                 fontSize: 12,
                                 fontWeight: 600,
                                 color: "#193546",
@@ -7460,7 +9148,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                   ) : (
                     <div
                       style={{
-                        padding: "30px",
+                        padding: isMobileHubAi ? "16px 12px" : "30px",
                         display: "flex",
                         flexDirection: "column",
                         gap: 24,
@@ -7470,7 +9158,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                       }}
                     >
                       {chatHistory.map((msg, idx) =>
-                        idx === 0 ? null : (
+                        idx === 0 &&
+                        msg.role === "assistant" &&
+                        msg.content.includes("HUB.AI") ? null : (
                           <motion.div
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -7479,7 +9169,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                             style={{
                               alignSelf:
                                 msg.role === "user" ? "flex-end" : "flex-start",
-                              maxWidth: "85%",
+                              maxWidth: isMobileHubAi ? "92%" : "85%",
                             }}
                           >
                             {msg.role === "assistant" && (
@@ -7576,7 +9266,8 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               <div
                                 style={{
                                   display: "flex",
-                                  gap: 16,
+                                  gap: isMobileHubAi ? 12 : 16,
+                                  flexWrap: "wrap",
                                   marginTop: 10,
                                   marginLeft: 8,
                                 }}
@@ -7589,7 +9280,8 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                                   }}
                                   style={{
                                     background: "transparent",
-                                    borderWidth: 0, borderStyle: "none",
+                                    borderWidth: 0,
+                                    borderStyle: "none",
                                     fontSize: 12,
                                     fontWeight: 700,
                                     color: "#065B98",
@@ -7608,7 +9300,8 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                                   }}
                                   style={{
                                     background: "transparent",
-                                    borderWidth: 0, borderStyle: "none",
+                                    borderWidth: 0,
+                                    borderStyle: "none",
                                     fontSize: 12,
                                     fontWeight: 700,
                                     color: "#0DB8D3",
@@ -7701,7 +9394,14 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
 
                 {/* FLOATING TEXT INPUT */}
                 {!isSearchMode && (
-                  <div style={{ padding: "0 32px 24px 32px", flexShrink: 0 }}>
+                  <div
+                    style={{
+                      padding: isMobileHubAi
+                        ? "0 12px 12px 12px"
+                        : "0 32px 24px 32px",
+                      flexShrink: 0,
+                    }}
+                  >
                     <div
                       style={{
                         margin: "0 auto",
@@ -7710,7 +9410,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                         background: "white",
                         borderRadius: 20,
                         padding: "8px 12px",
-                        borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(6,91,152,0.15)",
+                        borderWidth: "1px",
+                        borderStyle: "solid",
+                        borderColor: "rgba(6,91,152,0.15)",
                         boxShadow:
                           "0 12px 30px rgba(0,0,0,0.06), 0 0 20px rgba(13,184,211,0.05) inset",
                         display: "flex",
@@ -7719,7 +9421,11 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                       }}
                     >
                       <textarea
-                        placeholder={lang === "id" ? "Tanya apapun ke HUB.AI..." : "Ask HUB.AI anything..."}
+                        placeholder={
+                          lang === "id"
+                            ? "Tanya apapun ke HUB.AI..."
+                            : "Ask HUB.AI anything..."
+                        }
                         value={chatInput}
                         onChange={(e) => {
                           const target = e.target;
@@ -7727,7 +9433,7 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                           window.requestAnimationFrame(() => {
                             target.style.height = "auto";
                             target.style.height =
-                            Math.min(target.scrollHeight, 200) + "px";
+                              Math.min(target.scrollHeight, 200) + "px";
                           });
                         }}
                         onKeyDown={(e) => {
@@ -7743,7 +9449,8 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                         rows={1}
                         style={{
                           width: "100%",
-                          borderWidth: 0, borderStyle: "none",
+                          borderWidth: 0,
+                          borderStyle: "none",
                           outline: "none",
                           fontSize: 12,
                           background: "transparent",
@@ -7761,15 +9468,18 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                       <div
                         style={{
                           display: "flex",
+                          flexDirection: isMobileHubAi ? "column" : "row",
+                          gap: isMobileHubAi ? 6 : 0,
                           justifyContent: "space-between",
-                          alignItems: "center",
+                          alignItems: isMobileHubAi ? "stretch" : "center",
                         }}
                       >
                         <div
                           style={{
                             display: "flex",
-                            gap: 8,
+                            gap: 6,
                             alignItems: "center",
+                            flexWrap: "wrap",
                           }}
                         >
                           <div
@@ -7789,7 +9499,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                                 gap: 6,
                                 padding: "4px 10px",
                                 background: "rgba(13,184,211,0.1)",
-                                borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(13,184,211,0.2)",
+                                borderWidth: "1px",
+                                borderStyle: "solid",
+                                borderColor: "rgba(13,184,211,0.2)",
                                 borderRadius: 14,
                                 fontSize: 10,
                                 fontWeight: 600,
@@ -7798,7 +9510,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               }}
                             >
                               {dataSource === "all"
-                                ? (lang === "id" ? "Semua Data" : "All Data")
+                                ? lang === "id"
+                                  ? "Semua Data"
+                                  : "All Data"
                                 : dataSource === "social_management"
                                   ? "Social Management"
                                   : "Social Studio"}{" "}
@@ -7816,7 +9530,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                                     left: 0,
                                     marginBottom: 8,
                                     background: "white",
-                                    borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(6,91,152,0.1)",
+                                    borderWidth: "1px",
+                                    borderStyle: "solid",
+                                    borderColor: "rgba(6,91,152,0.1)",
                                     borderRadius: 12,
                                     padding: 6,
                                     boxShadow: "0 12px 32px rgba(0,0,0,0.1)",
@@ -7828,7 +9544,13 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                                   }}
                                 >
                                   {[
-                                    { id: "all", label: lang === "id" ? "Semua Data" : "All Data" },
+                                    {
+                                      id: "all",
+                                      label:
+                                        lang === "id"
+                                          ? "Semua Data"
+                                          : "All Data",
+                                    },
                                     {
                                       id: "social_management",
                                       label: "Social Management",
@@ -7884,7 +9606,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                                 gap: 6,
                                 padding: "4px 10px",
                                 background: "rgba(27,127,220,0.1)",
-                                borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(27,127,220,0.2)",
+                                borderWidth: "1px",
+                                borderStyle: "solid",
+                                borderColor: "rgba(27,127,220,0.2)",
                                 borderRadius: 14,
                                 fontSize: 10,
                                 fontWeight: 600,
@@ -7908,7 +9632,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                                     left: 0,
                                     marginBottom: 8,
                                     background: "white",
-                                    borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(6,91,152,0.1)",
+                                    borderWidth: "1px",
+                                    borderStyle: "solid",
+                                    borderColor: "rgba(6,91,152,0.1)",
                                     borderRadius: 12,
                                     padding: 6,
                                     boxShadow: "0 12px 32px rgba(0,0,0,0.1)",
@@ -7969,7 +9695,10 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                                         paddingTop: 6,
                                       }}
                                     >
-                                      <Settings size={12} /> {lang === "id" ? "Atur Konfigurasi" : "Set up Config"}
+                                      <Settings size={12} />{" "}
+                                      {lang === "id"
+                                        ? "Atur Konfigurasi"
+                                        : "Set up Config"}
                                     </div>
                                   )}
                                 </motion.div>
@@ -7981,17 +9710,55 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                           style={{
                             display: "flex",
                             alignItems: "center",
+                            justifyContent: isMobileHubAi
+                              ? "space-between"
+                              : "flex-end",
                             gap: 10,
+                            marginTop: isMobileHubAi ? 6 : 0,
+                            borderTop: isMobileHubAi
+                              ? "1px solid rgba(6,91,152,0.06)"
+                              : "none",
+                            paddingTop: isMobileHubAi ? 8 : 0,
                           }}
                         >
+                          <select
+                            value={selectedAiModel}
+                            onChange={(e) => setSelectedAiModel(e.target.value)}
+                            style={{
+                              background: "rgba(27,127,220,0.05)",
+                              border: "1px solid rgba(27,127,220,0.2)",
+                              borderRadius: 14,
+                              padding: "4px 8px",
+                              fontSize: 10,
+                              fontWeight: 600,
+                              color: "#1B7FDC",
+                              outline: "none",
+                              cursor: "pointer",
+                            }}
+                          >
+                            <option value="gemini-3.5-flash">
+                              Gemini 3.5 Flash
+                            </option>
+                            <option value="gemini-3.1-pro-preview">
+                              Gemini 3.1 Pro
+                            </option>
+                            <option value="gemini-3.1-flash-lite">
+                              Gemini 3.1 Flash Lite
+                            </option>
+                          </select>
                           <button
                             onClick={() =>
-                              alert(lang === "id" ? "Fitur Lampirkan Berkas akan segera hadir!" : "Attach File feature is coming soon!")
+                              alert(
+                                lang === "id"
+                                  ? "Fitur Lampirkan Berkas akan segera hadir!"
+                                  : "Attach File feature is coming soon!",
+                              )
                             }
                             className="hover-scale"
                             style={{
                               background: "transparent",
-                              borderWidth: 0, borderStyle: "none",
+                              borderWidth: 0,
+                              borderStyle: "none",
                               display: "flex",
                               alignItems: "center",
                               gap: 4,
@@ -8001,7 +9768,8 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               cursor: "pointer",
                             }}
                           >
-                            <Paperclip size={14} /> {lang === "id" ? "Lampirkan" : "Attach"}
+                            <Paperclip size={14} />{" "}
+                            {lang === "id" ? "Lampirkan" : "Attach"}
                           </button>
                           <button
                             onClick={() => handleChatSubmit()}
@@ -8016,7 +9784,8 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                                 chatLoading || !chatInput.trim()
                                   ? "#065B98"
                                   : "white",
-                              borderWidth: 0, borderStyle: "none",
+                              borderWidth: 0,
+                              borderStyle: "none",
                               borderRadius: 16,
                               padding: "6px 14px",
                               display: "flex",
@@ -8034,7 +9803,8 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                                   : "0 6px 16px rgba(27,127,220,0.3)",
                             }}
                           >
-                            <ArrowUp size={14} /> {lang === "id" ? "Kirim" : "Send"}
+                            <ArrowUp size={14} />{" "}
+                            {lang === "id" ? "Kirim" : "Send"}
                           </button>
                         </div>
                       </div>
@@ -8047,9 +9817,13 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                           fontWeight: 500,
                         }}
                       >
-                        {lang === "id" ? "HUB.AI dapat menampilkan info yang tidak akurat." : "HUB.AI may display inaccurate info."}{" "}
+                        {lang === "id"
+                          ? "HUB.AI dapat menampilkan info yang tidak akurat."
+                          : "HUB.AI may display inaccurate info."}{" "}
                         <u style={{ cursor: "pointer", color: "#065B98" }}>
-                          {lang === "id" ? "Panduan Verifikasi" : "Verification Guide"}
+                          {lang === "id"
+                            ? "Panduan Verifikasi"
+                            : "Verification Guide"}
                         </u>
                       </div>
                     </div>
@@ -8074,9 +9848,11 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                         top: 0,
                         right: 0,
                         bottom: 0,
-                        width: 380,
+                        width: isMobileHubAi ? "100%" : 380,
                         background: "#F8FAFC",
-                        borderLeft: "1px solid rgba(6,91,152,0.1)",
+                        borderLeft: isMobileHubAi
+                          ? "none"
+                          : "1px solid rgba(6,91,152,0.1)",
                         zIndex: 10,
                         display: "flex",
                         flexDirection: "column",
@@ -8111,14 +9887,18 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               letterSpacing: "0.5px",
                             }}
                           >
-                            <Settings size={18} color="#0DB8D3" /> {lang === "id" ? "KONFIGURASI AI" : "AI CONFIGURATION"}
+                            <Settings size={18} color="#0DB8D3" />{" "}
+                            {lang === "id"
+                              ? "KONFIGURASI AI"
+                              : "AI CONFIGURATION"}
                           </div>
                           <button
                             className="hover-bg"
                             onClick={handleCloseConfigPanel}
                             style={{
                               background: "rgba(6,91,152,0.05)",
-                              borderWidth: 0, borderStyle: "none",
+                              borderWidth: 0,
+                              borderStyle: "none",
                               cursor: "pointer",
                               color: "#193546",
                               padding: 8,
@@ -8203,7 +9983,8 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               alignItems: "center",
                             }}
                           >
-                            <Plus size={14} /> {lang === "id" ? "Tambah" : "Add"}
+                            <Plus size={14} />{" "}
+                            {lang === "id" ? "Tambah" : "Add"}
                           </div>
                         )}
                       </div>
@@ -8230,10 +10011,16 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               letterSpacing: "1px",
                             }}
                           >
-                            {lang === "id" ? "Nama Konfigurasi" : "Configuration Name"}
+                            {lang === "id"
+                              ? "Nama Konfigurasi"
+                              : "Configuration Name"}
                           </label>
                           <input
-                            placeholder={lang === "id" ? "Contoh: Config Instagram Utama..." : "Example: Main Instagram Config..."}
+                            placeholder={
+                              lang === "id"
+                                ? "Contoh: Config Instagram Utama..."
+                                : "Example: Main Instagram Config..."
+                            }
                             value={editingConfig.name}
                             onChange={(e) =>
                               updateEditingConfig("name", e.target.value)
@@ -8242,7 +10029,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               width: "100%",
                               padding: "12px",
                               borderRadius: 12,
-                              borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(6,91,152,0.1)",
+                              borderWidth: "1px",
+                              borderStyle: "solid",
+                              borderColor: "rgba(6,91,152,0.1)",
                               fontSize: 13,
                               fontFamily: "inherit",
                               background: "white",
@@ -8262,10 +10051,16 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               letterSpacing: "1px",
                             }}
                           >
-                            {lang === "id" ? "Posisi Pekerjaan" : "Job Role / Title"}
+                            {lang === "id"
+                              ? "Posisi Pekerjaan"
+                              : "Job Role / Title"}
                           </label>
                           <input
-                            placeholder={lang === "id" ? "Contoh: Social Media Manager..." : "Example: Social Media Manager..."}
+                            placeholder={
+                              lang === "id"
+                                ? "Contoh: Social Media Manager..."
+                                : "Example: Social Media Manager..."
+                            }
                             value={editingConfig.jobRole}
                             onChange={(e) =>
                               updateEditingConfig("jobRole", e.target.value)
@@ -8274,7 +10069,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               width: "100%",
                               padding: "12px",
                               borderRadius: 12,
-                              borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(6,91,152,0.1)",
+                              borderWidth: "1px",
+                              borderStyle: "solid",
+                              borderColor: "rgba(6,91,152,0.1)",
                               fontSize: 13,
                               fontFamily: "inherit",
                               background: "white",
@@ -8294,10 +10091,16 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               letterSpacing: "1px",
                             }}
                           >
-                            {lang === "id" ? "Gaya Bahasa (Tone of Voice)" : "Tone of Voice"}
+                            {lang === "id"
+                              ? "Gaya Bahasa (Tone of Voice)"
+                              : "Tone of Voice"}
                           </label>
                           <input
-                            placeholder={lang === "id" ? "Contoh: Santai, Gaul, dan Persuasif..." : "Example: Casual, Friendly, and Persuasive..."}
+                            placeholder={
+                              lang === "id"
+                                ? "Contoh: Santai, Gaul, dan Persuasif..."
+                                : "Example: Casual, Friendly, and Persuasive..."
+                            }
                             value={editingConfig.toneOfVoice}
                             onChange={(e) =>
                               updateEditingConfig("toneOfVoice", e.target.value)
@@ -8306,7 +10109,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               width: "100%",
                               padding: "12px",
                               borderRadius: 12,
-                              borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(6,91,152,0.1)",
+                              borderWidth: "1px",
+                              borderStyle: "solid",
+                              borderColor: "rgba(6,91,152,0.1)",
                               fontSize: 13,
                               fontFamily: "inherit",
                               background: "white",
@@ -8329,7 +10134,11 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                             {lang === "id" ? "Nama Brand" : "Brand Name"}
                           </label>
                           <input
-                            placeholder={lang === "id" ? "Contoh: Kopi Senja..." : "Example: Sunset Coffee..."}
+                            placeholder={
+                              lang === "id"
+                                ? "Contoh: Kopi Senja..."
+                                : "Example: Sunset Coffee..."
+                            }
                             value={editingConfig.brandName}
                             onChange={(e) =>
                               updateEditingConfig("brandName", e.target.value)
@@ -8338,7 +10147,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               width: "100%",
                               padding: "12px",
                               borderRadius: 12,
-                              borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(6,91,152,0.1)",
+                              borderWidth: "1px",
+                              borderStyle: "solid",
+                              borderColor: "rgba(6,91,152,0.1)",
                               fontSize: 13,
                               fontFamily: "inherit",
                               background: "white",
@@ -8361,7 +10172,11 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                             {lang === "id" ? "Bidang / Industri" : "Industry"}
                           </label>
                           <input
-                            placeholder={lang === "id" ? "Contoh: F&B / Minuman..." : "Example: Food & Beverage..."}
+                            placeholder={
+                              lang === "id"
+                                ? "Contoh: F&B / Minuman..."
+                                : "Example: Food & Beverage..."
+                            }
                             value={editingConfig.brandIndustry}
                             onChange={(e) =>
                               updateEditingConfig(
@@ -8373,7 +10188,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               width: "100%",
                               padding: "12px",
                               borderRadius: 12,
-                              borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(6,91,152,0.1)",
+                              borderWidth: "1px",
+                              borderStyle: "solid",
+                              borderColor: "rgba(6,91,152,0.1)",
                               fontSize: 13,
                               fontFamily: "inherit",
                               background: "white",
@@ -8393,10 +10210,16 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               letterSpacing: "1px",
                             }}
                           >
-                            {lang === "id" ? "Target Audiens" : "Target Audience"}
+                            {lang === "id"
+                              ? "Target Audiens"
+                              : "Target Audience"}
                           </label>
                           <input
-                            placeholder={lang === "id" ? "Contoh: Gen Z, Mahasiswa, Pekerja Kantoran..." : "Example: Gen Z, Students, Office Workers..."}
+                            placeholder={
+                              lang === "id"
+                                ? "Contoh: Gen Z, Mahasiswa, Pekerja Kantoran..."
+                                : "Example: Gen Z, Students, Office Workers..."
+                            }
                             value={editingConfig.targetAudience}
                             onChange={(e) =>
                               updateEditingConfig(
@@ -8408,7 +10231,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               width: "100%",
                               padding: "12px",
                               borderRadius: 12,
-                              borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(6,91,152,0.1)",
+                              borderWidth: "1px",
+                              borderStyle: "solid",
+                              borderColor: "rgba(6,91,152,0.1)",
                               fontSize: 13,
                               fontFamily: "inherit",
                               background: "white",
@@ -8428,10 +10253,16 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               letterSpacing: "1px",
                             }}
                           >
-                            {lang === "id" ? "Keunikan Brand (USP)" : "Unique Selling Proposition (USP)"}
+                            {lang === "id"
+                              ? "Keunikan Brand (USP)"
+                              : "Unique Selling Proposition (USP)"}
                           </label>
                           <input
-                            placeholder={lang === "id" ? "Apa yang membedakan brand anda..." : "What sets your brand apart..."}
+                            placeholder={
+                              lang === "id"
+                                ? "Apa yang membedakan brand anda..."
+                                : "What sets your brand apart..."
+                            }
                             value={editingConfig.usp}
                             onChange={(e) =>
                               updateEditingConfig("usp", e.target.value)
@@ -8440,7 +10271,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               width: "100%",
                               padding: "12px",
                               borderRadius: 12,
-                              borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(6,91,152,0.1)",
+                              borderWidth: "1px",
+                              borderStyle: "solid",
+                              borderColor: "rgba(6,91,152,0.1)",
                               fontSize: 13,
                               fontFamily: "inherit",
                               background: "white",
@@ -8463,7 +10296,11 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                             {lang === "id" ? "Tujuan Konten" : "Content Goals"}
                           </label>
                           <input
-                            placeholder={lang === "id" ? "Contoh: Awareness, Sales, Edukasi..." : "Example: Awareness, Sales, Education..."}
+                            placeholder={
+                              lang === "id"
+                                ? "Contoh: Awareness, Sales, Edukasi..."
+                                : "Example: Awareness, Sales, Education..."
+                            }
                             value={editingConfig.contentGoals}
                             onChange={(e) =>
                               updateEditingConfig(
@@ -8475,7 +10312,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               width: "100%",
                               padding: "12px",
                               borderRadius: 12,
-                              borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(6,91,152,0.1)",
+                              borderWidth: "1px",
+                              borderStyle: "solid",
+                              borderColor: "rgba(6,91,152,0.1)",
                               fontSize: 13,
                               fontFamily: "inherit",
                               background: "white",
@@ -8495,10 +10334,16 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               letterSpacing: "1px",
                             }}
                           >
-                            {lang === "id" ? "Pilar Konten (Topik Utama)" : "Content Pillars (Main Topics)"}
+                            {lang === "id"
+                              ? "Pilar Konten (Topik Utama)"
+                              : "Content Pillars (Main Topics)"}
                           </label>
                           <input
-                            placeholder={lang === "id" ? "Contoh: Motivasi, Humor, Tips & Trik..." : "Example: Motivation, Humor, Tips & Tricks..."}
+                            placeholder={
+                              lang === "id"
+                                ? "Contoh: Motivasi, Humor, Tips & Trik..."
+                                : "Example: Motivation, Humor, Tips & Tricks..."
+                            }
                             value={editingConfig.contentPillars}
                             onChange={(e) =>
                               updateEditingConfig(
@@ -8510,7 +10355,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               width: "100%",
                               padding: "12px",
                               borderRadius: 12,
-                              borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(6,91,152,0.1)",
+                              borderWidth: "1px",
+                              borderStyle: "solid",
+                              borderColor: "rgba(6,91,152,0.1)",
                               fontSize: 13,
                               fontFamily: "inherit",
                               background: "white",
@@ -8530,10 +10377,16 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               letterSpacing: "1px",
                             }}
                           >
-                            {lang === "id" ? "Kompetitor (Benchmarks)" : "Competitors (Benchmarks)"}
+                            {lang === "id"
+                              ? "Kompetitor (Benchmarks)"
+                              : "Competitors (Benchmarks)"}
                           </label>
                           <input
-                            placeholder={lang === "id" ? "Contoh: Kopi Janji Jiwa, Kopi Kenangan..." : "Example: Sunset Coffee, Dawn Coffee..."}
+                            placeholder={
+                              lang === "id"
+                                ? "Contoh: Kopi Janji Jiwa, Kopi Kenangan..."
+                                : "Example: Sunset Coffee, Dawn Coffee..."
+                            }
                             value={editingConfig.competitors}
                             onChange={(e) =>
                               updateEditingConfig("competitors", e.target.value)
@@ -8542,7 +10395,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               width: "100%",
                               padding: "12px",
                               borderRadius: 12,
-                              borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(6,91,152,0.1)",
+                              borderWidth: "1px",
+                              borderStyle: "solid",
+                              borderColor: "rgba(6,91,152,0.1)",
                               fontSize: 13,
                               fontFamily: "inherit",
                               background: "white",
@@ -8562,10 +10417,16 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               letterSpacing: "1px",
                             }}
                           >
-                            {lang === "id" ? "Info Tambahan" : "Additional Info"}
+                            {lang === "id"
+                              ? "Info Tambahan"
+                              : "Additional Info"}
                           </label>
                           <textarea
-                            placeholder={lang === "id" ? "Target market adalah Gen Z, produk unggulan kopi susu karamel..." : "Target market is Gen Z, signature product is caramel latte..."}
+                            placeholder={
+                              lang === "id"
+                                ? "Target market adalah Gen Z, produk unggulan kopi susu karamel..."
+                                : "Target market is Gen Z, signature product is caramel latte..."
+                            }
                             value={editingConfig.additionalInfo}
                             onChange={(e) =>
                               updateEditingConfig(
@@ -8577,7 +10438,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               width: "100%",
                               padding: "12px",
                               borderRadius: 12,
-                              borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(6,91,152,0.1)",
+                              borderWidth: "1px",
+                              borderStyle: "solid",
+                              borderColor: "rgba(6,91,152,0.1)",
                               fontSize: 13,
                               fontFamily: "inherit",
                               background: "white",
@@ -8599,10 +10462,16 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               letterSpacing: "1px",
                             }}
                           >
-                            {lang === "id" ? "Kamus Brand (Glossary)" : "Brand Glossary"}
+                            {lang === "id"
+                              ? "Kamus Brand (Glossary)"
+                              : "Brand Glossary"}
                           </label>
                           <textarea
-                            placeholder={lang === "id" ? "Tuliskan kata kunci, pantangan istilah, dan padanan kata yang spesifik ke brand anda. Contoh: Jangan pakai kata 'murah', gunakan 'hemat'..." : "Write down keywords, forbidden terms, and brand vocabulary. Example: Do not use the word 'cheap', use 'budget-friendly'..."}
+                            placeholder={
+                              lang === "id"
+                                ? "Tuliskan kata kunci, pantangan istilah, dan padanan kata yang spesifik ke brand anda. Contoh: Jangan pakai kata 'murah', gunakan 'hemat'..."
+                                : "Write down keywords, forbidden terms, and brand vocabulary. Example: Do not use the word 'cheap', use 'budget-friendly'..."
+                            }
                             value={editingConfig.brandGlossary}
                             onChange={(e) =>
                               updateEditingConfig(
@@ -8614,7 +10483,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               width: "100%",
                               padding: "12px",
                               borderRadius: 12,
-                              borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(6,91,152,0.1)",
+                              borderWidth: "1px",
+                              borderStyle: "solid",
+                              borderColor: "rgba(6,91,152,0.1)",
                               fontSize: 13,
                               fontFamily: "inherit",
                               background: "white",
@@ -8636,10 +10507,16 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               letterSpacing: "1px",
                             }}
                           >
-                            {lang === "id" ? "Contoh Konten (Referensi)" : "Content Reference (Examples)"}
+                            {lang === "id"
+                              ? "Contoh Konten (Referensi)"
+                              : "Content Reference (Examples)"}
                           </label>
                           <textarea
-                            placeholder={lang === "id" ? "Tuliskan format atau gaya draft konten yang pernah berhasil dan ingin HUB.AI ikuti polanya..." : "Write down content drafts or styles that were successful and you want HUB.AI to replicate..."}
+                            placeholder={
+                              lang === "id"
+                                ? "Tuliskan format atau gaya draft konten yang pernah berhasil dan ingin HUB.AI ikuti polanya..."
+                                : "Write down content drafts or styles that were successful and you want HUB.AI to replicate..."
+                            }
                             value={editingConfig.contentExamples}
                             onChange={(e) =>
                               updateEditingConfig(
@@ -8651,7 +10528,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               width: "100%",
                               padding: "12px",
                               borderRadius: 12,
-                              borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(6,91,152,0.1)",
+                              borderWidth: "1px",
+                              borderStyle: "solid",
+                              borderColor: "rgba(6,91,152,0.1)",
                               fontSize: 13,
                               fontFamily: "inherit",
                               background: "white",
@@ -8693,7 +10572,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                                     fontWeight: 500,
                                   }}
                                 >
-                                  {lang === "id" ? "* Harap isi seluruh kolom konfigurasi untuk menyimpan." : "* Please fill in all configuration fields to save."}
+                                  {lang === "id"
+                                    ? "* Harap isi seluruh kolom konfigurasi untuk menyimpan."
+                                    : "* Please fill in all configuration fields to save."}
                                 </div>
                               )}
                               <button
@@ -8708,7 +10589,8 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                                       ? "#ccc"
                                       : "#1B7FDC",
                                   color: "white",
-                                  borderWidth: 0, borderStyle: "none",
+                                  borderWidth: 0,
+                                  borderStyle: "none",
                                   fontSize: 13,
                                   fontWeight: 600,
                                   cursor:
@@ -8719,8 +10601,12 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                                 }}
                               >
                                 {savingConfig
-                                  ? (lang === "id" ? "Menyimpan..." : "Saving...")
-                                  : lang === "id" ? "Simpan Konfigurasi" : "Save Configuration"}
+                                  ? lang === "id"
+                                    ? "Menyimpan..."
+                                    : "Saving..."
+                                  : lang === "id"
+                                    ? "Simpan Konfigurasi"
+                                    : "Save Configuration"}
                               </button>
                             </div>
                           );
@@ -8768,7 +10654,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                             fontWeight: 700,
                           }}
                         >
-                          {lang === "id" ? "Konfigurasi Belum Lengkap" : "Incomplete Configuration"}
+                          {lang === "id"
+                            ? "Konfigurasi Belum Lengkap"
+                            : "Incomplete Configuration"}
                         </h3>
                         <p
                           style={{
@@ -8791,14 +10679,17 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               borderRadius: 12,
                               background: "rgba(224,36,36,0.1)",
                               color: "#E02424",
-                              borderWidth: 0, borderStyle: "none",
+                              borderWidth: 0,
+                              borderStyle: "none",
                               fontSize: 13,
                               fontWeight: 600,
                               cursor: "pointer",
                             }}
                             className="hover-bg-slate"
                           >
-                            {lang === "id" ? "Tutup & Hapus" : "Close & Discard"}
+                            {lang === "id"
+                              ? "Tutup & Hapus"
+                              : "Close & Discard"}
                           </button>
                           <button
                             onClick={() => setShowDiscardModal(false)}
@@ -8808,7 +10699,8 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                               borderRadius: 12,
                               background: "#1B7FDC",
                               color: "white",
-                              borderWidth: 0, borderStyle: "none",
+                              borderWidth: 0,
+                              borderStyle: "none",
                               fontSize: 13,
                               fontWeight: 600,
                               cursor: "pointer",
@@ -8826,7 +10718,446 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
             </div>
           )}
         </div>
+      ) : isMobileHubAi ? (
+        /* MOBILE VIEW - Beautiful, Clean, Modern, and Touch-Friendly */
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -15 }}
+          className="flex-1 min-h-0 flex flex-col bg-[#FAFAFA] overflow-hidden"
+          style={{ fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif" }}
+        >
+          {/* Header & Mobile Tab Switcher */}
+          <div className="bg-white border-b border-black/[0.03] flex-shrink-0 flex flex-col pt-3 pb-2 px-4 shadow-sm z-10">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-base font-extrabold text-[#111827] m-0">
+                {lang === "id" ? "Buat Postingan Baru" : "Create a Post"}
+              </h2>
+              <button
+                onClick={() => {
+                  setShowCreatePostPopup(false);
+                  if (tab === "social-studio" && setTab) {
+                    setTab("social-dashboard");
+                  }
+                }}
+                className="w-8 h-8 rounded-full flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-gray-500 transition-colors border-none cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Premium Tab Switcher */}
+            <div className="bg-black/[0.03] p-1 rounded-xl flex">
+              <button
+                onClick={() => setCreatePostMobileTab("editor")}
+                className={`flex-1 py-2 text-xs font-bold rounded-lg border-none cursor-pointer transition-all flex items-center justify-center gap-1.5 ${
+                  createPostMobileTab === "editor"
+                    ? "bg-white text-[var(--theme-primary)] shadow-[0_2px_8px_rgba(0,0,0,0.05)]"
+                    : "bg-transparent text-gray-500 hover:text-gray-800"
+                }`}
+              >
+                <Edit3 size={14} />
+                <span>{lang === "id" ? "Tulis Konten" : "Post Editor"}</span>
+              </button>
+              <button
+                onClick={() => setCreatePostMobileTab("preview")}
+                className={`flex-1 py-2 text-xs font-bold rounded-lg border-none cursor-pointer transition-all flex items-center justify-center gap-1.5 ${
+                  createPostMobileTab === "preview"
+                    ? "bg-white text-[var(--theme-primary)] shadow-[0_2px_8px_rgba(0,0,0,0.05)]"
+                    : "bg-transparent text-gray-500 hover:text-gray-800"
+                }`}
+              >
+                <Smartphone size={14} />
+                <span>{lang === "id" ? "Pratinjau HP" : "Mobile Preview"}</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Main Scrollable Area */}
+          <div className="flex-1 overflow-y-auto p-4 pb-6 flex flex-col gap-4">
+            {createPostMobileTab === "editor" ? (
+              /* EDITOR TAB */
+              <>
+                {/* Under development banner */}
+                <div className="bg-blue-50/70 border border-blue-100/50 rounded-2xl p-4 flex items-start gap-3">
+                  <div className="bg-blue-100/50 p-2 rounded-xl text-[var(--theme-primary)] flex-shrink-0 mt-0.5">
+                    <Sparkles size={16} />
+                  </div>
+                  <div className="min-w-0">
+                    <h5 className="font-extrabold text-blue-900 text-xs m-0 leading-tight">
+                      {lang === "id"
+                        ? "Direct Publishing Preview 🚀"
+                        : "Feature Preview 🚀"}
+                    </h5>
+                    <p className="text-[10px] text-blue-700/80 m-0 mt-1 leading-normal font-medium">
+                      {lang === "id"
+                        ? "Fitur penerbitan langsung ke media sosial sedang dalam uji coba internal dan akan segera hadir secara penuh."
+                        : "Direct publishing is currently in internal preview and will be fully available very soon."}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Platforms selection */}
+                <div className="bg-white rounded-2xl border border-black/[0.02] p-4 shadow-sm">
+                  <label className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider mb-3 block">
+                    {lang === "id"
+                      ? "Pilih Platform Tujuan"
+                      : "Select Platforms"}
+                  </label>
+                  <div className="flex gap-2 flex-wrap">
+                    {PLATFORMS.filter(
+                      (p) =>
+                        p.id !== "all" && connectedPlatforms.includes(p.id),
+                    ).length === 0 ? (
+                      <div className="text-xs text-gray-400 py-1.5 flex flex-col gap-1.5">
+                        <span>
+                          {lang === "id"
+                            ? "Belum ada platform yang terhubung."
+                            : "No connected platforms."}
+                        </span>
+                        <button
+                          onClick={() => {
+                            setShowCreatePostPopup(false);
+                            setTab("social-dashboard");
+                          }}
+                          className="text-[10px] font-bold text-[var(--theme-primary)] underline text-left border-none bg-transparent cursor-pointer"
+                        >
+                          {lang === "id"
+                            ? "Hubungkan sekarang di Dashboard"
+                            : "Connect now in Dashboard"}
+                        </button>
+                      </div>
+                    ) : (
+                      PLATFORMS.filter(
+                        (p) =>
+                          p.id !== "all" && connectedPlatforms.includes(p.id),
+                      ).map((p) => {
+                        const isSelected = createPostPlatforms.includes(p.id);
+                        return (
+                          <button
+                            key={p.id}
+                            onClick={() => {
+                              if (isSelected) {
+                                setCreatePostPlatforms((prev) =>
+                                  prev.filter((id) => id !== p.id),
+                                );
+                                setCreatePostPlatformTypes((prev) => {
+                                  const next = { ...prev };
+                                  delete next[p.id];
+                                  return next;
+                                });
+                              } else {
+                                setCreatePostPlatforms((prev) => [
+                                  ...prev,
+                                  p.id,
+                                ]);
+                                if (
+                                  p.contentTypes &&
+                                  p.contentTypes.length > 0
+                                ) {
+                                  setCreatePostPlatformTypes((prev) => ({
+                                    ...prev,
+                                    [p.id]: p.contentTypes![0].id,
+                                  }));
+                                }
+                              }
+                            }}
+                            className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-extrabold cursor-pointer transition-all border-none active:scale-95 ${
+                              isSelected
+                                ? "text-white shadow-sm"
+                                : "bg-black/[0.02] text-gray-500 hover:bg-black/[0.04]"
+                            }`}
+                            style={{
+                              backgroundColor: isSelected ? p.color : "",
+                            }}
+                          >
+                            <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-current">
+                              {typeof p.icon === "string" ? (
+                                <span className="text-[9px] font-black">
+                                  {p.icon}
+                                </span>
+                              ) : (
+                                React.cloneElement(
+                                  p.icon as React.ReactElement<any>,
+                                  { size: 10 },
+                                )
+                              )}
+                            </div>
+                            <span>{p.name}</span>
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+
+                {/* Editor Inputs (caption, media, formats) */}
+                {createPostPlatforms.length === 0 ? (
+                  <div className="bg-white rounded-2xl border border-dashed border-black/[0.06] py-10 px-5 text-center flex flex-col items-center justify-center shadow-sm">
+                    <Edit3 size={24} className="text-gray-300 mb-2" />
+                    <span className="text-xs font-bold text-gray-400">
+                      {lang === "id"
+                        ? "Pilih platform untuk mulai mengedit"
+                        : "Select at least one platform to edit"}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-4">
+                    {createPostPlatforms.map((pId) => {
+                      const p = PLATFORMS.find((x) => x.id === pId);
+                      if (!p) return null;
+                      const isExpanded = expandedEditPlatforms[pId] !== false;
+                      return (
+                        <div
+                          key={pId}
+                          className="bg-white rounded-2xl border border-black/[0.02] shadow-sm overflow-hidden"
+                        >
+                          {/* Accordion Header */}
+                          <div
+                            onClick={() =>
+                              setExpandedEditPlatforms((prev) => ({
+                                ...prev,
+                                [pId]: prev[pId] === false ? true : false,
+                              }))
+                            }
+                            className="p-4 flex items-center justify-between cursor-pointer bg-black/[0.01] hover:bg-black/[0.02] transition-colors select-none"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div
+                                className="w-7 h-7 rounded-full flex items-center justify-center text-white shadow-sm"
+                                style={{ backgroundColor: p.color }}
+                              >
+                                {typeof p.icon === "string" ? (
+                                  <span className="text-[10px] font-black text-white">
+                                    {p.icon}
+                                  </span>
+                                ) : (
+                                  React.cloneElement(
+                                    p.icon as React.ReactElement<any>,
+                                    { size: 12, color: "#FFFFFF" },
+                                  )
+                                )}
+                              </div>
+                              <span className="text-xs font-extrabold text-[#111827]">
+                                {p.name} {lang === "id" ? "Konten" : "Content"}
+                              </span>
+                            </div>
+                            <ChevronRight
+                              size={16}
+                              className="text-gray-400 transition-transform duration-200"
+                              style={{
+                                transform: isExpanded
+                                  ? "rotate(90deg)"
+                                  : "none",
+                              }}
+                            />
+                          </div>
+
+                          {/* Accordion Body */}
+                          <AnimatePresence initial={false}>
+                            {isExpanded && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: "auto", opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="overflow-hidden"
+                              >
+                                <div className="p-4 border-t border-black/[0.03]">
+                                  {renderEditorBlock(pId, p)}
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            ) : (
+              /* PREVIEW TAB */
+              <div className="flex flex-col items-center gap-4">
+                {createPostPlatforms.length === 0 ? (
+                  <div className="bg-white rounded-2xl border border-dashed border-black/[0.06] w-full py-12 px-6 text-center flex flex-col items-center justify-center shadow-sm">
+                    <Smartphone size={28} className="text-gray-300 mb-2" />
+                    <span className="text-xs font-bold text-gray-400">
+                      {lang === "id"
+                        ? "Belum ada platform yang dipilih untuk pratinjau"
+                        : "Select at least one platform to preview"}
+                    </span>
+                  </div>
+                ) : (
+                  <>
+                    {/* Horizontal Platform Select for Preview */}
+                    {createPostPlatforms.length > 1 && (
+                      <div className="flex gap-1.5 overflow-x-auto pb-1.5 w-full max-w-[340px] px-1 no-scrollbar">
+                        {createPostPlatforms.map((pId) => {
+                          const p = PLATFORMS.find((x) => x.id === pId);
+                          if (!p) return null;
+                          const isActive =
+                            activePreviewPlatform &&
+                            createPostPlatforms.includes(activePreviewPlatform)
+                              ? activePreviewPlatform === pId
+                              : createPostPlatforms[0] === pId;
+                          return (
+                            <button
+                              key={`preview-tab-mob-${pId}`}
+                              onClick={() => setActivePreviewPlatform(pId)}
+                              className={`px-3 py-1.5 rounded-full text-[11px] font-extrabold cursor-pointer transition-all border-none flex items-center gap-1.5 shrink-0 active:scale-95 shadow-xs ${
+                                isActive
+                                  ? "text-white"
+                                  : "bg-white text-gray-500 border border-black/[0.04] hover:bg-gray-50"
+                              }`}
+                              style={{
+                                backgroundColor: isActive ? p.color : "",
+                              }}
+                            >
+                              {typeof p.icon === "string" ? (
+                                <span className="text-[9px] font-black">
+                                  {p.icon}
+                                </span>
+                              ) : (
+                                React.cloneElement(
+                                  p.icon as React.ReactElement<any>,
+                                  { size: 10 },
+                                )
+                              )}
+                              <span>{p.name}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Beautiful, Realistic Integrated Mockup from PlatformPreview directly */}
+                    <div className="w-full flex justify-center py-2">
+                      {(() => {
+                        const pId =
+                          createPostPlatforms.length > 0
+                            ? activePreviewPlatform &&
+                              createPostPlatforms.includes(
+                                activePreviewPlatform,
+                              )
+                              ? activePreviewPlatform
+                              : createPostPlatforms[0]
+                            : null;
+                        const caption = pId
+                          ? (platformOverrides[pId]?.caption ??
+                            createPostCaption)
+                          : createPostCaption;
+                        const mediaList = pId
+                          ? platformOverrides[pId]?.media !== undefined
+                            ? platformOverrides[pId]?.media
+                            : createPostMedia
+                          : createPostMedia;
+
+                        return (
+                          <div className="w-full max-w-[310px] flex justify-center">
+                            <PlatformPreview
+                              platform={pId || "instagram"}
+                              contentType={
+                                createPostPlatformTypes[pId || ""] || "feed"
+                              }
+                              caption={caption}
+                              mediaList={mediaList || []}
+                              workspaceName={workspace?.name || "Workspace"}
+                            />
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* STICKY BOTTOM ACTIONS BAR - Non-fixed, natural sibling of scrollable content area to ensure absolutely no overlapping */}
+          <div className="flex-shrink-0 bg-white border-t border-black/[0.04] py-3.5 px-4 shadow-[0_-5px_20px_rgba(0,0,0,0.03)] z-10 flex flex-col gap-3">
+            {/* Mode selection Slider and Scheduler details side-by-side or stacked cleanly */}
+            <div className="flex flex-col gap-2">
+              <div className="bg-black/[0.03] p-0.5 rounded-xl flex w-full">
+                <button
+                  onClick={() => setCreatePostMode("now")}
+                  className={`flex-1 py-1.5 text-[11px] font-extrabold rounded-lg border-none cursor-pointer transition-all ${
+                    createPostMode === "now"
+                      ? "bg-white text-gray-900 shadow-sm"
+                      : "bg-transparent text-gray-400"
+                  }`}
+                >
+                  Post Sekarang
+                </button>
+                <button
+                  onClick={() => setCreatePostMode("schedule")}
+                  className={`flex-1 py-1.5 text-[11px] font-extrabold rounded-lg border-none cursor-pointer transition-all ${
+                    createPostMode === "schedule"
+                      ? "bg-white text-gray-900 shadow-sm"
+                      : "bg-transparent text-gray-400"
+                  }`}
+                >
+                  Jadwal Post
+                </button>
+              </div>
+
+              {/* Collapsible Schedule Picker Inputs */}
+              {createPostMode === "schedule" && (
+                <div className="grid grid-cols-2 gap-2 mt-1 animate-[fadeIn_0.15s_ease-out]">
+                  <div className="bg-black/[0.02] border border-black/[0.03] rounded-xl px-2.5 py-1 flex flex-col">
+                    <span className="text-[8px] font-extrabold text-gray-400 uppercase tracking-wider">
+                      {lang === "id" ? "Tanggal" : "Date"}
+                    </span>
+                    <input
+                      type="date"
+                      value={createPostDate}
+                      onChange={(e) => setCreatePostDate(e.target.value)}
+                      className="border-none bg-transparent text-xs font-bold text-gray-800 outline-none p-0 mt-0.5"
+                    />
+                  </div>
+                  <div className="bg-black/[0.02] border border-black/[0.03] rounded-xl px-2.5 py-1 flex flex-col">
+                    <span className="text-[8px] font-extrabold text-gray-400 uppercase tracking-wider">
+                      {lang === "id" ? "Waktu" : "Time"}
+                    </span>
+                    <input
+                      type="time"
+                      value={createPostTime}
+                      onChange={(e) => setCreatePostTime(e.target.value)}
+                      className="border-none bg-transparent text-xs font-bold text-gray-800 outline-none p-0 mt-0.5"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Cancel and Action Buttons */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowCreatePostPopup(false);
+                  if (tab === "social-studio" && setTab) {
+                    setTab("social-dashboard");
+                  }
+                }}
+                className="flex-1 py-2.5 px-4 rounded-xl text-xs font-extrabold text-gray-500 bg-gray-100 hover:bg-gray-200 transition-colors border-none cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleCreatePost}
+                disabled={createPostPlatforms.length === 0}
+                className={`flex-1.5 py-2.5 px-4 rounded-xl text-xs font-black text-white shadow-sm transition-all border-none cursor-pointer active:scale-95 ${
+                  createPostPlatforms.length === 0
+                    ? "bg-gray-300 cursor-not-allowed opacity-50"
+                    : "bg-[var(--theme-primary)] hover:opacity-95"
+                }`}
+              >
+                {createPostMode === "now" ? "Post Sekarang" : "Jadwal Post"}
+              </button>
+            </div>
+          </div>
+        </motion.div>
       ) : (
+        /* DESKTOP VIEW - Kept 100% original */
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -8854,10 +11185,16 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
               Create a Post
             </h2>
             <button
-              onClick={() => setShowCreatePostPopup(false)}
+              onClick={() => {
+                setShowCreatePostPopup(false);
+                if (tab === "social-studio" && setTab) {
+                  setTab("social-dashboard");
+                }
+              }}
               style={{
                 background: "transparent",
-                borderWidth: 0, borderStyle: "none",
+                borderWidth: 0,
+                borderStyle: "none",
                 width: 28,
                 height: 28,
                 borderRadius: 14,
@@ -8882,6 +11219,61 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
               flexDirection: "column",
             }}
           >
+            {/* Info Banner: Feature Coming Soon */}
+            <div
+              style={{
+                background:
+                  "linear-gradient(135deg, rgba(37, 99, 235, 0.05) 0%, rgba(59, 130, 246, 0.05) 100%)",
+                border: "1px solid rgba(37, 99, 235, 0.15)",
+                borderRadius: "16px",
+                padding: "16px 20px",
+                marginBottom: "24px",
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+                flexShrink: 0,
+              }}
+            >
+              <div
+                style={{
+                  background: "rgba(37, 99, 235, 0.1)",
+                  borderRadius: "50%",
+                  padding: "8px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <Sparkles size={18} color="var(--theme-primary)" />
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                <div
+                  style={{
+                    fontSize: "14px",
+                    fontWeight: 800,
+                    color: "#1E3A8A",
+                  }}
+                >
+                  {lang === "id"
+                    ? "Fitur dalam Pengembangan (Segera Hadir) 🚀"
+                    : "Feature in Development (Coming Soon) 🚀"}
+                </div>
+                <div
+                  style={{
+                    fontSize: "12px",
+                    color: "#1E40AF",
+                    opacity: 0.85,
+                    lineHeight: "1.4",
+                  }}
+                >
+                  {lang === "id"
+                    ? "Fitur penerbitan otomatis ke media sosial saat ini sedang dalam tahap uji coba internal dan akan segera dapat digunakan secara penuh."
+                    : "Direct publishing to social media platforms is currently in internal preview and will be fully available very soon."}
+                </div>
+              </div>
+            </div>
+
             <div
               style={{
                 display: "grid",
@@ -8915,7 +11307,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                       <div
                         style={{ fontSize: 13, color: "rgba(44,32,22,0.5)" }}
                       >
-                        {lang === "id" ? "Silakan hubungkan akun di pengaturan terlebih dahulu." : "Please connect your account in settings first."}
+                        {lang === "id"
+                          ? "Silakan hubungkan akun di pengaturan terlebih dahulu."
+                          : "Please connect your account in settings first."}
                       </div>
                     ) : (
                       PLATFORMS.filter(
@@ -8968,7 +11362,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                                 borderRadius: 20,
                                 borderWidth: isSelected ? "0" : "1px",
                                 borderStyle: isSelected ? "none" : "solid",
-                                borderColor: isSelected ? "transparent" : "rgba(44,32,22,0.08)",
+                                borderColor: isSelected
+                                  ? "transparent"
+                                  : "rgba(44,32,22,0.08)",
                                 background: isSelected
                                   ? p.color
                                   : "transparent",
@@ -9035,7 +11431,9 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                         <div
                           key={pId}
                           style={{
-                            borderWidth: "1px", borderStyle: "solid", borderColor: "rgba(44,32,22,0.08)",
+                            borderWidth: "1px",
+                            borderStyle: "solid",
+                            borderColor: "rgba(44,32,22,0.08)",
                             borderRadius: 16,
                             overflow: "hidden",
                             background: "white",
@@ -9185,9 +11583,12 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                             {typeof p.icon === "string" ? (
                               <span>{p.icon}</span>
                             ) : (
-                              React.cloneElement(p.icon as React.ReactElement<any>, {
-                                size: 12,
-                              })
+                              React.cloneElement(
+                                p.icon as React.ReactElement<any>,
+                                {
+                                  size: 12,
+                                },
+                              )
                             )}
                             {p.name}
                           </div>
@@ -9264,7 +11665,8 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                   style={{
                     background:
                       createPostMode === "now" ? "white" : "transparent",
-                    borderWidth: 0, borderStyle: "none",
+                    borderWidth: 0,
+                    borderStyle: "none",
                     borderRadius: 8,
                     padding: "8px 16px",
                     fontSize: 13,
@@ -9288,7 +11690,8 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                   style={{
                     background:
                       createPostMode === "schedule" ? "white" : "transparent",
-                    borderWidth: 0, borderStyle: "none",
+                    borderWidth: 0,
+                    borderStyle: "none",
                     borderRadius: 8,
                     padding: "8px 16px",
                     fontSize: 13,
@@ -9317,7 +11720,8 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                     onChange={(e) => setCreatePostDate(e.target.value)}
                     style={{
                       borderRadius: 10,
-                      borderWidth: 0, borderStyle: "none",
+                      borderWidth: 0,
+                      borderStyle: "none",
                       background: "rgba(44,32,22,0.03)",
                       padding: "8px 12px",
                       fontSize: 13,
@@ -9339,7 +11743,8 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                     onChange={(e) => setCreatePostTime(e.target.value)}
                     style={{
                       borderRadius: 10,
-                      borderWidth: 0, borderStyle: "none",
+                      borderWidth: 0,
+                      borderStyle: "none",
                       background: "rgba(44,32,22,0.03)",
                       padding: "8px 12px",
                       fontSize: 13,
@@ -9360,10 +11765,16 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
             </div>
             <div style={{ display: "flex", gap: 12 }}>
               <button
-                onClick={() => setShowCreatePostPopup(false)}
+                onClick={() => {
+                  setShowCreatePostPopup(false);
+                  if (tab === "social-studio" && setTab) {
+                    setTab("social-dashboard");
+                  }
+                }}
                 style={{
                   background: "transparent",
-                  borderWidth: 0, borderStyle: "none",
+                  borderWidth: 0,
+                  borderStyle: "none",
                   borderRadius: 10,
                   padding: "10px 20px",
                   fontWeight: 700,
@@ -9379,7 +11790,8 @@ Catatan: Anda boleh menambahkan teks pembuka/penutup di luar tag tersebut.`;
                 onClick={handleCreatePost}
                 style={{
                   background: "var(--theme-primary)",
-                  borderWidth: 0, borderStyle: "none",
+                  borderWidth: 0,
+                  borderStyle: "none",
                   borderRadius: 10,
                   padding: "10px 24px",
                   fontWeight: 700,

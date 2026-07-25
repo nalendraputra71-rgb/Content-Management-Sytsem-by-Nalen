@@ -5,47 +5,49 @@ import { X, Users, SlidersHorizontal, Check } from "lucide-react";
 function getBlankDemographics(platform: string) {
   return {
     platform,
-    gender: { male: 0, female: 0 },
+    gender: { male: 50, female: 50 },
     age: [
-      { range: "13-17", value: 0 },
-      { range: "18-24", value: 0 },
-      { range: "25-34", value: 0 },
-      { range: "35-44", value: 0 },
-      { range: "45+", value: 0 },
+      { range: "13-17", value: 5 },
+      { range: "18-24", value: 40 },
+      { range: "25-34", value: 35 },
+      { range: "35-44", value: 15 },
+      { range: "45+", value: 5 },
     ],
     cities: [
-      { name: "", percentage: 0 },
-      { name: "", percentage: 0 },
-      { name: "", percentage: 0 },
-      { name: "", percentage: 0 },
-      { name: "", percentage: 0 }
+      { name: "Jakarta", percentage: 35 },
+      { name: "Surabaya", percentage: 25 },
+      { name: "Bandung", percentage: 15 },
+      { name: "Medan", percentage: 10 },
+      { name: "Semarang", percentage: 5 }
     ],
     countries: [
-      { name: "", percentage: 0 },
-      { name: "", percentage: 0 },
-      { name: "", percentage: 0 },
-      { name: "", percentage: 0 },
-      { name: "", percentage: 0 }
+      { name: "Indonesia", percentage: 85 },
+      { name: "Malaysia", percentage: 8 },
+      { name: "Singapore", percentage: 4 },
+      { name: "Japan", percentage: 2 },
+      { name: "United States", percentage: 1 }
     ],
     interests: [
-      { name: "", percentage: 0 },
-      { name: "", percentage: 0 },
-      { name: "", percentage: 0 },
-      { name: "", percentage: 0 },
-      { name: "", percentage: 0 }
+      { name: "Technology & Gadget", percentage: 30 },
+      { name: "Lifestyle & Fashion", percentage: 25 },
+      { name: "Entertainment & Film", percentage: 20 },
+      { name: "Food & Culinary", percentage: 15 },
+      { name: "Business & Career", percentage: 10 }
     ],
     devices: [
-      { name: "Mobile", percentage: 0 },
-      { name: "Desktop", percentage: 0 },
-      { name: "Tablet", percentage: 0 }
+      { name: "Mobile", percentage: 85 },
+      { name: "Desktop", percentage: 12 },
+      { name: "Tablet", percentage: 3 }
     ]
   };
 }
 
 export function DemoEditModal({
+  lang,
   isDemoModalOpen, setIsDemoModalOpen,
   demographics, setDemographics,
-  platformFilter, platforms
+  platformFilter, platforms,
+  onSaveDemographics
 }: any) {
   const [editingPlatform, setEditingPlatform] = useState("");
   const [editDemoData, setEditDemoData] = useState<any>(null);
@@ -53,9 +55,9 @@ export function DemoEditModal({
 
   useEffect(() => {
     if (isDemoModalOpen) {
-      const initialTemp = JSON.parse(JSON.stringify(demographics));
+      const initialTemp = JSON.parse(JSON.stringify(demographics || {}));
       setTempDemographics(initialTemp);
-      const firstPlatform = platforms[0];
+      const firstPlatform = platforms?.[0];
       const startPlatform = platformFilter === "all" 
         ? (typeof firstPlatform === 'string' ? firstPlatform : (firstPlatform?.name || "TikTok")) 
         : platformFilter;
@@ -64,7 +66,7 @@ export function DemoEditModal({
       const current = initialTemp[startPlatform.toLowerCase()] || null;
       setEditDemoData(current ? JSON.parse(JSON.stringify(current)) : getBlankDemographics(startPlatform));
     }
-  }, [isDemoModalOpen, demographics, platformFilter, platforms]);
+  }, [isDemoModalOpen]);
 
   return (
 
@@ -84,9 +86,9 @@ export function DemoEditModal({
                 <div>
                   <h3 className="text-lg font-extrabold text-gray-950 m-0 tracking-tight flex items-center gap-2">
                     <SlidersHorizontal size={18} className="text-blue-600" />
-                    <span>Edit Demografi Audiens</span>
+                    <span>{lang === "id" ? "Edit Demografi Audiens" : "Edit Audience Demographics"}</span>
                   </h3>
-                  <p className="text-xs text-gray-500 mt-1">Sesuaikan persebaran demografi per platform. Perubahan disimpan secara offline di browser Anda.</p>
+                  <p className="text-xs text-gray-500 mt-1">{lang === "id" ? "Sesuaikan persebaran demografi per platform. Perubahan disimpan secara offline di browser Anda." : "Adjust demographics distribution per platform. Changes are saved offline in your browser."}</p>
                 </div>
                 <button 
                   onClick={() => setIsDemoModalOpen(false)}
@@ -100,7 +102,7 @@ export function DemoEditModal({
               {/* Platform Selector Row inside Modal */}
               <div className="bg-blue-50/50 px-6 py-3 border-b border-blue-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-gray-500">Pilih Platform untuk Diedit:</span>
+                  <span className="text-xs font-bold text-gray-500">{lang === "id" ? "Pilih Platform untuk Diedit:" : "Select Platform to Edit:"}</span>
                   <div className="relative">
                     <select 
                       value={editingPlatform}
@@ -132,7 +134,7 @@ export function DemoEditModal({
                 </div>
                 <div className="flex items-center gap-1.5 text-[11px] font-bold text-blue-700 bg-blue-100/50 px-3 py-1 rounded-full border border-blue-200/30">
                   <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse" />
-                  <span>Mengedit data untuk: <strong className="text-blue-900 font-extrabold">{editingPlatform}</strong></span>
+                  <span>{lang === "id" ? "Mengedit data untuk:" : "Editing data for:"} <strong className="text-blue-900 font-extrabold">{editingPlatform}</strong></span>
                 </div>
               </div>
 
@@ -145,12 +147,12 @@ export function DemoEditModal({
                 <div className="space-y-4">
                   <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-pink-500" />
-                    <span>1. Jenis Kelamin (Gender Split)</span>
+                    <span>{lang === "id" ? "1. Jenis Kelamin (Gender Split)" : "1. Gender Split"}</span>
                   </h4>
                   <div className="bg-black/[0.01] p-5 rounded-2xl border border-black/[0.02] space-y-4">
                     <div className="flex justify-between items-center text-sm font-bold">
-                      <span className="text-pink-600">👩 Wanita: {editDemoData.gender.female}%</span>
-                      <span className="text-blue-600">👨 Pria: {editDemoData.gender.male}%</span>
+                      <span className="text-pink-600">👩 {lang === "id" ? "Wanita" : "Female"}: {editDemoData.gender.female}%</span>
+                      <span className="text-blue-600">👨 {lang === "id" ? "Pria" : "Male"}: {editDemoData.gender.male}%</span>
                     </div>
                     {/* Horizontal Bar Visualizer */}
                     <div className="flex h-4 rounded-full overflow-hidden bg-black/[0.04]">
@@ -159,7 +161,7 @@ export function DemoEditModal({
                     </div>
                     {/* Real-time Slider */}
                     <div className="space-y-1">
-                      <label className="text-[11px] font-bold text-gray-400 block">Geser untuk mengatur persentase Wanita (Pria otomatis menyesuaikan):</label>
+                      <label className="text-[11px] font-bold text-gray-400 block">Geser untuk mengatur persentase {lang === "id" ? "Wanita" : "Female"} ({lang === "id" ? "Pria" : "Male"} otomatis menyesuaikan):</label>
                       <input 
                         type="range" 
                         min="0" 
@@ -186,14 +188,14 @@ export function DemoEditModal({
                   <div className="flex justify-between items-center">
                     <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
                       <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                      <span>2. Kelompok Umur</span>
+                      <span>{lang === "id" ? "2. Kelompok Umur" : "2. Age Groups"}</span>
                     </h4>
                     {/* Sum Tracker */}
                     {(() => {
                       const totalAge = editDemoData.age.reduce((acc: number, item: any) => acc + (parseInt(item.value) || 0), 0);
                       return (
                         <span className={`text-xs font-bold px-2 py-0.5 rounded-lg ${totalAge === 100 ? "text-emerald-600 bg-emerald-50" : "text-amber-600 bg-amber-50"}`}>
-                          Total: {totalAge}% {totalAge !== 100 && "(Harus 100%)"}
+                          Total: {totalAge}% {totalAge !== 100 && lang === "id" ? "(Harus 100%)" : "(Must be 100%)"}
                         </span>
                       );
                     })()}
@@ -231,7 +233,7 @@ export function DemoEditModal({
                     <div className="flex justify-between items-center">
                       <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
                         <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                        <span>3. Kota Teratas</span>
+                        <span>{lang === "id" ? "3. Kota Teratas" : "3. Top Cities"}</span>
                       </h4>
                       {(() => {
                         const total = editDemoData.cities.reduce((acc: number, item: any) => acc + (parseInt(item.percentage) || 0), 0);
@@ -278,7 +280,7 @@ export function DemoEditModal({
                     <div className="flex justify-between items-center">
                       <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
                         <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
-                        <span>4. Negara Teratas</span>
+                        <span>{lang === "id" ? "4. Negara Teratas" : "4. Top Countries"}</span>
                       </h4>
                       {(() => {
                         const total = editDemoData.countries.reduce((acc: number, item: any) => acc + (parseInt(item.percentage) || 0), 0);
@@ -325,7 +327,7 @@ export function DemoEditModal({
                     <div className="flex justify-between items-center">
                       <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                        <span>5. Minat Audiens</span>
+                        <span>{lang === "id" ? "5. Minat Audiens" : "5. Audience Interests"}</span>
                       </h4>
                       {(() => {
                         const total = editDemoData.interests.reduce((acc: number, item: any) => acc + (parseInt(item.percentage) || 0), 0);
@@ -338,7 +340,7 @@ export function DemoEditModal({
                           <input 
                             type="text" 
                             value={interest.name}
-                            placeholder={`Kategori Minat ${idx+1}`}
+                            placeholder={lang === "id" ? `Kategori Minat ${idx+1}` : `Interest Category ${idx+1}`}
                             onChange={(e) => {
                               const newInts = [...editDemoData.interests];
                               newInts[idx] = { ...newInts[idx], name: e.target.value };
@@ -374,13 +376,13 @@ export function DemoEditModal({
                   <div className="flex justify-between items-center">
                     <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
                       <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
-                      <span>6. Perangkat / Devices</span>
+                      <span>{lang === "id" ? "6. Perangkat / Devices" : "6. Devices"}</span>
                     </h4>
                     {(() => {
                       const totalDevices = editDemoData.devices.reduce((acc: number, item: any) => acc + (parseInt(item.percentage) || 0), 0);
                       return (
                         <span className={`text-xs font-bold px-2 py-0.5 rounded-lg ${totalDevices === 100 ? "text-emerald-600 bg-emerald-50" : "text-amber-600 bg-amber-50"}`}>
-                          Total: {totalDevices}% {totalDevices !== 100 && "(Harus 100%)"}
+                          Total: {totalDevices}% {totalDevices !== 100 && lang === "id" ? "(Harus 100%)" : "(Must be 100%)"}
                         </span>
                       );
                     })()}
@@ -421,7 +423,7 @@ export function DemoEditModal({
                     onClick={() => setIsDemoModalOpen(false)}
                     className="px-4 py-2 text-xs font-bold text-gray-500 hover:text-gray-900 hover:bg-black/[0.03] rounded-xl cursor-pointer transition-all border-none bg-transparent"
                   >
-                    Batal
+                    {lang === "id" ? "Batal" : "Cancel"}
                   </button>
                   <button 
                     onClick={() => {
@@ -430,12 +432,17 @@ export function DemoEditModal({
                         [editingPlatform.toLowerCase()]: editDemoData
                       };
                       setDemographics(finalTemp);
-                      localStorage.setItem("hubify_custom_demographics", JSON.stringify(finalTemp));
+                      try {
+                        localStorage.setItem("hubify_custom_demographics", JSON.stringify(finalTemp));
+                      } catch (e) {}
+                      if (onSaveDemographics) {
+                        onSaveDemographics(finalTemp);
+                      }
                       setIsDemoModalOpen(false);
                     }}
                     className="px-5 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl cursor-pointer transition-all shadow-md hover:shadow-lg border-none"
                   >
-                    Simpan Perubahan
+                    {lang === "id" ? "Simpan Perubahan" : "Save Changes"}
                   </button>
                 </div>
               </div>

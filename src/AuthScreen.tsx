@@ -31,18 +31,34 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
   const [nickname, setNickname] = useState("");
 
   const getFriendlyError = (e: any) => {
-    switch(e.code) {
-      case 'auth/popup-closed-by-user': return "Login dibatalkan, kamu menutup popup sebelum selesai.";
-      case 'auth/operation-not-allowed': return "Metode login ini belum aktif nih. Coba cara lain ya.";
-      case 'auth/email-already-in-use': return "Email ini udah pernah didaftarin.";
-      case 'auth/wrong-password':
-      case 'auth/user-not-found':
-      case 'auth/invalid-credential': return "Username atau passwordnya salah, coba cek lagi ya.";
-      case 'auth/too-many-requests': return "Udah terlalu sering nyoba nih. Wait sebentar trus coba lagi ya.";
-      case 'auth/invalid-email': return "Format emailnya kurang pas nih.";
-      case 'auth/weak-password': return "Passwordnya terlalu gampang ditebak, minimal 6 karakter ya.";
-      case 'auth/network-request-failed': return "Wah internetnya lagi ngadat nih, cek koneksi dulu yuk.";
-      default: return "Ups, ada kendala teknis. Coba sebentar lagi ya.";
+    if (lang === "id") {
+      switch(e.code) {
+        case 'auth/popup-closed-by-user': return "Login dibatalkan, kamu menutup popup sebelum selesai.";
+        case 'auth/operation-not-allowed': return "Metode login ini belum aktif nih. Coba cara lain ya.";
+        case 'auth/email-already-in-use': return "Email ini udah pernah didaftarin.";
+        case 'auth/wrong-password':
+        case 'auth/user-not-found':
+        case 'auth/invalid-credential': return "Username atau passwordnya salah, coba cek lagi ya.";
+        case 'auth/too-many-requests': return "Udah terlalu sering nyoba nih. Wait sebentar trus coba lagi ya.";
+        case 'auth/invalid-email': return "Format emailnya kurang pas nih.";
+        case 'auth/weak-password': return "Passwordnya terlalu gampang ditebak, minimal 6 karakter ya.";
+        case 'auth/network-request-failed': return "Wah internetnya lagi ngadat nih, cek koneksi dulu yuk.";
+        default: return "Ups, ada kendala teknis. Coba sebentar lagi ya.";
+      }
+    } else {
+      switch(e.code) {
+        case 'auth/popup-closed-by-user': return "Login cancelled, you closed the popup before completing.";
+        case 'auth/operation-not-allowed': return "This login method is not enabled. Please try another way.";
+        case 'auth/email-already-in-use': return "This email is already registered.";
+        case 'auth/wrong-password':
+        case 'auth/user-not-found':
+        case 'auth/invalid-credential': return "Incorrect email or password, please check again.";
+        case 'auth/too-many-requests': return "Too many attempts. Please wait a bit and try again.";
+        case 'auth/invalid-email': return "The email format is invalid.";
+        case 'auth/weak-password': return "Password is too weak, must be at least 6 characters.";
+        case 'auth/network-request-failed': return "Network error, please check your connection.";
+        default: return "Oops, something went wrong. Please try again soon.";
+      }
     }
   };
 
@@ -102,13 +118,13 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
 
   const handleForgot = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) return setError("Masukkan email terlebih dahulu.");
+    if (!email) return setError(lang === 'id' ? "Masukkan email terlebih dahulu." : "Please enter your email first.");
     setLoading(true);
     setError("");
     setMsg("");
     try {
       await sendPasswordResetEmail(auth, email);
-      setMsg("Link udah dikirim ke email kamu, buruan cek ya!");
+      setMsg(lang === 'id' ? "Link udah dikirim ke email kamu, buruan cek ya!" : "A password reset link has been sent to your email, check it out!");
     } catch (e: any) { 
       setError(getFriendlyError(e));
     }
@@ -125,7 +141,7 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
          await checkUserDocument(res.user);
       } else if (mode === "signup") {
          if (!fullName || !nickname) {
-           setError("Nama Lengkap dan Nama Panggilan wajib diisi!");
+           setError(lang === 'id' ? "Nama Lengkap dan Nama Panggilan wajib diisi!" : "Full Name and Nickname are required!");
            setLoading(false);
            return;
          }
@@ -184,8 +200,17 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
                transition={{ delay: 0.3 }}
                className="text-4xl md:text-5xl font-extrabold leading-[1.1] mb-6 tracking-tight"
             >
-              Urus Konten.<br/>
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-blue-100">Bebas Ruwet.</span>
+              {lang === "id" ? (
+                <>
+                  Urus Konten.<br/>
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-blue-100">Bebas Ruwet.</span>
+                </>
+              ) : (
+                <>
+                  Manage Content.<br/>
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-blue-100">Hassle-Free.</span>
+                </>
+              )}
             </motion.h1>
             <motion.p 
                initial={{ opacity: 0, x: -20 }}
@@ -193,7 +218,9 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
                transition={{ delay: 0.4 }}
                className="text-blue-100/80 font-medium text-lg max-w-sm"
             >
-              Atur ide, jadwalin postingan, dan pantau analitik di satu dashboard yang cakep.
+              {lang === "id"
+                ? "Atur ide, jadwalin postingan, dan pantau analitik di satu dashboard yang cakep."
+                : "Organize ideas, schedule posts, and track analytics in one gorgeous dashboard."}
             </motion.p>
           </div>
 

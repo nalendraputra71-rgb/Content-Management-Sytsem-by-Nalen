@@ -1,7 +1,8 @@
 import { useI18n } from "./i18n";
 import { motion, AnimatePresence } from "motion/react";
 import { useState, useEffect, useRef } from "react";
-import { db, collection, query, where, onSnapshot, doc, updateDoc, addDoc } from "./firebase";
+import { createPortal } from "react-dom";
+import { db, collection, query, where, onSnapshot, doc, updateDoc, addDoc, limit } from "./firebase";
 import {
   Calendar,
   Layout,
@@ -45,7 +46,7 @@ import {
   Printer,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { eng, fmt, YEARS, B, I, TAB, MONTHS, MONTHS_EN, CustomDropdown } from "./data";
+import { eng, fmt, YEARS, B, I, TAB, MONTHS, MONTHS_EN, CustomDropdown, getPlatformIcon } from "./data";
 import {
   useNotifications,
   NotificationToast,
@@ -88,10 +89,9 @@ export function Header({ profile }: any) {
 
   return (
     <div
+      className="hidden md:flex px-5 py-5 md:px-10 md:pt-8 md:pb-4"
       style={{
-        padding: "32px 40px 16px 40px",
         position: "relative",
-        display: "flex",
         alignItems: "flex-start",
         justifyContent: "space-between",
         zIndex: 100,
@@ -111,8 +111,8 @@ export function Header({ profile }: any) {
         }}
       >
         <h1
+          className="text-xl md:text-[27px] leading-tight"
           style={{
-            fontSize: 27,
             fontWeight: 900,
             color: "#2C2016",
             letterSpacing: "-1px",
@@ -147,12 +147,10 @@ export function Header({ profile }: any) {
           {clockSettings.type === "analog" ? (
             <div
               onClick={() => setClockMenu(!clockMenu)}
+              className="w-10 h-10 md:w-16 md:h-16 border-[3px] md:border-4 border-[#2C2016]"
               style={{
-                width: 64,
-                height: 64,
                 borderRadius: "50%",
                 background: "white",
-                border: "4px solid #2C2016",
                 position: "relative",
                 cursor: "pointer",
                 boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
@@ -217,8 +215,8 @@ export function Header({ profile }: any) {
           ) : (
             <div
               onClick={() => setClockMenu(!clockMenu)}
+              className="text-xl md:text-[32px]"
               style={{
-                fontSize: 32,
                 fontWeight: 900,
                 color: "#2C2016",
                 letterSpacing: "-1px",
@@ -409,7 +407,7 @@ function ChatSupportPanel({
     let unsub: any;
     const q = query(
       collection(db, "tickets"),
-      where("userId", "==", userId),
+      where("userId", "==", userId), limit(20)
     );
     unsub = onSnapshot(
       q,
@@ -963,7 +961,7 @@ function ChatSupportPanel({
 }
 
 export function Sidebar({
-
+  planDetails,
   systemConfig,
   open,
   setOpen,
@@ -980,6 +978,7 @@ export function Sidebar({
   onLeaveWorkspace,
   onDeleteWorkspace,
   onRenameWorkspace,
+  onUpdateWorkspace,
   onCreateWorkspaceRequest,
   onTitleChange,
   onQuickAddContent,
@@ -997,6 +996,10 @@ export function Sidebar({
   const [wsMenuOpen, setWsMenuOpen] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleValue, setTitleValue] = useState("");
+  const [showCreateMenu, setShowCreateMenu] = useState(false);
+  const [editingWorkspace, setEditingWorkspace] = useState<any | null>(null);
+  const [editWsName, setEditWsName] = useState("");
+  const [editWsAvatar, setEditWsAvatar] = useState<string | null>(null);
 
   useEffect(() => {
     if (tutorialActive) {
@@ -1030,6 +1033,18 @@ export function Sidebar({
     return true;
   });
 
+  const handleNavClick = (v: any) => {
+    if (v.requiredFeature && profile?.plan !== "vip" && !isSuperAdmin) {
+       const hasFeature = planDetails?.features?.includes(v.requiredFeature);
+       if (!hasFeature) {
+          setUpgradeModalFeature(v.requiredFeature);
+          return;
+       }
+    }
+    setTab(v.id);
+    if (!open) setOpen(true);
+  };
+
   const SOCIAL_STUDIO = (systemConfig?.features?.socialStudio === false && !isSuperAdmin) ? [] : [
     {
       id: "social-dashboard",
@@ -1037,29 +1052,16 @@ export function Sidebar({
       lb: "Home",
     },
     {
-      id: "social-analytics",
-      ic: <BarChart2 size={18} />,
-      lb: "Analytics Expert",
-    },
-    {
       id: "social-competitor",
       ic: <Search size={18} />,
       lb: "Analisis Kompetitor",
-    },
-    {
-      id: "social-calendar",
-      ic: <Calendar size={18} />,
-      lb: "Kalender Konten",
+      requiredFeature: "Competitor Analytics (Pantau Kompetitor)"
     },
     {
       id: "social-inbox",
       ic: <MessageSquare size={18} />,
       lb: "Inbox & Komen",
-    },
-    {
-      id: "social-content",
-      ic: <Layout size={18} />,
-      lb: "Konten",
+      requiredFeature: "Social Inbox (Manajemen Pesan terpusat)"
     },
   ];
 
@@ -1076,7 +1078,8 @@ export function Sidebar({
       : []),
   ];
 
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  
+  const [upgradeModalFeature, setUpgradeModalFeature] = useState<string | null>(null);
   const [showNotifPanel, setShowNotifPanel] = useState(false);
   const [showChatSupport, setShowChatSupport] = useState(false);
   const {
@@ -1091,15 +1094,31 @@ export function Sidebar({
   } = useNotifications(profile);
 
   const unreadCount = notifications.filter((n) => n.unread).length;
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const handleRead = async (id: string) => {
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, unread: false } : n)),
     );
+    if (id.startsWith("personal_")) {
+      const dbId = id.replace("personal_", "");
+      try {
+        await updateDoc(doc(db, "notifications", dbId), { read: true });
+        const targetNotif = notifications.find((n) => n.id === id);
+        if (targetNotif?.type === "content_share" || targetNotif?.link === "/dashboard") {
+          setShowNotifPanel(false);
+          setTab("dashboard");
+          if (targetNotif?.workspaceId && targetNotif?.contentId) {
+            window.open(`/shared-brief/${targetNotif.workspaceId}/${targetNotif.contentId}`, "_blank");
+          }
+        }
+      } catch (e) {
+        console.error("Error updating notification read status:", e);
+      }
+    }
     if (id.startsWith("ticket_")) {
       const dbId = id.replace("ticket_", "");
       try {
-        
         await updateDoc(doc(db, "tickets", dbId), { readByUser: true });
         // Also open chat support so they can reply
         setShowNotifPanel(false);
@@ -1114,15 +1133,22 @@ export function Sidebar({
     setShowLogoutConfirm(true);
   };
 
-  const confirmLogout = () => {
-    setShowLogoutConfirm(false);
-    onLogout();
-  };
-
   const [leavingWs, setLeavingWs] = useState<any>(null);
 
   return (
     <>
+      {wsMenuOpen && (
+        <div
+          onClick={() => setWsMenuOpen(null)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 90,
+            background: "transparent",
+            cursor: "default"
+          }}
+        />
+      )}
       <NotificationToast
         toast={toast}
         onClose={() => setToast(null)}
@@ -1136,11 +1162,10 @@ export function Sidebar({
         initial={false}
         animate={{ width: open ? 230 : 64 }}
         transition={{ duration: 0.3, ease: "easeOut" }}
+        className="hidden md:flex flex-col"
         style={{
           background: "transparent",
           color: "#FAFAFA",
-          display: "flex",
-          flexDirection: "column",
           borderRadius: "0px",
           height: "100vh",
           margin: "0px",
@@ -1164,7 +1189,7 @@ export function Sidebar({
           <div
             style={{
               padding: open ? "24px 16px" : "24px 0",
-              borderBottom: open ? "1px solid rgba(255,255,255,0.05)" : "none",
+              borderBottom: open ? "1px solid rgba(255,255,255,0.05)" : "1px solid transparent",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -1414,10 +1439,24 @@ export function Sidebar({
                                 justifyContent: "center",
                                 fontSize: 11,
                                 fontWeight: 800,
-                                color: "white"
+                                color: "white",
+                                overflow: "hidden"
                               }}
                             >
-                              {activeWorkspace?.name?.charAt(0).toUpperCase() || "W"}
+                              {activeWorkspace?.avatar ? (
+                                <img
+                                  src={activeWorkspace.avatar}
+                                  alt="workspace avatar"
+                                  style={{
+                                    width: "100%",
+                                    height: "100%",
+                                    borderRadius: 6,
+                                    objectFit: "cover"
+                                  }}
+                                />
+                              ) : (
+                                activeWorkspace?.name?.charAt(0).toUpperCase() || "W"
+                              )}
                             </div>
                           </div>
                           {open && (
@@ -1479,7 +1518,9 @@ export function Sidebar({
                                     }}
                                     className="group"
                                   >
-                                    <button
+                                    <div
+                                      role="button"
+                                      tabIndex={0}
                                       className="hover-scale"
                                       onClick={() => {
                                         onWorkspaceSelect(ws);
@@ -1520,9 +1561,22 @@ export function Sidebar({
                                           justifyContent: "center",
                                           fontSize: 10,
                                           fontWeight: 800,
+                                          overflow: "hidden"
                                         }}
                                       >
-                                        {ws.name.charAt(0).toUpperCase()}
+                                        {ws.avatar ? (
+                                          <img
+                                            src={ws.avatar}
+                                            alt="workspace avatar"
+                                            style={{
+                                              width: "100%",
+                                              height: "100%",
+                                              objectFit: "cover"
+                                            }}
+                                          />
+                                        ) : (
+                                          ws.name.charAt(0).toUpperCase()
+                                        )}
                                       </div>
                                       
                                       {renamingWs === ws.id ? (
@@ -1558,36 +1612,141 @@ export function Sidebar({
                                             {ws.name}
                                           </span>
                                           <div
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setWsMenuOpen(wsMenuOpen === ws.id ? null : ws.id);
+                                            }}
+                                            style={{
+                                              padding: 4,
+                                              borderRadius: 4,
+                                              cursor: "pointer",
+                                              display: "flex",
+                                              alignItems: "center",
+                                              justifyContent: "center",
+                                              background: wsMenuOpen === ws.id ? "rgba(255,255,255,0.15)" : "transparent",
+                                              transition: "background 0.2s"
+                                            }}
                                             className="opacity-0 group-hover:opacity-100 transition-opacity"
-                                            style={{ display: "flex", gap: 4, alignItems: "center" }}
+                                            title="Workspace Options"
                                           >
-                                            {isOwner ? (
-                                              <div
-                                                onClick={(e) => {
-                                                  e.stopPropagation();
-                                                  setLeavingWs({ id: ws.id, type: "delete", name: ws.name });
-                                                }}
-                                                style={{ padding: 4, borderRadius: 4, background: "rgba(225,29,72,0.8)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
-                                                title="Hapus Workspace"
-                                              >
-                                                <Trash2 size={12} color="white" />
-                                              </div>
-                                            ) : (
-                                              <div
-                                                onClick={(e) => {
-                                                  e.stopPropagation();
-                                                  setLeavingWs({ id: ws.id, type: "leave", name: ws.name });
-                                                }}
-                                                style={{ padding: 4, borderRadius: 4, background: "rgba(225,29,72,0.8)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
-                                                title="Tinggalkan Workspace"
-                                              >
-                                                <LogOut size={12} color="white" />
-                                              </div>
-                                            )}
+                                            <MoreVertical size={14} color="rgba(255,255,255,0.7)" />
                                           </div>
+
+                                          {wsMenuOpen === ws.id && (
+                                            <div
+                                              onClick={(e) => e.stopPropagation()}
+                                              style={{
+                                                position: "absolute",
+                                                top: "100%",
+                                                right: 0,
+                                                background: "var(--theme-sidebar)",
+                                                border: "1px solid rgba(255,255,255,0.15)",
+                                                borderRadius: 8,
+                                                boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+                                                padding: 4,
+                                                minWidth: 120,
+                                                zIndex: 110,
+                                                display: "flex",
+                                                flexDirection: "column",
+                                                gap: 2
+                                              }}
+                                            >
+                                              {/* EDIT */}
+                                              {(isOwner || ws.userRole === "owner" || ws.userRole === "editor" || ws.userRole === "admin") && (
+                                                <button
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setEditingWorkspace(ws);
+                                                    setEditWsName(ws.name);
+                                                    setEditWsAvatar(ws.avatar || null);
+                                                    setWsMenuOpen(null);
+                                                    setShowWorkspaces(false);
+                                                  }}
+                                                  style={{
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    gap: 6,
+                                                    padding: "6px 8px",
+                                                    background: "transparent",
+                                                    border: "none",
+                                                    color: "white",
+                                                    fontSize: 11,
+                                                    fontWeight: 600,
+                                                    cursor: "pointer",
+                                                    borderRadius: 6,
+                                                    width: "100%",
+                                                    textAlign: "left"
+                                                  }}
+                                                  className="hover:bg-white/10 transition-colors"
+                                                >
+                                                  <Pencil size={11} color="var(--theme-primary)" />
+                                                  {lang === "id" ? "Edit" : "Edit"}
+                                                </button>
+                                              )}
+
+                                              {/* LEAVE / DELETE */}
+                                              {isOwner ? (
+                                                <button
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setLeavingWs({ id: ws.id, type: "delete", name: ws.name });
+                                                    setWsMenuOpen(null);
+                                                    setShowWorkspaces(false);
+                                                  }}
+                                                  style={{
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    gap: 6,
+                                                    padding: "6px 8px",
+                                                    background: "transparent",
+                                                    border: "none",
+                                                    color: "#f43f5e",
+                                                    fontSize: 11,
+                                                    fontWeight: 600,
+                                                    cursor: "pointer",
+                                                    borderRadius: 6,
+                                                    width: "100%",
+                                                    textAlign: "left"
+                                                  }}
+                                                  className="hover:bg-rose-500/10 transition-colors"
+                                                >
+                                                  <Trash2 size={11} color="#f43f5e" />
+                                                  {lang === "id" ? "Hapus" : "Delete"}
+                                                </button>
+                                              ) : (
+                                                <button
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setLeavingWs({ id: ws.id, type: "leave", name: ws.name });
+                                                    setWsMenuOpen(null);
+                                                    setShowWorkspaces(false);
+                                                  }}
+                                                  style={{
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    gap: 6,
+                                                    padding: "6px 8px",
+                                                    background: "transparent",
+                                                    border: "none",
+                                                    color: "#f43f5e",
+                                                    fontSize: 11,
+                                                    fontWeight: 600,
+                                                    cursor: "pointer",
+                                                    borderRadius: 6,
+                                                    width: "100%",
+                                                    textAlign: "left"
+                                                  }}
+                                                  className="hover:bg-rose-500/10 transition-colors"
+                                                >
+                                                  <LogOut size={11} color="#f43f5e" />
+                                                  {lang === "id" ? "Tinggalkan" : "Leave"}
+                                                </button>
+                                              )}
+                                            </div>
+                                          )}
                                         </>
                                       )}
-                                    </button>
+                                    </div>
                                   </div>
                                 );
                               })}
@@ -1619,35 +1778,222 @@ export function Sidebar({
                       </div>
 
                       {/* Quick Add Pill Button */}
-                      <div style={{ marginBottom: 24, padding: open ? "0 4px" : "0", display: "flex", justifyContent: "center" }}>
-                        <button
-                          onClick={() => {
-                            onQuickAddContent?.();
-                          }}
+                      <div style={{ width: "100%", padding: open ? "0 4px" : "0", marginBottom: 24 }}>
+                        <div
                           style={{
-                            width: "100%",
-                            height: 38,
                             display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            gap: open ? 8 : 0,
-                            padding: open ? "8px 16px" : "0",
-                            background: "linear-gradient(135deg, #2563EB 0%, #3B82F6 100%)",
-                            border: "none",
-                            color: "#FFFFFF",
-                            fontWeight: 700,
-                            fontSize: 12,
-                            borderRadius: 9999,
-                            cursor: "pointer",
-                            boxShadow: "0 4px 12px rgba(37, 99, 235, 0.2)",
-                            transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+                            flexDirection: "column",
+                            gap: 6,
+                            width: "100%",
                           }}
-                          className="hover-scale active:scale-95"
-                          title={lang === "id" ? "Tambah Brief Konten Baru" : "Add New Content Brief"}
                         >
-                          <Plus size={open ? 14 : 18} strokeWidth={3} color="#FFFFFF" />
-                          {open && <span style={{ letterSpacing: "0.2px", color: "#FFFFFF" }}>{lang === "id" ? "Tambah Brief" : "Add Brief"}</span>}
-                        </button>
+                          <button
+                            onClick={() => {
+                              setShowCreateMenu(!showCreateMenu);
+                            }}
+                            style={{
+                              width: "100%",
+                              height: 38,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              gap: open ? 8 : 0,
+                              padding: open ? "8px 16px" : "0",
+                              background: "linear-gradient(135deg, #2563EB 0%, #3B82F6 100%)",
+                              border: "none",
+                              color: "#FFFFFF",
+                              fontWeight: 800,
+                              fontSize: 12,
+                              borderRadius: 9999,
+                              cursor: "pointer",
+                              boxShadow: "0 4px 12px rgba(37, 99, 235, 0.25)",
+                              transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+                            }}
+                            className="hover-scale active:scale-95"
+                            title={lang === "id" ? "Buat Baru" : "Create New"}
+                          >
+                            <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                              <Plus size={open ? 14 : 18} strokeWidth={3} color="#FFFFFF" />
+                            </div>
+                            {open && <span style={{ letterSpacing: "0.2px", color: "#FFFFFF" }}>{lang === "id" ? "Create" : "Create"}</span>}
+                          </button>
+                          
+                          <AnimatePresence>
+                            {showCreateMenu && (
+                              <motion.div
+                                initial={{ opacity: 0, height: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, height: "auto", scale: 1 }}
+                                exit={{ opacity: 0, height: 0, scale: 0.95 }}
+                                transition={{ duration: 0.2, ease: "easeOut" }}
+                                style={{
+                                  overflow: showCreateMenu ? "visible" : "hidden",
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  gap: 6,
+                                  width: "100%",
+                                  padding: open ? "4px 2px" : "0",
+                                }}
+                              >
+                                {open ? (
+                                  <>
+                                    <motion.button
+                                      whileHover={{ scale: 1.03, borderColor: "rgba(37, 99, 235, 0.2)" }}
+                                      whileTap={{ scale: 0.97 }}
+                                      onClick={() => {
+                                        setShowCreateMenu(false);
+                                        onQuickAddContent?.();
+                                      }}
+                                      style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 10,
+                                        padding: "8px 16px",
+                                        border: "1.5px solid rgba(37, 99, 235, 0.08)",
+                                        background: "white",
+                                        borderRadius: 9999,
+                                        cursor: "pointer",
+                                        width: "100%",
+                                        color: "#111827",
+                                        fontSize: 12,
+                                        fontWeight: 700,
+                                        boxShadow: "0 2px 6px rgba(0,0,0,0.02)",
+                                        outline: "none",
+                                      }}
+                                    >
+                                      <div style={{ background: "rgba(37, 99, 235, 0.06)", borderRadius: 9999, padding: 5, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                        <Pencil size={12} color="var(--theme-primary)" />
+                                      </div>
+                                      {lang === "id" ? "Brief" : "Brief"}
+                                    </motion.button>
+                                    <motion.button
+                                      whileHover={{ scale: 1.03, borderColor: "rgba(37, 99, 235, 0.2)" }}
+                                      whileTap={{ scale: 0.97 }}
+                                      onClick={() => {
+                                        setShowCreateMenu(false);
+                                        setTab("social-studio");
+                                        setTimeout(() => {
+                                          window.dispatchEvent(new CustomEvent('open-social-studio-create-post'));
+                                        }, 100);
+                                      }}
+                                      style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 10,
+                                        padding: "8px 16px",
+                                        border: "1.5px solid rgba(37, 99, 235, 0.08)",
+                                        background: "white",
+                                        borderRadius: 9999,
+                                        cursor: "pointer",
+                                        width: "100%",
+                                        color: "#111827",
+                                        fontSize: 12,
+                                        fontWeight: 700,
+                                        boxShadow: "0 2px 6px rgba(0,0,0,0.02)",
+                                        outline: "none",
+                                      }}
+                                    >
+                                      <div style={{ background: "rgba(37, 99, 235, 0.06)", borderRadius: 9999, padding: 5, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                        <Layout size={12} color="var(--theme-primary)" />
+                                      </div>
+                                      <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                                        {lang === "id" ? "Post" : "Post"}
+                                      </span>
+                                      <span style={{ fontSize: 9, padding: "2px 6px", background: "rgba(37, 99, 235, 0.08)", color: "var(--theme-primary)", borderRadius: 9999, fontWeight: 800, marginLeft: "auto", flexShrink: 0 }}>SOON</span>
+                                    </motion.button>
+                                  </>
+                                ) : (
+                                  <div style={{ position: "relative" }}>
+                                    <motion.div
+                                      initial={{ opacity: 0, x: -10 }}
+                                      animate={{ opacity: 1, x: 0 }}
+                                      exit={{ opacity: 0, x: -10 }}
+                                      style={{
+                                        position: "absolute",
+                                        left: 48,
+                                        top: -38,
+                                        width: 180,
+                                        background: "white",
+                                        borderRadius: 16,
+                                        boxShadow: "0 10px 35px rgba(0,0,0,0.12)",
+                                        border: "1px solid rgba(0,0,0,0.06)",
+                                        padding: 6,
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        gap: 6,
+                                        zIndex: 9999,
+                                      }}
+                                    >
+                                      <motion.button
+                                        whileHover={{ scale: 1.03, borderColor: "rgba(37, 99, 235, 0.15)" }}
+                                        whileTap={{ scale: 0.97 }}
+                                        onClick={() => {
+                                          setShowCreateMenu(false);
+                                          onQuickAddContent?.();
+                                        }}
+                                        style={{
+                                          display: "flex",
+                                          alignItems: "center",
+                                          gap: 8,
+                                          padding: "6px 12px",
+                                          background: "rgba(37, 99, 235, 0.02)",
+                                          border: "1px solid rgba(37, 99, 235, 0.06)",
+                                          borderRadius: 9999,
+                                          cursor: "pointer",
+                                          width: "100%",
+                                          color: "#111827",
+                                          fontSize: 11,
+                                          fontWeight: 700,
+                                          outline: "none",
+                                        }}
+                                      >
+                                        <Pencil size={12} color="var(--theme-primary)" />
+                                        {lang === "id" ? "Brief" : "Brief"}
+                                      </motion.button>
+                                      <motion.button
+                                        whileHover={{ scale: 1.03, borderColor: "rgba(37, 99, 235, 0.15)" }}
+                                        whileTap={{ scale: 0.97 }}
+                                        onClick={() => {
+                                          setShowCreateMenu(false);
+                                          setTab("social-studio");
+                                          setTimeout(() => {
+                                            window.dispatchEvent(new CustomEvent('open-social-studio-create-post'));
+                                          }, 100);
+                                        }}
+                                        style={{
+                                          display: "flex",
+                                          alignItems: "center",
+                                          gap: 8,
+                                          padding: "6px 12px",
+                                          background: "rgba(37, 99, 235, 0.02)",
+                                          border: "1px solid rgba(37, 99, 235, 0.06)",
+                                          borderRadius: 9999,
+                                          cursor: "pointer",
+                                          width: "100%",
+                                          color: "#111827",
+                                          fontSize: 11,
+                                          fontWeight: 700,
+                                          outline: "none",
+                                        }}
+                                      >
+                                        <Layout size={12} color="var(--theme-primary)" />
+                                        <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                                          {lang === "id" ? "Post" : "Post"}
+                                        </span>
+                                        <span style={{ fontSize: 8, padding: "1px 4px", background: "rgba(37, 99, 235, 0.08)", color: "var(--theme-primary)", borderRadius: 9999, fontWeight: 800, marginLeft: "auto", flexShrink: 0 }}>SOON</span>
+                                      </motion.button>
+                                    </motion.div>
+                                  </div>
+                                )}
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                        {showCreateMenu && !open && (
+                          <div
+                            style={{ position: "fixed", inset: 0, zIndex: 98 }}
+                            onClick={() => setShowCreateMenu(false)}
+                          />
+                        )}
                       </div>
 
                       {HUBIVERSE.length > 0 && (
@@ -1710,10 +2056,7 @@ export function Sidebar({
                                     id={"sidebar-tab-" + v.id}
                                     className="hover-scale"
                                     key={v.id}
-                                    onClick={() => {
-                                      setTab(v.id);
-                                      if (!open) setOpen(true);
-                                    }}
+                                    onClick={() => handleNavClick(v)}
                                     style={{
                                       display: "flex",
                                       alignItems: "center",
@@ -2302,10 +2645,7 @@ export function Sidebar({
                                     id={"sidebar-tab-" + v.id}
                                     className="hover-scale"
                                     key={v.id}
-                                    onClick={() => {
-                                      setTab(v.id);
-                                      if (!open) setOpen(true);
-                                    }}
+                                    onClick={() => handleNavClick(v)}
                                     style={{
                                       display: "flex",
                                       alignItems: "center",
@@ -2708,92 +3048,211 @@ export function Sidebar({
           </>
 
           {/* Logout Confirm Modal */}
-          <AnimatePresence>
-            {showLogoutConfirm && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                style={{
-                  position: "fixed",
-                  inset: 0,
-                  background: "rgba(0,0,0,0.6)",
-                  backdropFilter: "none",
-                  zIndex: 999,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
+          {createPortal(
+            <AnimatePresence>
+              {showLogoutConfirm && (
+                <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", zIndex: 999999, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
+                >
+                  <motion.div
+                    initial={{ scale: 0.95, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.95, opacity: 0 }}
+                    transition={{ type: "spring", duration: 0.4 }}
+                    style={{ background: "white", borderRadius: 24, width: "100%", maxWidth: 380, padding: 24, textAlign: "center", boxShadow: "0 20px 40px rgba(0,0,0,0.2)" }}
+                  >
+                    <div style={{ width: 48, height: 48, borderRadius: 24, background: "#FFF1F2", color: "#E11D48", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+                      <LogOut size={24} />
+                    </div>
+                    <h3 style={{ fontSize: 16, fontWeight: 800, color: "#111827", marginBottom: 6 }}>
+                      {lang === "id" ? "Keluar dari Hubify?" : "Log out from Hubify?"}
+                    </h3>
+                    <p style={{ fontSize: 12, color: "#6B7280", lineHeight: 1.5, marginBottom: 24, fontWeight: 500 }}>
+                      {lang === "id"
+                        ? "Apakah Anda yakin ingin keluar dari sesi akun Hubify Social Anda saat ini?"
+                        : "Are you sure you want to log out of your current Hubify Social session?"}
+                    </p>
+                    <div style={{ display: "flex", gap: 12 }}>
+                      <button
+                        onClick={() => setShowLogoutConfirm(false)}
+                        className="hover-scale"
+                        style={{ flex: 1, background: "#F9FAFB", color: "#374151", fontWeight: 800, padding: "12px 0", borderRadius: 12, border: "1px solid #E5E7EB", cursor: "pointer", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.5px" }}
+                      >
+                        {lang === "id" ? "Batal" : "Cancel"}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowLogoutConfirm(false);
+                          onLogout();
+                        }}
+                        className="hover-scale"
+                        style={{ flex: 1, background: "#E11D48", color: "white", fontWeight: 800, padding: "12px 0", borderRadius: 12, border: "none", cursor: "pointer", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.5px", boxShadow: "0 4px 12px rgba(225, 29, 72, 0.2)" }}
+                      >
+                        {lang === "id" ? "Keluar" : "Log Out"}
+                      </button>
+                    </div>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>,
+            document.body
+          )}
+
+          {/* Custom Upgrade Notification Modal (Hubify Social Styled) */}
+          {createPortal(
+            <AnimatePresence>
+              {upgradeModalFeature && (
                 <motion.div
-                  initial={{ scale: 0.95 }}
-                  animate={{ scale: 1 }}
-                  exit={{ scale: 0.95 }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
                   style={{
-                    background: "white",
-                    padding: 30,
-                    borderRadius: 20,
-                    width: 320,
-                    textAlign: "center",
+                    position: "fixed",
+                    inset: 0,
+                    background: "rgba(15, 23, 42, 0.45)",
+                    backdropFilter: "blur(4px)",
+                    WebkitBackdropFilter: "blur(4px)",
+                    zIndex: 999999,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: 16,
                   }}
                 >
-                  <h3
+                  <motion.div
+                    initial={{ scale: 0.92, opacity: 0, y: 15 }}
+                    animate={{ scale: 1, opacity: 1, y: 0 }}
+                    exit={{ scale: 0.92, opacity: 0, y: 15 }}
+                    transition={{ type: "spring", damping: 25, stiffness: 350 }}
                     style={{
-                      fontSize: 20,
-                      fontWeight: 800,
-                      color: "#2C2016",
-                      marginBottom: 12,
-                      whiteSpace: "normal",
+                      background: "white",
+                      padding: "32px 24px",
+                      borderRadius: 24,
+                      width: "100%",
+                      maxWidth: 420,
+                      textAlign: "center",
+                      position: "relative",
+                      boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1), 0 0 0 1px rgba(0,0,0,0.05)",
                     }}
                   >
-                    Keluar dari sistem?
-                  </h3>
-                  <p
-                    style={{
-                      fontSize: 14,
-                      color: "rgba(44,32,22,0.6)",
-                      marginBottom: 24,
-                      whiteSpace: "normal",
-                    }}
-                  >
-                    Apakah Anda yakin ingin keluar dari akun Anda?
-                  </p>
-                  <div style={{ display: "flex", gap: 12 }}>
+                    {/* Close button in top right */}
                     <button
-                      onClick={() => setShowLogoutConfirm(false)}
+                      onClick={() => setUpgradeModalFeature(null)}
                       style={{
-                        flex: 1,
-                        padding: 12,
-                        borderRadius: 12,
-                        background: "#FAFAFA",
-                        border: "1px solid rgba(44,32,22,0.1)",
-                        fontWeight: 600,
-                        color: "#2C2016",
-                        cursor: "pointer",
-                      }}
-                    >
-                      Batal
-                    </button>
-                    <button
-                      onClick={confirmLogout}
-                      style={{
-                        flex: 1,
-                        padding: 12,
-                        borderRadius: 12,
-                        background: "#9C2B4E",
+                        position: "absolute",
+                        top: 16,
+                        right: 16,
+                        background: "rgba(0,0,0,0.04)",
                         border: "none",
-                        fontWeight: 600,
-                        color: "white",
+                        width: 32,
+                        height: 32,
+                        borderRadius: "50%",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: "#64748B",
                         cursor: "pointer",
+                        transition: "all 0.2s ease",
+                      }}
+                      className="hover:bg-slate-200 hover:text-slate-800"
+                    >
+                      <X size={16} />
+                    </button>
+
+                    {/* Icon illustration header */}
+                    <div className="flex justify-center mb-5">
+                      <div className="w-16 h-16 rounded-2xl bg-amber-50 flex items-center justify-center border border-amber-100 shadow-sm relative overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-tr from-amber-500/10 to-amber-500/0" />
+                        <Crown size={32} className="text-amber-500 relative z-10" strokeWidth={2.2} />
+                      </div>
+                    </div>
+
+                    {/* Title */}
+                    <h3
+                      style={{
+                        fontSize: 20,
+                        fontWeight: 800,
+                        color: "#0F172A",
+                        marginBottom: 10,
+                        letterSpacing: "-0.025em",
                       }}
                     >
-                      Keluar
-                    </button>
-                  </div>
+                      {lang === "id" ? "Akses Fitur Terkunci" : "Feature Access Locked"}
+                    </h3>
+
+                    {/* Subtext description */}
+                    <p
+                      style={{
+                        fontSize: 14.5,
+                        lineHeight: "1.5",
+                        color: "#475569",
+                        marginBottom: 24,
+                        padding: "0 8px",
+                      }}
+                    >
+                      {lang === "id" ? (
+                        <>
+                          Fitur <strong className="text-blue-600 font-semibold">{upgradeModalFeature}</strong> tidak tersedia di paket Anda. Silakan upgrade paket untuk mengaksesnya.
+                        </>
+                      ) : (
+                        <>
+                          The <strong className="text-blue-600 font-semibold">{upgradeModalFeature}</strong> feature is not available in your plan. Please upgrade your plan to access this feature.
+                        </>
+                      )}
+                    </p>
+
+                    {/* Actions buttons */}
+                    <div className="flex flex-col gap-2.5">
+                      <button
+                        onClick={() => {
+                          setUpgradeModalFeature(null);
+                          navigate("/billing");
+                        }}
+                        style={{
+                          width: "100%",
+                          padding: "14px",
+                          borderRadius: 14,
+                          background: "linear-gradient(135deg, #2563EB, #1D4ED8)",
+                          border: "none",
+                          fontWeight: 700,
+                          color: "white",
+                          cursor: "pointer",
+                          boxShadow: "0 4px 12px rgba(37, 99, 235, 0.25)",
+                          transition: "all 0.2s ease",
+                          fontSize: 14,
+                        }}
+                        className="hover:opacity-95 hover:shadow-lg hover:scale-[1.01] active:scale-[0.99] transition-all"
+                      >
+                        {lang === "id" ? "Upgrade Paket Sekarang" : "Upgrade Plan Now"}
+                      </button>
+                      <button
+                        onClick={() => setUpgradeModalFeature(null)}
+                        style={{
+                          width: "100%",
+                          padding: "13px",
+                          borderRadius: 14,
+                          background: "#F8FAFC",
+                          border: "1px solid #E2E8F0",
+                          fontWeight: 600,
+                          color: "#475569",
+                          cursor: "pointer",
+                          transition: "all 0.2s ease",
+                          fontSize: 14,
+                        }}
+                        className="hover:bg-slate-50 hover:text-slate-800 transition-all"
+                      >
+                        {lang === "id" ? "Nanti Saja" : "Maybe Later"}
+                      </button>
+                    </div>
+                  </motion.div>
                 </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+              )}
+            </AnimatePresence>,
+            document.body
+          )}
 
           {/* Delete/Leave Workspace Confirmation */}
           <AnimatePresence>
@@ -2934,6 +3393,244 @@ export function Sidebar({
             )}
           </AnimatePresence>
 
+          {/* Edit Workspace Modal */}
+          <AnimatePresence>
+            {editingWorkspace && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                style={{
+                  position: "fixed",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  background: "rgba(0,0,0,0.5)",
+                  zIndex: 3000,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <motion.div
+                  initial={{ scale: 0.95, opacity: 0, y: 20 }}
+                  animate={{ scale: 1, opacity: 1, y: 0 }}
+                  exit={{ scale: 0.95, opacity: 0, y: 20 }}
+                  style={{
+                    background: "white",
+                    padding: "28px",
+                    borderRadius: 24,
+                    width: 440,
+                    boxShadow: "0 20px 40px rgba(0,0,0,0.1)",
+                    fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif",
+                  }}
+                >
+                  <h3
+                    style={{
+                      fontSize: 20,
+                      fontWeight: 800,
+                      color: "#111827",
+                      marginBottom: 6,
+                      letterSpacing: "-0.5px",
+                    }}
+                  >
+                    {lang === "id" ? "Edit Workspace" : "Edit Workspace"}
+                  </h3>
+                  <p
+                    style={{
+                      fontSize: 13,
+                      color: "rgba(17,24,39,0.5)",
+                      marginBottom: 24,
+                    }}
+                  >
+                    {lang === "id" 
+                      ? "Ubah nama dan gambar profil workspace Anda." 
+                      : "Modify your workspace name and profile image."}
+                  </p>
+
+                  {/* Avatar Upload Section */}
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16, marginBottom: 28 }}>
+                    <div
+                      style={{
+                        width: 80,
+                        height: 80,
+                        borderRadius: 20,
+                        background: "rgba(0,0,0,0.03)",
+                        border: "2px dashed rgba(0,0,0,0.08)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        overflow: "hidden",
+                        position: "relative",
+                        fontSize: 28,
+                        fontWeight: 800,
+                        color: "var(--theme-primary)"
+                      }}
+                    >
+                      {editWsAvatar ? (
+                        <img
+                          src={editWsAvatar}
+                          alt="Workspace Profile Preview"
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover"
+                          }}
+                        />
+                      ) : (
+                        editWsName ? editWsName.charAt(0).toUpperCase() : "W"
+                      )}
+                    </div>
+                    
+                    <div style={{ width: "100%" }}>
+                      <label style={{ fontSize: 12, fontWeight: 700, color: "#111827", marginBottom: 8, display: "block", textAlign: "left" }}>
+                        {lang === "id" ? "Pilih Ikon" : "Choose Icon"}
+                      </label>
+                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                        <button
+                          onClick={() => setEditWsAvatar(null)}
+                          title={lang === "id" ? "Gunakan Huruf Depan" : "Use First Letter"}
+                          style={{
+                            width: 40,
+                            height: 40,
+                            borderRadius: 12,
+                            border: editWsAvatar === null ? "2px solid var(--theme-primary)" : "1px solid transparent",
+                            background: "rgba(0,0,0,0.03)",
+                            padding: 0,
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: 20,
+                            fontWeight: 800,
+                            color: "var(--theme-primary)"
+                          }}
+                        >
+                          {editWsName ? editWsName.charAt(0).toUpperCase() : "W"}
+                        </button>
+                        {[
+                          { emoji: "🚀", color: "#FEE2E2" },
+                          { emoji: "💼", color: "#E0E7FF" },
+                          { emoji: "🔥", color: "#FFEDD5" },
+                          { emoji: "✨", color: "#FEF3C7" },
+                          { emoji: "📊", color: "#D1FAE5" },
+                          { emoji: "🎨", color: "#F3E8FF" },
+                          { emoji: "🌟", color: "#DBEAFE" },
+                          { emoji: "🎯", color: "#FCE7F3" },
+                          { emoji: "💡", color: "#FEF9C3" },
+                          { emoji: "🍀", color: "#DCFCE7" },
+                        ].map((preset, idx) => {
+                          const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="${preset.color}" rx="20"/><text x="50%" y="50%" font-size="50" dominant-baseline="central" text-anchor="middle">${preset.emoji}</text></svg>`;
+                          const dataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+                          return (
+                            <button
+                              key={idx}
+                              onClick={() => setEditWsAvatar(dataUrl)}
+                              style={{
+                                width: 40,
+                                height: 40,
+                                borderRadius: 12,
+                                border: editWsAvatar === dataUrl ? "2px solid var(--theme-primary)" : "1px solid transparent",
+                                background: preset.color,
+                                padding: 0,
+                                cursor: "pointer",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: 20
+                              }}
+                            >
+                              {preset.emoji}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Name Input Section */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 28, textAlign: "left" }}>
+                    <label
+                      style={{
+                        fontSize: 12,
+                        fontWeight: 700,
+                        color: "#111827",
+                      }}
+                    >
+                      {lang === "id" ? "Nama Workspace" : "Workspace Name"}
+                    </label>
+                    <input
+                      type="text"
+                      value={editWsName}
+                      onChange={(e) => setEditWsName(e.target.value)}
+                      placeholder="Masukkan nama workspace..."
+                      style={{
+                        width: "100%",
+                        background: "rgba(0,0,0,0.03)",
+                        border: "none",
+                        borderRadius: 10,
+                        padding: "10px 14px",
+                        fontSize: 14,
+                        color: "#111827",
+                        fontWeight: 500,
+                        outline: "none",
+                      }}
+                    />
+                  </div>
+
+                  {/* Sticky/Bottom Action Buttons */}
+                  <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
+                    <button
+                      onClick={() => setEditingWorkspace(null)}
+                      style={{
+                        padding: "10px 18px",
+                        borderRadius: 12,
+                        background: "transparent",
+                        border: "none",
+                        fontWeight: 600,
+                        color: "rgba(17,24,39,0.6)",
+                        cursor: "pointer",
+                        fontSize: 13,
+                        transition: "background 0.2s"
+                      }}
+                      className="hover:bg-black/5"
+                    >
+                      {lang === "id" ? "Batal" : "Cancel"}
+                    </button>
+                    <button
+                      onClick={async () => {
+                        if (!editWsName.trim()) return;
+                        if (onUpdateWorkspace) {
+                          await onUpdateWorkspace(editingWorkspace.id, {
+                            name: editWsName.trim(),
+                            avatar: editWsAvatar
+                          });
+                        } else if (onRenameWorkspace) {
+                          await onRenameWorkspace(editingWorkspace.id, editWsName.trim());
+                        }
+                        setEditingWorkspace(null);
+                      }}
+                      disabled={!editWsName.trim()}
+                      style={{
+                        padding: "10px 20px",
+                        borderRadius: 12,
+                        background: !editWsName.trim() ? "rgba(0,0,0,0.15)" : "var(--theme-primary)",
+                        border: "none",
+                        fontWeight: 700,
+                        color: "white",
+                        cursor: !editWsName.trim() ? "not-allowed" : "pointer",
+                        fontSize: 13,
+                      }}
+                    >
+                      {lang === "id" ? "Simpan" : "Save"}
+                    </button>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* Chat Support Window Prototype */}
           <AnimatePresence>
             {showChatSupport && user?.uid && (
@@ -2970,7 +3667,8 @@ function ColsIcon({ size }: any) {
 }
 
 export function NavBar({
-
+  planDetails,
+  userProfile,
   tab,
   setTab,
   year,
@@ -2987,9 +3685,19 @@ export function NavBar({
   sidebarOpen,
 }: any) {
   const { lang } = useI18n();
+  const navigate = useNavigate();
   const [localSearchOpen, setLocalSearchOpen] = useState(!sidebarOpen);
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [upgradeModalFeature, setUpgradeModalFeature] = useState<string | null>(null);
   const addRef = useRef<HTMLDivElement>(null);
+
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 1024);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   useEffect(() => {
     setLocalSearchOpen(!sidebarOpen);
@@ -3010,6 +3718,259 @@ export function NavBar({
     { id: "timeline", label: lang === "id" ? "Timeline" : "Timeline" },
     { id: "table", label: lang === "id" ? "Tabel" : "Table" },
   ];
+
+  const handleTabClick = (t: any) => {
+    if (t.requiredFeature && userProfile?.plan !== "vip") {
+       const hasFeature = planDetails?.features?.includes(t.requiredFeature);
+       if (!hasFeature) {
+          setUpgradeModalFeature(t.requiredFeature);
+          return;
+       }
+    }
+    setContentTab(t.id);
+  };
+
+  if (isMobile) {
+    return (
+      <div
+        style={{
+          position: "sticky",
+          top: 12,
+          zIndex: 50,
+          margin: "12px 12px 0",
+          background: "rgba(255,255,255,0.98)",
+          border: "1px solid rgba(0,0,0,0.04)",
+          borderRadius: 24,
+          display: "flex",
+          flexDirection: "column",
+          gap: 12,
+          padding: "14px 18px",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.02)",
+        }}
+      >
+        {/* Row 1: Brand & Actions */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+          {/* Logo / Brand / Title */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 18 }}>🗓️</span>
+            <span style={{ fontSize: 15, fontWeight: 800, color: "#111827", fontFamily: "'Plus Jakarta Sans', sans-serif", letterSpacing: "-0.01em" }}>
+              {lang === "id" ? "Perencana Konten" : "Content Planner"}
+            </span>
+          </div>
+
+          {/* Quick Actions (Search and Share) */}
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            {/* Search toggler button */}
+            <button
+              onClick={() => setLocalSearchOpen(!localSearchOpen)}
+              style={{
+                background: localSearchOpen ? "rgba(0,0,0,0.06)" : "rgba(0,0,0,0.03)",
+                border: "none",
+                borderRadius: "50%",
+                width: 36,
+                height: 36,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                outline: "none",
+                transition: "all 0.2s ease",
+              }}
+            >
+              <Search size={15} color="#111827" />
+            </button>
+
+            {/* Share */}
+            <button
+              onClick={onShare}
+              style={{
+                background: "rgba(0,0,0,0.03)",
+                border: "none",
+                borderRadius: "50%",
+                width: 36,
+                height: 36,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                color: "#111827",
+                outline: "none",
+                transition: "all 0.2s ease",
+              }}
+            >
+              <Share2 size={15} />
+            </button>
+          </div>
+        </div>
+
+        {/* Search input (if open) */}
+        {localSearchOpen && (
+          <div style={{ position: "relative", width: "100%" }}>
+            <input
+              style={{
+                background: "rgba(0,0,0,0.03)",
+                border: "none",
+                borderRadius: 10,
+                padding: "8px 12px",
+                outline: "none",
+                color: "#111827",
+                fontSize: 12,
+                width: "100%",
+              }}
+              value={search}
+              onChange={(e: any) => onSearch && onSearch(e.target.value)}
+              placeholder={lang === "id" ? "Cari konten..." : "Search content..."}
+              autoFocus
+            />
+          </div>
+        )}
+
+        {/* Row 2: Swipeable Tabs */}
+        <div
+          style={{
+            display: "flex",
+            background: "rgba(0,0,0,0.03)",
+            padding: 4,
+            borderRadius: 999,
+            overflowX: "auto",
+            scrollbarWidth: "none",
+          }}
+          className="[&::-webkit-scrollbar]:hidden"
+        >
+          {CONTENT_TABS.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => handleTabClick(t)}
+              style={{
+                flex: "1 0 auto",
+                textAlign: "center",
+                position: "relative",
+                padding: "6px 12px",
+                borderRadius: 999,
+                border: "none",
+                background: "transparent",
+                color: contentTab === t.id ? "var(--theme-primary)" : "#666",
+                fontWeight: 700,
+                fontSize: 11,
+                cursor: "pointer",
+                transition: "color 0.2s ease",
+              }}
+            >
+              {contentTab === t.id && (
+                <motion.div
+                  layoutId="activeContentTabHighlightMobile"
+                  initial={false}
+                  transition={{ type: "spring", stiffness: 500, damping: 35 }}
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: "white",
+                    borderRadius: 999,
+                    boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
+                    zIndex: 0,
+                  }}
+                />
+              )}
+              <span style={{ position: "relative", zIndex: 1 }}>{t.label}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Upgrade Modal Popup */}
+        {createPortal(
+          <AnimatePresence>
+            {upgradeModalFeature && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                style={{
+                  position: "fixed",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  background: "rgba(11, 37, 74, 0.4)",
+                  backdropFilter: "blur(4px)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  zIndex: 999999,
+                  padding: 24,
+                }}
+              >
+                <motion.div
+                  initial={{ scale: 0.95, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.95, opacity: 0 }}
+                  style={{
+                    background: "white",
+                    borderRadius: 24,
+                    padding: 24,
+                    maxWidth: 360,
+                    width: "100%",
+                    boxShadow: "0 20px 40px rgba(0,0,0,0.15)",
+                    textAlign: "center",
+                  }}
+                >
+                  <Crown size={40} color="var(--theme-primary)" style={{ margin: "0 auto 16px" }} />
+                  <h3 style={{ fontSize: 18, fontWeight: 800, color: "#111827", marginBottom: 8 }}>
+                    {lang === "id" ? "Fitur VIP Premium" : "VIP Premium Feature"}
+                  </h3>
+                  <p style={{ fontSize: 13, color: "#666", marginBottom: 20 }}>
+                    {lang === "id"
+                      ? "Fitur ini memerlukan akses VIP Premium. Upgrade sekarang untuk membuka potensi penuh sosial media Anda!"
+                      : "This feature requires VIP Premium access. Upgrade now to unlock your full social media potential!"}
+                  </p>
+                  <div style={{ display: "flex", gap: 10 }}>
+                    <button
+                      onClick={() => setUpgradeModalFeature(null)}
+                      style={{
+                        flex: 1,
+                        background: "#F3F4F6",
+                        border: "none",
+                        padding: "10px",
+                        borderRadius: 12,
+                        fontSize: 13,
+                        fontWeight: 700,
+                        color: "#4B5563",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {lang === "id" ? "Nanti Saja" : "Maybe Later"}
+                    </button>
+                    <button
+                      onClick={() => {
+                        window.location.href = "/billing";
+                        setUpgradeModalFeature(null);
+                      }}
+                      style={{
+                        flex: 1,
+                        background: "var(--theme-primary)",
+                        border: "none",
+                        padding: "10px",
+                        borderRadius: 12,
+                        fontSize: 13,
+                        fontWeight: 700,
+                        color: "white",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {lang === "id" ? "Upgrade" : "Upgrade"}
+                    </button>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>,
+          document.body
+        )}
+      </div>
+    );
+  }
 
   return (
     <div
@@ -3053,7 +4014,7 @@ export function NavBar({
             <button
               className="hover-scale"
               key={t.id}
-              onClick={() => setContentTab(t.id)}
+              onClick={() => handleTabClick(t)}
               style={{
                 position: "relative",
                 padding: "8px 16px",
@@ -3100,11 +4061,12 @@ export function NavBar({
         />
 
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <div style={{ width: 110 }}>
+          <div style={{ width: 140 }}>
             <CustomDropdown
               value={String(month)}
               options={(lang === "id" ? MONTHS : MONTHS_EN).map((m, i) => ({ id: String(i + 1), name: m }))}
               onChange={(v: any) => setMonth(+v)}
+              noCheckmark={true}
               style={{
                 padding: "6px 10px",
                 borderRadius: 8,
@@ -3119,6 +4081,7 @@ export function NavBar({
               value={String(year)}
               options={YEARS.map((y) => String(y))}
               onChange={(v: any) => setYear(+v)}
+              noCheckmark={true}
               style={{
                 padding: "6px 10px",
                 borderRadius: 8,
@@ -3344,6 +4307,160 @@ export function NavBar({
           <Share2 size={16} />
         </button>
       </div>
+
+      {/* Upgrade Limit Modal Popup */}
+      {createPortal(
+        <AnimatePresence>
+          {upgradeModalFeature && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              style={{
+                position: "fixed",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: "rgba(11, 37, 74, 0.4)",
+                backdropFilter: "blur(4px)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                zIndex: 999999,
+                padding: 24,
+              }}
+            >
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                style={{
+                  background: "linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 100%)",
+                  padding: "36px 28px",
+                  borderRadius: 24,
+                  width: "100%",
+                  maxWidth: 420,
+                  textAlign: "center",
+                  position: "relative",
+                  boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1), 0 0 0 1px rgba(0,0,0,0.05)",
+                }}
+              >
+                {/* Close button in top right */}
+                <button
+                  onClick={() => setUpgradeModalFeature(null)}
+                  style={{
+                    position: "absolute",
+                    top: 16,
+                    right: 16,
+                    background: "rgba(0,0,0,0.04)",
+                    border: "none",
+                    width: 32,
+                    height: 32,
+                    borderRadius: "50%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#64748B",
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
+                  }}
+                  className="hover:bg-slate-200 hover:text-slate-800"
+                >
+                  <X size={16} />
+                </button>
+
+                {/* Icon illustration header */}
+                <div className="flex justify-center mb-5">
+                  <div className="w-16 h-16 rounded-2xl bg-amber-50 flex items-center justify-center border border-amber-100 shadow-sm relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-tr from-amber-500/10 to-amber-500/0" />
+                    <Crown size={32} className="text-amber-500 relative z-10" strokeWidth={2.2} />
+                  </div>
+                </div>
+
+                {/* Title */}
+                <h3
+                  style={{
+                    fontSize: 20,
+                    fontWeight: 800,
+                    color: "#0F172A",
+                    marginBottom: 10,
+                    letterSpacing: "-0.025em",
+                  }}
+                >
+                  {lang === "id" ? "Akses Fitur Terkunci" : "Feature Access Locked"}
+                </h3>
+
+                {/* Subtext description */}
+                <p
+                  style={{
+                    fontSize: 14.5,
+                    lineHeight: "1.5",
+                    color: "#475569",
+                    marginBottom: 24,
+                    padding: "0 8px",
+                  }}
+                >
+                  {lang === "id" ? (
+                    <>
+                      Fitur <strong className="text-blue-600 font-semibold">{upgradeModalFeature}</strong> tidak tersedia di paket Anda. Silakan upgrade paket untuk mengaksesnya.
+                    </>
+                  ) : (
+                    <>
+                      The <strong className="text-blue-600 font-semibold">{upgradeModalFeature}</strong> feature is not available in your plan. Please upgrade your plan to access this feature.
+                    </>
+                  )}
+                </p>
+
+                {/* Actions buttons */}
+                <div className="flex flex-col gap-2.5">
+                  <button
+                    onClick={() => {
+                      setUpgradeModalFeature(null);
+                      navigate("/billing");
+                    }}
+                    style={{
+                      width: "100%",
+                      padding: "14px",
+                      borderRadius: 14,
+                      background: "linear-gradient(135deg, #2563EB, #1D4ED8)",
+                      border: "none",
+                      fontWeight: 700,
+                      color: "white",
+                      cursor: "pointer",
+                      boxShadow: "0 4px 12px rgba(37, 99, 235, 0.25)",
+                      transition: "all 0.2s ease",
+                      fontSize: 14,
+                    }}
+                    className="hover:opacity-95 hover:shadow-lg hover:scale-[1.01] active:scale-[0.99] transition-all"
+                  >
+                    {lang === "id" ? "Upgrade Paket Sekarang" : "Upgrade Plan Now"}
+                  </button>
+                  <button
+                    onClick={() => setUpgradeModalFeature(null)}
+                    style={{
+                      width: "100%",
+                      padding: "13px",
+                      borderRadius: 14,
+                      background: "#F8FAFC",
+                      border: "1px solid #E2E8F0",
+                      fontWeight: 600,
+                      color: "#475569",
+                      cursor: "pointer",
+                      transition: "all 0.2s ease",
+                      fontSize: 14,
+                    }}
+                    className="hover:bg-slate-100 hover:text-slate-800 transition-all active:scale-[0.99]"
+                  >
+                    {lang === "id" ? "Nanti Saja" : "Maybe Later"}
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
   );
 }
@@ -3355,11 +4472,20 @@ function MultiSelectFilter({
   label,
   style,
   onUpdateOptions,
+  isPlatform = false,
 }: any) {
   const { lang } = useI18n();
   const [open, setOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 1024);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   // Exclude "All" from local editable options, we handle "All" manually.
   const baseOptions = options.filter(
@@ -3438,6 +4564,18 @@ function MultiSelectFilter({
           .join(", ")
       : lang === "id" ? `Tidak ada ${label}` : `No ${label}`;
 
+  const getButtonIcon = () => {
+    if (!isPlatform) return null;
+    if (values.includes("All") || values.length === 0) {
+      return getPlatformIcon("all", 14);
+    }
+    if (values.length === 1) {
+      return getPlatformIcon(values[0], 14);
+    }
+    return getPlatformIcon("all", 14);
+  };
+  const buttonIcon = getButtonIcon();
+
   return (
     <div ref={ref} style={{ position: "relative", width: "100%" }}>
       <button
@@ -3449,15 +4587,17 @@ function MultiSelectFilter({
           alignItems: "center",
           justifyContent: "space-between",
           gap: 8,
-          padding: "6px 14px",
-          borderRadius: 9999,
-          border: "1px solid rgba(44,32,22,0.1)",
-          background: "white",
-          fontSize: 12,
-          fontWeight: 700,
+          padding: isMobile ? "12px 18px" : "6px 14px",
+          borderRadius: isMobile ? 16 : 9999,
+          border: isMobile ? "none" : "1px solid rgba(44,32,22,0.1)",
+          background: isMobile ? "rgba(0,0,0,0.03)" : "white",
+          fontSize: isMobile ? 13 : 12,
+          fontWeight: 800,
           cursor: "pointer",
-          color: "#2C2016",
-          height: 32,
+          color: "#111827",
+          height: isMobile ? 44 : 32,
+          outline: "none",
+          transition: "all 0.2s ease",
           ...style,
         }}
       >
@@ -3469,6 +4609,11 @@ function MultiSelectFilter({
             overflow: "hidden",
           }}
         >
+          {buttonIcon && (
+            <div style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
+              {buttonIcon}
+            </div>
+          )}
           <span
             style={{
               overflow: "hidden",
@@ -3480,7 +4625,7 @@ function MultiSelectFilter({
           </span>
         </div>
         <ChevronDown
-          size={14}
+          size={isMobile ? 16 : 14}
           style={{
             transform: open ? "rotate(180deg)" : "none",
             transition: "all 0.2s",
@@ -3492,25 +4637,25 @@ function MultiSelectFilter({
       <AnimatePresence>
         {open && (
           <motion.div
-            initial={{ opacity: 0, y: 5 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 5 }}
+            initial={isMobile ? { opacity: 0, height: 0 } : { opacity: 0, y: 5 }}
+            animate={isMobile ? { opacity: 1, height: "auto" } : { opacity: 1, y: 0 }}
+            exit={isMobile ? { opacity: 0, height: 0 } : { opacity: 0, y: 5 }}
             transition={{ duration: 0.15 }}
             style={{
-              position: "absolute",
-              top: "100%",
+              position: isMobile ? "relative" : "absolute",
+              top: isMobile ? "auto" : "100%",
               left: 0,
-              minWidth: "100%",
-              width: "max-content",
-              maxWidth: "250px",
-              marginTop: 4,
-              background: "white",
-              border: "1px solid rgba(44,32,22,0.1)",
-              borderRadius: 12,
-              padding: 6,
+              right: isMobile ? 0 : "auto",
+              minWidth: isMobile ? "100%" : "190px",
+              width: isMobile ? "100%" : "max-content",
+              marginTop: 8,
+              background: isMobile ? "rgba(0,0,0,0.015)" : "white",
+              border: isMobile ? "1px solid rgba(0,0,0,0.03)" : "1px solid rgba(44,32,22,0.1)",
+              borderRadius: isMobile ? 18 : 12,
+              padding: isMobile ? 12 : 6,
               zIndex: 9999,
-              boxShadow: "0 10px 40px rgba(0,0,0,0.15)",
-              maxHeight: 300,
+              boxShadow: isMobile ? "none" : "0 10px 40px rgba(0,0,0,0.15)",
+              maxHeight: isMobile ? 240 : 300,
               overflowY: "auto",
               overflowX: "hidden",
             }}
@@ -3701,7 +4846,7 @@ function MultiSelectFilter({
               </div>
             ) : (
               <>
-                {options.map((opt: any, i: any) => {
+                 {options.map((opt: any, i: any) => {
                   const val =
                     typeof opt === "string" ? opt : opt.id || opt.name;
                   let name =
@@ -3712,6 +4857,7 @@ function MultiSelectFilter({
                   const isAll = values.includes("All");
                   const selected =
                     val === "All" ? isAll : isAll || values.includes(val);
+                  const optIcon = isPlatform ? getPlatformIcon(val, isMobile ? 16 : 14) : null;
 
                   return (
                     <button
@@ -3720,40 +4866,47 @@ function MultiSelectFilter({
                       style={{
                         width: "100%",
                         textAlign: "left",
-                        padding: "8px 12px",
+                        padding: isMobile ? "10px 14px" : "8px 12px",
                         background: "transparent",
-                        color: "#4B5563",
+                        color: "#374151",
                         border: "none",
-                        borderRadius: 8,
-                        fontSize: 13,
+                        borderRadius: isMobile ? 12 : 8,
+                        fontSize: isMobile ? 13 : 13,
                         cursor: "pointer",
-                        fontWeight: selected ? 600 : 500,
+                        fontWeight: selected ? 800 : 500,
                         display: "flex",
                         alignItems: "center",
-                        gap: 10,
+                        gap: isMobile ? 12 : 10,
                         transition: "all 0.2s",
                       }}
                     >
                       <div
                         style={{
-                          width: 16,
-                          height: 16,
+                          width: isMobile ? 18 : 16,
+                          height: isMobile ? 18 : 16,
+                          borderRadius: isMobile ? 6 : 4,
+                          border: selected ? "1px solid var(--theme-primary)" : "1.5px solid rgba(0,0,0,0.18)",
+                          background: selected ? "var(--theme-primary)" : "transparent",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
                           flexShrink: 0,
+                          transition: "all 0.15s ease",
                         }}
                       >
                         {selected && (
-                          <Check size={14} color="#9C2B4E" strokeWidth={3} />
+                          <Check size={isMobile ? 12 : 11} color="#FFFFFF" strokeWidth={3.5} />
                         )}
                       </div>
+                      {optIcon && (
+                        <div style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
+                          {optIcon}
+                        </div>
+                      )}
                       <span
                         style={{
                           flex: 1,
                           whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
                         }}
                       >
                         {name}
@@ -3809,7 +4962,6 @@ function MultiSelectFilter({
 }
 
 export function FilterBar({
-
   filters,
   setFilters,
   pillars,
@@ -3824,9 +4976,382 @@ export function FilterBar({
   onImportClick,
   onExportClick,
   onSettingUpdate,
+  month,
+  setMonth,
+  year,
+  setYear,
 }: any) {
   const { lang } = useI18n();
   const set = (k: any, v: any) => setFilters((p: any) => ({ ...p, [k]: v }));
+
+  const [isMobile, setIsMobile] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 1024);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  const activeFiltersCount = [
+    filters.pillar,
+    filters.platform,
+    filters.contentType,
+    filters.pic
+  ].filter(f => f && f.length > 0 && f[0] !== "All").length;
+
+  if (isMobile) {
+    return (
+      <div style={{ margin: "10px 12px 0", position: "relative", zIndex: 20 }}>
+        {/* Horizontal Chips Bar */}
+        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          {/* Main Filter Trigger Chip */}
+          <button
+            onClick={() => setIsExpanded(true)}
+            style={{
+              flex: 1,
+              background: "white",
+              border: "1px solid rgba(0,0,0,0.06)",
+              borderRadius: 999,
+              padding: "10px 18px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+              fontSize: 12,
+              fontWeight: 800,
+              color: "#111827",
+              cursor: "pointer",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.01)",
+              outline: "none",
+            }}
+          >
+            <span>⚙️</span>
+            <span>{lang === "id" ? "Filter & Aksi" : "Filters & Actions"}</span>
+            {activeFiltersCount > 0 && (
+              <span style={{
+                background: "var(--theme-primary)",
+                color: "white",
+                fontSize: 10,
+                padding: "2px 6px",
+                borderRadius: 999,
+                fontWeight: 800,
+              }}>
+                {activeFiltersCount}
+              </span>
+            )}
+          </button>
+
+          {/* Archived Toggle Chip */}
+          <button
+            onClick={() => setShowArchived((v: any) => !v)}
+            style={{
+              background: showArchived ? "rgba(35, 131, 226, 0.1)" : "white",
+              border: showArchived ? "1px solid rgba(35, 131, 226, 0.3)" : "1px solid rgba(0,0,0,0.06)",
+              color: showArchived ? "var(--theme-primary)" : "#4B5563",
+              borderRadius: 999,
+              padding: "10px 18px",
+              fontSize: 12,
+              fontWeight: 800,
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              cursor: "pointer",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.01)",
+              outline: "none",
+            }}
+          >
+            <span>{showArchived ? "🙈" : "📦"}</span>
+            <span>{showArchived ? (lang === "id" ? "Sembunyikan Arsip" : "Hide Archived") : (lang === "id" ? "Tampilkan Arsip" : "Show Archived")}</span>
+          </button>
+        </div>
+
+        {/* Premium Bottom Sheet Overlay */}
+        {createPortal(
+          <AnimatePresence>
+            {isExpanded && (
+              <>
+                {/* Backdrop overlay with blur */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  onClick={() => setIsExpanded(false)}
+                  style={{
+                    position: "fixed",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: "rgba(0, 0, 0, 0.4)",
+                    backdropFilter: "blur(4px)",
+                    WebkitBackdropFilter: "blur(4px)",
+                    zIndex: 99999,
+                  }}
+                />
+
+                {/* Bottom Sheet Container */}
+                <motion.div
+                  initial={{ y: "100%" }}
+                  animate={{ y: 0 }}
+                  exit={{ y: "100%" }}
+                  transition={{ type: "spring", damping: 25, stiffness: 220 }}
+                  style={{
+                    position: "fixed",
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    background: "white",
+                    borderTopLeftRadius: 28,
+                    borderTopRightRadius: 28,
+                    padding: "24px 28px calc(24px + env(safe-area-inset-bottom, 0px)) 28px",
+                    boxShadow: "0 -8px 32px rgba(0,0,0,0.12)",
+                    zIndex: 100000,
+                    maxHeight: "90vh",
+                    display: "flex",
+                    flexDirection: "column",
+                  }}
+                >
+                  {/* Pull bar / indicator */}
+                  <div style={{
+                    width: 40,
+                    height: 4,
+                    background: "rgba(0,0,0,0.1)",
+                    borderRadius: 999,
+                    margin: "0 auto 16px",
+                  }} />
+
+                  {/* Header */}
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
+                    <h3 style={{ fontSize: 18, fontWeight: 800, color: "#111827", margin: 0, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                      {lang === "id" ? "Filter & Aksi" : "Filters & Actions"}
+                    </h3>
+                    <button
+                      onClick={() => setIsExpanded(false)}
+                      style={{
+                        background: "rgba(0,0,0,0.03)",
+                        border: "none",
+                        borderRadius: "50%",
+                        width: 36,
+                        height: 36,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        cursor: "pointer",
+                        color: "#111827",
+                        outline: "none",
+                        transition: "all 0.2s ease",
+                      }}
+                    >
+                      <X size={18} strokeWidth={2.5} />
+                    </button>
+                  </div>
+
+                  {/* Scrollable Form Content */}
+                  <div style={{ overflowY: "auto", flex: 1, padding: "4px 4px 28px 4px" }} className="[&::-webkit-scrollbar]:hidden">
+                    {/* Month & Year Selectors (Mobile Only) */}
+                    {month && setMonth && year && setYear && (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 24 }}>
+                        <label style={{ fontSize: 11, fontWeight: 800, color: "#6B7280", textTransform: "uppercase", letterSpacing: "0.05em", paddingLeft: 4 }}>
+                          {lang === "id" ? "Pilih Periode" : "Select Period"}
+                        </label>
+                        <div style={{ display: "flex", gap: 12 }}>
+                          <div style={{ flex: 1.5 }}>
+                            <CustomDropdown
+                              value={String(month)}
+                              options={(lang === "id" ? MONTHS : MONTHS_EN).map((m, i) => ({ id: String(i + 1), name: m }))}
+                              onChange={(v: any) => setMonth(+v)}
+                              noCheckmark={true}
+                              style={{
+                                width: "100%",
+                                padding: "12px 16px",
+                                borderRadius: 16,
+                                border: "none",
+                                background: "rgba(0,0,0,0.03)",
+                                fontWeight: 800,
+                                fontSize: 13,
+                                color: "#111827",
+                                height: 44,
+                              }}
+                            />
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <CustomDropdown
+                              value={String(year)}
+                              options={YEARS.map((y) => String(y))}
+                              onChange={(v: any) => setYear(+v)}
+                              noCheckmark={true}
+                              style={{
+                                width: "100%",
+                                padding: "12px 16px",
+                                borderRadius: 16,
+                                border: "none",
+                                background: "rgba(0,0,0,0.03)",
+                                fontWeight: 800,
+                                fontSize: 13,
+                                color: "#111827",
+                                height: 44,
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Filters List */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+                      {[
+                        [lang === "id" ? "Pillar" : "Pillar", pillars, "pillar"],
+                        [lang === "id" ? "Platform" : "Platform", platforms, "platform"],
+                        [lang === "id" ? "Tipe Konten" : "Content Type", contentTypes, "contentType"],
+                        [lang === "id" ? "PIC" : "PIC", pics, "pic"],
+                      ].map(([l, opt, key]) => (
+                        <div key={key as string} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                          <label style={{ fontSize: 11, fontWeight: 800, color: "#6B7280", textTransform: "uppercase", letterSpacing: "0.05em", paddingLeft: 4 }}>
+                            {l as string}
+                          </label>
+                          <MultiSelectFilter
+                            label={l as string}
+                            values={filters[key as string] || ["All"]}
+                            options={[{ id: "All", name: "Semua" }, ...(opt as any[])]}
+                            onChange={(v: any) => set(key, v)}
+                            isPlatform={key === "platform"}
+                            onUpdateOptions={(opts: any) => {
+                              const settingKey =
+                                key === "pillar"
+                                  ? "pillars"
+                                  : key === "platform"
+                                    ? "platforms"
+                                    : "pics";
+                              if (onSettingUpdate) onSettingUpdate({ [settingKey]: opts });
+                            }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+
+                    <div style={{ height: 1, background: "rgba(0,0,0,0.05)", margin: "28px 0" }} />
+
+                    {/* Actions Panel */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                      <span style={{ fontSize: 11, fontWeight: 800, color: "#6B7280", textTransform: "uppercase", letterSpacing: "0.05em", paddingLeft: 4, marginBottom: 4 }}>
+                        {lang === "id" ? "Ekspor & Impor Data" : "Export & Import Data"}
+                      </span>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                        <button
+                          onClick={() => {
+                            setIsExpanded(false);
+                            onExportClick();
+                          }}
+                          style={{
+                            background: "rgba(16, 185, 129, 0.08)",
+                            border: "none",
+                            color: "#10B981",
+                            padding: "14px",
+                            fontSize: 13,
+                            fontWeight: 800,
+                            borderRadius: 16,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: 8,
+                            cursor: "pointer",
+                            outline: "none",
+                          }}
+                        >
+                          <Download size={16} /> Export
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            setIsExpanded(false);
+                            onImportClick();
+                          }}
+                          style={{
+                            background: "rgba(17, 24, 39, 0.03)",
+                            border: "none",
+                            color: "#111827",
+                            padding: "14px",
+                            fontSize: 13,
+                            fontWeight: 800,
+                            borderRadius: 16,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: 8,
+                            cursor: "pointer",
+                            outline: "none",
+                          }}
+                        >
+                          <Plus size={16} /> Import
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Sticky Footer actions */}
+                  <div style={{
+                    display: "flex",
+                    gap: 12,
+                    alignItems: "center",
+                    borderTop: "1px solid rgba(0,0,0,0.05)",
+                    paddingTop: 16,
+                    background: "white",
+                  }}>
+                    <button
+                      onClick={() => {
+                        setFilters({
+                          pillar: ["All"],
+                          platform: ["All"],
+                          contentType: ["All"],
+                          pic: ["All"],
+                        });
+                      }}
+                      style={{
+                        flex: 1,
+                        background: "rgba(0,0,0,0.02)",
+                        border: "none",
+                        color: "#4B5563",
+                        padding: "14px 0",
+                        borderRadius: 16,
+                        fontSize: 13,
+                        fontWeight: 800,
+                        cursor: "pointer",
+                        outline: "none",
+                      }}
+                    >
+                      {lang === "id" ? "Reset" : "Reset"}
+                    </button>
+
+                    <button
+                      onClick={() => setIsExpanded(false)}
+                      style={{
+                        flex: 2,
+                        background: "var(--theme-primary)",
+                        border: "none",
+                        color: "white",
+                        padding: "14px 0",
+                        borderRadius: 16,
+                        fontSize: 13,
+                        fontWeight: 800,
+                        cursor: "pointer",
+                        outline: "none",
+                      }}
+                    >
+                      {lang === "id" ? "Terapkan" : "Apply"}
+                    </button>
+                  </div>
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>,
+          document.body
+        )}
+      </div>
+    );
+  }
+
   return (
     <div
       style={{
@@ -3863,7 +5388,7 @@ export function FilterBar({
           <div
             key={key as string}
             style={{
-              width: 130,
+              width: key === "contentType" ? 170 : 145,
               display: "flex",
               flexDirection: "column",
               gap: 4,
@@ -3885,6 +5410,7 @@ export function FilterBar({
               values={filters[key as string] || ["All"]}
               options={[{ id: "All", name: "Semua" }, ...(opt as any[])]}
               onChange={(v: any) => set(key, v)}
+              isPlatform={key === "platform"}
               onUpdateOptions={(opts: any) => {
                 const settingKey =
                   key === "pillar"
@@ -3919,9 +5445,13 @@ export function FilterBar({
             padding: "0 12px",
             height: 32,
             borderRadius: 999,
+            display: "flex",
+            alignItems: "center",
+            gap: 6
           }}
         >
-          📦 Arsip
+          <span>{showArchived ? "🙈" : "📦"}</span>
+          <span>{showArchived ? (lang === "id" ? "Sembunyikan Arsip" : "Hide Archive") : (lang === "id" ? "Tampilkan Arsip" : "Show Archive")}</span>
         </button>
       </div>
       <div style={{ flex: 1 }} />
@@ -3967,5 +5497,462 @@ export function FilterBar({
         <Plus size={14} style={{ opacity: 0.6 }} /> Import
       </button>
     </div>
+  );
+}
+
+export function BottomBar({
+  planDetails,
+  systemConfig,
+  tab,
+  setTab,
+  user,
+  profile,
+  onQuickAddContent,
+}: any) {
+  const { lang } = useI18n();
+  const navigate = useNavigate();
+  const [showMoreSheet, setShowMoreSheet] = useState(false);
+  const [showCreateMenu, setShowCreateMenu] = useState(false);
+
+  const isSuperAdmin =
+    profile?.role === "admin" ||
+    profile?.email?.toLowerCase() === "nalendraputra71@gmail.com" ||
+    user?.email?.toLowerCase() === "nalendraputra71@gmail.com";
+
+  // Check if active tab is in bottom bar or sisa menu
+  const isTabInBottomBar = ["dashboard", "content_planner", "analytics-trends"].includes(tab);
+
+  const handleNavClick = (v: any) => {
+    if (v.requiredFeature && profile?.plan !== "vip" && !isSuperAdmin) {
+       const hasFeature = planDetails?.features?.includes(v.requiredFeature);
+       if (!hasFeature) {
+          // Fallback or trigger supportive alert
+          alert(`${v.requiredFeature} requires a premium plan.`);
+          return;
+       }
+    }
+    if (v.id === "profile") {
+      navigate("/profile");
+    } else {
+      setTab(v.id);
+    }
+    setShowMoreSheet(false);
+  };
+
+  const HUBIVERSE = [
+    { id: "social-hub-ai", ic: <Sparkles size={18} />, lb: "Hub.ai" },
+    { id: "soc_hub", ic: <Users size={18} />, lb: "SocHub" },
+  ].filter(item => {
+    if (isSuperAdmin) return true;
+    if (item.id === "social-hub-ai" && systemConfig?.features?.hubai === false) return false;
+    if (item.id === "soc_hub" && systemConfig?.features?.sochub === false) return false;
+    return true;
+  });
+
+  const SOCIAL_STUDIO = (systemConfig?.features?.socialStudio === false && !isSuperAdmin) ? [] : [
+    {
+      id: "social-dashboard",
+      ic: <Home size={18} />,
+      lb: "Home",
+    },
+    {
+      id: "social-competitor",
+      ic: <Search size={18} />,
+      lb: "Analisis Kompetitor",
+      requiredFeature: "Competitor Analytics (Pantau Kompetitor)"
+    },
+    {
+      id: "social-inbox",
+      ic: <MessageSquare size={18} />,
+      lb: "Inbox & Komen",
+      requiredFeature: "Social Inbox (Manajemen Pesan terpusat)"
+    },
+  ];
+
+  const EXTRA = [
+    ...(isSuperAdmin
+      ? [
+          {
+            id: "admin",
+            ic: <Shield size={18} />,
+            lb: "Admin Panel",
+            super: true,
+          },
+        ]
+      : []),
+  ];
+
+  // List of remaining menus for menu 5 (Lainnya)
+  const remainingMenus = [
+    ...HUBIVERSE,
+    { id: "dashboard", ic: <Layout size={18} style={{ transform: "rotate(90deg)" }} />, lb: "Dashboard" },
+    { id: "analytics-overview", ic: <Activity size={18} />, lb: "Overview" },
+    { id: "analytics-content", ic: <Layers size={18} />, lb: "Content" },
+    { id: "analytics-activity", ic: <Users size={18} />, lb: "Audience" },
+    ...SOCIAL_STUDIO.map(item => item.id === "social-dashboard" ? { ...item, lb: "Integrasi Sosmed" } : item),
+    ...EXTRA,
+    { id: "settings", ic: <Settings size={18} />, lb: "Pengaturan" },
+    { id: "profile", ic: <img src={profile?.avatar || user?.photoURL || `https://ui-avatars.com/api/?name=${user?.displayName}`} style={{ width: 18, height: 18, borderRadius: "50%", objectFit: "cover" }} />, lb: "Profile" }
+  ];
+
+  return (
+    <>
+      {/* Bottom Bar Container */}
+      <div 
+        className="flex md:hidden"
+        style={{
+          position: "fixed",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: 64,
+          background: "#FFFFFF",
+          borderTop: "1px solid rgba(0,0,0,0.06)",
+          boxShadow: "0 -4px 16px rgba(0,0,0,0.04)",
+          alignItems: "center",
+          justifyContent: "space-around",
+          zIndex: 9999,
+          paddingBottom: "safe-area-inset-bottom",
+        }}
+      >
+        {/* Tab 1: Home */}
+        <button
+          onClick={() => setTab("dashboard")}
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 4,
+            background: "transparent",
+            border: "none",
+            color: tab === "dashboard" ? "var(--theme-primary)" : "#6B7280",
+            cursor: "pointer",
+            width: 60,
+            height: "100%",
+            outline: "none",
+          }}
+        >
+          <Home size={20} strokeWidth={tab === "dashboard" ? 2.5 : 2} />
+          <span style={{ fontSize: 10, fontWeight: tab === "dashboard" ? 700 : 500 }}>Home</span>
+        </button>
+
+        {/* Tab 2: Calendar */}
+        <button
+          onClick={() => setTab("content_planner")}
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 4,
+            background: "transparent",
+            border: "none",
+            color: tab === "content_planner" ? "var(--theme-primary)" : "#6B7280",
+            cursor: "pointer",
+            width: 60,
+            height: "100%",
+            outline: "none",
+          }}
+        >
+          <Calendar size={20} strokeWidth={tab === "content_planner" ? 2.5 : 2} />
+          <span style={{ fontSize: 10, fontWeight: tab === "content_planner" ? 700 : 500 }}>Calendar</span>
+        </button>
+
+        {/* Tab 3: Plus button (Center Action) */}
+        <div style={{ position: "relative", width: 56, height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <button
+            onClick={() => setShowCreateMenu(!showCreateMenu)}
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: "50%",
+              background: "linear-gradient(135deg, #2563EB 0%, #3B82F6 100%)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "white",
+              border: "none",
+              cursor: "pointer",
+              boxShadow: "0 4px 12px rgba(37, 99, 235, 0.3)",
+              outline: "none",
+            }}
+            className="hover-scale active:scale-95"
+          >
+            <Plus size={24} strokeWidth={3} color="#FFFFFF" />
+          </button>
+
+          {/* Plus Menu Floating Overlay */}
+          <AnimatePresence>
+            {showCreateMenu && (
+              <>
+                <div 
+                  style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.1)", zIndex: 9997 }}
+                  onClick={() => setShowCreateMenu(false)}
+                />
+                <motion.div
+                  initial={{ opacity: 0, y: 15, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 15, scale: 0.95 }}
+                  transition={{ duration: 0.2 }}
+                  style={{
+                    position: "absolute",
+                    bottom: 70,
+                    width: 185,
+                    background: "white",
+                    borderRadius: 16,
+                    boxShadow: "0 10px 25px rgba(0,0,0,0.12)",
+                    border: "1px solid rgba(0,0,0,0.06)",
+                    padding: 8,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 8,
+                    zIndex: 9998,
+                  }}
+                >
+                  <button
+                    onClick={() => {
+                      setShowCreateMenu(false);
+                      onQuickAddContent?.();
+                    }}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                      padding: "12px 16px",
+                      background: "rgba(37, 99, 235, 0.02)",
+                      border: "1px solid rgba(37, 99, 235, 0.06)",
+                      borderRadius: 9999,
+                      cursor: "pointer",
+                      width: "100%",
+                      color: "#111827",
+                      fontSize: 14,
+                      fontWeight: 700,
+                      outline: "none",
+                      textAlign: "left"
+                    }}
+                  >
+                    <Pencil size={15} color="var(--theme-primary)" />
+                    Brief
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowCreateMenu(false);
+                      setTab("social-studio");
+                      setTimeout(() => {
+                        window.dispatchEvent(new CustomEvent('open-social-studio-create-post'));
+                      }, 100);
+                    }}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                      padding: "12px 16px",
+                      background: "rgba(37, 99, 235, 0.02)",
+                      border: "1px solid rgba(37, 99, 235, 0.06)",
+                      borderRadius: 9999,
+                      cursor: "pointer",
+                      width: "100%",
+                      color: "#111827",
+                      fontSize: 14,
+                      fontWeight: 700,
+                      outline: "none",
+                      textAlign: "left"
+                    }}
+                  >
+                    <Layout size={15} color="var(--theme-primary)" />
+                    Post
+                    <span style={{ 
+                      fontSize: 9, 
+                      padding: "2px 6px", 
+                      borderRadius: 6, 
+                      background: "rgba(0,0,0,0.06)", 
+                      color: "#6B7280", 
+                      fontWeight: 700, 
+                      marginLeft: "auto", 
+                      textTransform: "uppercase", 
+                      letterSpacing: "0.5px" 
+                    }}>Soon</span>
+                  </button>
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Tab 4: Trends */}
+        <button
+          onClick={() => setTab("analytics-trends")}
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 4,
+            background: "transparent",
+            border: "none",
+            color: tab === "analytics-trends" ? "var(--theme-primary)" : "#6B7280",
+            cursor: "pointer",
+            width: 60,
+            height: "100%",
+            outline: "none",
+          }}
+        >
+          <TrendingUp size={20} strokeWidth={tab === "analytics-trends" ? 2.5 : 2} />
+          <span style={{ fontSize: 10, fontWeight: tab === "analytics-trends" ? 700 : 500 }}>Trends</span>
+        </button>
+
+        {/* Tab 5: Lainnya */}
+        <button
+          onClick={() => setShowMoreSheet(true)}
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 4,
+            background: "transparent",
+            border: "none",
+            color: !isTabInBottomBar ? "var(--theme-primary)" : "#6B7280",
+            cursor: "pointer",
+            width: 60,
+            height: "100%",
+            outline: "none",
+          }}
+        >
+          <Menu size={20} strokeWidth={!isTabInBottomBar ? 2.5 : 2} />
+          <span style={{ fontSize: 10, fontWeight: !isTabInBottomBar ? 700 : 500 }}>Lainnya</span>
+        </button>
+      </div>
+
+      {/* "Lainnya" Bottom Sheet Sheet Overlay */}
+      <AnimatePresence>
+        {showMoreSheet && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowMoreSheet(false)}
+              style={{
+                position: "fixed",
+                inset: 0,
+                background: "rgba(0,0,0,0.4)",
+                backdropFilter: "blur(4px)",
+                WebkitBackdropFilter: "blur(4px)",
+                zIndex: 10000,
+              }}
+            />
+
+            {/* Bottom Sheet Modal */}
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              style={{
+                position: "fixed",
+                bottom: 0,
+                left: 0,
+                right: 0,
+                maxHeight: "80vh",
+                background: "#FFFFFF",
+                borderTopLeftRadius: 24,
+                borderTopRightRadius: 24,
+                zIndex: 10001,
+                boxShadow: "0 -10px 30px rgba(0,0,0,0.15)",
+                overflowY: "auto",
+                padding: "24px 24px 40px",
+              }}
+            >
+              {/* Drag Indicator Accent */}
+              <div 
+                style={{
+                  width: 36,
+                  height: 4,
+                  borderRadius: 2,
+                  background: "rgba(0,0,0,0.1)",
+                  margin: "0 auto 20px",
+                }}
+              />
+
+              {/* Sheet Title */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+                <h3 style={{ fontSize: 16, fontWeight: 800, color: "#111827" }}>Menu Lainnya</h3>
+                <button
+                  onClick={() => setShowMoreSheet(false)}
+                  style={{
+                    background: "rgba(0,0,0,0.03)",
+                    border: "none",
+                    borderRadius: "50%",
+                    width: 28,
+                    height: 28,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                  }}
+                >
+                  <X size={14} color="#6B7280" />
+                </button>
+              </div>
+
+              {/* Items List Grid */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>
+                {remainingMenus.map((item) => {
+                  const isActive = tab === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => handleNavClick(item)}
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        padding: "16px 8px",
+                        borderRadius: 16,
+                        background: isActive ? "rgba(37,99,235,0.06)" : "rgba(0,0,0,0.02)",
+                        border: isActive ? "1px solid rgba(37,99,235,0.15)" : "1px solid transparent",
+                        cursor: "pointer",
+                        outline: "none",
+                        transition: "all 0.2s",
+                        minHeight: 80,
+                      }}
+                      className="hover-scale"
+                    >
+                      <div 
+                        style={{ 
+                          color: isActive ? "var(--theme-primary)" : "#4B5563",
+                          marginBottom: 8,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        {item.ic}
+                      </div>
+                      <span 
+                        style={{ 
+                          fontSize: 11, 
+                          fontWeight: isActive ? 700 : 500, 
+                          color: isActive ? "var(--theme-primary)" : "#111827",
+                          textAlign: "center",
+                          lineHeight: 1.2,
+                          wordBreak: "break-word"
+                        }}
+                      >
+                        {item.lb}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </>
   );
 }

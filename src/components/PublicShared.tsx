@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Heart, Instagram, Twitter, Facebook, Linkedin, MapPin, Mail, Globe, ChevronDown } from 'lucide-react';
+import { Heart, Instagram, Twitter, Facebook, Linkedin, MapPin, Mail, Globe, ChevronDown, Menu, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { TiktokIcon, ThreadsIcon } from './social-icons';
 
 export const PublicHeader = ({ currentLang, onLangChange, transparentOnTop = false }: { currentLang: 'id' | 'en', onLangChange?: (l: 'id' | 'en') => void, transparentOnTop?: boolean }) => {
   const navigate = useNavigate();
   const [scrollY, setScrollY] = useState(0);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY);
@@ -16,14 +18,14 @@ export const PublicHeader = ({ currentLang, onLangChange, transparentOnTop = fal
   const isScrolled = scrollY > 20 || !transparentOnTop;
 
   return (
-    <header className={`fixed top-0 w-full z-50 transition-all duration-300 ${isScrolled ? 'bg-white/90 backdrop-blur-md border-b border-black/5 py-4' : 'bg-transparent py-6'}`}>
-      <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
-        <Link to="/" className="flex items-center gap-2 cursor-pointer">
-          <div className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center">
+    <header className={`fixed top-0 w-full z-50 transition-all duration-300 ${isScrolled ? 'bg-white/95 backdrop-blur-md border-b border-black/5 py-2.5 sm:py-4' : 'bg-transparent py-4 sm:py-6'}`}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 flex justify-between items-center">
+        <Link to="/" className="flex items-center gap-1.5 sm:gap-2 cursor-pointer shrink-0">
+          <div className="w-7 h-7 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl overflow-hidden flex items-center justify-center shrink-0">
             <img src="/icon.png" alt="Hubify Social" className="w-full h-full object-cover scale-110" onError={(e) => { e.currentTarget.parentElement!.style.display = 'none'; e.currentTarget.parentElement!.nextElementSibling!.setAttribute('style', 'display: flex'); }} />
           </div>
-          <div className="hidden w-10 h-10 rounded-lg bg-gradient-to-tr from-[#1D4D7A] to-[#0B2A4A] items-center justify-center text-white font-bold text-xl">H</div>
-          <span className={`font-extrabold text-xl tracking-tight ${isScrolled ? 'text-[#0B2A4A]' : 'text-[#0B2A4A]'}`}>Hubify Social</span>
+          <div className="hidden w-7 h-7 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-tr from-[#1D4D7A] to-[#0B2A4A] items-center justify-center text-white font-bold text-xs sm:text-xl">H</div>
+          <span className={`font-extrabold text-[13px] sm:text-xl tracking-tight ${isScrolled ? 'text-[#0B2A4A]' : 'text-[#0B2A4A]'}`}>Hubify Social</span>
         </Link>
         
         <nav className="hidden md:flex gap-8 items-center font-semibold text-sm text-[#1D4D7A]">
@@ -32,11 +34,78 @@ export const PublicHeader = ({ currentLang, onLangChange, transparentOnTop = fal
           <Link to="/pricing" className="hover:text-[#0B2A4A] transition-colors">{currentLang === 'id' ? 'Harga' : 'Pricing'}</Link>
         </nav>
 
-        <div className="flex items-center gap-4">
-          <button onClick={() => navigate('/login', { state: { mode: 'login' }})} className="hidden sm:block text-sm font-bold text-[#1D4D7A] hover:text-[#0B2A4A] transition-colors">{currentLang === 'id' ? 'Masuk' : 'Login'}</button>
-          <button onClick={() => navigate('/login', { state: { mode: 'signup' }})} className="bg-[#1D4D7A] text-white text-sm font-bold py-2.5 px-5 rounded-full hover:bg-[#0B2A4A] transition-all transform hover:scale-105 active:scale-95 shadow-lg shadow-[#1D4D7A]/20">{currentLang === 'id' ? 'Mulai Sekarang' : 'Start Now'}</button>
+        <div className="flex items-center gap-1.5 sm:gap-4 shrink-0">
+          <button onClick={() => navigate('/login', { state: { mode: 'login' }})} className="text-[11px] sm:text-sm font-bold text-[#1D4D7A] hover:text-[#0B2A4A] transition-colors px-1 py-1">{currentLang === 'id' ? 'Masuk' : 'Login'}</button>
+          <button onClick={() => navigate('/login', { state: { mode: 'signup' }})} className="bg-[#1D4D7A] text-white text-[10px] sm:text-sm font-bold py-1.5 px-3 sm:py-2.5 sm:px-5 rounded-full hover:bg-[#0B2A4A] transition-all transform hover:scale-105 active:scale-95 shadow-md sm:shadow-lg shadow-[#1D4D7A]/20">{currentLang === 'id' ? 'Mulai Sekarang' : 'Start Now'}</button>
+          
+          {/* Hamburger menu button for mobile */}
+          <button 
+            onClick={() => setIsMenuOpen(!isMenuOpen)} 
+            className="md:hidden p-1 text-[#1D4D7A] hover:text-[#0B2A4A] focus:outline-none shrink-0"
+            aria-label="Toggle menu"
+          >
+            {isMenuOpen ? <X size={18} /> : <Menu size={18} />}
+          </button>
         </div>
       </div>
+
+      {/* Mobile Dropdown Navigation */}
+      <AnimatePresence>
+        {isMenuOpen && (
+          <motion.div 
+            initial={{ opacity: 0, y: -12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="md:hidden fixed inset-x-0 top-[49px] sm:top-[68px] bg-white border-b border-black/5 shadow-xl py-5 px-6 flex flex-col gap-5 z-40"
+          >
+            <nav className="flex flex-col gap-3.5 font-semibold text-sm text-[#1D4D7A]">
+              <Link 
+                to="/#fitur" 
+                onClick={() => setIsMenuOpen(false)}
+                className="hover:text-[#0B2A4A] py-1 border-b border-slate-50 transition-colors"
+              >
+                {currentLang === 'id' ? 'Fitur' : 'Features'}
+              </Link>
+              <Link 
+                to="/#analitik" 
+                onClick={() => setIsMenuOpen(false)}
+                className="hover:text-[#0B2A4A] py-1 border-b border-slate-50 transition-colors"
+              >
+                {currentLang === 'id' ? 'Analitik' : 'Analytics'}
+              </Link>
+              <Link 
+                to="/pricing" 
+                onClick={() => setIsMenuOpen(false)}
+                className="hover:text-[#0B2A4A] py-1 border-b border-slate-50 transition-colors"
+              >
+                {currentLang === 'id' ? 'Harga' : 'Pricing'}
+              </Link>
+            </nav>
+
+            <div className="flex flex-col gap-2.5 pt-2 border-t border-slate-100">
+              <button 
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  navigate('/login', { state: { mode: 'login' }});
+                }} 
+                className="w-full py-2.5 rounded-xl border border-slate-200 font-bold text-[#1D4D7A] hover:bg-slate-50 text-xs text-center transition-all"
+              >
+                {currentLang === 'id' ? 'Masuk ke Akun' : 'Log In to Account'}
+              </button>
+              <button 
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  navigate('/login', { state: { mode: 'signup' }});
+                }} 
+                className="w-full bg-[#1D4D7A] text-white py-2.5 rounded-xl font-bold text-xs text-center hover:bg-[#0B2A4A] shadow-md shadow-[#1D4D7A]/10 transition-all"
+              >
+                {currentLang === 'id' ? 'Daftar Gratis' : 'Sign Up Free'}
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </header>
   );
 };

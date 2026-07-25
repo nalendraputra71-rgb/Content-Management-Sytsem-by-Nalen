@@ -1,18 +1,18 @@
 import { useI18n } from "./i18n";
 import React, { useState, useEffect } from "react";
-import { Bell, CalendarClock, PartyPopper, X, ChevronDown, ChevronUp, Archive, Trash2, HelpCircle, CheckCheck } from "lucide-react";
+import { Bell, CalendarClock, PartyPopper, X, ChevronDown, ChevronUp, Archive, Trash2, HelpCircle, CheckCheck, Share2 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { db, collection, query, onSnapshot, orderBy, where, collectionGroup, doc, updateDoc, deleteDoc } from "./firebase";
+import { db, collection, query, onSnapshot, orderBy, where, collectionGroup, doc, updateDoc, deleteDoc, getDocs, limit } from "./firebase";
 
 export function useNotifications(userProfile: any) {
   const { lang } = useI18n();
   const [notifications, setNotifications] = useState<any[]>([]);
   const [toast, setToast] = useState<any | null>(null);
   
-  const getDeletedIds = () => JSON.parse(localStorage.getItem(`deletedNotifs_${userProfile?.uid}`) || '[]');
+  const getDeletedIds = (uid?: string) => JSON.parse(localStorage.getItem(`deletedNotifs_${uid || userProfile?.uid}`) || '[]');
 
   const deleteNotif = (id: string) => {
-    if (!userProfile) return;
+    const uid = userProfile?.uid; const plan = userProfile?.plan; const activeUntilStr = userProfile?.activeUntil; const hasUsedPromo = userProfile?.hasUsedPromo; if (!uid) return;
     const existing = getDeletedIds();
     if(!existing.includes(id)){
       localStorage.setItem(`deletedNotifs_${userProfile.uid}`, JSON.stringify([...existing, id]));
@@ -21,7 +21,7 @@ export function useNotifications(userProfile: any) {
   };
 
   const deleteAll = () => {
-    if (!userProfile) return;
+    const uid = userProfile?.uid; const plan = userProfile?.plan; const activeUntilStr = userProfile?.activeUntil; const hasUsedPromo = userProfile?.hasUsedPromo; if (!uid) return;
     const activeIds = notifications.map(n => n.id);
     const existing = getDeletedIds();
     const newDeleted = [...new Set([...existing, ...activeIds])];
@@ -30,20 +30,20 @@ export function useNotifications(userProfile: any) {
   };
 
   useEffect(() => {
-    if (!userProfile) return;
-    const isTrial = userProfile?.plan === "trial";
-    const activeUntil = userProfile?.activeUntil ? new Date(userProfile.activeUntil) : new Date(0);
+    const uid = userProfile?.uid; const plan = userProfile?.plan; const activeUntilStr = userProfile?.activeUntil; const hasUsedPromo = userProfile?.hasUsedPromo; if (!uid) return;
+    const isTrial = plan === "trial";
+    const activeUntil = activeUntilStr ? new Date(activeUntilStr) : new Date(0);
     const isExpired = new Date() > activeUntil;
     const sisaHari = Math.ceil((activeUntil.getTime() - new Date().getTime()) / (1000 * 3600 * 24));
 
     const notifs: any[] = [];
 
       const applyFilters = (arr: any[]) => {
-          const deletedIds = getDeletedIds();
+          const deletedIds = getDeletedIds(uid);
           return arr.filter(n => !deletedIds.includes(n.id));
       };
 
-      if (userProfile?.hasUsedPromo) {
+      if (hasUsedPromo) {
         notifs.push({
           id: "pro_active",
           icon: <PartyPopper size={14} color="#538135" />,
@@ -92,7 +92,7 @@ export function useNotifications(userProfile: any) {
     let initialGlobalLoaded = false;
 
     
-      unsubGlobal = onSnapshot(query(collection(db, "global_notifications"), orderBy("createdAt", "desc")), (snap) => {
+      getDocs(query(collection(db, "global_notifications"), orderBy("createdAt", "desc"), limit(20))).then((snap) => {
         if (!isMounted) return;
         
         const isInitial = !initialGlobalLoaded;
@@ -121,23 +121,23 @@ export function useNotifications(userProfile: any) {
            const finalNotifs = applyFilters([...applicableGlobal, ...others]);
            
            if (!isInitial && newGlobal.length > 0) {
-               const dIds = getDeletedIds();
-               const toastedIds = JSON.parse(localStorage.getItem(`toastedNotifs_${userProfile?.uid}`) || '[]');
+               const dIds = getDeletedIds(uid);
+               const toastedIds = JSON.parse(localStorage.getItem(`toastedNotifs_${uid}`) || '[]');
                const unarchivedNew = newGlobal.filter(n => !dIds.includes(n.id) && !toastedIds.includes(n.id));
                if (unarchivedNew.length > 0 && typeof window !== "undefined") {
                    setTimeout(() => setToast(unarchivedNew[0]), 500);
-                   localStorage.setItem(`toastedNotifs_${userProfile?.uid}`, JSON.stringify([...toastedIds, unarchivedNew[0].id]));
+                   localStorage.setItem(`toastedNotifs_${uid}`, JSON.stringify([...toastedIds, unarchivedNew[0].id]));
                }
            }
            return finalNotifs;
         });
-      }, (err:any) => {
+      }).catch((err:any) => {
         console.warn("Global_notifications onSnapshot error:", err);
       });
 
       // Listen to user tickets too
-      if (userProfile.uid) {
-         unsubTickets = onSnapshot(query(collection(db, "tickets"), where("userId", "==", userProfile.uid)), (snap) => {
+      if (uid) {
+         unsubTickets = onSnapshot(query(collection(db, "tickets"), where("userId", "==", uid), limit(20)), (snap) => {
             if (!isMounted) return;
             const ticketNotifs: any[] = [];
             snap.forEach(d => {
@@ -174,7 +174,7 @@ export function useNotifications(userProfile: any) {
 
          // Listen to workspace invites
          let initialInvitesLoaded = false;
-         unsubInvites = onSnapshot(query(collectionGroup(db, "members"), where("userId", "==", userProfile.uid)), (snap) => {
+         unsubInvites = onSnapshot(query(collectionGroup(db, "members"), where("userId", "==", uid), limit(20)), (snap) => {
             if (!isMounted) return;
             const isInitial = !initialInvitesLoaded;
             initialInvitesLoaded = true;
@@ -223,7 +223,7 @@ export function useNotifications(userProfile: any) {
          });
 
          let initialPersonalLoaded = false;
-         let unsubPersonal = onSnapshot(query(collection(db, "notifications"), where("userId", "==", userProfile.uid)), (snap) => {
+         let unsubPersonal = onSnapshot(query(collection(db, "notifications"), where("userId", "==", uid), limit(20)), (snap) => {
             if (!isMounted) return;
             const isInitial = !initialPersonalLoaded;
             initialPersonalLoaded = true;
@@ -234,10 +234,12 @@ export function useNotifications(userProfile: any) {
                personalNotifs.push({
                    id: `personal_${d.id}`,
                    type: data.type || "social",
-                   icon: <Bell size={14} color="#3B82F6" />,
+                   icon: data.type === "content_share" ? <Share2 size={14} color="var(--theme-primary)" /> : <Bell size={14} color="#3B82F6" />,
                    title: data.title,
                    desc: data.body,
                    link: data.link,
+                   workspaceId: data.workspaceId,
+                   contentId: data.contentId,
                    time: data.createdAt?.toMillis ? new Date(data.createdAt.toMillis()).toLocaleString(lang === "id" ? "id-ID" : "en-US", {dateStyle:"short", timeStyle:"short"}) : new Date().toLocaleString(lang === "id" ? "id-ID" : "en-US", {dateStyle:"short", timeStyle:"short"}),
                    unread: !data.read
                });
@@ -280,12 +282,11 @@ export function useNotifications(userProfile: any) {
 
     return () => { 
        isMounted = false; 
-       if (unsubGlobal) unsubGlobal();
        if (unsubTickets) unsubTickets();
        if (unsubInvites) unsubInvites();
        if ((window as any)._unsubPersonal) (window as any)._unsubPersonal();
     };
-  }, [userProfile]);
+  }, [userProfile?.uid, userProfile?.plan, userProfile?.activeUntil, userProfile?.hasUsedPromo]);
 
   const handleInviteAction = async (workspaceId: string, memberId: string, action: 'accept'|'reject') => {
       try {

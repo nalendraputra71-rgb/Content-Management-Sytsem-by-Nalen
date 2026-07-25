@@ -5,7 +5,7 @@ import { Users, Mail, Shield, Trash2, Link, Copy, Check, Search, AtSign } from "
 import { I, B, CARD } from "./data";
 import { motion, AnimatePresence } from "motion/react";
 
-export const ShareWorkspaceModal: React.FC<{ workspace: any, userProfile: any, onClose: () => void }> = ({ workspace, userProfile, onClose }) => {
+export const ShareWorkspaceModal: React.FC<{ workspace: any, userProfile: any, planDetails?: any, onClose: () => void }> = ({ workspace, userProfile, planDetails, onClose }) => {
   const { lang } = useI18n();
 
   const [email, setEmail] = useState("");
@@ -49,6 +49,14 @@ export const ShareWorkspaceModal: React.FC<{ workspace: any, userProfile: any, o
   };
 
   const inviteMember = async (userToInvite: any) => {
+    const maxTeamMembers = planDetails?.maxTeamMembers || 0;
+    // Members array includes the owner. So if maxTeamMembers is 0, they can't invite anyone (length > 1).
+    // Or we just check members.length >= maxTeamMembers + 1 (since 1 is the owner)
+    if (members.length >= (maxTeamMembers + 1) && userProfile?.plan !== "vip") {
+       alert(`Batas maksimal anggota tim untuk paket Anda adalah ${maxTeamMembers} (diluar Anda). Silakan upgrade paket untuk mengundang lebih banyak anggota.`);
+       return;
+    }
+
     setLoading(true);
     try {
       const memberRef = doc(db, "workspaces", workspace.id, "members", userToInvite.uid);

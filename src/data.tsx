@@ -4,30 +4,23 @@ import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContai
 import { motion, AnimatePresence } from "motion/react";
 import { ChevronDown, Pencil, Plus, Trash2, Instagram, Facebook, Linkedin, AtSign, Music, Globe, Save } from "lucide-react";
 import { ColorPickerSelect } from "./components/ColorPickerSelect";
+import { DynamicPlatformIcon } from "./components/DynamicPlatformIcon";
 
 export function getPlatformIcon(platformName: string, size = 16) {
   const name = String(platformName || "").trim().toLowerCase();
-  if (name.includes("instagram") || name === "ig") {
-    return <Instagram size={size} color="#E1306C" />;
-  }
-  if (name.includes("tiktok") || name === "tt") {
-    return <Music size={size} color="#000000" />;
-  }
-  if (name.includes("facebook") || name === "fb" || name === "meta") {
-    return <Facebook size={size} color="#1877F2" />;
-  }
-  if (name.includes("threads")) {
-    return <AtSign size={size} color="#111111" />;
-  }
-  if (name === "x" || name.includes("twitter")) {
-    return <span style={{ fontWeight: 900, fontSize: size, fontFamily: "sans-serif", color: "#111111", display: "inline-flex", alignItems: "center", justifyContent: "center", width: size, height: size, lineHeight: 1 }}>𝕏</span>;
-  }
-  if (name.includes("linkedin")) {
-    return <Linkedin size={size} color="#0077B5" />;
-  }
+  
+  const exactMatches = ["ig", "tt", "fb", "meta", "x", "li", "yt"];
+  const includesMatches = ["instagram", "tiktok", "facebook", "threads", "twitter", "linkedin", "youtube"];
+  const isKnown = exactMatches.includes(name) || includesMatches.some(k => name.includes(k));
+
   if (name.includes("semua") || name === "all") {
     return <Globe size={size} color="#888888" />;
   }
+
+  if (isKnown) {
+    return <DynamicPlatformIcon platformName={platformName} size={size} />;
+  }
+  
   return null;
 }
 
@@ -64,7 +57,7 @@ export const htmlToPlainText = (html: any) => {
   return text.trim();
 };
 
-export function CustomDropdown({ value, options = [], onChange, dark = false, style = {}, prefix = "", alignRight = false, onUpdateOptions, multiple = false, initiallyOpen = false, onClose }: { value: any, options?: any[], onChange: (val: any) => void, dark?: boolean, style?: any, prefix?: string, alignRight?: boolean, onUpdateOptions?: (newOptions: any[], renames?: any) => void, multiple?: boolean, initiallyOpen?: boolean, onClose?: () => void }) {
+export function CustomDropdown({ value, options = [], onChange, dark = false, style = {}, prefix = "", alignRight = false, onUpdateOptions, multiple = false, initiallyOpen = false, onClose, noCheckmark = false }: { value: any, options?: any[], onChange: (val: any) => void, dark?: boolean, style?: any, prefix?: string, alignRight?: boolean, onUpdateOptions?: (newOptions: any[], renames?: any) => void, multiple?: boolean, initiallyOpen?: boolean, onClose?: () => void, noCheckmark?: boolean }) {
   const [open, setOpen] = useState(initiallyOpen);
   const [editMode, setEditMode] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -95,15 +88,29 @@ export function CustomDropdown({ value, options = [], onChange, dark = false, st
     });
 
     if (Object.keys(renames).length > 0) {
-      if (multiple && Array.isArray(value)) {
+      if (Array.isArray(value)) {
         let changed = false;
         const newValue = value.map(v => {
           if (renames[v]) { changed = true; return renames[v]; }
+          const lower = String(v).toLowerCase();
+          for (const [o, n] of Object.entries(renames)) {
+            if (o.toLowerCase() === lower) { changed = true; return n as string; }
+          }
           return v;
         });
         if (changed) onChange(newValue);
-      } else if (!multiple && value && typeof value === 'string' && renames[value]) {
-        onChange(renames[value]);
+      } else if (value && typeof value === 'string') {
+        const parts = value.split(',').map(s => s.trim());
+        let changed = false;
+        const newParts = parts.map(part => {
+          if (renames[part]) { changed = true; return renames[part]; }
+          const lower = part.toLowerCase();
+          for (const [o, n] of Object.entries(renames)) {
+            if (o.toLowerCase() === lower) { changed = true; return n as string; }
+          }
+          return part;
+        });
+        if (changed) onChange(newParts.join(', '));
       }
     }
 
@@ -329,6 +336,13 @@ export function CustomDropdown({ value, options = [], onChange, dark = false, st
                   const isSelected = multiple ? valuesArray.includes(val) : val === value;
                   const label = typeof o === 'string' ? o : o.label || o.name || o;
                   const color = (typeof o !== 'string') ? o.color : null;
+                  const itemColor = color || null;
+                  const selectedBg = itemColor
+                    ? (itemColor.startsWith("#") ? `${itemColor}1F` : "rgba(37, 99, 235, 0.12)")
+                    : "rgba(37, 99, 235, 0.12)";
+                  const selectedTextColor = itemColor || "#2563EB";
+                  
+                  const showHighlight = isSelected && !multiple;
                   
                   return (
                     <div 
@@ -346,24 +360,34 @@ export function CustomDropdown({ value, options = [], onChange, dark = false, st
                         }
                       }}
                       style={{ 
-                        padding: "10px 12px", borderRadius: 8, fontSize: 13, fontWeight: isSelected?800:600, cursor: "pointer", 
-                        background: "transparent", 
-                        color: "#2C2016", 
-                        transition: "all 0.1s",
+                        padding: "10px 12px", borderRadius: 8, fontSize: 13, fontWeight: isSelected ? 700 : 500, cursor: "pointer", 
+                        background: showHighlight ? selectedBg : "transparent", 
+                        color: showHighlight ? selectedTextColor : "#2C2016", 
+                        transition: "all 0.15s ease",
                         display: "flex", alignItems: "center", gap: 10,
                         marginBottom: 2
                       }}
-                      onMouseEnter={(e: any) => { if (!isSelected) e.currentTarget.style.background = "#FAFAFA"; }}
-                      onMouseLeave={(e: any) => { if (!isSelected) e.currentTarget.style.background = "transparent"; }}
+                      onMouseEnter={(e: any) => { if (!showHighlight) e.currentTarget.style.background = "rgba(0,0,0,0.03)"; }}
+                      onMouseLeave={(e: any) => { if (!showHighlight) e.currentTarget.style.background = "transparent"; }}
                     >
                       {multiple && (
-                        <div style={{width: 14, height: 14, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0}}>
-                          {isSelected && <svg width="14" height="14" viewBox="0 0 12 12" fill="none"><path d="M10 3L4.5 8.5L2 6" stroke={color || "var(--theme-primary)"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
-                        </div>
-                      )}
-                      {!multiple && isSelected && (
-                        <div style={{width: 14, height: 14, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0}}>
-                          <svg width="14" height="14" viewBox="0 0 12 12" fill="none"><path d="M10 3L4.5 8.5L2 6" stroke={color || "var(--theme-primary)"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                        <div style={{
+                          width: 16,
+                          height: 16,
+                          borderRadius: 4,
+                          border: isSelected ? "1px solid var(--theme-primary)" : "1.5px solid rgba(0,0,0,0.18)",
+                          background: isSelected ? "var(--theme-primary)" : "transparent",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexShrink: 0,
+                          transition: "all 0.15s ease"
+                        }}>
+                          {isSelected && (
+                            <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
+                              <path d="M10 3L4.5 8.5L2 6" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          )}
                         </div>
                       )}
                       {getPlatformIcon(label) ? (

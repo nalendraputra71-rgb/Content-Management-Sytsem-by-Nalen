@@ -13,11 +13,11 @@ import {
   GripVertical, Layout, Edit3, Save, 
   Calendar, RotateCcw, Target, Sparkles,
   ArrowRight, Settings, User as UserIcon, X, Maximize2, Move, Trash2, Pencil, Search, Copy, Check,
-  Heart, Bookmark, Activity, Award, Zap, ChevronDown, MousePointerClick, Repeat
+  Heart, Bookmark, Activity, Award, Zap, ChevronDown, MousePointerClick, Repeat, ExternalLink
 } from "lucide-react";
 import { 
   doc, setDoc, updateDoc, onSnapshot, 
-  collection, collectionGroup, query, where, orderBy, getDocs, addDoc, deleteDoc, serverTimestamp 
+  collection, collectionGroup, query, where, orderBy, getDocs, limit, addDoc, deleteDoc, serverTimestamp 
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { B, CARD, TRANS, I, SS, gss, TAB } from "./data";
@@ -164,7 +164,7 @@ export function DashboardView({ user, profile, activeWorkspace, content, theme, 
     if (!activeWorkspace?.id) return;
     const q = query(
       collection(db, "workspaces", activeWorkspace.id, "todos"),
-      orderBy("createdAt", "desc")
+      orderBy("createdAt", "desc"), limit(20)
     );
     const unsub = onSnapshot(q, (snap) => {
       setTodos(snap.docs.map(d => ({ id: d.id, ...d.data() })));
@@ -176,40 +176,56 @@ export function DashboardView({ user, profile, activeWorkspace, content, theme, 
 
   // Sync Shared with Me Content Briefs
   useEffect(() => {
-    if (!user?.uid) {
+    const currentUid = user?.uid;
+    const currentEmail = (profile?.email || user?.email || "").toLowerCase();
+
+    if (!currentUid && !currentEmail) {
       setSharedLoading(false);
       return;
     }
     setSharedLoading(true);
-    
-    const q = query(
-      collectionGroup(db, "content"),
-      where("sharedUids", "array-contains", user.uid)
-    );
+    const fetchSharedBriefs = async () => {
+      let uidBriefs: Record<string, any> = {};
+      let emailBriefs: Record<string, any> = {};
+      const mergeAndSet = () => {
+        const mergedMap = { ...uidBriefs, ...emailBriefs };
+        const briefs = Object.values(mergedMap);
+        briefs.sort((a: any, b: any) => {
+          const tA = a.updatedAt?.toMillis ? a.updatedAt.toMillis() : (a.updatedAt || 0);
+          const tB = b.updatedAt?.toMillis ? b.updatedAt.toMillis() : (b.updatedAt || 0);
+          return tB - tA;
+        });
+        setSharedBriefs(briefs);
+        setSharedLoading(false);
+      };
+      try {
+        if (currentUid) {
+          const qUid = query(collectionGroup(db, "content"), where("sharedUids", "array-contains", currentUid), limit(20));
+          const snap = await getDocs(qUid);
+          snap.docs.forEach(docSnap => {
+            const data = docSnap.data();
+            const wsId = data.workspaceId || docSnap.ref.parent?.parent?.id || "";
+            uidBriefs[docSnap.id] = { id: docSnap.id, workspaceId: wsId, ...data };
+          });
+        }
+        if (currentEmail) {
+          const qEmail = query(collectionGroup(db, "content"), where("sharedEmails", "array-contains", currentEmail), limit(20));
+          const snap = await getDocs(qEmail);
+          snap.docs.forEach(docSnap => {
+            const data = docSnap.data();
+            const wsId = data.workspaceId || docSnap.ref.parent?.parent?.id || "";
+            emailBriefs[docSnap.id] = { id: docSnap.id, workspaceId: wsId, ...data };
+          });
+        }
+        mergeAndSet();
+      } catch (err) {
+        console.error("Error loading shared briefs:", err);
+        setSharedLoading(false);
+      }
+    };
+    fetchSharedBriefs();
 
-    const unsub = onSnapshot(q, (snap) => {
-      const briefs = snap.docs.map(docSnap => {
-        const data = docSnap.data();
-        return {
-          id: docSnap.id,
-          ...data
-        };
-      });
-      // Sort in-memory to avoid compound index requirements
-      briefs.sort((a: any, b: any) => {
-        const tA = a.updatedAt?.toMillis ? a.updatedAt.toMillis() : (a.updatedAt || 0);
-        const tB = b.updatedAt?.toMillis ? b.updatedAt.toMillis() : (b.updatedAt || 0);
-        return tB - tA;
-      });
-      setSharedBriefs(briefs);
-      setSharedLoading(false);
-    }, (error) => {
-      console.warn("Error loading shared briefs:", error);
-      setSharedLoading(false);
-    });
-
-    return unsub;
-  }, [user?.uid]);
+  }, [user?.uid, profile?.email, user?.email]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -266,86 +282,36 @@ export function DashboardView({ user, profile, activeWorkspace, content, theme, 
   if (loading) return <div style={{padding:40, textAlign:"center", color:"rgba(0,0,0,0.3)"}}>Loading Dashboard...</div>;
 
   return (
-    <div style={{ padding: "32px", width: "100%", margin: "0 auto", minHeight: "100vh", display: "flex", flexDirection: "column", gap: 32 }}>
+    <div className="p-4 md:p-8 w-full max-w-7xl mx-auto min-h-screen flex flex-col gap-6 md:gap-8">
       {/* Header Container */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24, flexWrap: "wrap", gap: 32 }}>
-        <div style={{ display: "flex", gap: 16, alignItems: "flex-start", flex: 1, minWidth: 280 }}>
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-2">
+        <div className="w-full lg:w-auto">
           <GreetingSection profile={profile} theme={theme} trends={trends} trendGeo={trendGeo} onTrendGeoChange={setTrendGeo} />
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 16, alignItems: "flex-end" }}>
-           <div style={{ display: "flex", alignItems: "center", gap: 32, flexWrap: "wrap", justifyContent: "flex-end" }}>
-             <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", textAlign: "right" }}>
-                <div style={{ fontSize: 16, fontWeight: 700, color: "rgba(0,0,0,0.5)", textTransform: "uppercase" }}>{weather.city}</div>
-                <div style={{ display: "flex", alignItems: "center", gap: 12, color: "#2C2016", fontSize: 32, fontWeight: 800 }}>
-                   {weather?.temp > 30 ? <Sun size={32} color="#3B82F6" /> : <Cloud size={32} color="#3F51B5" />}
-                   <span>{weather?.temp}°C</span>
-                </div>
-                <div style={{ fontSize: 16, fontWeight: 600, color: "rgba(0,0,0,0.5)" }}>{weather.desc}</div>
-             </div>
-             <div style={{ width: 1, height: 64, background: "rgba(0,0,0,0.1)", display: "block" }} />
-             
-             <LiveClock config={config} updateConfig={updateConfig} theme={theme} /><div style={{ position: "relative", display: "none" }}>
-               {clockSettings.type === "analog" ? (
-                 <div 
-                   onClick={() => setClockMenu(!clockMenu)}
-                   style={{ width: 100, height: 100, borderRadius: "50%", background: "white", border: "5px solid #2C2016", position: "relative", cursor: "pointer" }}
-                 >
-                   <div style={{ position: "absolute", top: "50%", left: "50%", width: 6, height: 6, background: "#3B82F6", borderRadius: "50%", transform: "translate(-50%, -50%)", zIndex: 10 }} />
-                   {/* Hour Hand */}
-                   <div style={{ position: "absolute", top: "25%", left: "calc(50% - 2.5px)", width: 5, height: "25%", background: "#2C2016", borderRadius: 4, transformOrigin: "bottom center", transform: `rotate(${(time.getHours() % 12) * 30 + time.getMinutes() * 0.5}deg)` }} />
-                   {/* Minute Hand */}
-                   <div style={{ position: "absolute", top: "15%", left: "calc(50% - 2px)", width: 4, height: "35%", background: "#666", borderRadius: 4, transformOrigin: "bottom center", transform: `rotate(${time.getMinutes() * 6}deg)` }} />
-                   {/* Second Hand */}
-                   <div style={{ position: "absolute", top: "10%", left: "calc(50% - 1px)", width: 2, height: "40%", background: "#3B82F6", borderRadius: 4, transformOrigin: "bottom center", transform: `rotate(${time.getSeconds() * 6}deg)` }} />
-                 </div>
-               ) : (
-                 <div 
-                   onClick={() => setClockMenu(!clockMenu)}
-                   style={{ fontSize: 56, fontWeight: 900, color: "#2C2016", letterSpacing: "-2px", fontVariantNumeric: "tabular-nums", cursor: "pointer", display: "flex", alignItems: "baseline", gap: 8 }}
-                 >
-                   {time.toLocaleTimeString("en-US", { 
-                     hour: "2-digit", 
-                     minute: "2-digit", 
-                     hour12: clockSettings.format === 12 
-                   }).replace(/\s?[APap][mM]/, "").replace("::", ":")}
-                   {clockSettings.format === 12 && (
-                     <span style={{ fontSize: 20, fontWeight: 700, color: "rgba(0,0,0,0.4)", letterSpacing: 0 }}>
-                       {time.getHours() >= 12 ? 'PM' : 'AM'}
-                     </span>
-                   )}
-                 </div>
-               )}
-               
-               <AnimatePresence>
-                 {clockMenu && (
-                   <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} style={{ position: "absolute", top: "100%", right: 0, marginTop: 12, background: "rgba(255,255,255,0.85)", backdropFilter: "none", WebkitBackdropFilter: "none", padding: 16, borderRadius: 16, boxShadow: "0 10px 40px rgba(0,0,0,0.15)", border: "1px solid rgba(255,255,255,0.7)", minWidth: 200, zIndex: 100 }}>
-                     <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(0,0,0,0.4)", textTransform: "uppercase", marginBottom: 12 }}>{lang === "id" ? "Tampilan Jam" : "Clock Display"}</div>
-                     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                       <button onClick={() => { updateConfig("clock", { ...clockSettings, type: "digital" }); setClockMenu(false); }} style={{ ...B(clockSettings.type === "digital", theme.primary), padding: "8px 12px", fontSize: 13 }}>{lang === "id" ? "Jam Digital" : "Digital Clock"}</button>
-                       <button onClick={() => { updateConfig("clock", { ...clockSettings, type: "analog" }); setClockMenu(false); }} style={{ ...B(clockSettings.type === "analog", theme.primary), padding: "8px 12px", fontSize: 13 }}>{lang === "id" ? "Jam Analog" : "Analog Clock"}</button>
-                     </div>
-                     {clockSettings.type === "digital" && (
-                       <>
-                         <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(0,0,0,0.4)", textTransform: "uppercase", margin: "16px 0 12px 0" }}>{lang === "id" ? "Format Waktu" : "Time Format"}</div>
-                         <div style={{ display: "flex", gap: 8 }}>
-                           <button onClick={() => { updateConfig("clock", { ...clockSettings, format: 24 }); setClockMenu(false); }} style={{ ...B(clockSettings.format === 24, theme.primary), flex: 1, padding: "8px 0", fontSize: 13 }}>{lang === "id" ? "24 Jam" : "24 Hour"}</button>
-                           <button onClick={() => { updateConfig("clock", { ...clockSettings, format: 12 }); setClockMenu(false); }} style={{ ...B(clockSettings.format === 12, theme.primary), flex: 1, padding: "8px 0", fontSize: 13 }}>AM/PM</button>
-                         </div>
-                       </>
-                     )}
-                   </motion.div>
-                 )}
-               </AnimatePresence>
-             </div>
-           </div>
-           
-           <button 
-             onClick={() => isEditing ? saveLayout() : setIsEditing(true)} 
-             style={{ ...B(isEditing, isEditing ? "var(--theme-primary)" : "#2C2016"), borderRadius: 12, height: 32, padding: "0 16px", fontSize: 12 }}
-             className="hover-scale"
-           >
-             {isEditing ? <><Save size={14} /> {lang === "id" ? "Selesai" : "Done"}</> : <><Layout size={14} /> {lang === "id" ? "Atur Widget" : "Manage Widgets"}</>}
-           </button>
+        
+        <div className="flex flex-col items-stretch lg:items-end w-full lg:w-auto gap-4">
+          <div className="flex items-center justify-between lg:justify-end w-full lg:w-auto gap-6 bg-black/[0.02] lg:bg-transparent p-4 lg:p-0 rounded-2xl border border-black/[0.03] lg:border-none">
+            <div className="flex flex-col items-start lg:items-end text-left lg:text-right">
+               <div className="text-xs font-bold text-black/50 uppercase tracking-wider">{weather.city}</div>
+               <div className="flex items-center gap-2 text-2xl md:text-3xl font-extrabold text-[#2C2016] my-1">
+                  {weather?.temp > 30 ? <Sun size={24} color="#3B82F6" /> : <Cloud size={24} color="#3F51B5" />}
+                  <span>{weather?.temp}°C</span>
+               </div>
+               <div className="text-xs font-semibold text-black/40">{weather.desc}</div>
+            </div>
+            
+            <div className="w-[1px] h-12 bg-black/10" />
+            
+            <LiveClock config={config} updateConfig={updateConfig} theme={theme} />
+          </div>
+
+          <button 
+            onClick={() => isEditing ? saveLayout() : setIsEditing(true)} 
+            style={{ ...B(isEditing, isEditing ? "var(--theme-primary)" : "#2C2016"), borderRadius: 12, height: 36, fontSize: 12 }}
+            className="hover-scale w-full lg:w-auto px-4 flex items-center justify-center gap-2 font-bold"
+          >
+            {isEditing ? <><Save size={14} /> {lang === "id" ? "Selesai" : "Done"}</> : <><Layout size={14} /> {lang === "id" ? "Atur Widget" : "Manage Widgets"}</>}
+          </button>
         </div>
       </div>
 
@@ -394,8 +360,13 @@ export function DashboardView({ user, profile, activeWorkspace, content, theme, 
             @media (max-width: 768px) {
               .dashboard-grid {
                 grid-template-columns: repeat(1, minmax(0, 1fr));
+                grid-auto-rows: minmax(180px, auto);
+                gap: 16px;
               }
-              .w-widget { grid-column: span 1 !important; }
+              .w-widget { 
+                grid-column: span 1 !important; 
+                grid-row: span 1 !important;
+              }
             }
             @media (min-width: 1201px) {
                .dashboard-grid {
@@ -429,14 +400,14 @@ export function DashboardView({ user, profile, activeWorkspace, content, theme, 
       </DndContext>
 
       {/* Space: Shared With Me */}
-      <div id="dashboard-shared-with-me" style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 16 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(37, 99, 235, 0.08)", width: 36, height: 36, borderRadius: 10, flexShrink: 0 }}>
-            <Share2 size={18} color="var(--theme-primary)" />
+      <div id="dashboard-shared-with-me" className="mt-6 md:mt-8 flex flex-col gap-4">
+        <div className="flex items-start md:items-center gap-3">
+          <div className="flex items-center justify-center bg-blue-50 border border-blue-100 w-9 h-9 rounded-xl flex-shrink-0">
+            <Share2 size={16} color="var(--theme-primary)" />
           </div>
           <div>
-            <h2 style={{ fontSize: 20, fontWeight: 800, color: "#111827", margin: 0, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Shared With Me</h2>
-            <p style={{ fontSize: 12, color: "rgba(0,0,0,0.5)", margin: 0 }}>{lang === "id" ? "Brief konten kreatif yang dibagikan khusus untuk Anda oleh rekan kreator Hubify" : "Creative content briefs shared specially for you by fellow Hubify creators"}</p>
+            <h2 className="text-lg md:text-xl font-extrabold text-gray-900 m-0 font-sans">Shared With Me</h2>
+            <p className="text-xs text-gray-500 m-0 leading-relaxed">{lang === "id" ? "Brief konten kreatif yang dibagikan khusus untuk Anda oleh rekan kreator Hubify" : "Creative content briefs shared specially for you by fellow Hubify creators"}</p>
           </div>
         </div>
 
@@ -465,13 +436,11 @@ export function DashboardView({ user, profile, activeWorkspace, content, theme, 
             </div>
           </div>
         ) : (
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-            gap: 20
-          }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
             {sharedBriefs.map((b: any) => {
-              const shareUrl = `${window.location.origin}/#/shared-brief/${b.workspaceId}/${b.id}`;
+              const wsId = b.workspaceId || "";
+              const sharePath = `/shared-brief/${wsId}/${b.id}`;
+              const fullShareUrl = `${window.location.origin}${sharePath}`;
               const platformColors: any = {
                 instagram: { bg: "#fdf2f8", text: "#db2777", label: "Instagram" },
                 tiktok: { bg: "#f3f4f6", text: "#111827", label: "TikTok" },
@@ -480,12 +449,20 @@ export function DashboardView({ user, profile, activeWorkspace, content, theme, 
               };
               const platConfig = platformColors[String(b.platform).toLowerCase()] || { bg: "rgba(0,0,0,0.04)", text: "#4b5563", label: String(b.platform) };
 
+              const handleOpenBrief = (e: React.MouseEvent) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (openEdit) {
+                  openEdit(b);
+                } else {
+                  window.open(fullShareUrl, "_blank");
+                }
+              };
+
               return (
-                <motion.a
+                <motion.div
                   key={b.id}
-                  href={shareUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  onClick={handleOpenBrief}
                   whileHover={{ y: -4, boxShadow: "0 12px 30px rgba(0,0,0,0.06)" }}
                   style={{
                     display: "flex",
@@ -494,7 +471,6 @@ export function DashboardView({ user, profile, activeWorkspace, content, theme, 
                     borderRadius: 16,
                     border: "1px solid rgba(0,0,0,0.05)",
                     padding: 20,
-                    textDecoration: "none",
                     color: "inherit",
                     boxShadow: "0 4px 12px rgba(0,0,0,0.02)",
                     transition: "border-color 0.2s",
@@ -535,7 +511,7 @@ export function DashboardView({ user, profile, activeWorkspace, content, theme, 
                     overflow: "hidden",
                     flex: 1
                   }}>
-                    {b.objective || (lang === "id" ? "Tidak ada deskripsi singkat." : "No short description.")}
+                    {b.objective || b.briefCopywriting || b.brief || (lang === "id" ? "Tidak ada deskripsi singkat." : "No short description.")}
                   </p>
 
                   <div style={{
@@ -560,12 +536,33 @@ export function DashboardView({ user, profile, activeWorkspace, content, theme, 
                       </div>
                     </div>
 
-                    <div style={{ display: "flex", alignItems: "center", gap: 4, color: "var(--theme-primary)", fontSize: 11, fontWeight: 800 }}>
-                      <span>{lang === "id" ? "Buka" : "Open"}</span>
-                      <ArrowRight size={12} />
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <a
+                        href={fullShareUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          padding: "5px 7px",
+                          borderRadius: 8,
+                          background: "rgba(0,0,0,0.04)",
+                          color: "#4b5563",
+                          textDecoration: "none"
+                        }}
+                        title={lang === "id" ? "Buka Link Publik" : "Open Public Link"}
+                      >
+                        <ExternalLink size={12} />
+                      </a>
+                      <div style={{ display: "flex", alignItems: "center", gap: 4, color: "var(--theme-primary)", fontSize: 11, fontWeight: 800 }}>
+                        <span>{lang === "id" ? "Buka" : "Open"}</span>
+                        <ArrowRight size={12} />
+                      </div>
                     </div>
                   </div>
-                </motion.a>
+                </motion.div>
               );
             })}
           </div>
@@ -606,55 +603,48 @@ function GreetingSection({ profile, theme, trends = ["Cara viral di TikTok hari 
   }, [trends]);
 
   return (
-    <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} style={{ display: "flex", flexDirection: "column", gap: 16, flex: 1, maxWidth: 800 }}>
-      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 24 }}>
-        <h1 style={{ fontSize: 48, fontWeight: 900, color: "#2C2016", letterSpacing: "-1.5px", margin: 0, lineHeight: 1.1 }}>
+    <motion.div 
+      initial={{ opacity: 0, y: -20 }} 
+      animate={{ opacity: 1, y: 0 }} 
+      className="flex flex-col gap-4 w-full max-w-2xl"
+    >
+      <div className="flex flex-wrap items-center gap-4">
+        <h1 className="text-3xl md:text-5xl font-black text-[#2C2016] tracking-tight m-0 leading-tight">
           {greeting},<br/>
           <span style={{ color: theme.primary }}>{profile?.nickname || profile?.fullName?.split(" ")[0] || (lang === "id" ? "Kreator" : "Creator")}! {greetingIcon}</span>
         </h1>
       </div>
 
-      <div style={{ display: "flex", alignItems: "center", gap: 12, background: theme.primary+"10", padding: "10px 20px", borderRadius: 100, width: "fit-content" }}>
-         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", background: "#ffffff", width: 32, height: 32, borderRadius: "50%", boxShadow: "0 2px 8px rgba(0,0,0,0.05)", flexShrink: 0 }}>
-            <TrendingUp size={16} color={theme.primary} />
+      <div className="flex items-center gap-2 md:gap-3 bg-black/[0.02] border border-black/[0.03] p-2 pr-3 md:p-3 md:pr-4 rounded-full w-fit max-w-full">
+         <div className="flex items-center justify-center bg-white w-8 h-8 rounded-full shadow-sm flex-shrink-0">
+            <TrendingUp size={14} color={theme.primary} />
          </div>
-         <div style={{ display: "flex", flexDirection: "column" }}>
-            <span style={{ fontSize: 13, fontWeight: 800, color: theme.primary, textTransform: "uppercase", whiteSpace: "nowrap", lineHeight: 1.1 }}>Trends Now</span>
-            <span style={{ fontSize: 9, fontWeight: 700, color: theme.primary, opacity: 0.6, whiteSpace: "nowrap" }}>Powered by Google Trends</span>
+         <div className="flex flex-col min-w-0">
+            <span style={{ color: theme.primary }} className="text-[10px] md:text-xs font-extrabold uppercase tracking-wider whitespace-nowrap leading-none">Trends Now</span>
+            <span style={{ color: theme.primary }} className="text-[8px] font-bold opacity-60 whitespace-nowrap hidden sm:inline">Powered by Google Trends</span>
          </div>
-         <div style={{ width: 1, height: 24, background: theme.primary+"20", marginLeft: 4, marginRight: 4 }} />
-         <div style={{ position: "relative", height: 20, width: 220, overflow: "hidden" }}>
+         <div className="w-[1px] h-5 bg-black/10 mx-1" />
+         <div className="relative h-5 flex-1 min-w-[120px] sm:min-w-[180px] overflow-hidden">
            <AnimatePresence mode="wait">
              <motion.div 
                key={trendIndex} 
-               initial={{ opacity: 0, y: 20 }} 
+               initial={{ opacity: 0, y: 15 }} 
                animate={{ opacity: 1, y: 0 }} 
-               exit={{ opacity: 0, y: -20 }} 
+               exit={{ opacity: 0, y: -15 }} 
                transition={{ duration: 0.3 }}
-               style={{ position: "absolute", fontSize: 14, fontWeight: 700, color: "#2C2016", whiteSpace: "nowrap", textOverflow: "ellipsis", overflow: "hidden", width: "100%" }}
+               className="absolute text-xs md:text-sm font-bold text-[#2C2016] whitespace-nowrap text-ellipsis overflow-hidden w-full"
              >
                "{trends[trendIndex]}"
              </motion.div>
            </AnimatePresence>
          </div>
-         <div style={{ display: "flex", alignItems: "center", gap: 4, background: "#ffffff", padding: "4px 8px 4px 10px", borderRadius: 20, border: `1px solid ${theme.primary}20`, boxShadow: "0 2px 4px rgba(0,0,0,0.02)", cursor: "pointer", position: "relative" }}>
+         <div className="flex items-center gap-1 bg-white px-2 py-1 rounded-full border border-black/5 shadow-sm cursor-pointer relative flex-shrink-0">
            <select 
              title="Pilih Negara"
              value={trendGeo || "ID"} 
              onChange={(e) => onTrendGeoChange && onTrendGeoChange(e.target.value)}
-             style={{
-               background: "transparent",
-               border: "none",
-               fontSize: 11,
-               fontWeight: 800,
-               color: theme.primary,
-               cursor: "pointer",
-               outline: "none",
-               appearance: "none",
-               position: "relative",
-               zIndex: 2,
-               paddingRight: 16
-             }}
+             className="bg-transparent border-none text-[10px] md:text-xs font-extrabold cursor-pointer outline-none appearance-none relative z-10 pr-4 py-0"
+             style={{ color: theme.primary }}
            >
              <option value="ID">IDN 🇮🇩</option>
              <option value="US">USA 🇺🇸</option>
@@ -662,7 +652,7 @@ function GreetingSection({ profile, theme, trends = ["Cara viral di TikTok hari 
              <option value="MY">MYS 🇲🇾</option>
              <option value="GB">GBR 🇬🇧</option>
            </select>
-           <ChevronDown size={12} color={theme.primary} style={{ opacity: 0.7, position: "absolute", right: 8, zIndex: 1, pointerEvents: "none" }} />
+           <ChevronDown size={10} color={theme.primary} className="opacity-70 absolute right-2 z-0 pointer-events-none" />
          </div>
       </div>
     </motion.div>
@@ -776,9 +766,9 @@ function MetricsRow({ content, config, updateConfig, theme }: any) {
   };
 
   return (
-    <div id="dashboard-monthly-goals" style={{ background: "var(--theme-gradient)", padding: 24, borderRadius: 24, border: "1px solid rgba(0,0,0,0.03)", boxShadow: "0 10px 30px rgba(0,0,0,0.1)" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-        <h2 style={{ fontSize: 16, fontWeight: 800, color: "rgba(255,255,255,0.9)", letterSpacing: 0.5, margin: 0, textTransform: "uppercase" }}>{lang === "id" ? "Goal Metrics Tiap Bulannya" : "Monthly Goal Metrics"}</h2>
+    <div id="dashboard-monthly-goals" className="p-4 md:p-6 rounded-3xl" style={{ background: "var(--theme-gradient)", border: "1px solid rgba(0,0,0,0.03)", boxShadow: "0 10px 30px rgba(0,0,0,0.1)" }}>
+      <div className="flex flex-row items-center justify-between gap-3 flex-wrap mb-4">
+        <h2 className="text-xs md:text-sm font-black text-white/95 tracking-wider uppercase m-0">{lang === "id" ? "Goal Metrics Tiap Bulannya" : "Monthly Goal Metrics"}</h2>
         <button 
           onClick={() => {
             if (!config.customGoals || config.customGoals.length === 0) {
@@ -788,41 +778,40 @@ function MetricsRow({ content, config, updateConfig, theme }: any) {
             }
             setShowGoals(true);
           }}
-          className="hover-scale"
-          style={{ background: "rgba(255,255,255,0.2)", color: "white", border: "none", fontSize: 12, padding: "6px 16px", borderRadius: 12, height: 32, display: "flex", alignItems: "center", gap: 6, fontWeight: 700, cursor: "pointer" }}
+          className="hover-scale flex items-center gap-1.5 h-8 px-3.5 rounded-xl text-xs font-bold text-white bg-white/20 hover:bg-white/30 transition-all cursor-pointer border-none"
         >
-          <Edit3 size={14} /> {lang === "id" ? "Kustomisasi Goals" : "Customize Goals"}
+          <Edit3 size={12} /> {lang === "id" ? "Kustomisasi Goals" : "Customize Goals"}
         </button>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 24 }}>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-5">
         {displayGoals.map((m: any, i: number) => (
-          <div key={m.id || i} style={{ padding: 16, background: "rgba(255,255,255,0.1)", borderRadius: 16, boxShadow: "0 2px 10px rgba(0,0,0,0.02)", border: "1px solid rgba(255,255,255,0.1)" }}>
-             <div style={{ display: "flex", alignItems: "center", gap: 8, color: "rgba(255,255,255,0.9)", marginBottom: 8 }}>
-               {ICONS[m.icon] || <Target size={18}/>}
-               <span style={{ fontSize: 13, fontWeight: 700, textTransform: "uppercase", opacity: 0.8 }}>{m.label}</span>
-             </div>
-             <div style={{ display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap", wordBreak: "keep-all" }}>
-                <span style={{ fontSize: "clamp(16px, 2vw, 24px)", fontWeight: 900, color: "white" }}>
-                  {m.isPerc ? Number(m.current).toFixed(2) + "%" : Number(m.current).toLocaleString()}
-                </span>
-                <span style={{ fontSize: "clamp(10px, 1.2vw, 13px)", fontWeight: 600, color: "rgba(255,255,255,0.5)" }}>
-                  / {m.isPerc ? m.target + "%" : Number(m.target).toLocaleString()}
-                </span>
-             </div>
-             <div style={{ marginTop: 12, fontSize: 12, fontWeight: 600, color: m.current >= m.target ? "#A7F3D0" : "#FECACA" }}>
-                {m.current >= m.target 
-                  ? (lang === "id" ? "Tercapai! ✨" : "Achieved! ✨")
-                  : (lang === "id" ? `Kurang ${(m.target - m.current).toLocaleString()} lagi` : `${(m.target - m.current).toLocaleString()} remaining`)}
-             </div>
+          <div key={m.id || i} className="p-3 md:p-4 rounded-2xl border border-white/10" style={{ background: "rgba(255,255,255,0.08)", boxShadow: "0 2px 10px rgba(0,0,0,0.02)" }}>
+              <div className="flex items-center gap-1.5 text-white/80 mb-2">
+                {ICONS[m.icon] || <Target size={14}/>}
+                <span className="text-[10px] md:text-[11px] font-extrabold uppercase tracking-wider">{m.label}</span>
+              </div>
+              <div className="flex items-baseline gap-1 flex-wrap break-all">
+                 <span className="text-lg md:text-2xl font-black text-white leading-none">
+                   {m.isPerc ? Number(m.current).toFixed(2) + "%" : Number(m.current).toLocaleString()}
+                 </span>
+                 <span className="text-[10px] md:text-xs font-bold text-white/40 leading-none">
+                   / {m.isPerc ? m.target + "%" : Number(m.target).toLocaleString()}
+                 </span>
+              </div>
+              <div className="mt-3 text-[10px] md:text-xs font-bold" style={{ color: m.current >= m.target ? "#A7F3D0" : "#FECACA" }}>
+                 {m.current >= m.target 
+                   ? (lang === "id" ? "Tercapai! ✨" : "Achieved! ✨")
+                   : (lang === "id" ? `Kurang ${(m.target - m.current).toLocaleString()} lagi` : `${(m.target - m.current).toLocaleString()} remaining`)}
+              </div>
           </div>
         ))}
       </div>
 
       {showGoals && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ background: "#FFFFFF", padding: 32, borderRadius: 24, border: "1px solid rgba(0,0,0,0.05)", width: 800, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 30px 60px rgba(0,0,0,0.15)" }}>
-             <h3 style={{ fontSize: 20, fontWeight: 800, marginBottom: 24 }}>{lang === "id" ? "Kustomisasi Goal Bulanan" : "Monthly Goal Customization"}</h3>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 100000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+          <div className="w-full max-w-2xl bg-white p-5 md:p-8 rounded-[24px] shadow-2xl overflow-y-auto max-h-[90vh]">
+             <h3 className="text-lg md:text-xl font-extrabold text-gray-900 mb-5 m-0">{lang === "id" ? "Kustomisasi Goal Bulanan" : "Monthly Goal Customization"}</h3>
              
              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                {customGoals.map((g, i) => (

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { PublicHeader, PublicFooter } from './components/PublicShared';
 import { useNavigate, Link } from 'react-router-dom';
+import { useI18n } from './i18n';
 import { MapPin, Phone, Instagram, Twitter, Linkedin, Facebook, Mail, Heart, ChevronDown, MessageCircle, Sparkles, HelpCircle, CreditCard, Shield, Zap, BookOpen, Users, LayoutDashboard, Calendar, ArrowRight, CheckCircle2, PlayCircle, Plus, BarChart3, Settings, PenTool, Image as ImageIcon, Link2, Download, Globe, Target, TrendingUp, Lock, Server, Coffee } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { TiktokIcon, ThreadsIcon } from './components/social-icons';
@@ -11,13 +12,10 @@ import { TiktokIcon, ThreadsIcon } from './components/social-icons';
 
 export function TermsOfService() {
   useEffect(() => { window.scrollTo(0, 0); }, []);
-  const [lang, setLang] = useState<'id' | 'en'>(() => {
-    return (localStorage.getItem('hubify_locale') as 'id' | 'en') || 'en';
-  });
+  const { lang, setLang } = useI18n();
 
   const handleLangChange = (l: 'id' | 'en') => {
     setLang(l);
-    localStorage.setItem('hubify_locale', l);
   };
 
   return (
@@ -117,13 +115,10 @@ export function TermsOfService() {
 
 export function PrivacyPolicy() {
   useEffect(() => { window.scrollTo(0, 0); }, []);
-  const [lang, setLang] = useState<'id' | 'en'>(() => {
-    return (localStorage.getItem('hubify_locale') as 'id' | 'en') || 'en';
-  });
+  const { lang, setLang } = useI18n();
 
   const handleLangChange = (l: 'id' | 'en') => {
     setLang(l);
-    localStorage.setItem('hubify_locale', l);
   };
 
   return (
@@ -253,15 +248,12 @@ export function PrivacyPolicy() {
 
 export function FAQ() {
   useEffect(() => { window.scrollTo(0, 0); }, []);
-  const [lang, setLang] = useState<'id' | 'en'>(() => {
-    return (localStorage.getItem('hubify_locale') as 'id' | 'en') || 'en';
-  });
+  const { lang, setLang } = useI18n();
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>('all');
 
   const handleLangChange = (l: 'id' | 'en') => {
     setLang(l);
-    localStorage.setItem('hubify_locale', l);
   };
 
   const categories = [
@@ -596,14 +588,11 @@ export function FAQ() {
 
 export function Guides() {
   useEffect(() => { window.scrollTo(0, 0); }, []);
-  const [lang, setLang] = useState<'id' | 'en'>(() => {
-    return (localStorage.getItem('hubify_locale') as 'id' | 'en') || 'en';
-  });
+  const { lang, setLang } = useI18n();
   const [activeGuideId, setActiveGuideId] = useState('workspace');
 
   const handleLangChange = (l: 'id' | 'en') => {
     setLang(l);
-    localStorage.setItem('hubify_locale', l);
   };
 
   const guides = [
@@ -1861,13 +1850,10 @@ export function Guides() {
 
 export function AboutUs() {
   useEffect(() => { window.scrollTo(0, 0); }, []);
-  const [lang, setLang] = useState<'id' | 'en'>(() => {
-    return (localStorage.getItem('hubify_locale') as 'id' | 'en') || 'en';
-  });
+  const { lang, setLang } = useI18n();
 
   const handleLangChange = (l: 'id' | 'en') => {
     setLang(l);
-    localStorage.setItem('hubify_locale', l);
   };
 
   return (
@@ -2064,13 +2050,10 @@ export function AboutUs() {
 
 export function RefundPolicy() {
   useEffect(() => { window.scrollTo(0, 0); }, []);
-  const [lang, setLang] = useState<'id' | 'en'>(() => {
-    return (localStorage.getItem('hubify_locale') as 'id' | 'en') || 'en';
-  });
+  const { lang, setLang } = useI18n();
 
   const handleLangChange = (l: 'id' | 'en') => {
     setLang(l);
-    localStorage.setItem('hubify_locale', l);
   };
 
   return (

@@ -6,9 +6,10 @@ import {
   Search, Edit2, CreditCard, RefreshCw, AlertCircle, FileText, Globe, 
   Bell, LifeBuoy, ToggleLeft, ToggleRight, ArrowUpRight, ArrowDownRight, 
   BarChart2, X, Download, MessageSquare, ExternalLink, Calendar,
-  DollarSign, Package, Tag, Clock, ChevronRight, UserPlus, Filter, Crown, Send, Layout
+  DollarSign, Package, Tag, Clock, ChevronRight, UserPlus, Filter, Crown, Send, Layout,
+  Trash2, Sparkles, HardDrive, Check, Percent
 } from "lucide-react";
-import { db, collection, getDocs, doc, updateDoc, setDoc, deleteDoc, onSnapshot, query, where, addDoc, sendPasswordResetEmail, auth } from "./firebase";
+import { db, collection, getDocs, getDoc, doc, updateDoc, setDoc, deleteDoc, onSnapshot, query, where, addDoc, sendPasswordResetEmail, auth } from "./firebase";
 import { fmt, B, CARD } from "./data";
 
 export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogout: () => void }) {
@@ -20,6 +21,50 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
   const [selectedUser, setSelectedUser] = useState<any>(null);
 
   const [plans, setPlans] = useState<any[]>([]);
+  const [customAssignPlan, setCustomAssignPlan] = useState("vip");
+  const [customAssignDuration, setCustomAssignDuration] = useState(30);
+  const groupedPlans = React.useMemo(() => {
+    const groups: { [key: string]: any } = {};
+    plans.forEach(p => {
+      const baseId = p.id.replace('-monthly', '').replace('-annual', '');
+      const isAnnual = p.addMonths >= 12;
+      if (!groups[baseId]) {
+        groups[baseId] = {
+          id: baseId,
+          name: p.name.replace(/ \((Monthly|Annual)\)/i, ''),
+          desc: p.desc,
+          popular: p.popular || false,
+          limits: p.limits || {},
+          capabilities: p.capabilities || {},
+          features: p.features || [],
+          monthlyId: isAnnual ? null : p.id,
+          monthlyPrice: isAnnual ? 0 : p.price,
+          monthlyOriginalPrice: isAnnual ? 0 : p.originalPrice,
+          annualId: isAnnual ? p.id : null,
+          annualPrice: isAnnual ? p.price : 0,
+          annualOriginalPrice: isAnnual ? p.originalPrice : 0,
+        };
+      } else {
+        const g = groups[baseId];
+        if (!isAnnual) {
+          g.name = p.name.replace(/ \((Monthly|Annual)\)/i, '');
+          g.desc = p.desc;
+          g.popular = p.popular || g.popular;
+          g.limits = p.limits || g.limits;
+          g.capabilities = p.capabilities || g.capabilities;
+          g.features = p.features || g.features;
+          g.monthlyId = p.id;
+          g.monthlyPrice = p.price;
+          g.monthlyOriginalPrice = p.originalPrice;
+        } else {
+          g.annualId = p.id;
+          g.annualPrice = p.price;
+          g.annualOriginalPrice = p.originalPrice;
+        }
+      }
+    });
+    return Object.values(groups);
+  }, [plans]);
   const [promosList, setPromosList] = useState<any[]>([]);
   const [admins, setAdmins] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
@@ -30,6 +75,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
 
   const [showPlanModal, setShowPlanModal] = useState(false);
   const [editingPlan, setEditingPlan] = useState<any>(null);
+  const [modalPlanTab, setModalPlanTab] = useState<"general" | "pricing" | "limits" | "capabilities">("general");
   const [financeFilter, setFinanceFilter] = useState({ month: new Date().getMonth() + 1, year: new Date().getFullYear() });
   const [showPromoModal, setShowPromoModal] = useState(false);
   const [editingPromo, setEditingPromo] = useState<any>(null);
@@ -37,11 +83,39 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
   const [confirmAction, setConfirmAction] = useState<any>(null);
   const [saveMsg, setSaveMsg] = useState("");
 
+  const [modalPriceMonthly, setModalPriceMonthly] = useState<number>(0);
+  const [modalOriginalPriceMonthly, setModalOriginalPriceMonthly] = useState<number>(0);
+  const [modalPriceAnnual, setModalPriceAnnual] = useState<number>(0);
+  const [modalOriginalPriceAnnual, setModalOriginalPriceAnnual] = useState<number>(0);
+
+  useEffect(() => {
+    if (editingPlan && showPlanModal) {
+      setModalPriceMonthly(editingPlan.monthlyPrice ?? editingPlan.price ?? 0);
+      setModalOriginalPriceMonthly(editingPlan.monthlyOriginalPrice ?? editingPlan.originalPrice ?? 0);
+      setModalPriceAnnual(editingPlan.annualPrice ?? (editingPlan.price ? editingPlan.price * 12 : 0));
+      setModalOriginalPriceAnnual(editingPlan.annualOriginalPrice ?? (editingPlan.originalPrice ? editingPlan.originalPrice * 12 : 0));
+    } else {
+      setModalPriceMonthly(0);
+      setModalOriginalPriceMonthly(0);
+      setModalPriceAnnual(0);
+      setModalOriginalPriceAnnual(0);
+    }
+  }, [editingPlan, showPlanModal]);
+
   const [systemSettings, setSystemSettings] = useState<any>({
     maintenanceMode: false,
     allowRegistration: true,
     trialDays: 7
   });
+
+  const [featureRows, setFeatureRows] = useState<any[]>([]);
+  const [editableRows, setEditableRows] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (featureRows.length > 0 && editableRows.length === 0) {
+      setEditableRows(featureRows);
+    }
+  }, [featureRows]);
 
   const bannerActiveDraft = systemSettings?.bannerActiveDraft !== undefined ? systemSettings.bannerActiveDraft : (systemSettings?.bannerActive || false);
   const bannerMessageDraft = systemSettings?.bannerMessageDraft !== undefined ? systemSettings.bannerMessageDraft : (systemSettings?.bannerMessage || "");
@@ -69,87 +143,283 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
     }
   };
 
-  useEffect(() => {
-    let unsubs: any[] = [];
-    
-    // Real-time synchronization for Users list
-    unsubs.push(onSnapshot(collection(db, "users"), snap => {
-      const data = snap.docs.map(d => ({id: d.id, ...d.data()}));
-      setUsers(data as any[]);
-      setLoading(false);
+  const fetchAdminData = async () => {
+    setLoading(true);
+    setLoadingTickets(true);
+    try {
+      const [usersSnap, adminsSnap, plansSnap, promosSnap, transactionsSnap, ticketsSnap, configSnap, deletionSnap, featuresSnap] = await Promise.all([
+        getDocs(collection(db, "users")),
+        getDocs(query(collection(db, "users"), where("role", "==", "admin"))),
+        getDocs(collection(db, "plans")),
+        getDocs(collection(db, "promos")),
+        getDocs(collection(db, "transactions")),
+        getDocs(query(collection(db, "tickets"))),
+        getDoc(doc(db, "config", "system")),
+        getDocs(collection(db, "accountDeletionReasons")),
+        getDoc(doc(db, "config", "pricing_features"))
+      ]);
+
+      const usersData = usersSnap.docs.map(d => ({id: d.id, ...d.data()}));
+      setUsers(usersData as any[]);
       if (selectedUser) {
-          const current = data.find((u: any) => u.id === selectedUser.id);
-          if (current) setSelectedUser(current);
+          const current = usersData.find((u: any) => u.id === selectedUser.id);
+          if (current) setSelectedUser(current as any);
       }
-    }, (err) => { console.warn("Admin users snap error:", err); setLoading(false); }));
-
-    // Real-time synchronization for Admins
-    unsubs.push(onSnapshot(query(collection(db, "users"), where("role", "==", "admin")), snap => {
-      setAdmins(snap.docs.map(d => ({id: d.id, ...d.data()})));
-    }, (err) => console.warn("Admin roles snap error:", err)));
-
-    // Real-time synchronization for Plans & Promos
-    unsubs.push(onSnapshot(collection(db, "plans"), snap => {
-      setPlans(snap.docs.map(d => ({id: d.id, ...d.data()})));
-    }, (err) => console.warn("Admin plans snap error:", err)));
-
-    unsubs.push(onSnapshot(collection(db, "promos"), snap => {
-      setPromosList(snap.docs.map(d => ({id: d.id, ...d.data()})));
-    }, (err) => console.warn("Admin promos snap error:", err)));
-
-    // Real-time synchronization for Transactions
-    unsubs.push(onSnapshot(collection(db, "transactions"), snap => {
-      setTransactions(snap.docs.map(d => ({id: d.id, ...d.data()})));
-    }, (err) => console.warn("Admin transactions snap error:", err)));
-
-    // Real-time synchronization for Support
-    unsubs.push(onSnapshot(query(collection(db, "tickets")), snap => {
-      const data = snap.docs.map(d=>({id: d.id, ...d.data()}));
-      setTickets(data.sort((a:any, b:any) => new Date(b.updatedAt||0).getTime() - new Date(a.updatedAt||0).getTime()));
-      setLoadingTickets(false);
+      
+      setAdmins(adminsSnap.docs.map(d => ({id: d.id, ...d.data()})));
+      setPlans(plansSnap.docs.map(d => ({id: d.id, ...d.data()})));
+      setPromosList(promosSnap.docs.map(d => ({id: d.id, ...d.data()})));
+      setTransactions(transactionsSnap.docs.map(d => ({id: d.id, ...d.data()})));
+      
+      const ticketsData = ticketsSnap.docs.map(d => ({id: d.id, ...d.data()}));
+      setTickets(ticketsData.sort((a:any, b:any) => new Date(b.updatedAt||0).getTime() - new Date(a.updatedAt||0).getTime()));
       if (selectedTicket) {
-          const current = data.find((d: any) => d.id === selectedTicket.id);
-          if (current) setSelectedTicket(current);
+          const current = ticketsData.find((d: any) => d.id === selectedTicket.id);
+          if (current) setSelectedTicket(current as any);
       }
-    }, (err) => console.warn("Admin tickets snap error:", err)));
+      
+      if (configSnap.exists()) setSystemSettings(configSnap.data());
+      setDeletionReasons(deletionSnap.docs.map(d => ({id: d.id, ...d.data()})));
+      if (featuresSnap.exists() && featuresSnap.data().rows) {
+        setFeatureRows(featuresSnap.data().rows);
+      }
+    } catch (e) {
+      console.error("Admin fetch error:", e);
+    }
+    setLoading(false);
+    setLoadingTickets(false);
+  };
 
-    // System Settings
-    unsubs.push(onSnapshot(doc(db, "config", "system"), snap => {
-      if (snap.exists()) setSystemSettings(snap.data());
-    }, (err) => console.warn("Admin config snap error:", err)));
-
-    // Deletion reasons
-    unsubs.push(onSnapshot(collection(db, "accountDeletionReasons"), snap => {
-      setDeletionReasons(snap.docs.map(d => ({id: d.id, ...d.data()})));
-    }, (err) => console.warn("Admin deletion reasons snap error:", err)));
-    
-    return () => { unsubs.forEach(u => u()); };
+  useEffect(() => {
+    fetchAdminData();
   }, [selectedUser?.id, selectedTicket?.id]);
+
+  const seedDefaultData = async () => {
+    try {
+      setSaveMsg("Seeding data paket & promo...");
+      
+      const defaultPlans = [
+        {
+          id: "free-monthly",
+          name: "Free Starter (Monthly)",
+          desc: "Cocok untuk mencoba fitur dasar Hubify.",
+          price: 0,
+          originalPrice: 0,
+          addMonths: 1,
+          popular: false,
+          features: ["1 Workspace", "Hub.AI: 10x Generate AI / Bulan", "Analitik Dasar", "Kalender Konten"],
+          limits: { workspaces: 1, socialAccounts: 3, teamMembers: 1, aiGenerationPerMonth: 10, storageMB: 100 },
+          capabilities: { autoPublishing: false, analyticsLevel: 'basic', exportReports: 'none', contentApproval: false, commentManagement: false, supportLevel: 'community' }
+        },
+        {
+          id: "free-annual",
+          name: "Free Starter (Annual)",
+          desc: "Cocok untuk mencoba fitur dasar Hubify.",
+          price: 0,
+          originalPrice: 0,
+          addMonths: 12,
+          popular: false,
+          features: ["1 Workspace", "Hub.AI: 10x Generate AI / Bulan", "Analitik Dasar", "Kalender Konten"],
+          limits: { workspaces: 1, socialAccounts: 3, teamMembers: 1, aiGenerationPerMonth: 10, storageMB: 100 },
+          capabilities: { autoPublishing: false, analyticsLevel: 'basic', exportReports: 'none', contentApproval: false, commentManagement: false, supportLevel: 'community' }
+        },
+        {
+          id: "plus-monthly",
+          name: "Plus Plan (Monthly)",
+          desc: "Sempurna untuk kreator konten & profesional.",
+          price: 99000,
+          originalPrice: 99000,
+          addMonths: 1,
+          popular: false,
+          features: ["1 Workspace", "Hub.AI: 100x Generate AI / Bulan", "10 Akun Sosmed"],
+          limits: { workspaces: 1, socialAccounts: 10, teamMembers: 1, aiGenerationPerMonth: 100, storageMB: 1000 },
+          capabilities: { autoPublishing: true, analyticsLevel: 'advanced', exportReports: 'basic', contentApproval: false, commentManagement: true, supportLevel: 'email' }
+        },
+        {
+          id: "plus-annual",
+          name: "Plus Plan (Annual)",
+          desc: "Sempurna untuk kreator konten & profesional.",
+          price: 948000,
+          originalPrice: 1188000,
+          addMonths: 12,
+          popular: false,
+          features: ["1 Workspace", "Hub.AI: 100x Generate AI / Bulan", "10 Akun Sosmed"],
+          limits: { workspaces: 1, socialAccounts: 10, teamMembers: 1, aiGenerationPerMonth: 100, storageMB: 1000 },
+          capabilities: { autoPublishing: true, analyticsLevel: 'advanced', exportReports: 'basic', contentApproval: false, commentManagement: true, supportLevel: 'email' }
+        },
+        {
+          id: "pro-monthly",
+          name: "Pro Plan (Monthly)",
+          desc: "Kolaborasi mulus untuk tim kecil & bisnis.",
+          price: 299000,
+          originalPrice: 299000,
+          addMonths: 1,
+          popular: true,
+          features: ["3 Workspaces", "Hub.AI: 500x Generate AI / Bulan", "Kolaborasi 5 Anggota Tim"],
+          limits: { workspaces: 3, socialAccounts: 30, teamMembers: 5, aiGenerationPerMonth: 500, storageMB: 10000 },
+          capabilities: { autoPublishing: true, analyticsLevel: 'advanced', exportReports: 'custom', contentApproval: true, commentManagement: true, supportLevel: 'priority' }
+        },
+        {
+          id: "pro-annual",
+          name: "Pro Plan (Annual)",
+          desc: "Kolaborasi mulus untuk tim kecil & bisnis.",
+          price: 2868000,
+          originalPrice: 3588000,
+          addMonths: 12,
+          popular: true,
+          features: ["3 Workspaces", "Hub.AI: 500x Generate AI / Bulan", "Kolaborasi 5 Anggota Tim"],
+          limits: { workspaces: 3, socialAccounts: 30, teamMembers: 5, aiGenerationPerMonth: 500, storageMB: 10000 },
+          capabilities: { autoPublishing: true, analyticsLevel: 'advanced', exportReports: 'custom', contentApproval: true, commentManagement: true, supportLevel: 'priority' }
+        },
+        {
+          id: "max-monthly",
+          name: "Max Plan (Monthly)",
+          desc: "Skalabilitas tanpa batas untuk agensi & enterprise.",
+          price: 899000,
+          originalPrice: 899000,
+          addMonths: 1,
+          popular: false,
+          features: ["Unlimited Workspaces", "Hub.AI: Unlimited Generate AI", "Custom Analytics & Reporting", "White-label Export & Branding", "Prioritas Dukungan 24/7 VIP"],
+          limits: { workspaces: -1, socialAccounts: -1, teamMembers: -1, aiGenerationPerMonth: -1, storageMB: -1 },
+          capabilities: { autoPublishing: true, analyticsLevel: 'custom', exportReports: 'white-label', contentApproval: true, commentManagement: true, supportLevel: 'vip' }
+        },
+        {
+          id: "agency-annual",
+          name: "Agency (Annual)",
+          desc: "Skalabilitas tanpa batas untuk agensi besar.",
+          price: 8988000,
+          originalPrice: 10788000,
+          addMonths: 12,
+          popular: false,
+          features: ["Unlimited Workspaces", "Hub.AI: Unlimited Generate AI", "Custom Analytics & Reporting", "White-label Export & Branding", "Prioritas Dukungan 24/7 VIP"],
+          limits: { workspaces: -1, socialAccounts: -1, teamMembers: -1, aiGenerationPerMonth: -1, storageMB: -1 },
+          capabilities: { autoPublishing: true, analyticsLevel: 'custom', exportReports: 'white-label', contentApproval: true, commentManagement: true, supportLevel: 'vip' }
+        }
+      ];
+
+      const defaultPromos = [
+        {
+          id: "DISKON77",
+          code: "DISKON77",
+          type: "percent",
+          value: 77,
+          isActive: true,
+          terms: "Diskon spesial 77% untuk semua paket pilihan Anda.",
+          targetType: "all",
+          usageLimit: 100,
+          usageCount: 0,
+          startDate: new Date().toISOString().split('T')[0],
+          endDate: "2027-12-31"
+        },
+        {
+          id: "GRATISPRO",
+          code: "GRATISPRO",
+          type: "percent",
+          value: 100,
+          isActive: true,
+          terms: "Diskon 100% (Bypass pembayaran) untuk testing & perpanjangan gratis.",
+          targetType: "all",
+          usageLimit: 50,
+          usageCount: 0,
+          startDate: new Date().toISOString().split('T')[0],
+          endDate: "2027-12-31"
+        }
+      ];
+
+      const defaultFeatureRows = [
+        { key: 'workspaces', id: 'Workspaces', en: 'Workspaces', type: 'text', f: '1', s: '1', t: '3', a: 'Unlimited' },
+        { key: 'socials', id: 'Integrasi Akun Sosial', en: 'Social Account Integrations', type: 'text', f: '3 Akun', s: '10 Akun', t: '30 Akun', a: 'Unlimited' },
+        { key: 'members', id: 'Anggota Tim', en: 'Team Members', type: 'text', f: '1 (Solo)', s: '1 (Solo)', t: 'Hingga 3', a: 'Unlimited' },
+        { key: 'publishing', id: 'Penjadwalan Otomatis', en: 'Auto-Publishing', type: 'boolean', f: false, s: true, t: true, a: true },
+        { key: 'ai_limit', id: 'Batas Generate AI / Bulan', en: 'AI Generation / Month', type: 'text', f: '10 Prompts', s: '100 Prompts', t: '500 Prompts', a: 'Unlimited' },
+        { key: 'storage', id: 'Penyimpanan Aset', en: 'Asset Storage', type: 'text', f: '100 MB', s: '1 GB', t: '5 GB', a: 'Unlimited' },
+        { key: 'analytics', id: 'Analisis Performa', en: 'Performance Analytics', type: 'text', f: 'Dasar', s: 'Lanjutan', t: 'Lanjutan', a: 'Mendalam' },
+        { key: 'export', id: 'Export Laporan', en: 'Export Reports', type: 'text', f: 'Tidak', s: 'Ya', t: 'Ya (Kustom)', a: 'Ya (White-label)' },
+        { key: 'approval', id: 'Alur Persetujuan Konten', en: 'Content Approval Workflow', type: 'boolean', f: false, s: false, t: true, a: true },
+        { key: 'comments', id: 'Manajemen Komentar', en: 'Comment Management', type: 'boolean', f: false, s: true, t: true, a: true },
+        { key: 'support', id: 'Dukungan Pelanggan', en: 'Customer Support', type: 'text', f: 'Komunitas', s: 'Email', t: 'Email Prioritas', a: '24/7 Prioritas' },
+      ];
+
+      for (const plan of defaultPlans) {
+        await setDoc(doc(db, "plans", plan.id), plan);
+      }
+      for (const promo of defaultPromos) {
+        await setDoc(doc(db, "promos", promo.id), promo);
+      }
+      await setDoc(doc(db, "config", "pricing_features"), { rows: defaultFeatureRows });
+
+      setSaveMsg("Seeding berhasil! Semua paket & promo default telah dimuat.");
+      setTimeout(() => setSaveMsg(""), 3000);
+    } catch (err: any) {
+      console.error(err);
+      alert("Gagal melakukan seeding data: " + err.message);
+    }
+  };
 
   const savePlan = async (e: React.FormEvent) => {
      e.preventDefault();
      try {
        const fd = new FormData(e.target as HTMLFormElement);
-       const formDataObj = Object.fromEntries(fd.entries());
-       const features = Object.keys(formDataObj)
-          .filter(k => k.startsWith('feat_') && formDataObj[k] === 'on')
-          .map(k => k.replace('feat_', ''));
-          
-       const data = {
-         name: fd.get("name"),
-         desc: fd.get("desc"),
-         price: Number(fd.get("price")),
-         originalPrice: Number(fd.get("originalPrice")) || 0,
-         addMonths: Number(fd.get("addMonths")),
-         popular: fd.get("popular") === "on",
-         features
+       const name = fd.get("name") as string;
+       const desc = fd.get("desc") as string;
+       const price_monthly = Number(fd.get("price_monthly"));
+       const originalPrice_monthly = Number(fd.get("originalPrice_monthly")) || 0;
+       const price_annual = Number(fd.get("price_annual"));
+       const originalPrice_annual = Number(fd.get("originalPrice_annual")) || 0;
+       const popular = fd.get("popular") === "on";
+
+       const limits = {
+          workspaces: Number(fd.get("workspaces")),
+          socialAccounts: Number(fd.get("socialAccounts")),
+          teamMembers: Number(fd.get("teamMembers")),
+          aiGenerationPerMonth: Number(fd.get("aiGenerationPerMonth")),
+          storageMB: Number(fd.get("storageMB"))
        };
-       if (editingPlan?.id) {
-         await updateDoc(doc(db, "plans", editingPlan.id), data);
-       } else {
-         const id = data.name!.toString().toLowerCase().replace(/\s+/g,'-');
-         await setDoc(doc(db, "plans", id), { ...data, id });
-       }
+
+       const capabilities = {
+          autoPublishing: true,
+          analyticsLevel: fd.get("analyticsLevel"),
+          exportReports: "custom",
+          contentApproval: true,
+          commentManagement: true,
+          supportLevel: fd.get("supportLevel")
+       };
+
+       const baseId = editingPlan?.id ? editingPlan.id : name.toLowerCase().trim().replace(/\s+/g, '-');
+
+       // Monthly plan doc
+       const monthlyId = `${baseId}-monthly`;
+       const monthlyData = {
+          id: monthlyId,
+          name: `${name} (Monthly)`,
+          desc,
+          price: price_monthly,
+          originalPrice: originalPrice_monthly,
+          addMonths: 1,
+          popular,
+          features: [],
+          limits,
+          capabilities
+       };
+
+       // Annual plan doc
+       const annualId = `${baseId}-annual`;
+       const annualData = {
+          id: annualId,
+          name: `${name} (Annual)`,
+          desc,
+          price: price_annual,
+          originalPrice: originalPrice_annual,
+          addMonths: 12,
+          popular,
+          features: [],
+          limits,
+          capabilities
+       };
+
+       await setDoc(doc(db, "plans", monthlyId), monthlyData);
+       await setDoc(doc(db, "plans", annualId), annualData);
+
        setShowPlanModal(false);
      } catch (e: any) { alert(e.message); }
   };
@@ -325,6 +595,10 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
              <div style={{width:6, height:6, borderRadius:"50%", background:"#10B981", boxShadow:"0 0 8px #10B981"}} />
              Sistem Operasional Aktif
           </div>
+          <button onClick={fetchAdminData} style={{display:"flex", alignItems:"center", gap:6, padding:"6px 14px", borderRadius:20, border:"1px solid rgba(0,0,0,0.1)", background:"white", cursor:"pointer", fontSize: 12, fontWeight: 600, color: "#4B5563"}} className="hover:bg-stone-50 transition-colors">
+            {loading ? <span className="animate-spin text-stone-400"><RefreshCw size={14}/></span> : <RefreshCw size={14} />}
+            Refresh
+          </button>
         </div>
       </div>
 
@@ -366,7 +640,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
               <motion.div key="db" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0}} style={{maxWidth:1000}}>
                  <div style={{marginBottom:32}}>
                    <h2 style={{fontSize:28, fontWeight:800, color:"#111827", margin:0, letterSpacing:"-1px"}}>{lang === "id" ? "Ringkasan Sistem" : "System Summary"}</h2>
-                   <p style={{fontSize:14, color:"#6B7280", marginTop:4}}>" + (lang === "id" ? "Pantau pertumbuhan dan performa bisnis secara real-time." : "Monitor business growth and performance in real-time.") + "</p>
+                   <p style={{fontSize:14, color:"#6B7280", marginTop:4}}>{lang === "id" ? "Pantau pertumbuhan dan performa bisnis secara real-time." : "Monitor business growth and performance in real-time."}</p>
                  </div>
 
                  <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(240px, 1fr))", gap: 24, marginBottom:32}}>
@@ -470,7 +744,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                 <div style={{display:"flex", justifyContent:"space-between", alignItems:"flex-end", marginBottom:28}}>
                   <div>
                     <h2 style={{fontSize:28, fontWeight:800, color:"#111827", margin:0, letterSpacing:"-1px"}}>{lang === "id" ? "Manajemen User" : "User Management"}</h2>
-                    <p style={{fontSize:14, color:"#6B7280", marginTop:4}}>" + (lang === "id" ? "Kelola akses, paket, dan data seluruh pengguna sistem." : "Manage access, plans, and data for all system users.") + "</p>
+                    <p style={{fontSize:14, color:"#6B7280", marginTop:4}}>{lang === "id" ? "Kelola akses, paket, dan data seluruh pengguna sistem." : "Manage access, plans, and data for all system users."}</p>
                   </div>
                   <div style={{display:"flex", alignItems:"center", gap:12}}>
                     <div style={{display:"flex", alignItems:"center", background:"#FFFFFF", padding:"10px 16px", borderRadius:12, border:"1px solid rgba(0,0,0,0.06)", width: 320, boxShadow:"0 1px 3px rgba(0,0,0,0.01)"}}>
@@ -585,19 +859,47 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
 
                    <div style={{display:"flex", flexDirection:"column", gap:24}}>
                       <div style={{background:"#FFFFFF", borderRadius:24, padding:24, border:"1px solid rgba(0,0,0,0.04)", boxShadow:"0 1px 3px rgba(0,0,0,0.01), 0 10px 30px rgba(0,0,0,0.02)"}}>
-                         <h3 style={{fontSize:16, fontWeight:800, color:"#111827", marginBottom:16}}>{lang === "id" ? "Ubah Paket Manual" : "Manual Plan Change"}</h3>
-                         <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:12}}>
-                            <button onClick={()=>handleUpdatePlan(selectedUser.id, "pro", 30)} style={{background:"var(--theme-primary)", color:"white", border:"none", padding:12, borderRadius:12, fontWeight:700, cursor:"pointer"}} className="btn-hover">{lang === "id" ? "Atur PRO (30 Hari)" : "Set PRO (30 Days)"}</button>
-                            <button onClick={()=>handleUpdatePlan(selectedUser.id, "free", 0)} style={{background:"transparent", border:"1px solid rgba(239,68,68,0.15)", color:"#EF4444", padding:12, borderRadius:12, fontWeight:700, cursor:"pointer"}} className="btn-hover">{lang === "id" ? "Atur GRATIS (Cabut)" : "Set FREE (Revoke)"}</button>
-                         </div>
+                         <h3 style={{fontSize:16, fontWeight:800, color:"#111827", marginBottom:16}}>{lang === "id" ? "Ubah Paket Manual & Riset" : "Manual Plan & Testing"}</h3>
                          
-                         <div style={{marginTop:18, paddingTop:18, borderTop:"1px solid rgba(0,0,0,0.05)"}}>
-                            <div style={{fontSize:12, fontWeight:700, marginBottom:12, color:"#374151"}}>{lang === "id" ? "Berikan VIP (Riset / Pengujian)" : "Assign VIP (Research / Testing)"}</div>
-                            <div style={{display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8}}>
-                               <button onClick={()=>handleUpdatePlan(selectedUser.id, "vip", 30)} style={{background:"rgba(59,130,246,0.05)", color:"var(--theme-primary)", border:"none", padding:10, borderRadius:10, fontSize:11, fontWeight:700, cursor:"pointer"}} className="btn-hover">{lang === "id" ? "1 Bln" : "1 Mo"}</button>
-                               <button onClick={()=>handleUpdatePlan(selectedUser.id, "vip", 90)} style={{background:"rgba(59,130,246,0.05)", color:"var(--theme-primary)", border:"none", padding:10, borderRadius:10, fontSize:11, fontWeight:700, cursor:"pointer"}} className="btn-hover">3 Bln</button>
-                               <button onClick={()=>handleUpdatePlan(selectedUser.id, "vip", 180)} style={{background:"rgba(59,130,246,0.05)", color:"var(--theme-primary)", border:"none", padding:10, borderRadius:10, fontSize:11, fontWeight:700, cursor:"pointer"}} className="btn-hover">6 Bln</button>
+                         <div style={{display: "flex", flexDirection: "column", gap: 12}}>
+                            <div>
+                              <label style={{display: "block", fontSize: 11, fontWeight: 700, color: "#6B7280", marginBottom: 6}}>{lang === "id" ? "Pilih Paket" : "Select Plan"}</label>
+                              <select 
+                                value={customAssignPlan} 
+                                onChange={(e) => setCustomAssignPlan(e.target.value)}
+                                style={{width: "100%", padding: "10px 14px", borderRadius: 12, border: "1px solid rgba(0,0,0,0.08)", fontSize: 13, background: "#F9FAFB", cursor: "pointer"}}
+                              >
+                                <option value="free">Free / Gratis</option>
+                                <option value="vip">VIP (Lifetime / Special)</option>
+                                {plans.map(p => (
+                                  <option key={p.id} value={p.id}>{p.name || p.id}</option>
+                                ))}
+                              </select>
                             </div>
+                            
+                            <div>
+                              <label style={{display: "block", fontSize: 11, fontWeight: 700, color: "#6B7280", marginBottom: 6}}>{lang === "id" ? "Durasi Akses" : "Access Duration"}</label>
+                              <select 
+                                value={customAssignDuration} 
+                                onChange={(e) => setCustomAssignDuration(Number(e.target.value))}
+                                style={{width: "100%", padding: "10px 14px", borderRadius: 12, border: "1px solid rgba(0,0,0,0.08)", fontSize: 13, background: "#F9FAFB", cursor: "pointer"}}
+                              >
+                                <option value={0}>{lang === "id" ? "Cabut Akses (0 Hari)" : "Revoke Access (0 Days)"}</option>
+                                <option value={30}>1 Bulan (30 Hari)</option>
+                                <option value={90}>3 Bulan (90 Hari)</option>
+                                <option value={180}>6 Bulan (180 Hari)</option>
+                                <option value={365}>1 Tahun (365 Hari)</option>
+                                <option value={3650}>10 Tahun (Lifetime)</option>
+                              </select>
+                            </div>
+
+                            <button 
+                              onClick={() => handleUpdatePlan(selectedUser.id, customAssignPlan, customAssignDuration)} 
+                              style={{background: "var(--theme-primary)", color: "white", border: "none", padding: "12px", borderRadius: "12px", fontWeight: 700, cursor: "pointer", marginTop: "8px"}} 
+                              className="btn-hover"
+                            >
+                              {lang === "id" ? "Berikan Akses Paket" : "Assign Plan Access"}
+                            </button>
                          </div>
                       </div>
 
@@ -777,95 +1079,251 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
 
             {/* PLANS & PROMOS */}
             {activeTab === "plans" && (
-              <motion.div key="plans" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0}}>
-                <div style={{display:"flex", justifyContent:"space-between", alignItems:"flex-end", marginBottom:32}}>
+              <motion.div key="plans" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0}} style={{display: "flex", flexDirection: "column", gap: 24}}>
+                <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", paddingBottom: 16, borderBottom: "1px solid rgba(0,0,0,0.04)"}}>
                    <div>
-                     <h2 style={{fontSize:28, fontWeight:800, margin:0, letterSpacing:"-1px"}}>Paket & Promosi</h2>
-                     <p style={{fontSize:14, color:"rgba(44,32,22,0.5)", marginTop:4}}>Konfigurasi skema pricing dan kode diskon marketing.</p>
+                     <h2 style={{fontSize:24, fontWeight:800, color: "#111827", margin:0, letterSpacing:"-0.5px"}}>Paket & Promosi</h2>
+                     <p style={{fontSize:13, color:"rgba(17,24,39,0.5)", marginTop:4}}>Konfigurasi skema pricing paket langganan dan kode diskon kupon marketing.</p>
                    </div>
-                   <div style={{display:"flex", gap:12}}>
-                     <button onClick={() => { setEditingPromo({}); setShowPromoModal(true); }} style={{background:"white", border:"1px solid #DDD", padding:"10px 20px", borderRadius:12, fontSize:13, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", gap:8}}>
-                       <Tag size={16}/> New Promo
+                   <div style={{display:"flex", gap:10, flexWrap: "wrap"}}>
+                     <button onClick={seedDefaultData} style={{background:"rgba(var(--theme-primary-rgb, 37,99,235), 0.06)", color:"var(--theme-primary, #2563EB)", border:"none", padding:"10px 18px", borderRadius:12, fontSize:13, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", gap:6, transition: "all 0.2s"}} className="hover-scale">
+                       <RefreshCw size={14}/> Muat Data Default
                      </button>
-                     <button onClick={() => { setEditingPlan({}); setShowPlanModal(true); }} style={{background:"var(--theme-primary)", color:"white", border:"none", padding:"10px 24px", borderRadius:12, fontSize:13, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", gap:8}}>
-                       <Package size={16}/> New Plan
+                     <button onClick={() => { setEditingPromo({}); setShowPromoModal(true); }} style={{background:"#FFFFFF", border:"1px solid rgba(0,0,0,0.08)", color: "#111827", padding:"10px 18px", borderRadius:12, fontSize:13, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", gap:6, transition: "all 0.2s"}} className="hover-scale">
+                       <Tag size={14}/> Voucher Baru
+                     </button>
+                     <button onClick={() => { setEditingPlan({}); setShowPlanModal(true); }} style={{background:"var(--theme-primary, #2563EB)", color:"white", border:"none", padding:"10px 20px", borderRadius:12, fontSize:13, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", gap:6, transition: "all 0.2s"}} className="hover-scale">
+                       <Package size={14}/> Paket Baru
                      </button>
                    </div>
                 </div>
 
-                <h3 style={{fontSize:18, fontWeight:800, marginBottom:20}}>Subscription Plans</h3>
-                <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(300px, 1fr))", gap:20, marginBottom:40}}>
-                  {plans.map(p => (
-                    <div key={p.id} style={CARD({padding:24, borderRadius:24, borderRight:"1px solid #EEE", borderBottom:"1px solid #EEE", borderLeft:"1px solid #EEE", borderTop:`4px solid ${p.popular ? 'var(--theme-primary)' : '#EEE'}`})}>
-                       <div style={{display:"flex", justifyContent:"space-between", alignItems:"flex-start"}}>
-                          <div>
-                            <div style={{fontSize:18, fontWeight:800}}>{p.name}</div>
-                            <div style={{fontSize:12, color:"#999", marginTop:4}}>{p.desc}</div>
-                          </div>
-                          {p.popular && <span style={{background:"rgba(var(--theme-primary-rgb), 0.1)", color:"var(--theme-primary)", fontSize:10, fontWeight:800, padding:"4px 8px", borderRadius:6, textTransform:"uppercase"}}>Popular</span>}
-                       </div>
-                       <div style={{margin:"20px 0"}}>
-                          <div style={{fontSize:24, fontWeight:800, color:"var(--theme-primary)"}}>Rp{p.price.toLocaleString()}</div>
-                          <div style={{fontSize:11, color:"rgba(0,0,0,0.3)"}}>{p.addMonths} Bulan Akses Penuh</div>
-                       </div>
-                       <div style={{display:"flex", gap:10}}>
-                          <button onClick={() => { setEditingPlan(p); setShowPlanModal(true); }} style={{flex:1, padding:10, borderRadius:12, border:"1px solid #EEE", background:"white", fontWeight:700, cursor:"pointer", fontSize:12}} className="hover-bg-light">Edit Settings</button>
-                          <button onClick={() => setDeletingItem({id: p.id, type:"plans", name: p.name})} style={{background:"rgba(156,43,78,0.1)", color:"#9C2B4E", border:"1px solid rgba(156,43,78,0.1)", padding:10, borderRadius:12, fontWeight:700, cursor:"pointer", fontSize:12}}>{lang === "id" ? "Hapus" : "Delete"}</button>
-                       </div>
-                    </div>
-                  ))}
-                  {plans.length === 0 && (
-                    <div style={{gridColumn:"1/-1", padding:60, textAlign:"center", background:"white", borderRadius:24, border:"1px dashed #CCC", color:"#999"}}>Klik "+ New Plan" untuk membuat paket langganan.</div>
-                  )}
+                <div style={{marginTop: 8}}>
+                  <h3 style={{fontSize:16, fontWeight:800, color: "#111827", marginBottom:16, display: "flex", alignItems: "center", gap: 8}}>
+                    <Package size={18} color="var(--theme-primary)" />
+                    Subscription Plans (Paket Langganan)
+                  </h3>
+                  
+                  <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(320px, 1fr))", gap:20, marginBottom:40}}>
+                    {groupedPlans.map(p => {
+                      const monthlyPrice = p.monthlyPrice || 0;
+                      const monthlyOriginal = p.monthlyOriginalPrice || 0;
+                      const monthlyDiscountPercent = (monthlyOriginal > monthlyPrice) ? Math.round(((monthlyOriginal - monthlyPrice) / monthlyOriginal) * 100) : 0;
+
+                      const annualPrice = p.annualPrice || 0;
+                      const annualOriginal = p.annualOriginalPrice || (monthlyPrice * 12);
+                      const annualDiscountPercent = (annualOriginal > annualPrice) ? Math.round(((annualOriginal - annualPrice) / annualOriginal) * 100) : 0;
+                      const annualSavings = annualOriginal - annualPrice;
+
+                      return (
+                        <div key={p.id} style={CARD({padding:24, borderRadius:24, background: "#FFFFFF", position: "relative", border:"1px solid rgba(0,0,0,0.04)", overflow: "hidden", display:"flex", flexDirection:"column", gap: 20, boxShadow:"0 10px 30px rgba(0,0,0,0.02)", transition: "all 0.2s"})} className="hover-scale">
+                           {p.popular && (
+                             <div style={{position: "absolute", top: 12, right: 12, background:"rgba(37,99,235,0.08)", color:"var(--theme-primary, #2563EB)", fontSize:10, fontWeight:800, padding:"4px 10px", borderRadius:30, textTransform:"uppercase", display: "flex", alignItems: "center", gap: 4}}>
+                               <Sparkles size={10} /> Popular
+                             </div>
+                           )}
+                           
+                           <div>
+                              <div style={{fontSize:18, fontWeight:800, color: "#111827"}}>{p.name}</div>
+                              <div style={{fontSize:12, color:"rgba(17,24,39,0.5)", marginTop:4}}>{p.desc}</div>
+                           </div>
+
+                           {/* Comparative Pricing Layout */}
+                           <div style={{display:"grid", gridTemplateColumns: "1fr 1fr", gap:10}}>
+                              <div style={{background:"rgba(0,0,0,0.015)", padding:12, borderRadius:16, border:"1px solid rgba(0,0,0,0.025)"}}>
+                                 <div style={{fontSize:9, color:"rgba(17,24,39,0.4)", fontWeight:800, textTransform:"uppercase", marginBottom:4, letterSpacing: "0.5px"}}>Bulanan (Monthly)</div>
+                                 <div style={{fontSize:16, fontWeight:800, color:"#111827"}}>Rp{monthlyPrice.toLocaleString("id-ID")}</div>
+                                 {monthlyOriginal > monthlyPrice && (
+                                    <div style={{display: "flex", flexDirection: "column", gap: 2, marginTop: 4}}>
+                                      <div style={{fontSize:10, color:"rgba(17,24,39,0.4)", textDecoration:"line-through"}}>Rp{monthlyOriginal.toLocaleString("id-ID")}</div>
+                                      <span style={{background: "rgba(16,185,129,0.1)", color: "#10B981", fontSize: 8, padding: "2px 4px", borderRadius: 4, fontWeight: 900, alignSelf: "flex-start"}}>SAVE {monthlyDiscountPercent}%</span>
+                                    </div>
+                                 )}
+                              </div>
+                              
+                              <div style={{background:"rgba(16,185,129,0.03)", padding:12, borderRadius:16, border:"1px solid rgba(16,185,129,0.08)", position: "relative"}}>
+                                 <div style={{fontSize:9, color:"#10B981", fontWeight:800, textTransform:"uppercase", marginBottom:4, letterSpacing: "0.5px", display: "flex", alignItems: "center", gap: 3}}>
+                                   Tahunan (Annual)
+                                   {annualDiscountPercent > 0 && (
+                                     <span style={{background: "#10B981", color: "#FFF", fontSize: 8, padding: "1px 4px", borderRadius: 4, fontWeight: 900}}>SAVE {annualDiscountPercent}%</span>
+                                   )}
+                                 </div>
+                                 <div style={{fontSize:16, fontWeight:800, color:"#10B981"}}>Rp{annualPrice.toLocaleString("id-ID")}</div>
+                                 <div style={{fontSize:9, color:"rgba(16,185,129,0.7)", fontWeight:600}}>(Setara Rp{Math.round(annualPrice / 12).toLocaleString("id-ID")}/bln)</div>
+                                 {annualOriginal > annualPrice && (
+                                    <div style={{display: "flex", flexDirection: "column", gap: 2, marginTop: 4}}>
+                                      <div style={{fontSize:10, color:"rgba(17,24,39,0.3)", textDecoration:"line-through"}}>Rp{annualOriginal.toLocaleString("id-ID")}</div>
+                                      <div style={{fontSize:8, color:"#10B981", fontWeight:800}}>Hemat Rp{annualSavings.toLocaleString("id-ID")}</div>
+                                    </div>
+                                 )}
+                              </div>
+                           </div>
+
+                         {/* Usage Limits Section with clean Icons */}
+                         <div style={{background: "rgba(0,0,0,0.01)", padding: 16, borderRadius: 16, display:"flex", flexDirection:"column", gap:10}}>
+                            <div style={{fontSize: 11, fontWeight: 800, color: "rgba(17,24,39,0.4)", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 2}}>Batasan Penggunaan</div>
+                            
+                            <div style={{display:"grid", gridTemplateColumns: "1fr 1fr", gap: 8}}>
+                              <div style={{display: "flex", alignItems: "center", gap: 8, fontSize: 12, fontWeight: 600, color: "#111827"}}>
+                                <div style={{width: 24, height: 24, borderRadius: 8, background: "rgba(0,0,0,0.03)", display: "flex", alignItems: "center", justifyContent: "center"}}>
+                                  <Layout size={12} color="#111827" />
+                                </div>
+                                <span>{p.limits?.workspaces === -1 ? "Unlimited" : p.limits?.workspaces} Workspace</span>
+                              </div>
+                              <div style={{display: "flex", alignItems: "center", gap: 8, fontSize: 12, fontWeight: 600, color: "#111827"}}>
+                                <div style={{width: 24, height: 24, borderRadius: 8, background: "rgba(0,0,0,0.03)", display: "flex", alignItems: "center", justifyContent: "center"}}>
+                                  <Globe size={12} color="#111827" />
+                                </div>
+                                <span>{p.limits?.socialAccounts === -1 ? "Unlimited" : p.limits?.socialAccounts} Sosmed</span>
+                              </div>
+                              <div style={{display: "flex", alignItems: "center", gap: 8, fontSize: 12, fontWeight: 600, color: "#111827"}}>
+                                <div style={{width: 24, height: 24, borderRadius: 8, background: "rgba(37,99,235,0.05)", display: "flex", alignItems: "center", justifyContent: "center"}}>
+                                  <Sparkles size={12} color="var(--theme-primary, #2563EB)" />
+                                </div>
+                                <span>{p.limits?.aiGenerationPerMonth === -1 ? "Unlimited" : p.limits?.aiGenerationPerMonth} AI /bln</span>
+                              </div>
+                              <div style={{display: "flex", alignItems: "center", gap: 8, fontSize: 12, fontWeight: 600, color: "#111827"}}>
+                                <div style={{width: 24, height: 24, borderRadius: 8, background: "rgba(0,0,0,0.03)", display: "flex", alignItems: "center", justifyContent: "center"}}>
+                                  <Users size={12} color="#111827" />
+                                </div>
+                                <span>{p.limits?.teamMembers === -1 ? "Unlimited" : p.limits?.teamMembers || "0"} Member</span>
+                              </div>
+                            </div>
+                         </div>
+
+                         {/* Capabilities Checklist */}
+                         <div style={{display: "flex", flexDirection: "column", gap: 8}}>
+                           <div style={{fontSize: 11, fontWeight: 800, color: "rgba(17,24,39,0.4)", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 2}}>Fitur & Layanan</div>
+                           
+                           <div style={{display: "flex", flexWrap: "wrap", gap: 6}}>
+                             {p.capabilities?.autoPublishing && (
+                               <span style={{fontSize: 10, fontWeight: 700, color: "#10B981", background: "rgba(16,185,129,0.06)", padding: "4px 10px", borderRadius: 30, display: "flex", alignItems: "center", gap: 4}}>
+                                 <Check size={10} /> Auto-Publish
+                               </span>
+                             )}
+                             {p.capabilities?.contentApproval && (
+                               <span style={{fontSize: 10, fontWeight: 700, color: "#10B981", background: "rgba(16,185,129,0.06)", padding: "4px 10px", borderRadius: 30, display: "flex", alignItems: "center", gap: 4}}>
+                                 <Check size={10} /> Approval Workflow
+                               </span>
+                             )}
+                             {p.capabilities?.commentManagement && (
+                               <span style={{fontSize: 10, fontWeight: 700, color: "#10B981", background: "rgba(16,185,129,0.06)", padding: "4px 10px", borderRadius: 30, display: "flex", alignItems: "center", gap: 4}}>
+                                 <Check size={10} /> Comment Manager
+                               </span>
+                             )}
+                             <span style={{fontSize: 10, fontWeight: 700, color: "var(--theme-primary, #2563EB)", background: "rgba(37,99,235,0.06)", padding: "4px 10px", borderRadius: 30}}>
+                               📈 Analitik: {p.capabilities?.analyticsLevel === "custom" ? "Mendalam" : p.capabilities?.analyticsLevel === "advanced" ? "Lanjutan" : "Dasar"}
+                             </span>
+                             <span style={{fontSize: 10, fontWeight: 700, color: "var(--theme-primary, #2563EB)", background: "rgba(37,99,235,0.06)", padding: "4px 10px", borderRadius: 30}}>
+                               💌 CS: {p.capabilities?.supportLevel === "vip" ? "24/7 VIP" : p.capabilities?.supportLevel === "priority" ? "Prioritas" : p.capabilities?.supportLevel === "email" ? "Email" : "Komunitas"}
+                             </span>
+                           </div>
+                         </div>
+
+                         {/* Action Buttons */}
+                         <div style={{display:"flex", gap:10, marginTop: "auto", paddingTop: 10, borderTop: "1px solid rgba(0,0,0,0.03)"}}>
+                            <button type="button" onClick={() => { setEditingPlan(p); setShowPlanModal(true); }} style={{flex:1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding:"10px", borderRadius:12, border:"1px solid rgba(0,0,0,0.05)", background:"#FFFFFF", fontWeight:700, color: "#111827", cursor:"pointer", fontSize:12, transition: "all 0.2s"}} className="hover-bg-light">
+                              <Edit2 size={12} /> Edit Detail
+                            </button>
+                             {p.id !== 'free' ? (
+                               <button type="button" onClick={() => setDeletingItem({id: p.monthlyId || p.annualId || p.id, type:"plans", name: p.name})} style={{background:"rgba(239,68,68,0.06)", color:"#EF4444", border:"none", padding:"10px 14px", borderRadius:12, fontWeight:700, cursor:"pointer", fontSize:12, display: "flex", alignItems: "center", gap: 6, transition: "all 0.2s"}} className="hover-scale">
+                                 <Trash2 size={12}/> Hapus
+                               </button>
+                             ) : (
+                               <span style={{fontSize: 11, fontWeight: 700, color: "rgba(17,24,39,0.4)", padding: "10px 14px", background: "rgba(0,0,0,0.02)", borderRadius: 12, display: "flex", alignItems: "center", gap: 4}}>
+                                 Sistem Default
+                               </span>
+                             )}
+                         </div>
+                      </div>
+                    );
+                    })}
+                    
+                    {plans.length === 0 && (
+                      <div style={{gridColumn:"1/-1", padding:"60px 20px", textAlign:"center", background:"#FFFFFF", borderRadius:24, border:"1px dashed rgba(0,0,0,0.08)", color:"#111827", display:"flex", flexDirection:"column", alignItems:"center", gap:16}}>
+                        <div style={{fontSize:14, fontWeight:600, color:"rgba(17,24,39,0.5)"}}>Belum ada data paket langganan di database.</div>
+                        <button type="button" onClick={seedDefaultData} style={{background:"var(--theme-primary, #2563EB)", color:"white", border:"none", padding:"12px 24px", borderRadius:12, fontSize:13, fontWeight:800, cursor:"pointer", display:"flex", alignItems:"center", gap:8}}>
+                          <RefreshCw size={16}/> Muat Semua Paket & Promo Default
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                <h3 style={{fontSize:18, fontWeight:800, marginBottom:20}}>Coupon Codes</h3>
-                <div style={CARD({borderRadius:20, overflow:"hidden", border:"1px solid #EEE"})}>
-                   <table style={{width:"100%", borderCollapse:"collapse", fontSize:13}}>
-                      <thead style={{background:"#FAFAFA"}}>
-                        <tr>
-                          <th style={{padding:16, textAlign:"left", fontSize:11, fontWeight:700, textTransform:"uppercase", color:"#999", minWidth:120}}>Kode Promo</th>
-                          <th style={{padding:16, textAlign:"center", fontSize:11, fontWeight:700, textTransform:"uppercase", color:"#999"}}>Diskon</th>
-                          <th style={{padding:16, textAlign:"center", fontSize:11, fontWeight:700, textTransform:"uppercase", color:"#999"}}>Pemakaian</th>
-                          <th style={{padding:16, textAlign:"center", fontSize:11, fontWeight:700, textTransform:"uppercase", color:"#999", minWidth:150}}>Validity Period</th>
-                          <th style={{padding:16, textAlign:"center", fontSize:11, fontWeight:700, textTransform:"uppercase", color:"#999"}}>{lang === "id" ? "Status" : "Status"}</th>
-                          <th style={{padding:16, textAlign:"right"}}></th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {promosList.map(p => (
-                          <tr key={p.id} style={{borderBottom:"1px solid #FAFAFA", verticalAlign:"top"}}>
-                             <td style={{padding:16, fontWeight:800, whiteSpace:"normal", wordBreak:"break-word"}}>{p.code}</td>
-                             <td style={{padding:16, textAlign:"center"}}>
-                               <div style={{background:"rgba(76,175,80,0.1)", color:"#4CAF50", padding:"4px 10px", borderRadius:12, fontWeight:800, display:"inline-block"}}>
-                                 {p.type === "percent" ? `${p.value}%` : fmtRp(p.value)}
-                               </div>
-                             </td>
-                             <td style={{padding:16, textAlign:"center", fontWeight:700}}>{p.usageCount || 0}x</td>
-                             <td style={{padding:16, textAlign:"center", whiteSpace:"normal"}}>
-                                <div style={{fontSize:10, color:"#666", fontWeight:600}}>
-                                  {p.startDate ? `📅 From: ${p.startDate}` : "⚡ Immediate"} <br/>
-                                  {p.endDate ? `🏁 To: ${p.endDate}` : "♾ No Expiry"}
-                                </div>
-                             </td>
-                             <td style={{padding:16, textAlign:"center"}}>
-                                <button onClick={()=>togglePromo(p)} style={{background:"none", border:"none", cursor:"pointer"}}>
-                                  {p.isActive ? <ToggleRight color="#4CAF50" size={24}/> : <ToggleLeft color="#CCC" size={24}/>}
-                                </button>
-                             </td>
-                             <td style={{padding:16, textAlign:"right"}}>
-                                <div style={{display:"flex", gap:10, justifyContent:"flex-end"}}>
-                                   <button onClick={() => { setEditingPromo(p); setShowPromoModal(true); }} style={{color:"var(--theme-primary)", background:"transparent", border:"none", fontWeight:800, cursor:"pointer", fontSize:12}}>{lang === "id" ? "Edit" : "Edit"}</button>
-                                   <button onClick={() => setDeletingItem({id: p.id, type:"promos", name: p.code})} style={{color:"#9C2B4E", background:"transparent", border:"none", fontWeight:800, cursor:"pointer", fontSize:12}}>{lang === "id" ? "Hapus" : "Delete"}</button>
-                                </div>
-                             </td>
+                <div style={{marginTop: 16}}>
+                  <h3 style={{fontSize:16, fontWeight:800, color: "#111827", marginBottom:16, display: "flex", alignItems: "center", gap: 8}}>
+                    <Tag size={18} color="var(--theme-primary)" />
+                    Coupon & Promo Codes (Kode Voucher)
+                  </h3>
+
+                  <div style={CARD({borderRadius:24, overflow:"hidden", border:"1px solid rgba(0,0,0,0.04)", padding: 0, boxShadow: "0 10px 30px rgba(0,0,0,0.01)"})}>
+                     <table style={{width:"100%", borderCollapse:"collapse", fontSize:13}}>
+                        <thead style={{background:"rgba(0,0,0,0.015)", borderBottom: "1px solid rgba(0,0,0,0.03)"}}>
+                          <tr>
+                            <th style={{padding:"16px 20px", textAlign:"left", fontSize:11, fontWeight:800, textTransform:"uppercase", color:"rgba(17,24,39,0.4)", letterSpacing: "0.5px", minWidth:140}}>Kode Promo</th>
+                            <th style={{padding:"16px 20px", textAlign:"center", fontSize:11, fontWeight:800, textTransform:"uppercase", color:"rgba(17,24,39,0.4)", letterSpacing: "0.5px"}}>Diskon</th>
+                            <th style={{padding:"16px 20px", textAlign:"center", fontSize:11, fontWeight:800, textTransform:"uppercase", color:"rgba(17,24,39,0.4)", letterSpacing: "0.5px"}}>Pemakaian</th>
+                            <th style={{padding:"16px 20px", textAlign:"left", fontSize:11, fontWeight:800, textTransform:"uppercase", color:"rgba(17,24,39,0.4)", letterSpacing: "0.5px", minWidth:200}}>Masa Berlaku & Target</th>
+                            <th style={{padding:"16px 20px", textAlign:"center", fontSize:11, fontWeight:800, textTransform:"uppercase", color:"rgba(17,24,39,0.4)", letterSpacing: "0.5px"}}>{lang === "id" ? "Status" : "Status"}</th>
+                            <th style={{padding:"16px 20px", textAlign:"right"}}></th>
                           </tr>
-                        ))}
-                      </tbody>
-                   </table>
-                   {promosList.length === 0 && (
-                     <div style={{padding:40, textAlign:"center", color:"#999"}}>Belum ada kode promo aktif.</div>
-                   )}
+                        </thead>
+                        <tbody>
+                          {promosList.map(p => (
+                            <tr key={p.id} style={{borderBottom:"1px solid rgba(0,0,0,0.02)", verticalAlign:"middle"}} className="hover-bg-light">
+                               <td style={{padding:"16px 20px", fontWeight:800, color: "#111827", whiteSpace:"normal", wordBreak:"break-word"}}>
+                                 <div style={{display: "flex", alignItems: "center", gap: 8}}>
+                                   <div style={{width: 8, height: 8, borderRadius: "50%", background: p.isActive ? "#10B981" : "rgba(17,24,39,0.15)"}} />
+                                   <span style={{fontFamily: "var(--font-mono, monospace)", letterSpacing: "0.5px", background: "rgba(0,0,0,0.03)", padding: "4px 8px", borderRadius: 8}}>{p.code}</span>
+                                 </div>
+                               </td>
+                               <td style={{padding:"16px 20px", textAlign:"center"}}>
+                                 <span style={{background:p.type === "percent" ? "rgba(16,185,129,0.08)" : "rgba(37,99,235,0.08)", color:p.type === "percent" ? "#10B981" : "var(--theme-primary, #2563EB)", padding:"6px 12px", borderRadius:30, fontWeight:800, fontSize:12, display:"inline-flex", alignItems: "center", gap: 4}}>
+                                   {p.type === "percent" ? <Percent size={11} /> : "Rp"}
+                                   {p.type === "percent" ? `${p.value}%` : p.value.toLocaleString("id-ID")}
+                                 </span>
+                               </td>
+                               <td style={{padding:"16px 20px", textAlign:"center", fontWeight:700, color: "#111827"}}>
+                                 <span style={{background: "rgba(0,0,0,0.02)", padding: "4px 10px", borderRadius: 10}}>{p.usageCount || 0}x dipakai</span>
+                               </td>
+                               <td style={{padding:"16px 20px", textAlign:"left", whiteSpace:"normal"}}>
+                                  <div style={{display: "flex", flexDirection: "column", gap: 2}}>
+                                    <div style={{fontSize:12, color:"#111827", fontWeight:600}}>
+                                      {p.startDate ? `📅 ${p.startDate}` : "Immediate"} sd {p.endDate ? `🏁 ${p.endDate}` : "♾ No Expiry"}
+                                    </div>
+                                    <div style={{fontSize:10, color:"rgba(17,24,39,0.4)", fontWeight:700, textTransform: "uppercase"}}>
+                                      Target: {p.targetType === "first_timer" ? "Hanya User Baru" : "Semua Pengguna"}
+                                    </div>
+                                  </div>
+                               </td>
+                               <td style={{padding:"16px 20px", textAlign:"center"}}>
+                                  <button onClick={()=>togglePromo(p)} style={{background:"none", border:"none", cursor:"pointer", padding: 0, display: "inline-flex", alignItems: "center", transition: "all 0.2s"}}>
+                                    {p.isActive ? <ToggleRight color="#10B981" size={28}/> : <ToggleLeft color="rgba(17,24,39,0.2)" size={28}/>}
+                                  </button>
+                               </td>
+                               <td style={{padding:"16px 20px", textAlign:"right"}}>
+                                  <div style={{display:"flex", gap:8, justifyContent:"flex-end"}}>
+                                     <button onClick={() => { setEditingPromo(p); setShowPromoModal(true); }} style={{color:"var(--theme-primary, #2563EB)", background:"rgba(37,99,235,0.05)", border:"none", padding: "6px 12px", borderRadius: 10, fontWeight:800, cursor:"pointer", fontSize:11, display: "flex", alignItems: "center", gap: 4, transition: "all 0.2s"}} className="hover-scale">
+                                       <Edit2 size={10} /> Edit
+                                     </button>
+                                     <button onClick={() => setDeletingItem({id: p.id, type:"promos", name: p.code})} style={{color:"#EF4444", background:"rgba(239,68,68,0.05)", border:"none", padding: "6px 12px", borderRadius: 10, fontWeight:800, cursor:"pointer", fontSize:11, display: "flex", alignItems: "center", gap: 4, transition: "all 0.2s"}} className="hover-scale">
+                                       <Trash2 size={10} /> Hapus
+                                     </button>
+                                  </div>
+                               </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                     </table>
+                     {promosList.length === 0 && (
+                       <div style={{padding:"40px 20px", textAlign:"center", color:"rgba(17,24,39,0.5)", display:"flex", flexDirection:"column", alignItems:"center", gap:12}}>
+                         <div style={{fontSize:13, fontWeight:600}}>Belum ada kode voucher aktif.</div>
+                         <button type="button" onClick={seedDefaultData} style={{background:"rgba(var(--theme-primary-rgb, 37,99,235), 0.06)", color:"var(--theme-primary, #2563EB)", border:"none", padding:"10px 20px", borderRadius:12, fontSize:12, fontWeight:800, cursor:"pointer", display:"flex", alignItems:"center", gap:6}}>
+                           <RefreshCw size={14}/> Muat Voucher Default
+                         </button>
+                       </div>
+                     )}
+                  </div>
                 </div>
               </motion.div>
             )}
@@ -1205,121 +1663,402 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
       <AnimatePresence>
         {/* Plan Modal */}
         {showPlanModal && editingPlan && (
-          <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.5)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center", backdropFilter:"blur(4px)", padding:20}}>
-            <motion.form initial={{scale:0.95, opacity:0}} animate={{scale:1, opacity:1}} exit={{scale:0.95, opacity:0}} onSubmit={savePlan} style={{background:"white", padding:32, borderRadius:28, width:480, maxHeight:"90vh", overflowY:"auto"}}>
-               <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:24}}>
-                  <h3 style={{fontSize:20, fontWeight:800}}>{editingPlan.id ? "Edit Plan Details" : "Create New Plan"}</h3>
-                  <button type="button" onClick={()=>setShowPlanModal(false)} style={{background:"#F5F5F5", border:"none", padding:8, borderRadius:10, cursor:"pointer"}}><X size={20}/></button>
-               </div>
-               <div style={{display:"flex", flexDirection:"column", gap:16, marginBottom:24}}>
-                  <div>
-                    <label style={{display:"block", fontSize:11, fontWeight:800, color:"#999", textTransform:"uppercase", marginBottom:6}}>Nama Paket</label>
-                    <input name="name" placeholder="Pro Monthly, etc" defaultValue={editingPlan.name} required style={{width:"100%", padding:12, borderRadius:12, border:"1px solid #EEE", fontSize:14}} />
-                  </div>
-                  <div>
-                    <label style={{display:"block", fontSize:11, fontWeight:800, color:"#999", textTransform:"uppercase", marginBottom:6}}>Keterangan Singkat</label>
-                    <input name="desc" placeholder="Best for professionals" defaultValue={editingPlan.desc} required style={{width:"100%", padding:12, borderRadius:12, border:"1px solid #EEE", fontSize:14}} />
-                  </div>
-                  <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:16}}>
-                    <div>
-                      <label style={{display:"block", fontSize:11, fontWeight:800, color:"#999", textTransform:"uppercase", marginBottom:6}}>Harga (Rp)</label>
-                      <input name="price" type="number" placeholder="99000" defaultValue={editingPlan.price} required style={{width:"100%", padding:12, borderRadius:12, border:"1px solid #EEE", fontSize:14}} />
+          <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.4)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center", backdropFilter:"blur(6px)", padding:20}}>
+            <motion.form initial={{scale:0.97, opacity:0}} animate={{scale:1, opacity:1}} exit={{scale:0.97, opacity:0}} onSubmit={savePlan} style={{background:"#FFFFFF", borderRadius:24, width:780, maxWidth:"95vw", height: 560, maxHeight:"90vh", display:"flex", flexDirection:"column", overflow:"hidden", boxShadow: "0 25px 70px rgba(0,0,0,0.15)"}}>
+               
+               {/* Modal Header */}
+               <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", padding: "20px 24px", borderBottom: "1px solid rgba(0,0,0,0.03)", flexShrink: 0}}>
+                  <div style={{display: "flex", alignItems: "center", gap: 10}}>
+                    <div style={{width: 32, height: 32, borderRadius: 10, background: "rgba(37,99,235,0.08)", display: "flex", alignItems: "center", justifyContent: "center"}}>
+                      <Package size={16} color="var(--theme-primary, #2563EB)" />
                     </div>
                     <div>
-                      <label style={{display:"block", fontSize:11, fontWeight:800, color:"#999", textTransform:"uppercase", marginBottom:6}}>Harga Coret (Rp)</label>
-                      <input name="originalPrice" type="number" placeholder="149000" defaultValue={editingPlan.originalPrice} style={{width:"100%", padding:12, borderRadius:12, border:"1px solid #EEE", fontSize:14}} />
+                      <h3 style={{fontSize:16, fontWeight:800, color: "#111827", margin: 0}}>{editingPlan.id ? `Edit Pengaturan Paket: ${editingPlan.name || ''}` : "Buat Paket Langganan Baru"}</h3>
+                      <p style={{fontSize: 11, color: "rgba(17,24,39,0.4)", margin: 0}}>Konfigurasi nama, harga, limit, dan fitur premium.</p>
                     </div>
                   </div>
-                  <div>
-                    <label style={{display:"block", fontSize:11, fontWeight:800, color:"#999", textTransform:"uppercase", marginBottom:6}}>Masa Aktif (Bulan)</label>
-                    <input name="addMonths" type="number" placeholder="1" defaultValue={editingPlan.addMonths} required style={{width:"100%", padding:12, borderRadius:12, border:"1px solid #EEE", fontSize:14}} />
-                  </div>
-                  <div>
-                    <label style={{display:"block", fontSize:11, fontWeight:800, color:"#999", textTransform:"uppercase", marginBottom:6}}>{lang === "id" ? "Fitur Paket (Pilih yang termasuk)" : "Plan Features (Select included)"}</label>
-                    <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, maxHeight: 150, overflowY:"auto", padding: 12, border: "1px solid #EEE", borderRadius: 12}}>
-                      {[
-                        "Calendar", 
-                        "Full AI Analysis", 
-                        "Multi-platform Export", 
-                        "Advanced Analytics", 
-                        "Team Collaboration (Invite Members)", 
-                        "VIP Support", 
-                        "Custom Event", 
-                        "Priority Server"
-                      ].map(feat => {
-                        const isChecked = editingPlan?.features?.includes(feat);
-                        return (
-                          <label key={feat} style={{display:"flex", alignItems:"center", gap:8, cursor:"pointer", padding:"6px", borderRadius:6, background:isChecked?"rgba(var(--theme-primary-rgb),0.05)":"transparent"}}>
-                            <input name={`feat_${feat}`} type="checkbox" defaultChecked={isChecked} style={{accentColor: "var(--theme-primary)"}} />
-                            <span style={{fontSize:12, fontWeight:600}}>{feat}</span>
-                          </label>
-                        );
-                      })}
+                  <button type="button" onClick={()=>setShowPlanModal(false)} style={{background:"rgba(0,0,0,0.03)", border:"none", padding:8, borderRadius:12, cursor:"pointer", color: "#111827", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s"}} className="hover-scale">
+                    <X size={16}/>
+                  </button>
+               </div>
+
+               {/* Modal Main Body (Split Layout: Sidebar + Form Content) */}
+               <div style={{display: "flex", flex: 1, overflow: "hidden"}}>
+                 
+                 {/* Left Column Sidebar */}
+                 <div style={{width: 220, background: "rgba(0,0,0,0.01)", padding: "16px 12px", borderRight: "1px solid rgba(0,0,0,0.03)", display: "flex", flexDirection: "column", gap: 4, flexShrink: 0}}>
+                   <button type="button" onClick={() => setModalPlanTab("general")} style={{
+                     display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 14px", borderRadius: 12, border: "none", cursor: "pointer", fontSize: 13, textAlign: "left", transition: "all 0.2s",
+                     fontWeight: modalPlanTab === "general" ? 700 : 500,
+                     color: modalPlanTab === "general" ? "var(--theme-primary, #2563EB)" : "rgba(17,24,39,0.6)",
+                     background: modalPlanTab === "general" ? "rgba(37,99,235,0.06)" : "transparent"
+                   }}>
+                     <FileText size={16} /> Informasi Umum
+                   </button>
+                   <button type="button" onClick={() => setModalPlanTab("pricing")} style={{
+                     display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 14px", borderRadius: 12, border: "none", cursor: "pointer", fontSize: 13, textAlign: "left", transition: "all 0.2s",
+                     fontWeight: modalPlanTab === "pricing" ? 700 : 500,
+                     color: modalPlanTab === "pricing" ? "var(--theme-primary, #2563EB)" : "rgba(17,24,39,0.6)",
+                     background: modalPlanTab === "pricing" ? "rgba(37,99,235,0.06)" : "transparent"
+                   }}>
+                     <DollarSign size={16} /> Skema Harga
+                   </button>
+                   <button type="button" onClick={() => setModalPlanTab("limits")} style={{
+                     display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 14px", borderRadius: 12, border: "none", cursor: "pointer", fontSize: 13, textAlign: "left", transition: "all 0.2s",
+                     fontWeight: modalPlanTab === "limits" ? 700 : 500,
+                     color: modalPlanTab === "limits" ? "var(--theme-primary, #2563EB)" : "rgba(17,24,39,0.6)",
+                     background: modalPlanTab === "limits" ? "rgba(37,99,235,0.06)" : "transparent"
+                   }}>
+                     <Shield size={16} /> Batasan Penggunaan
+                   </button>
+                   <button type="button" onClick={() => setModalPlanTab("capabilities")} style={{
+                     display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 14px", borderRadius: 12, border: "none", cursor: "pointer", fontSize: 13, textAlign: "left", transition: "all 0.2s",
+                     fontWeight: modalPlanTab === "capabilities" ? 700 : 500,
+                     color: modalPlanTab === "capabilities" ? "var(--theme-primary, #2563EB)" : "rgba(17,24,39,0.6)",
+                     background: modalPlanTab === "capabilities" ? "rgba(37,99,235,0.06)" : "transparent"
+                   }}>
+                     <Settings size={16} /> Layanan & Fitur
+                   </button>
+                 </div>
+
+                 {/* Right Column Form Content */}
+                 <div style={{flex: 1, padding: 24, overflowY: "auto", display: "flex", flexDirection: "column"}}>
+                   
+                   {/* 1. GENERAL INFO TAB */}
+                   <div style={{display: modalPlanTab === "general" ? "flex" : "none", flexDirection: "column", gap: 16}}>
+                      <div style={{marginBottom: 4}}>
+                        <h4 style={{margin: 0, fontSize: 14, fontWeight: 800, color: "#111827"}}>Informasi Umum</h4>
+                        <p style={{margin: "4px 0 0 0", fontSize: 12, color: "rgba(17,24,39,0.4)"}}>Beri nama dan deskripsi menarik untuk paket langganan ini.</p>
+                      </div>
+
+                      <div>
+                        <label style={{display:"block", fontSize:11, fontWeight:800, color:"rgba(17,24,39,0.4)", textTransform:"uppercase", marginBottom:6, letterSpacing: "0.5px"}}>Nama Paket</label>
+                        <input name="name" placeholder="Misal: Pro, Enterprise, Brand Builder" defaultValue={editingPlan.name} required style={{width:"100%", padding:"11px 14px", borderRadius:12, border:"1px solid rgba(0,0,0,0.08)", background: "rgba(0,0,0,0.02)", fontSize:14, color: "#111827", transition: "all 0.2s"}} />
+                        <div style={{fontSize:11, color:"rgba(17,24,39,0.4)", marginTop:4}}>Akan diakhiri otomatis dengan (Monthly) / (Annual) di sistem database.</div>
+                      </div>
+
+                      <div>
+                        <label style={{display:"block", fontSize:11, fontWeight:800, color:"rgba(17,24,39,0.4)", textTransform:"uppercase", marginBottom:6, letterSpacing: "0.5px"}}>Keterangan Singkat</label>
+                        <input name="desc" placeholder="Misal: Cocok untuk agensi sosial media profesional" defaultValue={editingPlan.desc} required style={{width:"100%", padding:"11px 14px", borderRadius:12, border:"1px solid rgba(0,0,0,0.08)", background: "rgba(0,0,0,0.02)", fontSize:14, color: "#111827", transition: "all 0.2s"}} />
+                        <div style={{fontSize:11, color:"rgba(17,24,39,0.4)", marginTop:4}}>Keterangan singkat yang muncul di card halaman pricing.</div>
+                      </div>
+
+                      <div style={{marginTop: 10, background: "rgba(0,0,0,0.01)", padding: 14, borderRadius: 16, border: "1px solid rgba(0,0,0,0.02)"}}>
+                        <label style={{display:"flex", alignItems:"center", gap:10, cursor:"pointer"}}>
+                          <input name="popular" type="checkbox" defaultChecked={editingPlan.popular} style={{width: 16, height: 16, accentColor: "var(--theme-primary)"}} />
+                          <div>
+                            <span style={{fontSize:13, fontWeight:700, color: "#111827", display: "block"}}>Rekomendasi Utama (Paket Populer)</span>
+                            <span style={{fontSize:11, color: "rgba(17,24,39,0.4)", display: "block", marginTop: 2}}>Tampilkan tag "Popular" di bagian atas card pricing untuk memicu psikologi pembeli.</span>
+                          </div>
+                        </label>
+                      </div>
+                   </div>
+
+                   {/* 2. PRICING SCHEMES TAB */}
+                    <div style={{display: modalPlanTab === "pricing" ? "flex" : "none", flexDirection: "column", gap: 16}}>
+                       <div style={{marginBottom: 4}}>
+                         <h4 style={{margin: 0, fontSize: 14, fontWeight: 800, color: "#111827"}}>Skema Harga & Simulasi Diskon</h4>
+                         <p style={{margin: "4px 0 0 0", fontSize: 12, color: "rgba(17,24,39,0.4)"}}>Atur harga bulanan dan tahunan. Lihat simulasi visual harga coret serta kalkulasi hemat pembeli secara real-time.</p>
+                       </div>
+
+                       {/* Monthly pricing group */}
+                       <div style={{background: "rgba(37,99,235,0.01)", padding: 16, borderRadius: 18, border: "1px solid rgba(37,99,235,0.06)", display: "flex", flexDirection: "column", gap: 12}}>
+                         <div style={{fontSize: 11, fontWeight: 800, color: "var(--theme-primary, #2563EB)", textTransform: "uppercase", letterSpacing: "0.5px", display: "flex", alignItems: "center", gap: 6}}>
+                           <div style={{width: 6, height: 6, borderRadius: "50%", background: "var(--theme-primary, #2563EB)"}} />
+                           SKEMA BULANAN (MONTHLY SCHEME)
+                         </div>
+                         
+                         <div style={{display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16}}>
+                           <div>
+                             <label style={{display:"block", fontSize:11, fontWeight:800, color:"rgba(17,24,39,0.5)", textTransform:"uppercase", marginBottom:6, letterSpacing: "0.5px"}}>
+                               Harga Jual (Rp) <span style={{color: "#EF4444"}}>*</span>
+                             </label>
+                             <div style={{position: "relative"}}>
+                               <span style={{position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", fontSize: 13, fontWeight: 700, color: "rgba(17,24,39,0.3)"}}>Rp</span>
+                               <input 
+                                 name="price_monthly" 
+                                 type="number" 
+                                 placeholder="99000" 
+                                 value={modalPriceMonthly || ""} 
+                                 onChange={(e) => setModalPriceMonthly(Number(e.target.value))}
+                                 required 
+                                 style={{width:"100%", padding:"11px 14px 11px 34px", borderRadius:12, border:"1px solid rgba(0,0,0,0.08)", background: "#FFFFFF", fontSize:14, color: "#111827", fontWeight: 700}} 
+                               />
+                             </div>
+                             <div style={{fontSize: 10, color: "rgba(17,24,39,0.4)", marginTop: 4}}>Harga bersih yang dibayarkan pelanggan tiap bulan.</div>
+                           </div>
+                           <div>
+                             <label style={{display:"block", fontSize:11, fontWeight:800, color:"rgba(17,24,39,0.5)", textTransform:"uppercase", marginBottom:6, letterSpacing: "0.5px"}}>Harga Coret / Normal (Rp)</label>
+                             <div style={{position: "relative"}}>
+                               <span style={{position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", fontSize: 13, fontWeight: 700, color: "rgba(17,24,39,0.3)"}}>Rp</span>
+                               <input 
+                                 name="originalPrice_monthly" 
+                                 type="number" 
+                                 placeholder="149000" 
+                                 value={modalOriginalPriceMonthly || ""} 
+                                 onChange={(e) => setModalOriginalPriceMonthly(Number(e.target.value))}
+                                 style={{width:"100%", padding:"11px 14px 11px 34px", borderRadius:12, border:"1px solid rgba(0,0,0,0.08)", background: "#FFFFFF", fontSize:14, color: "rgba(17,24,39,0.5)", textDecoration: modalOriginalPriceMonthly > modalPriceMonthly ? "line-through" : "none"}} 
+                               />
+                             </div>
+                             <div style={{fontSize: 10, color: "rgba(17,24,39,0.4)", marginTop: 4}}>Opsional. Nilai jangkar psikologi harga coret.</div>
+                           </div>
+                         </div>
+
+                         {/* Monthly Visual Simulator */}
+                         <div style={{background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.025)", padding: 12, borderRadius: 14, display: "flex", flexDirection: "column", gap: 6}}>
+                           <div style={{fontSize: 10, fontWeight: 800, color: "rgba(17,24,39,0.3)", textTransform: "uppercase"}}>SIMULASI TAMPILAN BULANAN DI PRICING:</div>
+                           <div style={{display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap"}}>
+                             <span style={{fontSize: 18, fontWeight: 800, color: "#0B2A4A"}}>Rp {modalPriceMonthly.toLocaleString("id-ID")}</span>
+                             {modalOriginalPriceMonthly > modalPriceMonthly && (
+                               <>
+                                 <span style={{fontSize: 12, color: "rgba(17,24,39,0.4)", textDecoration: "line-through"}}>Rp {modalOriginalPriceMonthly.toLocaleString("id-ID")}</span>
+                                 <span style={{background: "#EF4444", color: "#FFFFFF", fontSize: 10, fontWeight: 800, padding: "2px 8px", borderRadius: 30, display: "inline-flex", alignItems: "center", gap: 4}}>
+                                   <Percent size={10} color="#FFFFFF" /> HEMAT {Math.round(((modalOriginalPriceMonthly - modalPriceMonthly) / modalOriginalPriceMonthly) * 100)}%
+                                 </span>
+                                 <span style={{fontSize: 11, color: "#10B981", fontWeight: 700}}>
+                                   (Lebih Murah Rp {(modalOriginalPriceMonthly - modalPriceMonthly).toLocaleString("id-ID")})
+                                 </span>
+                               </>
+                             )}
+                           </div>
+                         </div>
+                       </div>
+
+                       {/* Annual pricing group */}
+                       <div style={{background: "rgba(16,185,129,0.01)", padding: 16, borderRadius: 18, border: "1px solid rgba(16,185,129,0.06)", display: "flex", flexDirection: "column", gap: 12}}>
+                         <div style={{fontSize: 11, fontWeight: 800, color: "#10B981", textTransform: "uppercase", letterSpacing: "0.5px", display: "flex", alignItems: "center", gap: 6}}>
+                           <div style={{width: 6, height: 6, borderRadius: "50%", background: "#10B981"}} />
+                           SKEMA TAHUNAN (ANNUAL SCHEME)
+                         </div>
+
+                         <div style={{display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16}}>
+                           <div>
+                             <label style={{display:"block", fontSize:11, fontWeight:800, color:"rgba(17,24,39,0.5)", textTransform:"uppercase", marginBottom:6, letterSpacing: "0.5px"}}>
+                               Harga Jual Setahun (Rp) <span style={{color: "#EF4444"}}>*</span>
+                             </label>
+                             <div style={{position: "relative"}}>
+                               <span style={{position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", fontSize: 13, fontWeight: 700, color: "rgba(17,24,39,0.3)"}}>Rp</span>
+                               <input 
+                                 name="price_annual" 
+                                 type="number" 
+                                 placeholder="948000" 
+                                 value={modalPriceAnnual || ""} 
+                                 onChange={(e) => setModalPriceAnnual(Number(e.target.value))}
+                                 required 
+                                 style={{width:"100%", padding:"11px 14px 11px 34px", borderRadius:12, border:"1px solid rgba(0,0,0,0.08)", background: "#FFFFFF", fontSize:14, color: "#10B981", fontWeight: 700}} 
+                               />
+                             </div>
+                             <div style={{fontSize: 10, color: "rgba(17,24,39,0.4)", marginTop: 4}}>
+                               Setara <span style={{fontWeight: 700, color: "#111827"}}>Rp {Math.round(modalPriceAnnual / 12).toLocaleString("id-ID")}/bln</span>. Total tagihan dalam setahun.
+                             </div>
+                           </div>
+                           <div>
+                             <label style={{display:"block", fontSize:11, fontWeight:800, color:"rgba(17,24,39,0.5)", textTransform:"uppercase", marginBottom:6, letterSpacing: "0.5px"}}>Harga Coret Setahun (Rp)</label>
+                             <div style={{position: "relative"}}>
+                               <span style={{position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", fontSize: 13, fontWeight: 700, color: "rgba(17,24,39,0.3)"}}>Rp</span>
+                               <input 
+                                 name="originalPrice_annual" 
+                                 type="number" 
+                                 placeholder="1788000" 
+                                 value={modalOriginalPriceAnnual || ""} 
+                                 onChange={(e) => setModalOriginalPriceAnnual(Number(e.target.value))}
+                                 style={{width:"100%", padding:"11px 14px 11px 34px", borderRadius:12, border:"1px solid rgba(0,0,0,0.08)", background: "#FFFFFF", fontSize:14, color: "rgba(17,24,39,0.5)", textDecoration: modalOriginalPriceAnnual > modalPriceAnnual ? "line-through" : "none"}} 
+                               />
+                             </div>
+                             <div style={{fontSize: 10, color: "rgba(17,24,39,0.4)", marginTop: 4}}>Opsional. Nilai jangkar psikologi harga coret tahunan.</div>
+                           </div>
+                         </div>
+
+                         {/* Annual Visual Simulator */}
+                         <div style={{background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.025)", padding: 12, borderRadius: 14, display: "flex", flexDirection: "column", gap: 6}}>
+                           <div style={{fontSize: 10, fontWeight: 800, color: "rgba(17,24,39,0.3)", textTransform: "uppercase"}}>SIMULASI TAMPILAN TAHUNAN DI PRICING:</div>
+                           <div style={{display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap"}}>
+                             <span style={{fontSize: 18, fontWeight: 800, color: "#10B981"}}>Rp {modalPriceAnnual.toLocaleString("id-ID")}</span>
+                             {modalOriginalPriceAnnual > modalPriceAnnual && (
+                               <>
+                                 <span style={{fontSize: 12, color: "rgba(17,24,39,0.4)", textDecoration: "line-through"}}>Rp {modalOriginalPriceAnnual.toLocaleString("id-ID")}</span>
+                                 <span style={{background: "#10B981", color: "#FFFFFF", fontSize: 10, fontWeight: 800, padding: "2px 8px", borderRadius: 30, display: "inline-flex", alignItems: "center", gap: 4}}>
+                                   <Percent size={10} color="#FFFFFF" /> DISKON {Math.round(((modalOriginalPriceAnnual - modalPriceAnnual) / modalOriginalPriceAnnual) * 100)}%
+                                 </span>
+                                 <span style={{fontSize: 11, color: "#10B981", fontWeight: 700}}>
+                                   (Hemat Rp {(modalOriginalPriceAnnual - modalPriceAnnual).toLocaleString("id-ID")} /tahun)
+                                 </span>
+                               </>
+                             )}
+                           </div>
+                           
+                           {/* Cross-billing savings check */}
+                           {modalPriceMonthly > 0 && (modalPriceMonthly * 12) > modalPriceAnnual && (
+                             <div style={{marginTop: 4, display: "flex", alignItems: "center", gap: 6, fontSize: 11, fontWeight: 700, color: "var(--theme-primary, #2563EB)", background: "rgba(37,99,235,0.04)", padding: "6px 12px", borderRadius: 10}}>
+                               <Sparkles size={12} color="var(--theme-primary, #2563EB)" />
+                               <span>
+                                 Hemat tambahan Rp {((modalPriceMonthly * 12) - modalPriceAnnual).toLocaleString("id-ID")} ({Math.round((((modalPriceMonthly * 12) - modalPriceAnnual) / (modalPriceMonthly * 12)) * 100)}%) dibandingkan langganan bulanan terus-menerus!
+                               </span>
+                             </div>
+                           )}
+                         </div>
+                       </div>
                     </div>
-                  </div>
-                  <label style={{display:"flex", alignItems:"center", gap:8, cursor:"pointer"}}>
-                    <input name="popular" type="checkbox" defaultChecked={editingPlan.popular} />
-                    <span style={{fontSize:13, fontWeight:700}}>Tandai sebagai Paket Populer</span>
-                  </label>
+                    
+
+                    {/* 3. USAGE LIMITS TAB */}
+                   <div style={{display: modalPlanTab === "limits" ? "flex" : "none", flexDirection: "column", gap: 16}}>
+                      <div style={{marginBottom: 4}}>
+                        <h4 style={{margin: 0, fontSize: 14, fontWeight: 800, color: "#111827"}}>Batasan Penggunaan</h4>
+                        <p style={{margin: "4px 0 0 0", fontSize: 12, color: "rgba(17,24,39,0.4)"}}>Definisikan batas limit setiap item. Isi dengan <b>-1</b> untuk tak terbatas (unlimited).</p>
+                      </div>
+
+                      <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:16}}>
+                        <div>
+                          <label style={{display:"block", fontSize:11, fontWeight:800, color:"rgba(17,24,39,0.4)", textTransform:"uppercase", marginBottom:6, letterSpacing: "0.5px"}}>Jumlah Workspace</label>
+                          <input name="workspaces" type="number" placeholder="3" defaultValue={editingPlan.limits?.workspaces ?? 1} required style={{width:"100%", padding:"11px 14px", borderRadius:12, border:"1px solid rgba(0,0,0,0.08)", background: "rgba(0,0,0,0.02)", fontSize:14}} />
+                        </div>
+                        <div>
+                          <label style={{display:"block", fontSize:11, fontWeight:800, color:"rgba(17,24,39,0.4)", textTransform:"uppercase", marginBottom:6, letterSpacing: "0.5px"}}>Max Akun Sosial Media</label>
+                          <input name="socialAccounts" type="number" placeholder="10" defaultValue={editingPlan.limits?.socialAccounts ?? 10} required style={{width:"100%", padding:"11px 14px", borderRadius:12, border:"1px solid rgba(0,0,0,0.08)", background: "rgba(0,0,0,0.02)", fontSize:14}} />
+                        </div>
+                      </div>
+
+                      <div style={{display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12}}>
+                        <div>
+                          <label style={{display:"block", fontSize:11, fontWeight:800, color:"rgba(17,24,39,0.4)", textTransform:"uppercase", marginBottom:6, letterSpacing: "0.5px"}}>Akses AI (Kredit/Bulan)</label>
+                          <input name="aiGenerationPerMonth" type="number" placeholder="100" defaultValue={editingPlan.limits?.aiGenerationPerMonth ?? 50} required style={{width:"100%", padding:"11px 14px", borderRadius:12, border:"1px solid rgba(0,0,0,0.08)", background: "rgba(0,0,0,0.02)", fontSize:14}} />
+                        </div>
+                        <div>
+                          <label style={{display:"block", fontSize:11, fontWeight:800, color:"rgba(17,24,39,0.4)", textTransform:"uppercase", marginBottom:6, letterSpacing: "0.5px"}}>Batas Anggota Tim</label>
+                          <input name="teamMembers" type="number" placeholder="3" defaultValue={editingPlan.limits?.teamMembers ?? 0} required style={{width:"100%", padding:"11px 14px", borderRadius:12, border:"1px solid rgba(0,0,0,0.08)", background: "rgba(0,0,0,0.02)", fontSize:14}} />
+                        </div>
+                        <div>
+                          <label style={{display:"block", fontSize:11, fontWeight:800, color:"rgba(17,24,39,0.4)", textTransform:"uppercase", marginBottom:6, letterSpacing: "0.5px"}}>Penyimpanan (MB)</label>
+                          <input name="storageMB" type="number" placeholder="5000" defaultValue={editingPlan.limits?.storageMB ?? 1000} required style={{width:"100%", padding:"11px 14px", borderRadius:12, border:"1px solid rgba(0,0,0,0.08)", background: "rgba(0,0,0,0.02)", fontSize:14}} />
+                        </div>
+                      </div>
+                   </div>
+
+                   {/* 4. CAPABILITIES TAB */}
+                   <div style={{display: modalPlanTab === "capabilities" ? "flex" : "none", flexDirection: "column", gap: 16}}>
+                      <div style={{marginBottom: 4}}>
+                        <h4 style={{margin: 0, fontSize: 14, fontWeight: 800, color: "#111827"}}>Layanan & Fitur Premium</h4>
+                        <p style={{margin: "4px 0 0 0", fontSize: 12, color: "rgba(17,24,39,0.4)"}}>Aktifkan atau pilih tingkat kapabilitas fitur yang disediakan paket ini.</p>
+                      </div>
+
+                      <div style={{display:"grid", gridTemplateColumns:"1fr", gap:16}}>
+                        <div>
+                          <label style={{display:"block", fontSize:11, fontWeight:800, color:"rgba(17,24,39,0.4)", textTransform:"uppercase", marginBottom:6, letterSpacing: "0.5px"}}>Level Modul Analitik</label>
+                          <select name="analyticsLevel" defaultValue={editingPlan.capabilities?.analyticsLevel || 'basic'} style={{width:"100%", padding:"11px 14px", borderRadius:12, border:"1px solid rgba(0,0,0,0.08)", fontSize:13, background:"#FFFFFF", cursor: "pointer"}}>
+                            <option value="basic">Analitik Dasar</option>
+                            <option value="advanced">Analitik Lanjutan (Demografi & Grafik)</option>
+                            <option value="custom">Mendalam & Laporan Kustom</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label style={{display:"block", fontSize:11, fontWeight:800, color:"rgba(17,24,39,0.4)", textTransform:"uppercase", marginBottom:6, letterSpacing: "0.5px"}}>Tingkat Dukungan CS</label>
+                        <select name="supportLevel" defaultValue={editingPlan.capabilities?.supportLevel || 'community'} style={{width:"100%", padding:"11px 14px", borderRadius:12, border:"1px solid rgba(0,0,0,0.08)", fontSize:13, background:"#FFFFFF", cursor: "pointer"}}>
+                          <option value="community">Komunitas & Pusat Bantuan</option>
+                          <option value="email">Email Reguler (Respon 48 Jam)</option>
+                          <option value="priority">Email Prioritas (Respon &lt;12 Jam)</option>
+                          <option value="vip">Dukungan VIP 24/7 (Live Chat & WA)</option>
+                        </select>
+                      </div>
+                   </div>
+                 </div>
                </div>
-               <div style={{display:"flex", gap:12}}>
-                 <button type="submit" style={{flex:1, background:"var(--theme-primary)", color:"white", border:"none", padding:14, borderRadius:16, fontWeight:800, cursor:"pointer"}}>{lang === "id" ? "Simpan Perubahan" : "Save Changes"}</button>
+
+               {/* Modal Sticky Footer */}
+               <div style={{display:"flex", justifyContent: "flex-end", gap:12, padding: "16px 24px", background: "rgba(0,0,0,0.015)", borderTop: "1px solid rgba(0,0,0,0.03)", flexShrink: 0}}>
+                 <button type="button" onClick={()=>setShowPlanModal(false)} style={{background:"transparent", border:"1px solid rgba(0,0,0,0.08)", color: "#111827", padding:"10px 20px", borderRadius:12, fontSize:13, fontWeight:700, cursor:"pointer", transition: "all 0.2s"}} className="hover-bg-light">Batal</button>
+                 <button type="submit" style={{background:"var(--theme-primary, #2563EB)", color:"white", border:"none", padding:"10px 24px", borderRadius:12, fontSize:13, fontWeight:700, cursor:"pointer", transition: "all 0.2s", display: "flex", alignItems: "center", gap: 6}} className="hover-scale">
+                   <Check size={14} /> {lang === "id" ? "Simpan Perubahan" : "Save Changes"}
+                 </button>
                </div>
+
             </motion.form>
           </motion.div>
         )}
 
         {/* Promo Modal */}
         {showPromoModal && editingPromo && (
-          <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.5)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center", backdropFilter:"blur(4px)", padding:20}}>
-            <motion.form initial={{scale:0.95, opacity:0}} animate={{scale:1, opacity:1}} exit={{scale:0.95, opacity:0}} onSubmit={savePromo} style={{background:"white", padding:32, borderRadius:28, width:400}}>
-               <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:24}}>
-                  <h3 style={{fontSize:20, fontWeight:800}}>Generate Code</h3>
-                  <button type="button" onClick={()=>setShowPromoModal(false)} style={{background:"#F5F5F5", border:"none", padding:8, borderRadius:10, cursor:"pointer"}}><X size={20}/></button>
+          <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.4)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center", backdropFilter:"blur(6px)", padding:20}}>
+            <motion.form initial={{scale:0.97, opacity:0}} animate={{scale:1, opacity:1}} exit={{scale:0.97, opacity:0}} onSubmit={savePromo} style={{background:"#FFFFFF", borderRadius:24, width:520, maxWidth:"95vw", maxHeight:"85vh", display:"flex", flexDirection:"column", overflow:"hidden", boxShadow: "0 25px 70px rgba(0,0,0,0.15)"}}>
+               
+               {/* Modal Sticky Header */}
+               <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", padding: "20px 24px", borderBottom: "1px solid rgba(0,0,0,0.03)", flexShrink: 0}}>
+                  <div style={{display: "flex", alignItems: "center", gap: 10}}>
+                    <div style={{width: 32, height: 32, borderRadius: 10, background: "rgba(16,185,129,0.08)", display: "flex", alignItems: "center", justifyContent: "center"}}>
+                      <Percent size={16} color="#10B981" />
+                    </div>
+                    <div>
+                      <h3 style={{fontSize:16, fontWeight:800, color: "#111827", margin: 0}}>{editingPromo.id ? "Edit Kode Promo" : "Generate Kode Promo Baru"}</h3>
+                      <p style={{fontSize: 11, color: "rgba(17,24,39,0.4)", margin: 0}}>Buat voucher diskon atau potongan harga berlangganan.</p>
+                    </div>
+                  </div>
+                  <button type="button" onClick={()=>setShowPromoModal(false)} style={{background:"rgba(0,0,0,0.03)", border:"none", padding:8, borderRadius:12, cursor:"pointer", color: "#111827", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s"}} className="hover-scale">
+                    <X size={16}/>
+                  </button>
                </div>
-               <div style={{display:"flex", flexDirection:"column", gap:16, marginBottom:24}}>
+
+               {/* Scrollable Form Content */}
+               <div style={{display:"flex", flexDirection:"column", gap:16, padding:24, overflowY:"auto", flex:1}}>
                   <div>
-                    <label style={{display:"block", fontSize:11, fontWeight:800, color:"#999", textTransform:"uppercase", marginBottom:6}}>Kode Promo</label>
-                    <input name="code" placeholder="DISKON77" defaultValue={editingPromo.code} required style={{width:"100%", padding:12, borderRadius:12, border:"1px solid #EEE", fontSize:16, fontWeight:800, letterSpacing:1}} />
+                    <label style={{display:"block", fontSize:11, fontWeight:800, color:"rgba(17,24,39,0.4)", textTransform:"uppercase", marginBottom:6, letterSpacing: "0.5px"}}>Kode Promo / Kupon</label>
+                    <input name="code" placeholder="DISKON77" defaultValue={editingPromo.code} required style={{width:"100%", padding:"11px 14px", borderRadius:12, border:"1px solid rgba(0,0,0,0.08)", background: "rgba(0,0,0,0.02)", fontSize:16, fontWeight:800, letterSpacing:1, textTransform: "uppercase", color: "#111827"}} />
+                    <div style={{fontSize:11, color:"rgba(17,24,39,0.4)", marginTop:4}}>Gunakan huruf kapital dan tanpa spasi (misal: HUBIFYHEMAT).</div>
                   </div>
-                  <div>
-                    <label style={{display:"block", fontSize:11, fontWeight:800, color:"#999", textTransform:"uppercase", marginBottom:6}}>Tipe Diskon</label>
-                    <select name="type" defaultValue={editingPromo.type || "percent"} style={{width:"100%", padding:12, borderRadius:12, border:"1px solid #EEE", fontSize:14}}>
-                      <option value="percent">Persentase (%)</option>
-                      <option value="fixed">Nominal Tetap (Rp)</option>
-                    </select>
+
+                  <div style={{display:"grid", gridTemplateColumns:"1.2fr 1fr", gap:16}}>
+                    <div>
+                      <label style={{display:"block", fontSize:11, fontWeight:800, color:"rgba(17,24,39,0.4)", textTransform:"uppercase", marginBottom:6, letterSpacing: "0.5px"}}>Tipe Diskon</label>
+                      <select name="type" defaultValue={editingPromo.type || "percent"} style={{width:"100%", padding:"11px 14px", borderRadius:12, border:"1px solid rgba(0,0,0,0.08)", fontSize:13, background:"#FFFFFF", cursor: "pointer"}}>
+                        <option value="percent">Persentase (%)</option>
+                        <option value="fixed">Nominal Tetap (Rp)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{display:"block", fontSize:11, fontWeight:800, color:"rgba(17,24,39,0.4)", textTransform:"uppercase", marginBottom:6, letterSpacing: "0.5px"}}>Nilai Potongan</label>
+                      <input name="value" type="number" placeholder="15" defaultValue={editingPromo.value} required style={{width:"100%", padding:"11px 14px", borderRadius:12, border:"1px solid rgba(0,0,0,0.08)", background: "rgba(0,0,0,0.02)", fontSize:14}} />
+                    </div>
                   </div>
+
                   <div>
-                    <label style={{display:"block", fontSize:11, fontWeight:800, color:"#999", textTransform:"uppercase", marginBottom:6}}>Nilai Potongan</label>
-                    <input name="value" type="number" placeholder="10" defaultValue={editingPromo.value} required style={{width:"100%", padding:12, borderRadius:12, border:"1px solid #EEE", fontSize:14}} />
-                  </div>
-                  <div>
-                    <label style={{display:"block", fontSize:11, fontWeight:800, color:"#999", textTransform:"uppercase", marginBottom:6}}>Target Pengguna</label>
-                    <select name="targetType" defaultValue={editingPromo.targetType || "all"} style={{width:"100%", padding:12, borderRadius:12, border:"1px solid #EEE", fontSize:14}}>
+                    <label style={{display:"block", fontSize:11, fontWeight:800, color:"rgba(17,24,39,0.4)", textTransform:"uppercase", marginBottom:6, letterSpacing: "0.5px"}}>Target Pengguna</label>
+                    <select name="targetType" defaultValue={editingPromo.targetType || "all"} style={{width:"100%", padding:"11px 14px", borderRadius:12, border:"1px solid rgba(0,0,0,0.08)", fontSize:13, background:"#FFFFFF", cursor: "pointer"}}>
                       <option value="all">Semua Pengguna</option>
-                      <option value="first_timer">Hanya User Baru (Pertama Kali perpanjang setelah Trial)</option>
+                      <option value="first_timer">Hanya Pengguna Baru (Pertama Kali Berlangganan)</option>
                     </select>
                   </div>
+
                   <div>
-                    <label style={{display:"block", fontSize:11, fontWeight:800, color:"#999", textTransform:"uppercase", marginBottom:6}}>Batas Pemakaian (0=Tanpa Batas)</label>
-                    <input name="usageLimit" type="number" defaultValue={editingPromo.usageLimit || 0} style={{width:"100%", padding:12, borderRadius:12, border:"1px solid #EEE", fontSize:14}} />
+                    <label style={{display:"block", fontSize:11, fontWeight:800, color:"rgba(17,24,39,0.4)", textTransform:"uppercase", marginBottom:6, letterSpacing: "0.5px"}}>Batas Pemakaian (0 = Tanpa Batas)</label>
+                    <input name="usageLimit" type="number" defaultValue={editingPromo.usageLimit || 0} style={{width:"100%", padding:"11px 14px", borderRadius:12, border:"1px solid rgba(0,0,0,0.08)", background: "rgba(0,0,0,0.02)", fontSize:14}} />
                   </div>
+
                   <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:12}}>
                     <div>
-                      <label style={{display:"block", fontSize:11, fontWeight:800, color:"#999", textTransform:"uppercase", marginBottom:6}}>Mulai Berlaku</label>
-                      <input name="startDate" type="date" defaultValue={editingPromo.startDate} style={{width:"100%", padding:12, borderRadius:12, border:"1px solid #EEE", fontSize:14}} />
+                      <label style={{display:"block", fontSize:11, fontWeight:800, color:"rgba(17,24,39,0.4)", textTransform:"uppercase", marginBottom:6, letterSpacing: "0.5px"}}>Mulai Berlaku</label>
+                      <input name="startDate" type="date" defaultValue={editingPromo.startDate} style={{width:"100%", padding:"11px 14px", borderRadius:12, border:"1px solid rgba(0,0,0,0.08)", background: "rgba(0,0,0,0.02)", fontSize:13}} />
                     </div>
                     <div>
-                      <label style={{display:"block", fontSize:11, fontWeight:800, color:"#999", textTransform:"uppercase", marginBottom:6}}>Berakhir Pada</label>
-                      <input name="endDate" type="date" defaultValue={editingPromo.endDate} style={{width:"100%", padding:12, borderRadius:12, border:"1px solid #EEE", fontSize:14}} />
+                      <label style={{display:"block", fontSize:11, fontWeight:800, color:"rgba(17,24,39,0.4)", textTransform:"uppercase", marginBottom:6, letterSpacing: "0.5px"}}>Berakhir Pada</label>
+                      <input name="endDate" type="date" defaultValue={editingPromo.endDate} style={{width:"100%", padding:"11px 14px", borderRadius:12, border:"1px solid rgba(0,0,0,0.08)", background: "rgba(0,0,0,0.02)", fontSize:13}} />
                     </div>
                   </div>
+
                   <div>
-                    <label style={{display:"block", fontSize:11, fontWeight:800, color:"#999", textTransform:"uppercase", marginBottom:6}}>Syarat & Ketentuan (S&K)</label>
-                    <textarea name="terms" placeholder="Tulis syarat voucher di sini..." defaultValue={editingPromo.terms} style={{width:"100%", height:80, padding:12, borderRadius:12, border:"1px solid #EEE", fontSize:13, resize:"none"}} />
+                    <label style={{display:"block", fontSize:11, fontWeight:800, color:"rgba(17,24,39,0.4)", textTransform:"uppercase", marginBottom:6, letterSpacing: "0.5px"}}>Syarat & Ketentuan (S&K)</label>
+                    <textarea name="terms" placeholder="Contoh: Berlaku untuk minimal pembelian paket Pro setahun..." defaultValue={editingPromo.terms} style={{width:"100%", height:70, padding:"10px 14px", borderRadius:12, border:"1px solid rgba(0,0,0,0.08)", background: "rgba(0,0,0,0.02)", fontSize:13, resize:"none", lineHeight: 1.5}} />
                   </div>
                </div>
-               <button type="submit" style={{width:"100%", background:"var(--theme-primary)", color:"white", border:"none", padding:14, borderRadius:16, fontWeight:800, cursor:"pointer"}}>Aktifkan Promo</button>
+
+               {/* Modal Sticky Footer */}
+               <div style={{display:"flex", justifyContent: "flex-end", gap:12, padding: "16px 24px", background: "rgba(0,0,0,0.015)", borderTop: "1px solid rgba(0,0,0,0.03)", flexShrink: 0}}>
+                 <button type="button" onClick={()=>setShowPromoModal(false)} style={{background:"transparent", border:"1px solid rgba(0,0,0,0.08)", color: "#111827", padding:"10px 20px", borderRadius:12, fontSize:13, fontWeight:700, cursor:"pointer", transition: "all 0.2s"}} className="hover-bg-light">Batal</button>
+                 <button type="submit" style={{background:"var(--theme-primary, #2563EB)", color:"white", border:"none", padding:"10px 24px", borderRadius:12, fontSize:13, fontWeight:700, cursor:"pointer", transition: "all 0.2s", display: "flex", alignItems: "center", gap: 6}} className="hover-scale">
+                   <Check size={14} /> {lang === "id" ? "Aktifkan Promo" : "Activate Promo"}
+                 </button>
+               </div>
+
             </motion.form>
           </motion.div>
         )}
@@ -1344,7 +2083,13 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                   className="hover-bg-light">{lang === "id" ? "Batal" : "Cancel"}</button>
                 <button onClick={async () => {
                    try {
-                     await deleteDoc(doc(db, deletingItem.type, deletingItem.id));
+                     if (deletingItem.type === "plans") {
+                       const baseId = deletingItem.id.replace('-monthly', '').replace('-annual', '');
+                       await deleteDoc(doc(db, "plans", `${baseId}-monthly`));
+                       await deleteDoc(doc(db, "plans", `${baseId}-annual`));
+                     } else {
+                       await deleteDoc(doc(db, deletingItem.type, deletingItem.id));
+                     }
                      setDeletingItem(null);
                    } catch(e:any) { 
                      setDeletingItem(null);

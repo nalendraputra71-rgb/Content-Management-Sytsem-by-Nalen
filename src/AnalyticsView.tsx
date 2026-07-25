@@ -5,7 +5,7 @@ import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContai
 import { DemoEditModal } from "./components/DemoEditModal";
 import Markdown from "react-markdown";
 import { motion, AnimatePresence } from "motion/react";
-import { ChevronDown, ChevronLeft, ChevronRight, TrendingUp, Sparkles, PieChart, Users, BarChart2, Activity, Calendar, Zap, AlertCircle, ArrowUpRight, ArrowDownRight, Clock, Target, Star, Settings, Check, RotateCcw, SlidersHorizontal, Globe, Smartphone, Heart, Edit2, X, Download, ZoomIn, ZoomOut } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, TrendingUp, Sparkles, PieChart, Users, BarChart2, Activity, Calendar, Zap, AlertCircle, ArrowUpRight, ArrowDownRight, Clock, Target, Star, Settings, Check, RotateCcw, SlidersHorizontal, Globe, Smartphone, Heart, Edit2, X, Download, ZoomIn, ZoomOut, Eye } from "lucide-react";
 
 const CustomLegend = ({ payload }: any) => {
   return (
@@ -118,6 +118,195 @@ function CustomDropdown({ value, options = [], onChange, style }: { value: strin
                 >
                   {typeof o === 'string' ? o : o.label}
                 </div>
+              );
+            })}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function MobileStepper({
+  value,
+  options,
+  onChange,
+  prefix = "",
+}: {
+  value: string;
+  options: any[];
+  onChange: (val: string) => void;
+  prefix?: string;
+}) {
+  const currentIndex = options.findIndex(
+    (o) => (typeof o === "string" ? o : o.id || o[0]) === value
+  );
+
+  const handlePrev = () => {
+    if (currentIndex === -1 || options.length <= 1) return;
+    const nextIdx = (currentIndex - 1 + options.length) % options.length;
+    const option = options[nextIdx];
+    onChange(typeof option === "string" ? option : option.id || option[0]);
+  };
+
+  const handleNext = () => {
+    if (currentIndex === -1 || options.length <= 1) return;
+    const nextIdx = (currentIndex + 1) % options.length;
+    const option = options[nextIdx];
+    onChange(typeof option === "string" ? option : option.id || option[0]);
+  };
+
+  const activeOption = options[currentIndex];
+  const displayLabel = activeOption
+    ? typeof activeOption === "string"
+      ? activeOption
+      : activeOption.label || activeOption.name || activeOption[1]
+    : value;
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        background: "white",
+        border: "1px solid rgba(0,0,0,0.06)",
+        borderRadius: 12,
+        padding: "4px 8px",
+        width: "100%",
+        justifyContent: "space-between",
+        boxShadow: "0 1px 3px rgba(0,0,0,0.01)",
+        height: 44,
+      }}
+    >
+      <button
+        onClick={handlePrev}
+        style={{
+          background: "transparent",
+          border: "none",
+          padding: 8,
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "rgba(0,0,0,0.5)",
+          width: 40,
+          height: 40,
+        }}
+      >
+        <ChevronLeft size={18} />
+      </button>
+      <div
+        style={{
+          fontWeight: 700,
+          fontSize: 13,
+          color: "#111827",
+          textAlign: "center",
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          flex: 1,
+          justifyContent: "center",
+          fontFamily: "Plus Jakarta Sans, Inter, sans-serif",
+        }}
+      >
+        {prefix && <span style={{ opacity: 0.5, fontWeight: 500 }}>{prefix}:</span>}
+        <span style={{ color: "#000000" }}>{displayLabel}</span>
+      </div>
+      <button
+        onClick={handleNext}
+        style={{
+          background: "transparent",
+          border: "none",
+          padding: 8,
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "rgba(0,0,0,0.5)",
+          width: 40,
+          height: 40,
+        }}
+      >
+        <ChevronRight size={18} />
+      </button>
+    </div>
+  );
+}
+
+function MobileFilterDropdown({
+  label,
+  value,
+  options,
+  onChange,
+  icon: Icon
+}: {
+  label: string;
+  value: string;
+  options: { id: string; label: string }[];
+  onChange: (val: string) => void;
+  icon?: any;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (ref.current && !ref.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const activeOption = options.find((o) => o.id === value);
+  const displayLabel = activeOption ? activeOption.label : value;
+
+  return (
+    <div ref={ref} className="relative flex flex-col gap-1 w-full text-left">
+      <label className="text-[8px] font-extrabold text-gray-400 uppercase tracking-wider pl-2">
+        {label}
+      </label>
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between gap-1.5 bg-white border border-black/[0.08] hover:bg-gray-50 px-2.5 py-1 rounded-full shadow-sm cursor-pointer transition-colors text-[11px] font-bold h-8"
+      >
+        <div className="flex items-center gap-1.5 min-w-0">
+          {Icon && <Icon size={12} className="text-gray-500 shrink-0" />}
+          <span className="text-gray-800 truncate">{displayLabel}</span>
+        </div>
+        <ChevronDown
+          size={12}
+          className="text-gray-500 shrink-0 transition-transform duration-200"
+          style={{ transform: open ? "rotate(180deg)" : "none" }}
+        />
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 5 }}
+            transition={{ duration: 0.15 }}
+            className="absolute top-full left-0 right-0 mt-1.5 bg-white rounded-xl shadow-xl border border-black/10 z-[9999] overflow-hidden flex flex-col w-full min-w-[150px] text-left max-h-[250px] overflow-y-auto py-1"
+          >
+            {options.map((opt) => {
+              const selected = opt.id === value;
+              return (
+                <button
+                  key={opt.id}
+                  onClick={() => {
+                    onChange(opt.id);
+                    setOpen(false);
+                  }}
+                  className="w-full flex items-center justify-between px-2.5 py-1.5 text-[11px] font-semibold text-gray-700 hover:bg-gray-50 cursor-pointer border-none bg-transparent text-left"
+                >
+                  <span className={selected ? "text-blue-600 font-bold" : ""}>
+                    {opt.label}
+                  </span>
+                  {selected && <Check size={12} className="text-blue-600 shrink-0" />}
+                </button>
               );
             })}
           </motion.div>
@@ -419,28 +608,28 @@ function DateFilterPopover({ dateFilt, setDateFilt, customS, setCustomS, customE
   )
 }
 
-const METRICS_META: Record<string, { label: string; desc: string; category: "organic" | "ads"; color: string }> = {
+const METRICS_META: Record<string, { label: string; labelEn: string; desc: string; descEn: string; category: "organic" | "ads"; color: string }> = {
   // Organic/General
-  views: { label: "Views (Tayangan)", desc: "Total tayangan konten di feed / timeline", category: "organic", color: "#2C2016" },
-  reach: { label: "Reach (Jangkauan)", desc: "Jumlah akun unik yang melihat konten", category: "organic", color: "#3B82F6" },
-  likes: { label: "Likes (Suka)", desc: "Jumlah interaksi suka pada konten", category: "organic", color: "#9C2B4E" },
-  comments: { label: "Comments (Komentar)", desc: "Jumlah komentar di postingan", category: "organic", color: "#2B4C7E" },
-  reposts: { label: "Reposts (Bagikan Ulang)", desc: "Jumlah postingan dibagikan ulang / retweet", category: "organic", color: "#A67C1C" },
-  shares: { label: "Shares (Share Link)", desc: "Jumlah share link ke platform lain", category: "organic", color: "#2D7A5E" },
-  saves: { label: "Saves (Simpan)", desc: "Jumlah user yang menyimpan konten", category: "organic", color: "#723680" },
-  profileVisits: { label: "Profile Visits", desc: "Kunjungan ke halaman profil Anda", category: "organic", color: "#059669" },
-  bioLinkTaps: { label: "Bio Link Taps", desc: "Ketukan pada link website di bio", category: "organic", color: "#2563EB" },
-  follows: { label: "Follows", desc: "Jumlah pengikut baru dari konten ini", category: "organic", color: "#D97706" },
+  views: { label: "Views (Tayangan)", labelEn: "Views", desc: "Total tayangan konten di feed / timeline", descEn: "Total content views in feed / timeline", category: "organic", color: "#2C2016" },
+  reach: { label: "Reach (Jangkauan)", labelEn: "Reach", desc: "Jumlah akun unik yang melihat konten", descEn: "Number of unique accounts that saw the content", category: "organic", color: "#3B82F6" },
+  likes: { label: "Likes (Suka)", labelEn: "Likes", desc: "Jumlah interaksi suka pada konten", descEn: "Like interactions on content", category: "organic", color: "#9C2B4E" },
+  comments: { label: "Comments (Komentar)", labelEn: "Comments", desc: "Jumlah komentar di postingan", descEn: "Number of comments on posts", category: "organic", color: "#2B4C7E" },
+  reposts: { label: "Reposts (Bagikan Ulang)", labelEn: "Reposts", desc: "Jumlah postingan dibagikan ulang / retweet", descEn: "Number of posts reposted / retweeted", category: "organic", color: "#A67C1C" },
+  shares: { label: "Shares (Share Link)", labelEn: "Shares", desc: "Jumlah share link ke platform lain", descEn: "Number of link shares to other platforms", category: "organic", color: "#2D7A5E" },
+  saves: { label: "Saves (Simpan)", labelEn: "Saves", desc: "Jumlah user yang menyimpan konten", descEn: "Number of users who saved the content", category: "organic", color: "#723680" },
+  profileVisits: { label: "Profile Visits", labelEn: "Profile Visits", desc: "Kunjungan ke halaman profil Anda", descEn: "Visits to your profile page", category: "organic", color: "#059669" },
+  bioLinkTaps: { label: "Bio Link Taps", labelEn: "Bio Link Taps", desc: "Ketukan pada link website di bio", descEn: "Taps on the website link in bio", category: "organic", color: "#2563EB" },
+  follows: { label: "Follows", labelEn: "Follows", desc: "Jumlah pengikut baru dari konten ini", descEn: "Number of new followers from this content", category: "organic", color: "#D97706" },
 
   // Ads Specific
-  clicks: { label: "Clicks (Klik Iklan)", desc: "Total klik pada link/tombol iklan", category: "ads", color: "#3B82F6" },
-  conversions: { label: "Conversions (Konversi)", desc: "Tindakan berharga seperti pembelian/registrasi", category: "ads", color: "#10B981" },
-  msgConvStarted: { label: "Messages Started", desc: "Jumlah percakapan pesan baru yang dimulai", category: "ads", color: "#8B5CF6" },
-  threeSecPlays: { label: "3-Sec Video Plays", desc: "Pemutaran video minimal selama 3 detik", category: "ads", color: "#F59E0B" },
-  spendBudget: { label: "Spend Budget", desc: "Total anggaran iklan yang telah dibelanjakan", category: "ads", color: "#EF4444" },
-  dailyBudget: { label: "Daily Budget", desc: "Anggaran harian yang disiapkan", category: "ads", color: "#F97316" },
-  duration: { label: "Duration (Days)", desc: "Lama penayangan kampanye iklan", category: "ads", color: "#6366F1" },
-  cprProfileVisit: { label: "CPR Profile Visit", desc: "Biaya per Kunjungan Profil (Cost Per Result)", category: "ads", color: "#EC4899" },
+  clicks: { label: "Clicks (Klik Iklan)", labelEn: "Clicks", desc: "Total klik pada link/tombol iklan", descEn: "Total clicks on ad link/button", category: "ads", color: "#3B82F6" },
+  conversions: { label: "Conversions (Konversi)", labelEn: "Conversions", desc: "Tindakan berharga seperti pembelian/registrasi", descEn: "Valuable actions like purchase/registration", category: "ads", color: "#10B981" },
+  msgConvStarted: { label: "Messages Started", labelEn: "Messages Started", desc: "Jumlah percakapan pesan baru yang dimulai", descEn: "Number of new message conversations started", category: "ads", color: "#8B5CF6" },
+  threeSecPlays: { label: "3-Sec Video Plays", labelEn: "3-Sec Video Plays", desc: "Pemutaran video minimal selama 3 detik", descEn: "Video plays for at least 3 seconds", category: "ads", color: "#F59E0B" },
+  spendBudget: { label: "Spend Budget", labelEn: "Spend Budget", desc: "Total anggaran iklan yang telah dibelanjakan", descEn: "Total ad budget spent", category: "ads", color: "#EF4444" },
+  dailyBudget: { label: "Daily Budget", labelEn: "Daily Budget", desc: "Anggaran harian yang disiapkan", descEn: "Daily budget prepared", category: "ads", color: "#F97316" },
+  duration: { label: "Duration (Days)", labelEn: "Duration (Days)", desc: "Lama penayangan kampanye iklan", descEn: "Duration of the ad campaign", category: "ads", color: "#6366F1" },
+  cprProfileVisit: { label: "CPR Profile Visit", labelEn: "CPR Profile Visit", desc: "Biaya per Kunjungan Profil (Cost Per Result)", descEn: "Biaya per Kunjungan Profil (Cost Per Result)", category: "ads", color: "#EC4899" },
 };
 
 function getBlankDemographics(platform: string) {
@@ -825,6 +1014,11 @@ export function AnalyticsView({
   openEdit,
   isRestricted,
   isTutorialActive,
+  userProfile,
+  planDetails,
+  workspaceId,
+  workspaceSettings,
+  onUpdateSettings,
   activeSubTab: activeSubTabProp,
   setActiveSubTab: setActiveSubTabProp
 }: any) {
@@ -866,6 +1060,14 @@ export function AnalyticsView({
     return originalContent || [];
   }, [originalContent, isTutorialActive]);
 
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   const [dateFilt,setDateFilt] = useState("tm"); 
   const [customS,setCustomS] = useState("");
   const [customE,setCustomE] = useState("");
@@ -879,7 +1081,60 @@ export function AnalyticsView({
   }, [isTutorialActive]);
   const [adsFilter,setAdsFilter] = useState("organic"); 
   const [platformFilter, setPlatformFilter] = useState("all");
+
+  const platformOptions = useMemo(() => {
+    const list = [{ id: "all", label: lang === "id" ? "Semua Platform" : "All Platforms" }];
+    if (platforms) {
+      platforms.forEach((p: any) => {
+        const val = typeof p === 'string' ? p : p.name;
+        list.push({ id: val, label: val });
+      });
+    }
+    return list;
+  }, [platforms, lang]);
+
+  const adsOptions = useMemo(() => [
+    { id: "all", label: lang === "id" ? "Semua Data" : "All Data" },
+    { id: "organic", label: "Organic" },
+    { id: "ads", label: "Ads Only" }
+  ], [lang]);
+
+  const dateOptions = useMemo(() => [
+    {id:"yesterday", label: lang === "id" ? "Kemarin" : "Yesterday"},
+    {id:"7d", label: lang === "id" ? "7 Hari Terakhir" : "Last 7 days"},
+    {id:"28d", label: lang === "id" ? "28 Hari Terakhir" : "Last 28 days"},
+    {id:"90d", label: lang === "id" ? "90 Hari Terakhir" : "Last 90 days"},
+    {id:"tw", label: lang === "id" ? "Minggu Ini" : "This week"},
+    {id:"tm", label: lang === "id" ? "Bulan Ini" : "This month"},
+    {id:"ty", label: lang === "id" ? "Tahun Ini" : "This year"},
+    {id:"lw", label: lang === "id" ? "Minggu Lalu" : "Last week"},
+    {id:"lm", label: lang === "id" ? "Bulan Lalu" : "Last month"},
+  ], [lang]);
+
+  // States for Mobile Bottom Sheets and Temp Date Options
+  const [activeDrawerFilter, setActiveDrawerFilter] = useState<"platform" | "date" | "view" | "metrics" | "all_filters" | null>(null);
+  const [tempDateFilt, setTempDateFilt] = useState(dateFilt);
+  const [tempCustomS, setTempCustomS] = useState(customS);
+  const [tempCustomE, setTempCustomE] = useState(customE);
+  const [tempPlatformFilter, setTempPlatformFilter] = useState(platformFilter);
+  const [tempAdsFilter, setTempAdsFilter] = useState(adsFilter);
+
+  useEffect(() => {
+    if (activeDrawerFilter === "date" || activeDrawerFilter === "all_filters") {
+      setTempDateFilt(dateFilt);
+      setTempCustomS(customS);
+      setTempCustomE(customE);
+    }
+    if (activeDrawerFilter === "all_filters") {
+      setTempPlatformFilter(platformFilter);
+      setTempAdsFilter(adsFilter);
+    }
+  }, [activeDrawerFilter, dateFilt, customS, customE, platformFilter, adsFilter]);
+
   const [demographics, setDemographics] = useState<any>(() => {
+    if (workspaceSettings?.demographics && Object.keys(workspaceSettings.demographics).length > 0) {
+      return workspaceSettings.demographics;
+    }
     const saved = localStorage.getItem("hubify_custom_demographics");
     if (saved) {
       try {
@@ -890,6 +1145,15 @@ export function AnalyticsView({
     }
     return {};
   });
+
+  useEffect(() => {
+    if (workspaceSettings?.demographics && Object.keys(workspaceSettings.demographics).length > 0) {
+      setDemographics(workspaceSettings.demographics);
+      try {
+        localStorage.setItem("hubify_custom_demographics", JSON.stringify(workspaceSettings.demographics));
+      } catch (e) {}
+    }
+  }, [workspaceSettings?.demographics]);
   const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
   const [activeMetrics,setActiveMetrics] = useState(["views", "reach", "likes", "comments"]);
   const [topSort,setTopSort] = useState("engagement");
@@ -942,11 +1206,11 @@ export function AnalyticsView({
   }, [isPrintModalOpen, manualZoom]);
 
   const selectedPages = useMemo(() => {
-    const list = [{ id: "cover", title: "Halaman Sampul (Cover)" }];
-    if (printSections.overview) list.push({ id: "overview", title: "Ringkasan Kinerja (Overview)" });
-    if (printSections.content) list.push({ id: "content", title: "Performa Konten Terpopuler" });
-    if (printSections.trends) list.push({ id: "trends", title: "Tren & Pertumbuhan" });
-    if (printSections.audience) list.push({ id: "audience", title: "Demografi & Aktivitas" });
+    const list = [{ id: "cover", title: lang === "id" ? "Halaman Sampul (Cover)" : "Cover Page" }];
+    if (printSections.overview) list.push({ id: "overview", title: lang === "id" ? "Ringkasan Kinerja (Overview)" : "Performance Overview" });
+    if (printSections.content) list.push({ id: "content", title: lang === "id" ? "Performa Konten Terpopuler" : "Top Content Performance" });
+    if (printSections.trends) list.push({ id: "trends", title: lang === "id" ? "Tren & Pertumbuhan" : "Trends & Growth" });
+    if (printSections.audience) list.push({ id: "audience", title: lang === "id" ? "Demografi & Aktivitas" : "Audience & Activity" });
     return list;
   }, [printSections]);
 
@@ -1648,7 +1912,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
 2. Evaluasi Konten: Analisis pola dari konten yang berhasil (Winners) vs kurang berhasil (Losers), apa yang membedakannya (misalnya topik, pilar, atau platform).
 3. Next Step Pengembangan Konten: Berikan 3-5 saran konkrit dan actionable untuk pembuatan konten berikutnya berdasarkan data di atas.`;
 
-      const data = await callAiWithQuota(auth.currentUser?.uid || 'anon', undefined, { prompt, model: "gemini-2.0-flash" });
+      const data = await callAiWithQuota(auth.currentUser?.uid || 'anon', userProfile?.plan, { prompt, model: "gemini-3.5-flash" }, planDetails?.maxAiGenerations || 50);
       setAiInsight(data.text || lang === "id" ? "Tidak ada respon dari AI." : "No response from AI.");
     } catch(e:any) {
       console.error("AI Error:", e);
@@ -1665,43 +1929,43 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
   };
 
   const CDataList = ({title, list, rank=1}:any) => (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-      <div className="flex justify-between items-center mb-4">
-        <h4 className="text-base font-bold text-gray-900 m-0 tracking-tight">{title}</h4>
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 md:p-5">
+      <div className="flex justify-between items-center mb-3 md:mb-4">
+        <h4 className="text-sm md:text-base font-bold text-gray-900 m-0 tracking-tight">{title}</h4>
       </div>
-      {list.length===0 && <p className="text-sm text-gray-500 text-center py-5">{lang === "id" ? "Data tidak tersedia untuk filter saat ini." : "No data available for the current filters."}</p>}
-      <div className="flex flex-col gap-2.5">
+      {list.length===0 && <p className="text-xs md:text-sm text-gray-500 text-center py-5">{lang === "id" ? "Data tidak tersedia untuk filter saat ini." : "No data available for the current filters."}</p>}
+      <div className="flex flex-col gap-2 md:gap-2.5">
         {list.map((item:any,i:number)=>{
           const e=getEng(item),ps=gps(pillars,item.pillar);
           return (
-            <motion.div whileHover={{ scale: 1.01 }} key={item.id} className={`flex items-start gap-3 p-3 rounded-xl transition-all duration-200 ${i===0&&rank===1 ? "bg-amber-50 border border-amber-200" : "bg-gray-50 border border-black/5"}`}>
+            <motion.div whileHover={{ scale: 1.01 }} key={item.id} className={`flex items-start gap-2.5 md:gap-3 p-2 md:p-3 rounded-xl transition-all duration-200 ${i===0&&rank===1 ? "bg-amber-50 border border-amber-200" : "bg-gray-50 border border-black/5"}`}>
               {rank===1 && (
-                <div className={`w-7 h-7 flex items-center justify-center text-xs font-bold rounded-full shrink-0 border-2 border-white shadow-sm ${i===0?"text-amber-600 bg-amber-200":i===1?"text-gray-400 bg-gray-100":"text-gray-300 bg-white"}`}>{i+1}</div>
+                <div className={`w-6 h-6 md:w-7 md:h-7 flex items-center justify-center text-[10px] md:text-xs font-bold rounded-full shrink-0 border-2 border-white shadow-sm ${i===0?"text-amber-600 bg-amber-200":i===1?"text-gray-400 bg-gray-100":"text-gray-300 bg-white"}`}>{i+1}</div>
               )}
-              <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center shrink-0 overflow-hidden border border-black/10">
+              <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-gray-100 flex items-center justify-center shrink-0 overflow-hidden border border-black/10">
                 {item.referenceImage ? (
                   <img src={item.referenceImage} alt="thumb" className="w-full h-full object-cover" />
                 ) : item.linkSosmed ? (
-                  <SocialThumbnail url={item.linkSosmed} fallback={<div className="text-xl">{item.platform?.toLowerCase()?.includes('instagram') ? '📸' : item.platform?.toLowerCase()?.includes('tiktok') ? '🎵' : '🔗'}</div>} />
+                  <SocialThumbnail url={item.linkSosmed} fallback={<div className="text-sm md:text-xl">{item.platform?.toLowerCase()?.includes('instagram') ? '📸' : item.platform?.toLowerCase()?.includes('tiktok') ? '🎵' : '🔗'}</div>} />
                 ) : (
-                  <div className="text-[9px] text-gray-400 text-center leading-tight flex items-center justify-center h-full font-semibold">NO<br/>IMG</div>
+                  <div className="text-[8px] md:text-[9px] text-gray-400 text-center leading-tight flex items-center justify-center h-full font-semibold">NO<br/>IMG</div>
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-sm font-bold flex items-center gap-2 text-gray-900 mb-1">
+                <div className="text-xs md:text-sm font-bold flex items-center gap-1.5 md:gap-2 text-gray-900 mb-0.5 md:mb-1">
                   <span onClick={()=>openEdit(item)} className="cursor-pointer truncate" title={lang === "id" ? "Buka Detail Brief" : "Open Brief Detail"}>{item.title||(lang === "id" ? "(Tanpa judul)" : "(No title)")}</span>
-                  {item.linkSosmed && <a href={item.linkSosmed} target="_blank" rel="noreferrer" className="no-underline text-sm" title={lang === "id" ? "Buka Postingan" : "Open Post"}>🔗</a>}
-                  {item.linkUpload && <a href={item.linkUpload} target="_blank" rel="noreferrer" className="no-underline text-sm" title={lang === "id" ? "Akses Upload/Aset" : "Access Upload/Asset"}>📤</a>}
+                  {item.linkSosmed && <a href={item.linkSosmed} target="_blank" rel="noreferrer" className="no-underline text-xs md:text-sm" title={lang === "id" ? "Buka Postingan" : "Open Post"}>🔗</a>}
+                  {item.linkUpload && <a href={item.linkUpload} target="_blank" rel="noreferrer" className="no-underline text-xs md:text-sm" title={lang === "id" ? "Akses Upload/Aset" : "Access Upload/Asset"}>📤</a>}
                 </div>
-                <div className="flex gap-1.5 flex-wrap items-center">
+                <div className="flex gap-1 md:gap-1.5 flex-wrap items-center">
                   <PBadge name={item.platform} platforms={platforms}/>
-                  <span style={{background:ps.light||"#F3F4F6",color:ps.color||"#111827"}} className="text-[10px] font-semibold px-2 py-0.5 rounded-full">{item.pillar}</span>
-                  {item.isAds&&<span className="text-[10px] text-pink-500 font-bold bg-pink-50 px-2 py-0.5 rounded-full">💰 Ads</span>}
+                  <span style={{background:ps.light||"#F3F4F6",color:ps.color||"#111827"}} className="text-[8px] md:text-[10px] font-semibold px-1.5 md:px-2 py-0.5 rounded-full">{item.pillar}</span>
+                  {item.isAds&&<span className="text-[8px] md:text-[10px] text-pink-500 font-bold bg-pink-50 px-1.5 md:px-2 py-0.5 rounded-full">💰 Ads</span>}
                 </div>
               </div>
               <div className="text-right shrink-0 flex flex-col justify-center">
-                <div className="text-lg font-bold text-gray-900 tracking-tight">{fmt(topSort==="engagement"?e:topSort==="reach"?getR(item):getV(item))}</div>
-                <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">{topSort}</div>
+                <div className="text-sm md:text-lg font-bold text-gray-900 tracking-tight">{fmt(topSort==="engagement"?e:topSort==="reach"?getR(item):getV(item))}</div>
+                <div className="text-[8px] md:text-[10px] font-semibold text-gray-500 uppercase tracking-wider">{topSort}</div>
               </div>
             </motion.div>
           )
@@ -1751,18 +2015,18 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
   )};
 
   return (
-    <div className="px-6 pb-6 flex flex-col gap-5 w-full bg-[#FAFAFA] min-h-screen relative font-sans">
+    <div className="px-3 md:px-6 pb-6 flex flex-col gap-4 md:gap-5 w-full min-h-screen relative font-sans">
       <div ref={topAnchorRef} className="absolute top-0 left-0 h-[1px] w-full" />
       
       {/* Header */}
-      <div className="pt-6 pb-2 flex justify-between items-end flex-wrap gap-4">
-         <div>
+      <div className="pt-4 md:pt-6 pb-2 flex justify-between items-start md:items-end gap-4">
+         <div className="min-w-0 flex-1">
            <h1 className="text-2xl font-extrabold m-0 text-gray-900 tracking-tight flex items-center gap-2">
              {activeSubTab === "overview" && "Overview"}
              {activeSubTab === "content" && "Content"}
              {activeSubTab === "trends" && "Trends"}
              {activeSubTab === "activity" && "Audience"}
-             <Sparkles size={20} className="text-blue-600" />
+             <Sparkles size={20} className="text-blue-600 shrink-0" />
            </h1>
            <p className="text-sm text-gray-500 mt-1">
              {activeSubTab === "overview" && "Monitor overall content performance summaries with real-time data."}
@@ -1771,14 +2035,39 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
              {activeSubTab === "activity" && "Identify the best times and highest interactions of your audience based on posting times."}
            </p>
          </div>
-         <button onClick={handleOpenPrintModal} className="hover-scale btn-hover px-4 py-2 rounded-xl h-10 text-[13px] font-bold bg-white border border-black/[0.04] text-gray-900 shadow-sm flex items-center gap-2 cursor-pointer transition-all">
-            <Download size={16} className="text-gray-900" />
-            Simpan Laporan PDF
-         </button>
+         <div className="flex items-center gap-2 shrink-0 pt-1 md:pt-0">
+           {isMobile && (
+             <button
+               onClick={() => {
+                 setTempSelectedMetrics([...activeMetrics]);
+                 setTempDateFilt(dateFilt);
+                 setTempCustomS(customS || "");
+                 setTempCustomE(customE || "");
+                 setTempPlatformFilter(platformFilter);
+                 setTempAdsFilter(adsFilter);
+                 setActiveDrawerFilter("all_filters");
+               }}
+               className="p-3 rounded-2xl bg-black/[0.03] active:bg-black/[0.08] text-gray-900 flex items-center justify-center shadow-sm cursor-pointer border-none active:scale-95 transition-all relative"
+               style={{ width: 44, height: 44 }}
+               title={lang === "id" ? "Filter" : "Filter"}
+             >
+               <SlidersHorizontal size={18} />
+               {/* Show an indicator badge if filters are customized */}
+               {(platformFilter !== "all" || dateFilt !== "tm" || adsFilter !== "all" || activeMetrics.length !== 4) && (
+                 <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-blue-600 rounded-full ring-2 ring-white" />
+               )}
+             </button>
+           )}
+           <button onClick={handleOpenPrintModal} className="hidden md:flex hover-scale btn-hover px-4 py-2 rounded-xl h-10 text-[13px] font-bold bg-white border border-black/[0.04] text-gray-900 shadow-sm items-center gap-2 cursor-pointer transition-all">
+              <Download size={16} className="text-gray-900" />
+              {lang === "id" ? "Simpan Laporan PDF" : "Save PDF Report"}
+           </button>
+         </div>
       </div>
 
-      {/* Filters (Sticky) */}
-      <div className="sticky top-4 z-50 flex items-center justify-start gap-4 flex-wrap mb-2 bg-white/90 backdrop-blur-md border border-black/[0.03] rounded-full pl-8 pr-6 py-3.5 shadow-sm">
+      {/* Filters */}
+      {!isMobile && (
+        <div className="flex items-center justify-start gap-4 flex-wrap mb-4 bg-white border border-black/[0.03] rounded-full pl-8 pr-6 py-3.5 shadow-sm">
           <div className="flex gap-4 items-center flex-wrap">
             <PlatformFilterPopover 
               platformFilter={platformFilter} 
@@ -1803,6 +2092,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
             />
           </div>
         </div>
+      )}
 
       {/* Restricted Overlay & Main Dashboard Content */}
       <div className="relative">
@@ -1812,7 +2102,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
               <AlertCircle size={40} className="text-blue-500 mx-auto mb-3" />
               <h3 className="text-[18px] font-bold mb-2 text-gray-900 tracking-tight">Akses Analitik Premium</h3>
               <p className="text-[13px] text-gray-600 mb-5 leading-relaxed">Upgrade ke paket Pro untuk membuka analisis prediktif, AI Insights mendalam, heatmap performa, dan integrasi multi-platform tak terbatas.</p>
-              <button className="hover-scale w-full bg-blue-600 text-white py-3 px-6 rounded-xl font-bold text-[14px] border-none cursor-pointer shadow-[0_4px_14px_rgba(59,130,246,0.4)]" onClick={()=>window.location.hash="/billing"}>Upgrade Sekarang</button>
+              <button className="hover-scale w-full bg-blue-600 text-white py-3 px-6 rounded-xl font-bold text-[14px] border-none cursor-pointer shadow-[0_4px_14px_rgba(59,130,246,0.4)]" onClick={()=>window.location.href="/billing"}>Upgrade Sekarang</button>
             </div>
           </div>
         )}
@@ -2131,274 +2421,421 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
 
           {/* VIEW: TRENDS & GROWTH */}
           {activeSubTab === "trends" && (
-            <div id="analytics-trends-chart" className="bg-white rounded-2xl border border-black/[0.03] shadow-sm p-6 flex flex-col min-w-0 transition-shadow hover:shadow-md" style={{ scrollMarginTop: 100 }}>
-              <div className="flex justify-between items-center mb-5 flex-wrap gap-3">
-                <div className="flex items-center gap-2">
-                  <div className="bg-blue-50 p-2 rounded-lg text-blue-600"><TrendingUp size={18} /></div>
-                  <h4 className="font-extrabold text-gray-900 text-[15px] m-0 tracking-tight">Tren Pertumbuhan</h4>
-                </div>
-              </div>
+            <>
+              {/* DESKTOP VIEW - Completely Untouched */}
+              <div className="hidden md:block">
+                <div id="analytics-trends-chart" className="bg-white rounded-2xl border border-black/[0.03] shadow-sm p-6 flex flex-col min-w-0 transition-shadow hover:shadow-md" style={{ scrollMarginTop: 100 }}>
+                  <div className="flex justify-between items-center mb-5 flex-wrap gap-3">
+                    <div className="flex items-center gap-2">
+                      <div className="bg-blue-50 p-2 rounded-lg text-blue-600"><TrendingUp size={18} /></div>
+                      <h4 className="font-extrabold text-gray-900 text-[15px] m-0 tracking-tight">{lang === "id" ? "Tren Pertumbuhan" : "Growth Trends"}</h4>
+                    </div>
+                  </div>
 
-              {/* Active Metrics Bar containing Selection Button on the Left */}
-              <div className="flex items-center gap-2 mb-5 p-1.5 bg-black/[0.02] rounded-full border border-black/[0.03] relative min-w-0">
-                {/* Metric Selection Popover on Far Left */}
-                <div className="relative shrink-0" ref={metricSettingRef}>
-                  <button 
-                    onClick={openMetricSetting} 
-                    className="flex items-center gap-2 bg-white hover:bg-gray-50 border border-black/[0.08] px-3.5 py-1.5 rounded-full shadow-sm cursor-pointer transition-all text-xs font-extrabold text-gray-800 hover:scale-[1.02] active:scale-95 shrink-0"
-                  >
-                    <SlidersHorizontal size={13} className="text-gray-500" />
-                    <span>{lang === "id" ? "Pilih Metrik" : "Select Metric"}</span>
-                    {activeMetrics.length > 0 && (
-                      <span className="bg-blue-600 text-white px-1.5 py-0.5 rounded-full text-[10px] font-black min-w-[18px] h-[18px] flex items-center justify-center leading-none">
-                        {activeMetrics.length}
-                      </span>
-                    )}
-                  </button>
-
-                  <AnimatePresence>
-                    {isMetricSettingOpen && (
-                      <motion.div 
-                        initial={{ opacity: 0, y: 5 }} 
-                        animate={{ opacity: 1, y: 0 }} 
-                        exit={{ opacity: 0, y: 5 }} 
-                        transition={{ duration: 0.15 }}
-                        className="absolute top-full left-0 mt-2 bg-white rounded-2xl shadow-xl border border-black/10 z-[100] w-[320px] sm:w-[420px] md:w-[480px] overflow-hidden flex flex-col text-left"
-                      >
-                        {/* Header */}
-                        <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-                          <div>
-                            <h5 className="font-extrabold text-gray-900 text-sm tracking-tight">Tampilan Metrik</h5>
-                            <p className="text-[10px] text-gray-400 font-medium">Pilih metrik yang ingin ditampilkan pada grafik</p>
-                          </div>
-                          <button 
-                            onClick={resetToDefaultMetrics} 
-                            className="text-[10px] font-extrabold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer"
-                            title="Reset ke default (engagement dasar)"
-                          >
-                            <RotateCcw size={12} />
-                            <span>Reset Default</span>
-                          </button>
-                        </div>
-
-                        {/* Content */}
-                        <div className="p-4 max-h-[380px] overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {/* Organic Category */}
-                          <div>
-                            <div className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
-                              <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                              Metrik Organik
-                            </div>
-                            <div className="space-y-1">
-                              {Object.entries(METRICS_META)
-                                .filter(([_, meta]) => meta.category === "organic")
-                                .map(([key, meta]) => {
-                                  const isChecked = tempSelectedMetrics.includes(key);
-                                  return (
-                                    <label 
-                                      key={key} 
-                                      className={`flex items-start gap-2.5 p-2 rounded-xl hover:bg-black/[0.02] cursor-pointer transition-colors ${isChecked ? 'bg-black/[0.01]' : ''}`}
-                                    >
-                                      <input 
-                                        type="checkbox" 
-                                        checked={isChecked} 
-                                        onChange={() => toggleTempMetric(key)} 
-                                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 mt-0.5"
-                                      />
-                                      <div className="min-w-0">
-                                        <div className="flex items-center gap-1.5">
-                                          <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: meta.color }} />
-                                          <span className="text-xs font-bold text-gray-800">{meta.label.split(" (")[0]}</span>
-                                        </div>
-                                        <p className="text-[9px] text-gray-400 mt-0.5 leading-tight">{meta.desc}</p>
-                                      </div>
-                                    </label>
-                                  );
-                                })}
-                            </div>
-                          </div>
-
-                          {/* Ads Category */}
-                          <div>
-                            <div className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
-                              <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                              Metrik Ads (Iklan)
-                            </div>
-                            <div className="space-y-1">
-                              {Object.entries(METRICS_META)
-                                .filter(([_, meta]) => meta.category === "ads")
-                                .map(([key, meta]) => {
-                                  const isChecked = tempSelectedMetrics.includes(key);
-                                  return (
-                                    <label 
-                                      key={key} 
-                                      className={`flex items-start gap-2.5 p-2 rounded-xl hover:bg-black/[0.02] cursor-pointer transition-colors ${isChecked ? 'bg-black/[0.01]' : ''}`}
-                                    >
-                                      <input 
-                                        type="checkbox" 
-                                        checked={isChecked} 
-                                        onChange={() => toggleTempMetric(key)} 
-                                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 mt-0.5"
-                                      />
-                                      <div className="min-w-0">
-                                        <div className="flex items-center gap-1.5">
-                                          <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: meta.color }} />
-                                          <span className="text-xs font-bold text-gray-800">{meta.label.split(" (")[0]}</span>
-                                        </div>
-                                        <p className="text-[9px] text-gray-400 mt-0.5 leading-tight">{meta.desc}</p>
-                                      </div>
-                                    </label>
-                                  );
-                                })}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Footer */}
-                        <div className="p-3 border-t border-gray-100 flex justify-end gap-2 bg-gray-50/50">
-                          <button 
-                            onClick={() => setIsMetricSettingOpen(false)} 
-                            className="px-3 py-1.5 rounded-lg text-xs font-bold text-gray-500 hover:bg-black/[0.03] transition-colors cursor-pointer"
-                          >
-                            Batal
-                          </button>
-                          <button 
-                            onClick={applyMetrics} 
-                            className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-xs font-bold text-white shadow-sm transition-colors cursor-pointer flex items-center gap-1"
-                          >
-                            <Check size={12} />
-                            <span>Terapkan</span>
-                          </button>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-
-                {/* Vertical Divider */}
-                <div className="w-px h-5 bg-black/[0.08] shrink-0" />
-
-                {/* Scrollable Active Badges */}
-                <div className="flex-1 flex flex-nowrap overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden gap-2 items-center">
-                  {activeMetrics.map(k => (
-                    <div key={k} className="px-3 py-1 bg-white border border-black/[0.05] rounded-full text-[11px] font-bold text-gray-700 flex items-center gap-1.5 shadow-sm shrink-0">
-                      <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: METRICS_META[k]?.color || "#3B82F6" }} />
-                      <span>{METRICS_META[k]?.label?.split(" (")[0] || k}</span>
+                  {/* Active Metrics Bar containing Selection Button on the Left */}
+                  <div className="flex items-center gap-2 mb-5 p-1.5 bg-black/[0.02] rounded-full border border-black/[0.03] relative min-w-0">
+                    {/* Metric Selection Popover on Far Left */}
+                    <div className="relative shrink-0" ref={metricSettingRef}>
                       <button 
-                        onClick={() => setActiveMetrics(prev => prev.filter(x => x !== k))}
-                        className="text-gray-400 hover:text-red-500 hover:bg-red-50 w-4 h-4 rounded-full flex items-center justify-center ml-1 cursor-pointer font-black text-[10px] transition-colors"
-                        title="Sembunyikan metrik ini"
+                        onClick={openMetricSetting} 
+                        className="flex items-center gap-2 bg-white hover:bg-gray-50 border border-black/[0.08] px-3.5 py-1.5 rounded-full shadow-sm cursor-pointer transition-all text-xs font-extrabold text-gray-800 hover:scale-[1.02] active:scale-95 shrink-0"
                       >
-                        ×
+                        <SlidersHorizontal size={13} className="text-gray-500" />
+                        <span>{lang === "id" ? "Pilih Metrik" : "Select Metric"}</span>
+                        {activeMetrics.length > 0 && (
+                          <span className="bg-blue-600 text-white px-1.5 py-0.5 rounded-full text-[10px] font-black min-w-[18px] h-[18px] flex items-center justify-center leading-none">
+                            {activeMetrics.length}
+                          </span>
+                        )}
+                      </button>
+
+                      <AnimatePresence>
+                        {isMetricSettingOpen && (
+                          <motion.div 
+                            initial={{ opacity: 0, y: 5 }} 
+                            animate={{ opacity: 1, y: 0 }} 
+                            exit={{ opacity: 0, y: 5 }} 
+                            transition={{ duration: 0.15 }}
+                            className="absolute top-full left-0 mt-2 bg-white rounded-2xl shadow-xl border border-black/10 z-[100] w-[320px] sm:w-[420px] md:w-[480px] overflow-hidden flex flex-col text-left"
+                          >
+                            {/* Header */}
+                            <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                              <div>
+                                <h5 className="font-extrabold text-gray-900 text-sm tracking-tight">{lang === "id" ? "Tampilan Metrik" : "Metric View"}</h5>
+                                <p className="text-[10px] text-gray-400 font-medium">{lang === "id" ? "Pilih metrik yang ingin ditampilkan pada grafik" : "Select metrics to display on the chart"}</p>
+                              </div>
+                              <button 
+                                onClick={resetToDefaultMetrics} 
+                                className="text-[10px] font-extrabold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer"
+                                title={lang === "id" ? "Reset ke default (engagement dasar)" : "Reset to default (basic engagement)"}
+                              >
+                                <RotateCcw size={12} />
+                                <span>{lang === "id" ? "Reset Default" : "Reset to Default"}</span>
+                              </button>
+                            </div>
+
+                            {/* Content */}
+                            <div className="p-4 max-h-[380px] overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-4">
+                              {/* Organic Category */}
+                              <div>
+                                <div className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                                  {lang === "id" ? "Metrik Organik" : "Organic Metrics"}
+                                </div>
+                                <div className="space-y-1">
+                                  {Object.entries(METRICS_META)
+                                    .filter(([_, meta]) => meta.category === "organic")
+                                    .map(([key, meta]) => {
+                                      const isChecked = tempSelectedMetrics.includes(key);
+                                      return (
+                                        <label 
+                                          key={key} 
+                                          className={`flex items-start gap-2.5 p-2 rounded-xl hover:bg-black/[0.02] cursor-pointer transition-colors ${isChecked ? 'bg-black/[0.01]' : ''}`}
+                                        >
+                                          <input 
+                                            type="checkbox" 
+                                            checked={isChecked} 
+                                            onChange={() => toggleTempMetric(key)} 
+                                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 mt-0.5"
+                                          />
+                                          <div className="min-w-0">
+                                            <div className="flex items-center gap-1.5">
+                                              <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: meta.color }} />
+                                              <span className="text-xs font-bold text-gray-800">{(lang === "id" ? meta.label : meta.labelEn).split(" (")[0]}</span>
+                                            </div>
+                                            <p className="text-[9px] text-gray-400 mt-0.5 leading-tight">{(lang === "id" ? meta.desc : meta.descEn)}</p>
+                                          </div>
+                                        </label>
+                                      );
+                                    })}
+                                </div>
+                              </div>
+
+                              {/* Ads Category */}
+                              <div>
+                                <div className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                                  Metrik Ads (Iklan)
+                                </div>
+                                <div className="space-y-1">
+                                  {Object.entries(METRICS_META)
+                                    .filter(([_, meta]) => meta.category === "ads")
+                                    .map(([key, meta]) => {
+                                      const isChecked = tempSelectedMetrics.includes(key);
+                                      return (
+                                        <label 
+                                          key={key} 
+                                          className={`flex items-start gap-2.5 p-2 rounded-xl hover:bg-black/[0.02] cursor-pointer transition-colors ${isChecked ? 'bg-black/[0.01]' : ''}`}
+                                        >
+                                          <input 
+                                            type="checkbox" 
+                                            checked={isChecked} 
+                                            onChange={() => toggleTempMetric(key)} 
+                                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 mt-0.5"
+                                          />
+                                          <div className="min-w-0">
+                                            <div className="flex items-center gap-1.5">
+                                              <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: meta.color }} />
+                                              <span className="text-xs font-bold text-gray-800">{(lang === "id" ? meta.label : meta.labelEn).split(" (")[0]}</span>
+                                            </div>
+                                            <p className="text-[9px] text-gray-400 mt-0.5 leading-tight">{(lang === "id" ? meta.desc : meta.descEn)}</p>
+                                          </div>
+                                        </label>
+                                      );
+                                    })}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Footer */}
+                            <div className="p-3 border-t border-gray-100 flex justify-end gap-2 bg-gray-50/50">
+                              <button 
+                                onClick={() => setIsMetricSettingOpen(false)} 
+                                className="px-3 py-1.5 rounded-lg text-xs font-bold text-gray-500 hover:bg-black/[0.03] transition-colors cursor-pointer"
+                              >
+                                Batal
+                              </button>
+                              <button 
+                                onClick={applyMetrics} 
+                                className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-xs font-bold text-white shadow-sm transition-colors cursor-pointer flex items-center gap-1"
+                              >
+                                <Check size={12} />
+                                <span>{lang === "id" ? "Terapkan" : "Apply"}</span>
+                              </button>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+
+                    {/* Vertical Divider */}
+                    <div className="w-px h-5 bg-black/[0.08] shrink-0" />
+
+                    {/* Scrollable Active Badges */}
+                    <div className="flex-1 flex flex-nowrap overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden gap-2 items-center">
+                      {activeMetrics.map(k => (
+                        <div key={k} className="px-3 py-1 bg-white border border-black/[0.05] rounded-full text-[11px] font-bold text-gray-700 flex items-center gap-1.5 shadow-sm shrink-0">
+                          <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: METRICS_META[k]?.color || "#3B82F6" }} />
+                          <span>{(lang === "id" ? METRICS_META[k]?.label : METRICS_META[k]?.labelEn)?.split(" (")[0] || k}</span>
+                          <button 
+                            onClick={() => setActiveMetrics(prev => prev.filter(x => x !== k))}
+                            className="text-gray-400 hover:text-red-500 hover:bg-red-50 w-4 h-4 rounded-full flex items-center justify-center ml-1 cursor-pointer font-black text-[10px] transition-colors"
+                            title="Sembunyikan metrik ini"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {base.length === 0 ? (
+                    <div className="py-12 text-center text-gray-400 bg-black/[0.01] rounded-2xl border border-dashed border-black/[0.06] flex flex-col items-center justify-center">
+                      <TrendingUp size={36} className="text-gray-300 mb-2 opacity-50" />
+                      <p className="text-sm font-semibold">{lang === "id" ? "Tidak ada data untuk periode ini." : "No data for this period."}</p>
+                      <p className="text-xs text-gray-400 mt-1 mb-4">Silakan ubah filter tanggal, platform, atau tipe konten untuk melihat tren data.</p>
+                    </div>
+                  ) : activeMetrics.length === 0 ? (
+                    <div className="py-12 text-center text-gray-400 bg-black/[0.01] rounded-2xl border border-dashed border-black/[0.06] flex flex-col items-center justify-center">
+                      <TrendingUp size={36} className="text-gray-300 mb-2 animate-bounce" />
+                      <p className="text-sm font-semibold">{lang === "id" ? "Tidak ada metrik terpilih." : "No metric selected."}</p>
+                      <p className="text-xs text-gray-400 mt-1 mb-4">{lang === "id" ? "Pilih metrik melalui tombol 'Pilih Metrik' di atas untuk menampilkan grafik." : "Select metrics via the 'Select Metric' button above to display chart."}</p>
+                      <button 
+                        onClick={openMetricSetting} 
+                        className="px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-xl hover:bg-blue-700 shadow-sm transition-colors cursor-pointer"
+                      >
+                        {lang === "id" ? "Pilih Metrik" : "Select Metric"}
                       </button>
                     </div>
-                  ))}
+                  ) : (
+                    <div className="grid gap-5 grid-cols-1 lg:grid-cols-2">
+                      {activeMetrics.map((k, index) => {
+                        const currentTotal = base.reduce((sum: number, c: any) => {
+                          let val = 0;
+                          if (k === 'engagement') val = getEng(c);
+                          else if (k === 'views') val = getV(c);
+                          else if (k === 'reach') val = getR(c);
+                          else if (k === 'likes') val = getLikes(c);
+                          else if (k === 'comments') val = getComments(c);
+                          else val = (c.metrics?.[k] || 0) + (c.isAds || adsFilter === "all" ? (c.adsMetrics?.[k] || 0) : 0);
+                          return sum + val;
+                        }, 0);
+                        const previousTotal = prevBase.reduce((sum: number, c: any) => {
+                          let val = 0;
+                          if (k === 'engagement') val = getEng(c);
+                          else if (k === 'views') val = getV(c);
+                          else if (k === 'reach') val = getR(c);
+                          else if (k === 'likes') val = getLikes(c);
+                          else if (k === 'comments') val = getComments(c);
+                          else val = (c.metrics?.[k] || 0) + (c.isAds || adsFilter === "all" ? (c.adsMetrics?.[k] || 0) : 0);
+                          return sum + val;
+                        }, 0);
+                        const pctStr = calcPct(currentTotal, previousTotal);
+
+                        return (
+                          <div key={k} className="bg-white rounded-2xl border border-black/[0.03] p-5 flex flex-col justify-between shadow-sm transition-all hover:shadow-md">
+                            <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-black/[0.02] pb-4">
+                              <div className="min-w-0 flex-1">
+                                <div className="text-sm font-extrabold text-gray-900 mb-1 flex items-center gap-2">
+                                   <div className="w-2.5 h-2.5 rounded-full animate-pulse" style={{ background: METRICS_META[k]?.color || "#3B82F6" }} />
+                                   {(lang === "id" ? METRICS_META[k]?.label : METRICS_META[k]?.labelEn) || k}
+                                </div>
+                                {(lang === "id" ? METRICS_META[k]?.desc : METRICS_META[k]?.descEn) && <div className="text-[11px] text-gray-400 font-medium leading-relaxed">{(lang === "id" ? METRICS_META[k]?.desc : METRICS_META[k]?.descEn)}</div>}
+                              </div>
+
+                              {/* UI/UX for Metric Total & Pct Change - Minimalist & Borderless */}
+                              <div className="flex items-center gap-4 shrink-0 sm:text-right">
+                                <div className="flex flex-col sm:items-end">
+                                  <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider mb-0.5">Total</span>
+                                  <span className="text-2xl font-black text-gray-900 tracking-tight leading-none">{fmt(currentTotal)}</span>
+                                </div>
+
+                                {pctStr && (
+                                  <>
+                                    {/* Elegant subtle vertical separator */}
+                                    <div className="hidden sm:block w-px h-8 bg-black/[0.05]" />
+                                    <div className="flex flex-col items-start sm:items-end">
+                                      <div className={`text-sm font-extrabold flex items-center gap-0.5 leading-none ${pctStr.startsWith('+') ? 'text-emerald-600' : pctStr.startsWith('-') ? 'text-red-500' : 'text-gray-500'}`}>
+                                        {pctStr.startsWith('+') ? <ArrowUpRight size={13} strokeWidth={3} className="shrink-0" /> : pctStr.startsWith('-') ? <ArrowDownRight size={13} strokeWidth={3} className="shrink-0" /> : null}
+                                        <span>{pctStr}</span>
+                                      </div>
+                                      <span className="text-[9px] text-gray-400 font-bold mt-1.5 uppercase tracking-wider leading-none">{getPeriodText() || "vs prev"}</span>
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+
+                            <ResponsiveContainer width="100%" height={320} debounce={300}>
+                              {adsFilter==="all" ? (
+                                 <BarChart data={lineData} margin={{top:0,right:10,left:0,bottom:0}}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.02)"/>
+                                    <XAxis dataKey="name" tick={{fontSize:11,fill:"rgba(0,0,0,0.4)"}} axisLine={false} tickLine={false} dy={10}/>
+                                    <YAxis tick={{fontSize:11,fill:"rgba(0,0,0,0.4)"}} axisLine={false} tickLine={false} tickFormatter={fmt} width={55}/>
+                                    <Tooltip cursor={{fill:"rgba(0,0,0,0.02)"}} contentStyle={{borderRadius:12,fontSize:12,border:"1px solid rgba(0,0,0,0.04)",boxShadow:"0 10px 30px rgba(0,0,0,0.04)"}} labelStyle={{marginBottom:6,color:"rgba(0,0,0,0.4)"}} />
+                                    <Bar dataKey={`${k}_org`} stackId={k} name={lang === "id" ? "Organik" : "Organic"} fill={METRICS_META[k]?.color || "#3B82F6"} radius={[0,0,4,4]} maxBarSize={24}/>
+                                    <Bar dataKey={`${k}_ads`} stackId={k} name={`Ads`} fill={(METRICS_META[k]?.color || "#3B82F6")+"66"} radius={[4,4,0,0]} maxBarSize={24}/>
+                                 </BarChart>
+                              ) : (
+                                <LineChart data={lineData} margin={{top:5,right:10,left:0,bottom:0}}>
+                                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.02)"/>
+                                  <XAxis dataKey="name" tick={{fontSize:11,fill:"rgba(0,0,0,0.4)"}} axisLine={false} tickLine={false} dy={10}/>
+                                  <YAxis tick={{fontSize:11,fill:"rgba(0,0,0,0.4)"}} axisLine={false} tickLine={false} tickFormatter={fmt} width={55}/>
+                                  <Tooltip contentStyle={{borderRadius:12,fontSize:12,border:"1px solid rgba(0,0,0,0.04)",boxShadow:"0 10px 30px rgba(0,0,0,0.04)"}} labelStyle={{marginBottom:6,color:"rgba(0,0,0,0.4)"}} />
+                                  <Line type="monotone" dataKey={k} stroke={METRICS_META[k]?.color || "#3B82F6"} strokeWidth={3} dot={{r:0}} activeDot={{r:5, strokeWidth:0}} name={(lang === "id" ? METRICS_META[k]?.label : METRICS_META[k]?.labelEn) || k} />
+                                </LineChart>
+                              )}
+                            </ResponsiveContainer>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {base.length === 0 ? (
-                <div className="py-12 text-center text-gray-400 bg-black/[0.01] rounded-2xl border border-dashed border-black/[0.06] flex flex-col items-center justify-center">
-                  <TrendingUp size={36} className="text-gray-300 mb-2 opacity-50" />
-                  <p className="text-sm font-semibold">{lang === "id" ? "Tidak ada data untuk periode ini." : "No data for this period."}</p>
-                  <p className="text-xs text-gray-400 mt-1 mb-4">Silakan ubah filter tanggal, platform, atau tipe konten untuk melihat tren data.</p>
-                </div>
-              ) : activeMetrics.length === 0 ? (
-                <div className="py-12 text-center text-gray-400 bg-black/[0.01] rounded-2xl border border-dashed border-black/[0.06] flex flex-col items-center justify-center">
-                  <TrendingUp size={36} className="text-gray-300 mb-2 animate-bounce" />
-                  <p className="text-sm font-semibold">{lang === "id" ? "Tidak ada metrik terpilih." : "No metric selected."}</p>
-                  <p className="text-xs text-gray-400 mt-1 mb-4">{lang === "id" ? "Pilih metrik melalui tombol 'Pilih Metrik' di atas untuk menampilkan grafik." : "Select metrics via the 'Select Metric' button above to display chart."}</p>
-                  <button 
-                    onClick={openMetricSetting} 
-                    className="px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-xl hover:bg-blue-700 shadow-sm transition-colors cursor-pointer"
-                  >
-                    {lang === "id" ? "Pilih Metrik" : "Select Metric"}
-                  </button>
-                </div>
-              ) : (
-                <div className="grid gap-5 grid-cols-1 lg:grid-cols-2">
-                  {activeMetrics.map((k, index) => {
-                    const currentTotal = base.reduce((sum: number, c: any) => {
-                      let val = 0;
-                      if (k === 'engagement') val = getEng(c);
-                      else if (k === 'views') val = getV(c);
-                      else if (k === 'reach') val = getR(c);
-                      else if (k === 'likes') val = getLikes(c);
-                      else if (k === 'comments') val = getComments(c);
-                      else val = (c.metrics?.[k] || 0) + (c.isAds || adsFilter === "all" ? (c.adsMetrics?.[k] || 0) : 0);
-                      return sum + val;
-                    }, 0);
-                    const previousTotal = prevBase.reduce((sum: number, c: any) => {
-                      let val = 0;
-                      if (k === 'engagement') val = getEng(c);
-                      else if (k === 'views') val = getV(c);
-                      else if (k === 'reach') val = getR(c);
-                      else if (k === 'likes') val = getLikes(c);
-                      else if (k === 'comments') val = getComments(c);
-                      else val = (c.metrics?.[k] || 0) + (c.isAds || adsFilter === "all" ? (c.adsMetrics?.[k] || 0) : 0);
-                      return sum + val;
-                    }, 0);
-                    const pctStr = calcPct(currentTotal, previousTotal);
+              {/* MOBILE VIEW - Beautiful, Clean, Modern, and Touch-Friendly */}
+              <div className="block md:hidden flex flex-col gap-5" style={{ scrollMarginTop: 100 }}>
+                {/* Charts Area */}
+                {base.length === 0 ? (
+                  <div className="py-12 text-center text-gray-400 bg-white rounded-[24px] border border-dashed border-black/[0.06] flex flex-col items-center justify-center p-6 shadow-sm">
+                    <TrendingUp size={32} className="text-gray-300 mb-2.5 opacity-50" />
+                    <p className="text-xs font-bold text-gray-800 leading-tight">
+                      {lang === "id" ? "Tidak ada data untuk periode ini." : "No data for this period."}
+                    </p>
+                    <p className="text-[10px] text-gray-400 mt-1 max-w-[220px] leading-relaxed">
+                      {lang === "id" 
+                        ? "Ubah filter tanggal, platform, atau tipe konten Anda." 
+                        : "Change date filters, platforms, or content types to view trends."}
+                    </p>
+                  </div>
+                ) : activeMetrics.length === 0 ? (
+                  <div className="py-12 text-center text-gray-400 bg-white rounded-[24px] border border-dashed border-black/[0.06] flex flex-col items-center justify-center p-6 shadow-sm">
+                    <TrendingUp size={32} className="text-gray-300 mb-2.5 animate-bounce" />
+                    <p className="text-xs font-bold text-gray-800 leading-tight">
+                      {lang === "id" ? "Tidak ada metrik terpilih." : "No metric selected."}
+                    </p>
+                    <p className="text-[10px] text-gray-400 mt-1 max-w-[220px] leading-relaxed mb-4">
+                      {lang === "id" ? "Pilih salah satu metrik untuk menampilkan visualisasi grafik performa." : "Select a metric to display its performance visualization chart."}
+                    </p>
+                    <button 
+                      onClick={() => {
+                        setTempSelectedMetrics([...activeMetrics]);
+                        setTempDateFilt(dateFilt);
+                        setTempCustomS(customS || "");
+                        setTempCustomE(customE || "");
+                        setTempPlatformFilter(platformFilter);
+                        setTempAdsFilter(adsFilter);
+                        setActiveDrawerFilter("all_filters");
+                      }} 
+                      className="px-4 py-2 bg-[var(--theme-primary)] text-white text-xs font-black rounded-full shadow-sm transition-all cursor-pointer border-none"
+                    >
+                      {lang === "id" ? "Pilih Metrik Sekarang" : "Select Metric Now"}
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-4">
+                    {activeMetrics.map((k, index) => {
+                      const currentTotal = base.reduce((sum: number, c: any) => {
+                        let val = 0;
+                        if (k === 'engagement') val = getEng(c);
+                        else if (k === 'views') val = getV(c);
+                        else if (k === 'reach') val = getR(c);
+                        else if (k === 'likes') val = getLikes(c);
+                        else if (k === 'comments') val = getComments(c);
+                        else val = (c.metrics?.[k] || 0) + (c.isAds || adsFilter === "all" ? (c.adsMetrics?.[k] || 0) : 0);
+                        return sum + val;
+                      }, 0);
+                      const previousTotal = prevBase.reduce((sum: number, c: any) => {
+                        let val = 0;
+                        if (k === 'engagement') val = getEng(c);
+                        else if (k === 'views') val = getV(c);
+                        else if (k === 'reach') val = getR(c);
+                        else if (k === 'likes') val = getLikes(c);
+                        else if (k === 'comments') val = getComments(c);
+                        else val = (c.metrics?.[k] || 0) + (c.isAds || adsFilter === "all" ? (c.adsMetrics?.[k] || 0) : 0);
+                        return sum + val;
+                      }, 0);
+                      const pctStr = calcPct(currentTotal, previousTotal);
+                      const isUp = pctStr?.startsWith('+');
+                      const isDown = pctStr?.startsWith('-');
 
-                    return (
-                      <div key={k} className="bg-white rounded-2xl border border-black/[0.03] p-5 flex flex-col justify-between shadow-sm transition-all hover:shadow-md">
-                        <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-black/[0.02] pb-4">
-                          <div className="min-w-0 flex-1">
-                            <div className="text-sm font-extrabold text-gray-900 mb-1 flex items-center gap-2">
-                               <div className="w-2.5 h-2.5 rounded-full animate-pulse" style={{ background: METRICS_META[k]?.color || "#3B82F6" }} />
-                               {METRICS_META[k]?.label || k}
+                      return (
+                        <div key={k} className="bg-white rounded-[24px] border border-black/[0.03] p-4 flex flex-col justify-between shadow-sm">
+                          {/* Info Header */}
+                          <div className="mb-4 pb-3 border-b border-black/[0.02]">
+                            <div className="flex items-center gap-1.5 mb-1">
+                              <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: METRICS_META[k]?.color || "#3B82F6" }} />
+                              <span className="text-xs font-extrabold text-gray-900 uppercase tracking-wider">
+                                {(lang === "id" ? METRICS_META[k]?.label : METRICS_META[k]?.labelEn) || k}
+                              </span>
                             </div>
-                            {METRICS_META[k]?.desc && <div className="text-[11px] text-gray-400 font-medium leading-relaxed">{METRICS_META[k]?.desc}</div>}
-                          </div>
+                            
+                            {(lang === "id" ? METRICS_META[k]?.desc : METRICS_META[k]?.descEn) && (
+                              <p className="text-[10px] text-gray-400 font-medium m-0 leading-tight">
+                                {(lang === "id" ? METRICS_META[k]?.desc : METRICS_META[k]?.descEn)}
+                              </p>
+                            )}
 
-                          {/* UI/UX for Metric Total & Pct Change - Minimalist & Borderless */}
-                          <div className="flex items-center gap-4 shrink-0 sm:text-right">
-                            <div className="flex flex-col sm:items-end">
-                              <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider mb-0.5">Total</span>
-                              <span className="text-2xl font-black text-gray-900 tracking-tight leading-none">{fmt(currentTotal)}</span>
-                            </div>
+                            {/* Mobile stats row */}
+                            <div className="flex items-end justify-between mt-3 bg-black/[0.01] p-2.5 rounded-xl border border-black/[0.01]">
+                              <div className="flex flex-col">
+                                <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Total</span>
+                                <span className="text-xl font-black text-gray-900 tracking-tight leading-none">
+                                  {fmt(currentTotal)}
+                                </span>
+                              </div>
 
-                            {pctStr && (
-                              <>
-                                {/* Elegant subtle vertical separator */}
-                                <div className="hidden sm:block w-px h-8 bg-black/[0.05]" />
-                                <div className="flex flex-col items-start sm:items-end">
-                                  <div className={`text-sm font-extrabold flex items-center gap-0.5 leading-none ${pctStr.startsWith('+') ? 'text-emerald-600' : pctStr.startsWith('-') ? 'text-red-500' : 'text-gray-500'}`}>
-                                    {pctStr.startsWith('+') ? <ArrowUpRight size={13} strokeWidth={3} className="shrink-0" /> : pctStr.startsWith('-') ? <ArrowDownRight size={13} strokeWidth={3} className="shrink-0" /> : null}
+                              {pctStr && (
+                                <div className="flex flex-col items-end">
+                                  <div className={`px-2 py-0.5 rounded-full text-[10px] font-black flex items-center gap-0.5 leading-none ${
+                                    isUp 
+                                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' 
+                                      : isDown 
+                                        ? 'bg-rose-50 text-rose-700 border border-rose-100' 
+                                        : 'bg-gray-50 text-gray-600 border border-gray-100'
+                                  }`}>
+                                    {isUp ? <ArrowUpRight size={10} strokeWidth={3.5} /> : isDown ? <ArrowDownRight size={10} strokeWidth={3.5} /> : null}
                                     <span>{pctStr}</span>
                                   </div>
-                                  <span className="text-[9px] text-gray-400 font-bold mt-1.5 uppercase tracking-wider leading-none">{getPeriodText() || "vs prev"}</span>
+                                  <span className="text-[8px] text-gray-400 font-bold mt-1 uppercase tracking-widest leading-none">
+                                    {getPeriodText() || "vs prev"}
+                                  </span>
                                 </div>
-                              </>
-                            )}
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Chart viewport - Clean, compact dimensions for mobile screen */}
+                          <div className="w-full overflow-hidden">
+                            <ResponsiveContainer width="100%" height={210} debounce={200}>
+                              {adsFilter === "all" ? (
+                                 <BarChart data={lineData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.02)"/>
+                                    <XAxis dataKey="name" tick={{ fontSize: 9, fill: "rgba(0,0,0,0.4)", fontWeight: 700 }} axisLine={false} tickLine={false} dy={6} />
+                                    <YAxis tick={{ fontSize: 9, fill: "rgba(0,0,0,0.4)", fontWeight: 700 }} axisLine={false} tickLine={false} tickFormatter={fmt} width={40} />
+                                    <Tooltip cursor={{ fill: "rgba(0,0,0,0.02)" }} contentStyle={{ borderRadius: 12, fontSize: 10, border: "1px solid rgba(0,0,0,0.04)", boxShadow: "0 10px 20px rgba(0,0,0,0.04)" }} labelStyle={{ marginBottom: 4, color: "rgba(0,0,0,0.4)" }} />
+                                    <Bar dataKey={`${k}_org`} stackId={k} name={lang === "id" ? "Organik" : "Organic"} fill={METRICS_META[k]?.color || "#3B82F6"} radius={[0, 0, 3, 3]} maxBarSize={14} />
+                                    <Bar dataKey={`${k}_ads`} stackId={k} name={`Ads`} fill={(METRICS_META[k]?.color || "#3B82F6") + "66"} radius={[3, 3, 0, 0]} maxBarSize={14} />
+                                 </BarChart>
+                              ) : (
+                                 <LineChart data={lineData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
+                                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.02)"/>
+                                   <XAxis dataKey="name" tick={{ fontSize: 9, fill: "rgba(0,0,0,0.4)", fontWeight: 700 }} axisLine={false} tickLine={false} dy={6} />
+                                   <YAxis tick={{ fontSize: 9, fill: "rgba(0,0,0,0.4)", fontWeight: 700 }} axisLine={false} tickLine={false} tickFormatter={fmt} width={40} />
+                                   <Tooltip contentStyle={{ borderRadius: 12, fontSize: 10, border: "1px solid rgba(0,0,0,0.04)", boxShadow: "0 10px 20px rgba(0,0,0,0.04)" }} labelStyle={{ marginBottom: 4, color: "rgba(0,0,0,0.4)" }} />
+                                   <Line type="monotone" dataKey={k} stroke={METRICS_META[k]?.color || "#3B82F6"} strokeWidth={2.5} dot={{ r: 0 }} activeDot={{ r: 4, strokeWidth: 0 }} name={(lang === "id" ? METRICS_META[k]?.label : METRICS_META[k]?.labelEn) || k} />
+                                 </LineChart>
+                              )}
+                            </ResponsiveContainer>
                           </div>
                         </div>
-
-                        <ResponsiveContainer width="100%" height={320} debounce={300}>
-                          {adsFilter==="all" ? (
-                             <BarChart data={lineData} margin={{top:0,right:10,left:0,bottom:0}}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.02)"/>
-                                <XAxis dataKey="name" tick={{fontSize:11,fill:"rgba(0,0,0,0.4)"}} axisLine={false} tickLine={false} dy={10}/>
-                                <YAxis tick={{fontSize:11,fill:"rgba(0,0,0,0.4)"}} axisLine={false} tickLine={false} tickFormatter={fmt} width={55}/>
-                                <Tooltip cursor={{fill:"rgba(0,0,0,0.02)"}} contentStyle={{borderRadius:12,fontSize:12,border:"1px solid rgba(0,0,0,0.04)",boxShadow:"0 10px 30px rgba(0,0,0,0.04)"}} labelStyle={{marginBottom:6,color:"rgba(0,0,0,0.4)"}} />
-                                <Bar dataKey={`${k}_org`} stackId={k} name={`Organik`} fill={METRICS_META[k]?.color || "#3B82F6"} radius={[0,0,4,4]} maxBarSize={24}/>
-                                <Bar dataKey={`${k}_ads`} stackId={k} name={`Ads`} fill={(METRICS_META[k]?.color || "#3B82F6")+"66"} radius={[4,4,0,0]} maxBarSize={24}/>
-                             </BarChart>
-                          ) : (
-                            <LineChart data={lineData} margin={{top:5,right:10,left:0,bottom:0}}>
-                              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.02)"/>
-                              <XAxis dataKey="name" tick={{fontSize:11,fill:"rgba(0,0,0,0.4)"}} axisLine={false} tickLine={false} dy={10}/>
-                              <YAxis tick={{fontSize:11,fill:"rgba(0,0,0,0.4)"}} axisLine={false} tickLine={false} tickFormatter={fmt} width={55}/>
-                              <Tooltip contentStyle={{borderRadius:12,fontSize:12,border:"1px solid rgba(0,0,0,0.04)",boxShadow:"0 10px 30px rgba(0,0,0,0.04)"}} labelStyle={{marginBottom:6,color:"rgba(0,0,0,0.4)"}} />
-                              <Line type="monotone" dataKey={k} stroke={METRICS_META[k]?.color || "#3B82F6"} strokeWidth={3} dot={{r:0}} activeDot={{r:5, strokeWidth:0}} name={METRICS_META[k]?.label || k} />
-                            </LineChart>
-                          )}
-                        </ResponsiveContainer>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </>
           )}
 
           {/* VIEW: ACTIVITY HEATMAP & DEMOGRAPHICS */}
@@ -2410,7 +2847,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                   <div className="flex items-center gap-2.5 mb-5 justify-between flex-wrap">
                     <div className="flex items-center gap-2">
                       <div className="bg-red-50 p-2 rounded-lg text-red-600"><Clock size={18} /></div>
-                      <h4 className="font-extrabold text-gray-900 text-[15px] m-0 tracking-tight">Heatmap Aktivitas (Best Time)</h4>
+                      <h4 className="font-extrabold text-gray-900 text-[15px] m-0 tracking-tight">{lang === "id" ? "Heatmap Aktivitas (Best Time)" : "Activity Heatmap (Best Time)"}</h4>
                     </div>
                     <CustomDropdown 
                       value={heatmapMetric} 
@@ -2448,7 +2885,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <div className="bg-blue-50 p-2 rounded-lg text-blue-600"><Users size={18} /></div>
-                      <h4 className="font-extrabold text-gray-900 text-[15px] m-0 tracking-tight">Demografi Lengkap Audiens</h4>
+                      <h4 className="font-extrabold text-gray-900 text-[15px] m-0 tracking-tight">{lang === "id" ? "Demografi Lengkap Audiens" : "Complete Audience Demographics"}</h4>
                       
                       {/* Interactive Active Platform Badge synced with navbar */}
                       <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-blue-50 text-blue-600 border border-blue-100 flex items-center gap-1">
@@ -2456,7 +2893,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                         {platformFilter === "all" ? (lang === "id" ? "Semua Platform" : "All Platforms") : platformFilter}
                       </span>
                     </div>
-                    <p className="text-xs text-gray-400 mt-1">Persebaran umur, jenis kelamin, lokasi, dan preferensi minat berdasarkan tiap platform yang difilter.</p>
+                    <p className="text-xs text-gray-400 mt-1">{lang === "id" ? "Persebaran umur, jenis kelamin, lokasi, dan preferensi minat berdasarkan tiap platform yang difilter." : "Distribution of age, gender, location, and interest preferences based on each filtered platform."}</p>
                   </div>
 
                   {/* Manual Editor Trigger Button - Sync with all platforms */}
@@ -2465,7 +2902,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                     className="flex items-center gap-2 px-3.5 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl cursor-pointer transition-all shadow-sm hover:shadow-md border-none"
                   >
                     <Edit2 size={13} />
-                    <span>Edit Data Demografi</span>
+                    <span>{lang === "id" ? "Edit Data Demografi" : "Edit Demographic Data"}</span>
                   </button>
                 </div>
 
@@ -2491,7 +2928,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                           <div>
                             <div className="flex items-center gap-2 mb-4">
                               <Users size={15} className="text-blue-600" />
-                              <h5 className="text-[13px] font-extrabold text-gray-900 m-0 tracking-tight">Umur & Gender</h5>
+                              <h5 className="text-[13px] font-extrabold text-gray-900 m-0 tracking-tight">{lang === "id" ? "Umur & Gender" : "Age & Gender"}</h5>
                             </div>
 
                             {/* Gender Split Bar */}
@@ -2529,12 +2966,12 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                           <div>
                             <div className="flex items-center gap-2 mb-4">
                               <Globe size={15} className="text-blue-600" />
-                              <h5 className="text-[13px] font-extrabold text-gray-900 m-0 tracking-tight">Lokasi Teratas</h5>
+                              <h5 className="text-[13px] font-extrabold text-gray-900 m-0 tracking-tight">{lang === "id" ? "Lokasi Teratas" : "Top Locations"}</h5>
                             </div>
 
                             {/* Cities List */}
                             <div className="space-y-3 mb-6">
-                              <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider block mb-2">Kota Utama</span>
+                              <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider block mb-2">{lang === "id" ? "Kota Utama" : "Top Cities"}</span>
                               {(activeDemo.cities || []).map((city: any) => (
                                 <div key={city.name} className="space-y-1.5">
                                   <div className="flex justify-between items-center text-xs">
@@ -2550,7 +2987,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
 
                             {/* Countries List */}
                             <div className="space-y-2.5">
-                              <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider block mb-2">Negara Utama</span>
+                              <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider block mb-2">{lang === "id" ? "Negara Utama" : "Top Countries"}</span>
                               {(activeDemo.countries || []).map((country: any) => (
                                 <div key={country.name} className="flex justify-between items-center text-xs py-1 border-b border-black/[0.02] last:border-0">
                                   <span className="font-bold text-gray-700 flex items-center gap-2">
@@ -2569,12 +3006,12 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                           <div>
                             <div className="flex items-center gap-2 mb-4">
                               <Heart size={15} className="text-blue-600" />
-                              <h5 className="text-[13px] font-extrabold text-gray-900 m-0 tracking-tight">Minat & Perangkat</h5>
+                              <h5 className="text-[13px] font-extrabold text-gray-900 m-0 tracking-tight">{lang === "id" ? "Minat & Perangkat" : "Interests & Devices"}</h5>
                             </div>
 
                             {/* Interests List */}
                             <div className="space-y-3 mb-6">
-                              <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider block mb-2">Top Minat Audiens</span>
+                              <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider block mb-2">{lang === "id" ? "Top Minat Audiens" : "Top Audience Interests"}</span>
                               {(activeDemo.interests || []).map((interest: any) => (
                                 <div key={interest.name} className="space-y-1.5">
                                   <div className="flex justify-between items-center text-xs">
@@ -2590,7 +3027,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
 
                             {/* Devices List */}
                             <div className="space-y-2.5">
-                              <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider block mb-2">Perangkat / Device</span>
+                              <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider block mb-2">{lang === "id" ? "Perangkat / Device" : "Device / Platform"}</span>
                               {(activeDemo.devices || []).map((device: any) => (
                                 <div key={device.name} className="flex items-center justify-between text-xs bg-white border border-black/[0.03] p-2 rounded-xl">
                                   <span className="font-bold text-gray-700 flex items-center gap-2">
@@ -2613,7 +3050,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                             <div className="bg-blue-50 text-blue-600 p-3.5 rounded-full mb-3.5">
                               <Users size={28} />
                             </div>
-                            <h5 className="font-extrabold text-gray-900 text-sm tracking-tight m-0">Tidak Ada Data Demografi</h5>
+                            <h5 className="font-extrabold text-gray-900 text-sm tracking-tight m-0">{lang === "id" ? "Tidak Ada Data Demografi" : "No Demographic Data"}</h5>
                             <p className="text-xs text-gray-500 mt-2 mb-4 leading-relaxed max-w-xs">
                               {isAll 
                                 ? lang === "id" ? "Belum ada data demografi yang diisi di platform manapun. Klik tombol di bawah untuk mulai mengisi data demografi Anda." : "No demographic data entered on any platform. Click the button below to start entering your demographic data."
@@ -2640,13 +3077,22 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
       </div>
 
             {/* DEMOGRAPHICS EDITING MODAL */}
-      <DemoEditModal 
+      <DemoEditModal lang={lang} 
         isDemoModalOpen={isDemoModalOpen} 
         setIsDemoModalOpen={setIsDemoModalOpen} 
         demographics={demographics} 
         setDemographics={setDemographics} 
         platformFilter={platformFilter} 
         platforms={platforms} 
+        onSaveDemographics={(updatedDemo: any) => {
+          setDemographics(updatedDemo);
+          try {
+            localStorage.setItem("hubify_custom_demographics", JSON.stringify(updatedDemo));
+          } catch (e) {}
+          if (onUpdateSettings) {
+            onUpdateSettings({ demographics: updatedDemo });
+          }
+        }}
       />
 
       {/* PRINT CONFIGURATION MODAL */}
@@ -2779,10 +3225,10 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                     <label className="block text-[11px] font-extrabold text-gray-800 uppercase tracking-wider mb-2">3. Bagian Laporan</label>
                     <div className="flex flex-col gap-1.5 bg-black/[0.01] p-3 rounded-2xl border border-black/[0.03]">
                       {[
-                        { id: "overview", label: "Ringkasan Kinerja (Overview)", desc: "Menampilkan performa total views, reach, dan engagement rate." },
-                        { id: "content", label: "Performa Konten Terpopuler", desc: "Menampilkan 5 konten dengan engagement tertinggi." },
-                        { id: "trends", label: "Tren & Pertumbuhan", desc: "Grafik historis kinerja performa media sosial." },
-                        { id: "audience", label: "Demografi & Aktivitas Audiens", desc: "Data gender, umur, negara, kota, dan jam aktif audiens." }
+                        { id: "overview", label: lang === "id" ? "Ringkasan Kinerja (Overview)" : "Performance Overview", desc: lang === "id" ? "Menampilkan performa total views, reach, dan engagement rate." : "Displays total views, reach, and engagement rate performance." },
+                        { id: "content", label: lang === "id" ? "Performa Konten Terpopuler" : "Top Content Performance", desc: lang === "id" ? "Menampilkan 5 konten dengan engagement tertinggi." : "Displays the top 5 content with the highest engagement." },
+                        { id: "trends", label: lang === "id" ? "Tren & Pertumbuhan" : "Trends & Growth", desc: lang === "id" ? "Grafik historis kinerja performa media sosial." : "Historical charts of social media performance." },
+                        { id: "audience", label: lang === "id" ? "Demografi & Aktivitas Audiens" : "Audience Demographics & Activity", desc: lang === "id" ? "Data gender, umur, negara, kota, dan jam aktif audiens." : "Data on gender, age, country, city, and active hours." }
                       ].map((sec) => (
                         <label key={sec.id} className="flex items-start gap-3 p-2 hover:bg-black/[0.02] rounded-xl cursor-pointer transition-colors">
                           <input
@@ -2807,7 +3253,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                   <div className="h-14 border-b border-white/[0.06] bg-slate-950 px-5 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-2">
                       <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                      <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-300">Live Preview Laporan</span>
+                      <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-300">{lang === "id" ? "Live Preview Laporan" : "Live Report Preview"}</span>
                     </div>
 
                     <div className="flex items-center gap-4">
@@ -2851,7 +3297,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                           <ChevronLeft size={14} />
                         </button>
                         <span className="text-[11px] font-extrabold text-slate-300">
-                          Hal {previewPageIndex + 1} dari {selectedPages.length}
+                          {lang === "id" ? `Hal ${previewPageIndex + 1} dari ${selectedPages.length}` : `Page ${previewPageIndex + 1} of ${selectedPages.length}`}
                         </span>
                         <button
                           disabled={previewPageIndex === selectedPages.length - 1}
@@ -2873,7 +3319,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                         {isGeneratingPDF ? (
                           <>
                             <svg className="animate-spin text-white" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line></svg>
-                            <span>Menyimpan PDF...</span>
+                            <span>{lang === "id" ? "Menyimpan PDF..." : "Saving PDF..."}</span>
                           </>
                         ) : (
                           <>
@@ -2887,9 +3333,9 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
 
                   {/* Active Page Name */}
                   <div className="bg-slate-950/40 py-2 px-5 border-b border-white/[0.03] flex items-center justify-between">
-                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Seksi Dokumen:</span>
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{lang === "id" ? "Seksi Dokumen:" : "Document Section:"}</span>
                     <span className="text-[10px] font-black text-blue-400 uppercase tracking-wider">
-                      {selectedPages[previewPageIndex]?.title || "Halaman Sampul"}
+                      {selectedPages[previewPageIndex]?.title || (lang === "id" ? "Halaman Sampul" : "Cover Page")}
                     </span>
                   </div>
 
@@ -2915,22 +3361,22 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                               <div className="h-full flex flex-col justify-between">
                                 <div className="flex justify-between items-center border-b border-gray-150 pb-3">
                                   <span className="text-xs font-black tracking-widest text-blue-600">HUBIFY</span>
-                                  <span className="text-[9px] font-bold text-gray-400">ANALISIS MEDIA SOSIAL</span>
+                                  <span className="text-[9px] font-bold text-gray-400">{lang === "id" ? "ANALISIS MEDIA SOSIAL" : "SOCIAL MEDIA ANALYSIS"}</span>
                                 </div>
                                 
                                 <div className="my-auto py-4">
                                   <div className="w-10 h-1 bg-blue-600 mb-4 rounded-full" />
                                   <h1 className="text-xl font-black tracking-tight text-gray-950 uppercase leading-snug mb-1.5">
-                                    Laporan Kinerja<br />Media Sosial
+                                    {lang === "id" ? "Laporan Kinerja" : "Social Media"}<br />{lang === "id" ? "Media Sosial" : "Performance Report"}
                                   </h1>
                                   <p className="text-[10px] text-gray-500 font-medium tracking-wide max-w-xs leading-relaxed">
-                                    Analisis komprehensif performa platform, keterlibatan konten, pertumbuhan tren, dan demografi audiens.
+                                    {lang === "id" ? "Analisis komprehensif performa platform, keterlibatan konten, pertumbuhan tren, dan demografi audiens." : "Comprehensive analysis of platform performance, content engagement, trend growth, and audience demographics."}
                                   </p>
                                 </div>
                                 
                                 <div className="border-t border-gray-150 pt-3 grid grid-cols-2 gap-4 text-[9px]">
                                   <div>
-                                    <span className="block text-[8px] font-bold text-gray-400 uppercase tracking-wider mb-1">DIPERSIAPKAN UNTUK</span>
+                                    <span className="block text-[8px] font-bold text-gray-400 uppercase tracking-wider mb-1">{lang === "id" ? "DIPERSIAPKAN UNTUK" : "PREPARED FOR"}</span>
                                     <span className="block font-black text-gray-900">Hubify Social Manager</span>
                                     <span className="block text-gray-400 mt-0.5">Laporan Lintas Platform</span>
                                   </div>
@@ -3012,7 +3458,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                                 
                                 <div className="border-t border-gray-100 pt-1.5 text-center text-[7.5px] text-gray-400 flex justify-between shrink-0">
                                   <span>Hubify Analytics System</span>
-                                  <span>Halaman 2</span>
+                                  <span>{lang === "id" ? "Halaman 2" : "Page 2"}</span>
                                 </div>
                               </div>
                             )}
@@ -3074,7 +3520,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                                 
                                 <div className="border-t border-gray-150 pt-1.5 text-center text-[7.5px] text-gray-400 flex justify-between shrink-0">
                                   <span>Hubify Analytics System</span>
-                                  <span>Halaman 3</span>
+                                  <span>{lang === "id" ? "Halaman 3" : "Page 3"}</span>
                                 </div>
                               </div>
                             )}
@@ -3096,7 +3542,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                                     {activeMetrics.slice(0, 4).map((k) => (
                                       <div key={k} className="p-2 rounded-xl border border-gray-100 bg-white">
                                         <span className="block text-[6px] font-extrabold text-gray-500 uppercase tracking-wider mb-1 text-center">
-                                          {METRICS_META[k]?.label || k}
+                                          {(lang === "id" ? METRICS_META[k]?.label : METRICS_META[k]?.labelEn) || k}
                                         </span>
                                         <div className="w-full h-[60px] relative">
                                           {printData.timelineData && printData.timelineData.length > 0 ? (
@@ -3134,7 +3580,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                                 
                                 <div className="border-t border-gray-150 pt-1.5 text-center text-[7.5px] text-gray-400 flex justify-between shrink-0">
                                   <span>Hubify Analytics System</span>
-                                  <span>Halaman 4</span>
+                                  <span>{lang === "id" ? "Halaman 4" : "Page 4"}</span>
                                 </div>
                               </div>
                             )}
@@ -3148,7 +3594,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                                     <span className="text-[8px] font-bold text-gray-500">{printData.rangeLabel}</span>
                                   </div>
                                   
-                                  <h2 className="text-xs font-black text-gray-950 uppercase tracking-tight mb-0.5">4. Analisis Demografi Audiens</h2>
+                                  <h2 className="text-xs font-black text-gray-950 uppercase tracking-tight mb-0.5">{lang === "id" ? "4. Analisis Demografi Audiens" : "4. Audience Demographics Analysis"}</h2>
                                   <p className="text-[9px] text-gray-400 mb-2">Distribusi gender, demografi kelompok usia, dan ketertarikan minat teratas.</p>
                                   
                                   {printData.demographics ? (
@@ -3203,7 +3649,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                                 
                                 <div className="border-t border-gray-150 pt-1.5 text-center text-[7.5px] text-gray-400 flex justify-between shrink-0">
                                   <span>Hubify Analytics System</span>
-                                  <span>Halaman 5</span>
+                                  <span>{lang === "id" ? "Halaman 5" : "Page 5"}</span>
                                 </div>
                               </div>
                             )}
@@ -3245,18 +3691,18 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
             <div className="my-auto py-12">
               <div className="w-16 h-1.5 bg-blue-600 mb-8 rounded-full" />
               <h1 className="text-4xl font-extrabold tracking-tight text-gray-950 uppercase leading-tight mb-4" style={{ fontSize: "38px" }}>
-                Laporan Kinerja<br />Media Sosial
+                {lang === "id" ? "Laporan Kinerja" : "Social Media"}<br />{lang === "id" ? "Media Sosial" : "Performance Report"}
               </h1>
               <p className="text-lg text-gray-500 font-medium tracking-wide max-w-md">
-                Analisis komprehensif performa platform, keterlibatan konten, pertumbuhan tren, dan demografi audiens.
+                {lang === "id" ? "Analisis komprehensif performa platform, keterlibatan konten, pertumbuhan tren, dan demografi audiens." : "Comprehensive analysis of platform performance, content engagement, trend growth, and audience demographics."}
               </p>
             </div>
             
             <div className="border-t border-gray-150 pt-8 grid grid-cols-2 gap-8 text-xs">
               <div>
-                <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">DIPERSIAPKAN UNTUK</span>
+                <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">{lang === "id" ? "DIPERSIAPKAN UNTUK" : "PREPARED FOR"}</span>
                 <span className="block text-sm font-extrabold text-gray-900">Hubify Social Manager</span>
-                <span className="block text-gray-500 mt-1">Laporan Kinerja Lintas Platform</span>
+                <span className="block text-gray-500 mt-1">{lang === "id" ? "Laporan Kinerja Lintas Platform" : "Cross-Platform Performance Report"}</span>
               </div>
               <div>
                 <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">METADATA LAPORAN</span>
@@ -3346,7 +3792,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
               {/* Footer */}
               <div className="border-t border-gray-100 pt-3 text-center text-[9px] text-gray-400 flex justify-between">
                 <span>Hubify Analytics System</span>
-                <span>Halaman 2</span>
+                <span>{lang === "id" ? "Halaman 2" : "Page 2"}</span>
               </div>
             </div>
           )}
@@ -3419,7 +3865,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
               {/* Footer */}
               <div className="border-t border-gray-100 pt-3 text-center text-[9px] text-gray-400 flex justify-between">
                 <span>Hubify Analytics System</span>
-                <span>Halaman 3</span>
+                <span>{lang === "id" ? "Halaman 3" : "Page 3"}</span>
               </div>
             </div>
           )}
@@ -3442,7 +3888,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                   {activeMetrics.map((k) => (
                     <div key={k} className="print-card p-4 rounded-2xl border border-gray-100 bg-white">
                       <span className="block text-[10px] font-extrabold text-gray-500 uppercase tracking-wider mb-2 text-center">
-                        {METRICS_META[k]?.label || k}
+                        {(lang === "id" ? METRICS_META[k]?.label : METRICS_META[k]?.labelEn) || k}
                       </span>
                       <div className="w-full flex justify-center">
                         {printData.timelineData && printData.timelineData.length > 0 ? (
@@ -3454,7 +3900,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                             <Line 
                               type="monotone" 
                               dataKey={k} 
-                              name={METRICS_META[k]?.label || k} 
+                              name={(lang === "id" ? METRICS_META[k]?.label : METRICS_META[k]?.labelEn) || k} 
                               stroke={METRICS_META[k]?.color || "#2563eb"} 
                               strokeWidth={2} 
                               dot={false} 
@@ -3472,7 +3918,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                 <div className={`grid gap-4 mb-6 ${activeMetrics.length === 1 ? 'grid-cols-1' : activeMetrics.length === 2 ? 'grid-cols-2' : activeMetrics.length === 3 ? 'grid-cols-3' : 'grid-cols-4'}`}>
                   {activeMetrics.map(k => (
                     <div key={k} className="print-card p-4 rounded-2xl border border-gray-100 bg-white">
-                      <span className="block text-[10px] font-bold text-gray-400 uppercase mb-1 truncate">Rata-rata {METRICS_META[k]?.label || k}</span>
+                      <span className="block text-[10px] font-bold text-gray-400 uppercase mb-1 truncate">Rata-rata {(lang === "id" ? METRICS_META[k]?.label : METRICS_META[k]?.labelEn) || k}</span>
                       <span className="text-xl font-extrabold text-gray-900">
                         {Math.round((printData.metricTotals[k] || 0) / printData.totalDays).toLocaleString('id-ID')} <span className="text-xs text-gray-400 font-normal">/hari</span>
                       </span>
@@ -3488,7 +3934,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
               {/* Footer */}
               <div className="border-t border-gray-100 pt-3 text-center text-[9px] text-gray-400 flex justify-between">
                 <span>Hubify Analytics System</span>
-                <span>Halaman 4</span>
+                <span>{lang === "id" ? "Halaman 4" : "Page 4"}</span>
               </div>
             </div>
           )}
@@ -3503,24 +3949,24 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                   <span className="text-xs font-bold text-gray-500">{printData.rangeLabel}</span>
                 </div>
                 
-                <h2 className="text-xl font-extrabold text-gray-950 uppercase tracking-tight mb-2">4. Analisis Demografi & Aktivitas Audiens</h2>
+                <h2 className="text-xl font-extrabold text-gray-950 uppercase tracking-tight mb-2">{lang === "id" ? "4. Analisis Demografi & Aktivitas Audiens" : "4. Audience Demographics & Activity Analysis"}</h2>
                 <p className="text-xs text-gray-500 mb-6">Analisis mendalam mengenai profil pengguna, kelompok usia, geografi asal, dan tingkat aktivitas mereka.</p>
                 
                 {printData.demographics ? (
                   <div className="flex flex-col gap-6">
                     {/* Gender Breakdown Row */}
                     <div className="print-card p-5 rounded-2xl border border-gray-100 bg-white">
-                      <h4 className="text-xs font-extrabold text-gray-900 uppercase tracking-wider mb-3">Distribusi Gender Pengikut</h4>
+                      <h4 className="text-xs font-extrabold text-gray-900 uppercase tracking-wider mb-3">{lang === "id" ? "Distribusi Gender Pengikut" : "Follower Gender Breakdown"}</h4>
                       <div className="flex items-center gap-4 text-xs font-bold">
                         <div className="flex-1 text-left">
-                          <span className="text-gray-500">Perempuan:</span> <span className="text-base text-pink-600 font-extrabold">{printData.demographics.gender?.female || 50}%</span>
+                          <span className="text-gray-500">{lang === "id" ? "Perempuan:" : "Female:"}</span> <span className="text-base text-pink-600 font-extrabold">{printData.demographics.gender?.female || 50}%</span>
                         </div>
                         <div className="flex-[3] h-4 bg-gray-100 rounded-full overflow-hidden flex">
                           <div className="h-full bg-pink-500" style={{ width: `${printData.demographics.gender?.female || 50}%` }}></div>
                           <div className="h-full bg-blue-500 flex-1"></div>
                         </div>
                         <div className="flex-1 text-right">
-                          <span className="text-gray-500">Laki-laki:</span> <span className="text-base text-blue-600 font-extrabold">{printData.demographics.gender?.male || 50}%</span>
+                          <span className="text-gray-500">{lang === "id" ? "Laki-laki:" : "Male:"}</span> <span className="text-base text-blue-600 font-extrabold">{printData.demographics.gender?.male || 50}%</span>
                         </div>
                       </div>
                     </div>
@@ -3528,7 +3974,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                     <div className="grid grid-cols-2 gap-4">
                       {/* Age breakdown with simple vertical bar bars */}
                       <div className="print-card p-5 rounded-2xl border border-gray-100 bg-white">
-                        <h4 className="text-xs font-extrabold text-gray-900 uppercase tracking-wider mb-4">Kelompok Usia Utama</h4>
+                        <h4 className="text-xs font-extrabold text-gray-900 uppercase tracking-wider mb-4">{lang === "id" ? "Kelompok Usia Utama" : "Core Age Groups"}</h4>
                         <div className="flex flex-col gap-2.5 text-[11px]">
                           {(printData.demographics.age || []).map((item: any) => (
                             <div key={item.range} className="flex items-center gap-3">
@@ -3544,7 +3990,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
 
                       {/* Top Countries breakdown */}
                       <div className="print-card p-5 rounded-2xl border border-gray-100 bg-white">
-                        <h4 className="text-xs font-extrabold text-gray-900 uppercase tracking-wider mb-4">Negara Asal Terbanyak</h4>
+                        <h4 className="text-xs font-extrabold text-gray-900 uppercase tracking-wider mb-4">{lang === "id" ? "Negara Asal Terbanyak" : "Top Countries"}</h4>
                         <div className="flex flex-col gap-2.5 text-[11px]">
                           {(printData.demographics.countries || []).slice(0, 5).map((item: any) => (
                             <div key={item.name} className="flex items-center gap-3">
@@ -3562,7 +4008,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                     <div className="grid grid-cols-2 gap-4">
                       {/* Top Cities */}
                       <div className="print-card p-5 rounded-2xl border border-gray-100 bg-white">
-                        <h4 className="text-xs font-extrabold text-gray-900 uppercase tracking-wider mb-4">Kota Asal Terbanyak</h4>
+                        <h4 className="text-xs font-extrabold text-gray-900 uppercase tracking-wider mb-4">{lang === "id" ? "Kota Asal Terbanyak" : "Top Cities"}</h4>
                         <div className="flex flex-col gap-2.5 text-[11px]">
                           {(printData.demographics.cities || []).slice(0, 5).map((item: any) => (
                             <div key={item.name} className="flex items-center gap-3">
@@ -3579,7 +4025,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                       {/* Top Device & Interests */}
                       <div className="print-card p-5 rounded-2xl border border-gray-100 bg-white flex flex-col justify-between">
                         <div>
-                          <h4 className="text-xs font-extrabold text-gray-900 uppercase tracking-wider mb-3">Distribusi Perangkat</h4>
+                          <h4 className="text-xs font-extrabold text-gray-900 uppercase tracking-wider mb-3">{lang === "id" ? "Distribusi Perangkat" : "Device Distribution"}</h4>
                           <div className="grid grid-cols-3 gap-2 text-center text-[10px] mb-4">
                             {(printData.demographics.devices || []).slice(0, 3).map((d: any) => (
                               <div key={d.name} className="bg-gray-50 p-2 rounded-xl border border-gray-100">
@@ -3591,7 +4037,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                         </div>
 
                         <div>
-                          <h4 className="text-xs font-extrabold text-gray-900 uppercase tracking-wider mb-1.5">Minat Teratas Audiens</h4>
+                          <h4 className="text-xs font-extrabold text-gray-900 uppercase tracking-wider mb-1.5">{lang === "id" ? "Minat Teratas Audiens" : "Top Audience Interests"}</h4>
                           <div className="flex flex-wrap gap-1">
                             {(printData.demographics.interests || []).slice(0, 4).map((i: any) => (
                               <span key={i.name} className="px-2 py-0.5 rounded bg-gray-100 text-[10px] font-bold text-gray-600 border border-gray-200">{i.name} ({i.percentage}%)</span>
@@ -3602,25 +4048,259 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                     </div>
 
                     <div className="print-card p-5 rounded-2xl bg-gray-50 border border-gray-100 text-xs text-gray-600 leading-relaxed">
-                      <span className="block font-bold text-gray-900 mb-1">Analisis Strategis Audiens:</span>
-                      Mayoritas audiens Anda berada di kelompok usia produktif (18-34 tahun) dengan akses dominan menggunakan perangkat seluler (Smartphone). Mengetahui profil geografis dan ketertarikan minat utama ini, pesan kampanye pemasaran harus dikembangkan secara singkat, lugas, ramah seluler, dan terfokus pada gaya hidup digital yang relevan dengan generasi muda.
+                      <span className="block font-bold text-gray-900 mb-1">{lang === "id" ? "Analisis Strategis Audiens:" : "Strategic Audience Analysis:"}</span>
+                      {lang === "id" ? "Mayoritas audiens Anda berada di kelompok usia produktif (18-34 tahun) dengan akses dominan menggunakan perangkat seluler (Smartphone). Mengetahui profil geografis dan ketertarikan minat utama ini, pesan kampanye pemasaran harus dikembangkan secara singkat, lugas, ramah seluler, dan terfokus pada gaya hidup digital yang relevan dengan generasi muda." : "The majority of your audience falls within the core active age group (18-34 years), primarily accessing via mobile devices (Smartphones). Understanding this geographical profile and key interest affinities, your marketing campaigns should be developed to be concise, direct, mobile-friendly, and focused on digital lifestyles relevant to this younger demographic."}
                     </div>
                   </div>
                 ) : (
-                  <div className="print-card p-8 text-center text-gray-400 text-xs">Data demografi pengikut untuk platform terpilih tidak tersedia atau belum dikonfigurasi.</div>
+                  <div className="print-card p-8 text-center text-gray-400 text-xs">{lang === "id" ? "Data demografi pengikut untuk platform terpilih tidak tersedia atau belum dikonfigurasi." : "Follower demographic data for the selected platform is unavailable or not yet configured."}</div>
                 )}
               </div>
               
               {/* Footer */}
               <div className="border-t border-gray-100 pt-3 text-center text-[9px] text-gray-400 flex justify-between">
                 <span>Hubify Analytics System</span>
-                <span>Halaman 5</span>
+                <span>{lang === "id" ? "Halaman 5" : "Page 5"}</span>
               </div>
             </div>
           )}
 
         </div>
       )}
+
+      {/* Floating Action Button (FAB) for Simpan PDF on Mobile */}
+      {isMobile && (
+        <div className="fixed bottom-22 right-5 z-50">
+          <button
+            onClick={handleOpenPrintModal}
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-extrabold py-3 px-5 rounded-full shadow-[0_6px_20px_rgba(37,99,235,0.4)] cursor-pointer text-xs transition-transform active:scale-95 border-none"
+          >
+            <Download size={14} className="text-white shrink-0" />
+            <span>{lang === "id" ? "Simpan PDF" : "Save PDF"}</span>
+          </button>
+        </div>
+      )}
+
+      {/* Mobile Bottom Sheet Drawers */}
+      <AnimatePresence>
+        {/* Unified Filter Drawer for Mobile */}
+        {activeDrawerFilter === "all_filters" && (
+          <div className="fixed inset-0 z-[100000] flex items-end justify-center">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.5 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setActiveDrawerFilter(null)}
+              className="absolute inset-0 bg-black"
+            />
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 220 }}
+              className="relative w-full max-w-md bg-white rounded-t-[28px] shadow-[0_-10px_40px_rgba(0,0,0,0.15)] overflow-hidden flex flex-col z-10 max-h-[85vh] border border-black/[0.02]"
+            >
+              <div className="w-12 h-1 bg-gray-200 rounded-full mx-auto my-3 shrink-0" />
+              <div className="px-6 pb-4 border-b border-black/[0.03] flex justify-between items-center bg-white shrink-0">
+                <div>
+                  <h5 className="font-extrabold text-gray-900 text-[16px] tracking-tight">{lang === "id" ? "Filter & Pengaturan" : "Filters & Settings"}</h5>
+                  <p className="text-[11px] text-gray-400 font-medium">{lang === "id" ? "Atur tampilan data laporan analitik Anda" : "Configure your analytics report views"}</p>
+                </div>
+                <button onClick={() => setActiveDrawerFilter(null)} className="w-8 h-8 rounded-full bg-black/[0.03] active:bg-black/[0.08] flex items-center justify-center text-gray-500 cursor-pointer border-none"><X size={15} /></button>
+              </div>
+
+              <div className="overflow-y-auto px-6 py-4 flex-1 flex flex-col gap-6">
+                {/* Section 1: Platform Selection */}
+                <div>
+                  <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+                    <Globe size={13} className="text-gray-400" />
+                    {lang === "id" ? "Pilih Platform" : "Select Platform"}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {platformOptions.map((opt) => {
+                      const selected = opt.id === tempPlatformFilter;
+                      return (
+                        <button
+                          key={opt.id}
+                          onClick={() => setTempPlatformFilter(opt.id)}
+                          className={`flex items-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold transition-all border-none cursor-pointer w-full ${
+                            selected 
+                              ? "bg-blue-600 text-white shadow-sm font-extrabold" 
+                              : "bg-black/[0.03] text-gray-700 active:bg-black/[0.08]"
+                          }`}
+                        >
+                          <span className="truncate">{opt.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Section 2: Data View (Organic / Ads) */}
+                <div>
+                  <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+                    <Eye size={13} className="text-gray-400" />
+                    {lang === "id" ? "Tampilan Data" : "Data View"}
+                  </div>
+                  <div className="flex gap-2 p-1 bg-black/[0.03] rounded-xl">
+                    {adsOptions.map((opt) => {
+                      const selected = opt.id === tempAdsFilter;
+                      return (
+                        <button
+                          key={opt.id}
+                          onClick={() => setTempAdsFilter(opt.id)}
+                          className={`flex-1 text-center py-2 rounded-lg text-xs font-bold border-none cursor-pointer transition-all ${
+                            selected 
+                              ? "bg-white text-gray-900 shadow-sm" 
+                              : "bg-transparent text-gray-500 hover:text-gray-900"
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Section 3: Date Range Selection */}
+                <div>
+                  <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+                    <Calendar size={13} className="text-gray-400" />
+                    {lang === "id" ? "Rentang Tanggal" : "Date Range"}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 mb-3">
+                    {dateOptions.map((opt) => {
+                      const selected = tempDateFilt === opt.id;
+                      return (
+                        <button
+                          key={opt.id}
+                          onClick={() => {
+                            setTempDateFilt(opt.id);
+                          }}
+                          className={`flex items-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold transition-all border-none cursor-pointer w-full ${
+                            selected 
+                              ? "bg-blue-600 text-white shadow-sm font-extrabold" 
+                              : "bg-black/[0.03] text-gray-700 active:bg-black/[0.08]"
+                          }`}
+                        >
+                          <span className="truncate">{opt.label}</span>
+                        </button>
+                      );
+                    })}
+                    <button
+                      onClick={() => setTempDateFilt("custom")}
+                      className={`flex items-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold transition-all border-none cursor-pointer w-full ${
+                        tempDateFilt === "custom" 
+                          ? "bg-blue-600 text-white shadow-sm font-extrabold" 
+                          : "bg-black/[0.03] text-gray-700 active:bg-black/[0.08]"
+                      }`}
+                    >
+                      <span className="truncate">{lang === "id" ? "Kustom" : "Custom"}</span>
+                    </button>
+                  </div>
+
+                  {tempDateFilt === "custom" && (
+                    <div className="p-3.5 rounded-2xl bg-black/[0.02] border border-black/[0.03] flex flex-col gap-3">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="flex flex-col gap-1">
+                          <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">{lang === "id" ? "Mulai" : "Start"}</span>
+                          <input
+                            type="date"
+                            value={tempCustomS}
+                            onChange={(e) => setTempCustomS(e.target.value)}
+                            className="w-full text-xs px-3 py-2 bg-white border border-black/[0.08] rounded-lg outline-none focus:border-blue-500 font-semibold text-gray-800"
+                          />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">{lang === "id" ? "Selesai" : "End"}</span>
+                          <input
+                            type="date"
+                            value={tempCustomE}
+                            onChange={(e) => setTempCustomE(e.target.value)}
+                            className="w-full text-xs px-3 py-2 bg-white border border-black/[0.08] rounded-lg outline-none focus:border-blue-500 font-semibold text-gray-800"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Section 4: Metrics Selection Checklist */}
+                <div>
+                  <div className="flex justify-between items-center mb-2.5">
+                    <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+                      <SlidersHorizontal size={13} className="text-gray-400" />
+                      {lang === "id" ? "Pilih Metrik Grafik" : "Select Graph Metrics"}
+                    </div>
+                    <button 
+                      onClick={resetToDefaultMetrics} 
+                      className="text-[10px] font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer bg-transparent border-none active:scale-95 transition-all"
+                    >
+                      <RotateCcw size={11} />
+                      <span>{lang === "id" ? "Reset" : "Reset"}</span>
+                    </button>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    {Object.entries(METRICS_META).map(([key, meta]) => {
+                      const isChecked = tempSelectedMetrics.includes(key);
+                      return (
+                        <label 
+                          key={key} 
+                          className={`flex items-start gap-2.5 p-3 rounded-xl hover:bg-black/[0.02] cursor-pointer transition-colors border border-transparent ${isChecked ? 'bg-blue-50/[0.3] border-blue-100 font-bold' : 'bg-black/[0.01]'}`}
+                        >
+                          <input 
+                            type="checkbox" 
+                            checked={isChecked} 
+                            onChange={() => toggleTempMetric(key)} 
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 mt-0.5"
+                          />
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: meta.color }} />
+                              <span className="text-xs font-bold text-gray-800">{(lang === "id" ? meta.label : meta.labelEn).split(" (")[0]}</span>
+                            </div>
+                            <p className="text-[9px] text-gray-400 mt-0.5 leading-tight">{(lang === "id" ? meta.desc : meta.descEn)}</p>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Sticky Bottom Actions */}
+              <div className="p-4 border-t border-black/[0.03] flex justify-end gap-2 bg-gray-50/50 shrink-0 sticky bottom-0 z-20">
+                <button 
+                  onClick={() => setActiveDrawerFilter(null)} 
+                  className="px-4 py-2.5 rounded-xl text-xs font-bold text-gray-500 hover:bg-black/[0.03] active:bg-black/[0.08] transition-colors cursor-pointer bg-transparent border-none"
+                >
+                  {lang === "id" ? "Batal" : "Cancel"}
+                </button>
+                <button 
+                  onClick={() => {
+                    // Apply all filters
+                    setPlatformFilter(tempPlatformFilter);
+                    setAdsFilter(tempAdsFilter);
+                    setDateFilt(tempDateFilt);
+                    if (tempDateFilt === "custom") {
+                      setCustomS(tempCustomS);
+                      setCustomE(tempCustomE);
+                    }
+                    // Apply metrics state
+                    applyMetrics();
+                    setActiveDrawerFilter(null);
+                  }} 
+                  className="px-6 py-2.5 rounded-xl bg-blue-600 active:bg-blue-700 text-xs font-bold text-white shadow-sm transition-colors cursor-pointer flex items-center gap-1 border-none active:scale-95"
+                >
+                  <Check size={13} />
+                  <span>{lang === "id" ? "Terapkan" : "Apply"}</span>
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Stylesheet specifically injected for beautiful high-fidelity printing */}
       <style>{`

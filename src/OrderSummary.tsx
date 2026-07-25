@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate, Navigate } from 'react-router-dom';
-import { ArrowLeft, CheckCircle2, ShieldCheck, Zap } from 'lucide-react';
-import { auth } from './firebase'; // Ensure you have access to auth if needed
-import { updateProfile } from 'firebase/auth';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { ArrowLeft, CheckCircle2, ShieldCheck, Zap, Tag, Trash2, AlertCircle } from 'lucide-react';
+import { db, doc, getDoc, getDocs, collection, updateDoc, addDoc, increment, query, where, limit } from './firebase';
+import { generateBulletPoints } from './PricingPage';
 
 export function OrderSummary({ user, profile }: { user: any, profile: any }) {
   const [searchParams] = useSearchParams();
-const plan = searchParams.get('plan') || 'solo';
+  const plan = searchParams.get('plan') || 'solo';
   const cycle = searchParams.get('cycle') || 'monthly';
   const navigate = useNavigate();
 
@@ -17,10 +17,48 @@ const plan = searchParams.get('plan') || 'solo';
     }
   }, [user]);
 
+  const [plans, setPlans] = useState<any[]>([]);
+  const [loadingPlans, setLoadingPlans] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Promo / Coupon states
+  const [promoCodeInput, setPromoCodeInput] = useState('');
+  const [appliedPromo, setAppliedPromo] = useState<any>(null);
+  const [promoError, setPromoError] = useState('');
+  const [promoSuccess, setPromoSuccess] = useState('');
+
+  // T&C checkbox state
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+
   const isAnnual = cycle === 'annual';
+
+  useEffect(() => {
+    const fetchPlans = async () => {
+      try {
+        const snap = await getDocs(collection(db, 'plans'));
+        if (!snap.empty) {
+          setPlans(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        }
+      } catch (err) {
+        console.warn("Failed to fetch plans:", err);
+      } finally {
+        setLoadingPlans(false);
+      }
+    };
+    fetchPlans();
+  }, []);
+
+  // Find matched plan from database or fallback to hardcoded
+  let matchedPlan = plans.find(p => p.id === plan);
+  if (!matchedPlan) {
+    matchedPlan = plans.find(p => {
+      const nameLower = (p.name || '').toLowerCase();
+      const matchesSlug = nameLower.includes(plan.toLowerCase());
+      const isAnnualPlan = isAnnual ? p.addMonths >= 12 : p.addMonths < 12;
+      return matchesSlug && isAnnualPlan;
+    });
+  }
 
   let planName = 'Free Starter';
   let originalPrice = 0;
@@ -37,33 +75,35 @@ const plan = searchParams.get('plan') || 'solo';
       "10x Generate AI / Bulan",
       "Analitik Dasar"
     ];
+  } else if (matchedPlan) {
+    planName = matchedPlan.name.replace(/ \((Monthly|Annual)\)/i, '');
+    originalPrice = matchedPlan.originalPrice || matchedPlan.price;
+    finalPrice = matchedPlan.price;
+    features = generateBulletPoints(matchedPlan, 'id');
   } else if (plan === 'solo') {
     planName = 'Solo Creator';
-    originalPrice = isAnnual ? 1000 * 12 : 1000;
-    finalPrice = isAnnual ? 1000 * 12 : 1000;
-    features = [
+    originalPrice = matchedPlan ? matchedPlan.originalPrice || matchedPlan.price : (isAnnual ? 1188000 : 99000);
+    finalPrice = matchedPlan ? matchedPlan.price : (isAnnual ? 948000 : 99000);
+    features = matchedPlan?.features || [
       "1 Workspace", 
       "10 Akun Sosmed", 
-      "100x Generate AI / Bulan",
-      "Auto-Publishing",
-      "Analitik Lanjutan"
+      "100x Generate AI / Bulan"
     ];
   } else if (plan === 'team') {
     planName = 'Team';
-    originalPrice = isAnnual ? 299000 * 12 : 299000;
-    finalPrice = isAnnual ? 239000 * 12 : 299000;
-    features = [
+    originalPrice = matchedPlan ? matchedPlan.originalPrice || matchedPlan.price : (isAnnual ? 3588000 : 299000);
+    finalPrice = matchedPlan ? matchedPlan.price : (isAnnual ? 2868000 : 299000);
+    features = matchedPlan?.features || [
       "3 Workspaces", 
       "30 Akun Sosmed", 
       "500x Generate AI / Bulan",
-      "Alur Persetujuan Konten",
       "Kolaborasi 3 Anggota"
     ];
   } else if (plan === 'agency') {
     planName = 'Agency';
-    originalPrice = isAnnual ? 899000 * 12 : 899000;
-    finalPrice = isAnnual ? 749000 * 12 : 899000;
-    features = [
+    originalPrice = matchedPlan ? matchedPlan.originalPrice || matchedPlan.price : (isAnnual ? 10788000 : 899000);
+    finalPrice = matchedPlan ? matchedPlan.price : (isAnnual ? 8988000 : 899000);
+    features = matchedPlan?.features || [
       "Unlimited Workspaces", 
       "Unlimited Akun Sosmed", 
       "Unlimited Generate AI",
@@ -72,7 +112,88 @@ const plan = searchParams.get('plan') || 'solo';
     ];
   }
 
-  const discount = originalPrice - finalPrice;
+  // Calculate Voucher Promo Discount
+  let voucherDiscountAmount = 0;
+  if (appliedPromo) {
+    if (appliedPromo.type === 'percent') {
+      voucherDiscountAmount = Math.floor(finalPrice * (appliedPromo.value / 100));
+    } else if (appliedPromo.type === 'fixed') {
+      voucherDiscountAmount = appliedPromo.value;
+    }
+  }
+
+  const finalPriceAfterPromo = Math.max(0, finalPrice - voucherDiscountAmount);
+  const packageDiscount = originalPrice - finalPrice;
+
+  const handleApplyPromo = async () => {
+    setPromoError('');
+    setPromoSuccess('');
+    if (!promoCodeInput.trim()) {
+      setPromoError('Silakan masukkan kode voucher.');
+      return;
+    }
+
+    try {
+      const codeUpper = promoCodeInput.trim().toUpperCase();
+      const promoDoc = await getDoc(doc(db, 'promos', codeUpper));
+      
+      if (!promoDoc.exists()) {
+        setPromoError('Kode voucher tidak valid atau tidak ditemukan.');
+        return;
+      }
+
+      const pData = promoDoc.data();
+      
+      // Validation 1: Is Active
+      if (!pData.isActive) {
+        setPromoError('Voucher ini sudah tidak aktif.');
+        return;
+      }
+
+      // Validation 2: Usage Limit
+      if (pData.usageLimit > 0 && pData.usageCount >= pData.usageLimit) {
+        setPromoError('Kuota pemakaian voucher ini sudah habis.');
+        return;
+      }
+
+      // Validation 3: Date Check
+      const nowStr = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+      if (pData.startDate && nowStr < pData.startDate) {
+        setPromoError(`Voucher ini baru bisa digunakan mulai tanggal ${pData.startDate}.`);
+        return;
+      }
+      if (pData.endDate && nowStr > pData.endDate) {
+        setPromoError('Voucher ini sudah kedaluwarsa.');
+        return;
+      }
+
+      // Validation 4: First Timer Check
+      if (pData.targetType === 'first_timer') {
+        if (user) {
+          const transSnap = await getDocs(query(collection(db, 'transactions'), where('userId', '==', user.uid), limit(100)));
+          const hasPurchased = transSnap.docs.some(d => d.data().status === 'PAID');
+          if (hasPurchased) {
+            setPromoError('Voucher ini hanya berlaku untuk perpanjangan pertama kali.');
+            return;
+          }
+        }
+      }
+
+      // Promo is valid! Apply it
+      setAppliedPromo({ id: codeUpper, ...pData });
+      setPromoSuccess(`Voucher "${codeUpper}" berhasil digunakan!`);
+    } catch (err: any) {
+      console.error("Promo validation error:", err);
+      setPromoError('Gagal memverifikasi voucher. Silakan coba lagi.');
+    }
+  };
+
+  const handleRemovePromo = () => {
+    setAppliedPromo(null);
+    setPromoCodeInput('');
+    setPromoSuccess('');
+    setPromoError('');
+  };
 
   const handleContinue = async () => {
     if (!user) {
@@ -83,16 +204,69 @@ const plan = searchParams.get('plan') || 'solo';
       return;
     }
 
-    if (finalPrice === 0) {
-      // Free plan - bypass payment
-      setLoading(true);
-      setTimeout(() => navigate('/'), 1000);
+    if (!agreedToTerms) {
+      setError('Anda harus menyetujui Syarat & Ketentuan sebelum melanjutkan.');
       return;
     }
 
-    // Logged in -> Call Xendit API
     setLoading(true);
     setError('');
+
+    // If final price after promo discount is Rp 0 (Free), bypass payment flow entirely
+    if (finalPriceAfterPromo === 0) {
+      try {
+        const userRef = doc(db, "users", user.uid);
+        const addMonths = isAnnual ? 12 : 1;
+        let currentActive = new Date();
+        
+        if (profile?.activeUntil) {
+          const existingDate = new Date(profile.activeUntil);
+          if (existingDate > currentActive) {
+            currentActive = existingDate;
+          }
+        }
+        
+        currentActive.setMonth(currentActive.getMonth() + addMonths);
+
+        // Update user profile in Firestore
+        await updateDoc(userRef, {
+          activeUntil: currentActive.toISOString(),
+          plan: plan,
+          subscriptionStatus: "pro",
+          lastInvoiceId: `promo_free_${user.uid}_${Date.now()}`,
+          hasUsedPromo: true
+        });
+
+        // Increment usageCount of promo if applicable
+        if (appliedPromo) {
+          await updateDoc(doc(db, "promos", appliedPromo.id), {
+            usageCount: increment(1)
+          });
+        }
+
+        // Add transaction entry to Firestore
+        await addDoc(collection(db, "transactions"), {
+          userId: user.uid,
+          userEmail: profile?.email || user.email || "unknown",
+          amount: 0,
+          planName: plan,
+          paymentMethod: appliedPromo ? `Voucher: ${appliedPromo.id}` : "Free",
+          status: "PAID",
+          externalId: `promo_free_${user.uid}_${Date.now()}`,
+          timestamp: new Date().toISOString()
+        });
+
+        // Redirect to billing success page
+        navigate('/billing?payment=success');
+      } catch (err: any) {
+        console.error("Direct activation error:", err);
+        setError('Gagal mengaktifkan paket gratis: ' + (err.message || 'Terjadi kesalahan sistem.'));
+        setLoading(false);
+      }
+      return;
+    }
+
+    // Logged in & paid -> Call Xendit API
     try {
       const token = await user.getIdToken();
       const response = await fetch('/api/xendit/checkout', {
@@ -102,11 +276,11 @@ const plan = searchParams.get('plan') || 'solo';
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          amount: finalPrice,
+          amount: finalPriceAfterPromo,
           plan: planName,
           planId: plan,
           addMonths: isAnnual ? 12 : 1,
-          promoId: "none",
+          promoId: appliedPromo ? appliedPromo.id : "none",
           email: profile?.email || user.email,
           description: `Pembelian Paket ${planName} di Hubify Social`
         })
@@ -150,8 +324,9 @@ const plan = searchParams.get('plan') || 'solo';
 
           <div className="p-8">
             {error && (
-              <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm font-semibold mb-6 border border-red-100">
-                {error}
+              <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm font-semibold mb-6 border border-red-100 flex gap-2 items-center">
+                <AlertCircle size={18} />
+                <span>{error}</span>
               </div>
             )}
 
@@ -171,6 +346,69 @@ const plan = searchParams.get('plan') || 'solo';
                   </div>
                 </div>
 
+                {/* Promo Coupon Field */}
+                {plan !== 'free' && (
+                  <div className="bg-slate-50/50 p-5 rounded-2xl border border-slate-100">
+                    <h3 className="text-sm font-bold text-[#0B2A4A] uppercase tracking-wider mb-3 flex items-center gap-2">
+                      <Tag size={16} className="text-blue-500" /> Masukkan Voucher / Promo
+                    </h3>
+                    
+                    {!appliedPromo ? (
+                      <div className="space-y-2">
+                        <div className="flex gap-2">
+                          <input 
+                            type="text" 
+                            placeholder="Contoh: DISKON77" 
+                            value={promoCodeInput}
+                            onChange={(e) => setPromoCodeInput(e.target.value)}
+                            className="flex-1 bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-[#0B2A4A] uppercase placeholder:normal-case focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                          />
+                          <button 
+                            type="button"
+                            onClick={handleApplyPromo}
+                            className="bg-[#1D4D7A] text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-[#0B2A4A] transition-colors"
+                          >
+                            Terapkan
+                          </button>
+                        </div>
+                        {promoError && (
+                          <div className="text-xs text-red-500 font-semibold flex items-center gap-1 mt-1">
+                            <AlertCircle size={12} /> {promoError}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between bg-emerald-50/80 border border-emerald-100 px-4 py-3 rounded-xl">
+                          <div className="flex items-center gap-2">
+                            <span className="bg-emerald-600 text-white text-xs font-black px-2 py-1 rounded">
+                              {appliedPromo.id}
+                            </span>
+                            <span className="text-xs text-emerald-800 font-semibold">
+                              Voucher berhasil diterapkan!
+                            </span>
+                          </div>
+                          <button 
+                            type="button" 
+                            onClick={handleRemovePromo}
+                            className="text-slate-400 hover:text-red-500 transition-colors p-1"
+                            title="Hapus Voucher"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+
+                        {appliedPromo.terms && (
+                          <div className="text-xs bg-slate-100/80 text-slate-500 p-3 rounded-lg border border-slate-200/50">
+                            <span className="font-bold block text-slate-600 mb-1">Syarat & Ketentuan:</span>
+                            <span className="whitespace-pre-line">{appliedPromo.terms}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <div>
                   <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Yang Anda Dapatkan</h3>
                   <ul className="space-y-3">
@@ -189,33 +427,57 @@ const plan = searchParams.get('plan') || 'solo';
                   <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">Detail Pembayaran</h3>
                   
                   <div className="space-y-3 text-sm font-medium mb-6">
-                    {discount > 0 && (
-                      <>
-                        <div className="flex justify-between text-slate-500">
-                          <span>Harga Normal</span>
-                          <span className="line-through">Rp {originalPrice.toLocaleString('id-ID')}</span>
-                        </div>
-                        <div className="flex justify-between text-emerald-600">
-                          <span>Diskon Spesial</span>
-                          <span>- Rp {discount.toLocaleString('id-ID')}</span>
-                        </div>
-                        <div className="h-px bg-slate-200 my-2"></div>
-                      </>
+                    <div className="flex justify-between text-slate-500">
+                      <span>Harga Normal</span>
+                      <span>Rp {originalPrice.toLocaleString('id-ID')}</span>
+                    </div>
+
+                    {packageDiscount > 0 && (
+                      <div className="flex justify-between text-emerald-600">
+                        <span>Diskon Spesial</span>
+                        <span>- Rp {packageDiscount.toLocaleString('id-ID')}</span>
+                      </div>
                     )}
+
+                    {appliedPromo && voucherDiscountAmount > 0 && (
+                      <div className="flex justify-between text-emerald-600">
+                        <span>Potongan Voucher</span>
+                        <span>- Rp {voucherDiscountAmount.toLocaleString('id-ID')}</span>
+                      </div>
+                    )}
+
+                    <div className="h-px bg-slate-200 my-2"></div>
+                    
                     <div className="flex justify-between text-lg font-extrabold text-[#0B2A4A]">
                       <span>Total Tagihan</span>
                       <div className="text-right">
-                        <div>Rp {finalPrice.toLocaleString('id-ID')}</div>
+                        <div>Rp {finalPriceAfterPromo.toLocaleString('id-ID')}</div>
                         <div className="text-xs font-normal text-slate-500 mt-1">Sudah termasuk pajak</div>
                       </div>
                     </div>
                   </div>
+
+                  {/* Terms & Conditions Checkbox */}
+                  <div className="mb-5">
+                    <label className="flex gap-2.5 items-start cursor-pointer select-none">
+                      <input 
+                        type="checkbox" 
+                        checked={agreedToTerms}
+                        onChange={(e) => setAgreedToTerms(e.target.checked)}
+                        className="mt-0.5 w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 cursor-pointer accent-blue-600"
+                      />
+                      <span className="text-xs text-slate-500 font-medium leading-relaxed">
+                        Saya menyetujui <span className="text-[#1D4D7A] font-bold hover:underline">Syarat & Ketentuan</span> serta <span className="text-[#1D4D7A] font-bold hover:underline">Kebijakan Layanan</span> Hubify.
+                      </span>
+                    </label>
+                  </div>
+
                   <button 
                     onClick={handleContinue} 
                     disabled={loading}
                     className="w-full bg-[#1D4D7A] text-white font-bold py-4 px-4 rounded-xl hover:bg-[#0B2A4A] transition-all flex justify-center items-center gap-2 shadow-lg shadow-[#1D4D7A]/20 disabled:opacity-70 disabled:cursor-not-allowed"
                   >
-                    {loading ? 'Memproses...' : (user ? 'Lanjut ke Pembayaran' : 'Daftar & Bayar')}
+                    {loading ? 'Memproses...' : (user ? (finalPriceAfterPromo === 0 ? 'Aktifkan Paket Sekarang' : 'Lanjut ke Pembayaran') : 'Daftar & Bayar')}
                   </button>
 
                   <div className="mt-4 flex items-center justify-center gap-2 text-xs font-semibold text-slate-400">

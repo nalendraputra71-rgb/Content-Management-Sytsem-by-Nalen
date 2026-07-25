@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { doc, getDoc, updateDoc, onSnapshot } from "firebase/firestore";
 import { db, auth, onAuthStateChanged } from "./firebase";
+import { signOut } from "firebase/auth";
 import { motion, AnimatePresence } from "motion/react";
 import Markdown from "react-markdown";
-import {
-  Globe,
+import { 
+   RefreshCw, Globe,
   Copy,
   Check,
   MessageSquare,
@@ -27,13 +28,16 @@ import {
   Target,
   BarChart2,
   Eye,
+  Edit3,
   TrendingUp,
   Award,
   PenTool,
   Megaphone,
   Music,
-  Hash
-} from "lucide-react";
+  Hash,
+  ChevronDown,
+  ChevronUp
+, LogOut } from "lucide-react";
 import { PlatformPreview } from "./components/PlatformPreview";
 import { htmlToPlainText } from "./data";
 
@@ -126,11 +130,13 @@ const getFieldIcon = (iconName: string, size = 14) => {
 };
 
 export function PublicBriefView() {
+  const navigate = useNavigate();
   const { workspaceId, contentId } = useParams<{ workspaceId: string; contentId: string }>();
   const [brief, setBrief] = useState<any>(null);
   const [workspace, setWorkspace] = useState<any>(null);
   const [layoutFields, setLayoutFields] = useState<any[]>(DEFAULT_FIELDS);
   const [copiedFields, setCopiedFields] = useState<Record<string, boolean>>({});
+  const [showMobileProps, setShowMobileProps] = useState(false);
   const [localToast, setLocalToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
   const showToast = (message: string, type: "success" | "error" | "info" = "success") => {
     setLocalToast({ message, type });
@@ -200,6 +206,10 @@ export function PublicBriefView() {
   const [activeTab, setActiveTab] = useState<"draft" | "refs" | "metrics">("draft");
 
   const handleAddSectionComment = async (sectionId: string, commentText: string) => {
+    if (!canComment) {
+      showToast("Akses Ditolak: Peran Anda Pelihat (Read-Only) dan tidak dapat menambahkan komentar.", "error");
+      return;
+    }
     if (!commentText.trim() || !visitorName.trim()) return;
 
     try {
@@ -477,58 +487,72 @@ export function PublicBriefView() {
     return (
       <div 
         key={id}
-        className={`bg-white border rounded-[24px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.01)] transition-all duration-300 ${openSections[id] ? "border-blue-200 ring-2 ring-blue-500/10 shadow-lg" : "border-gray-100"}`}
+        className={`bg-white border rounded-2xl sm:rounded-[24px] p-4 sm:p-6 shadow-[0_8px_30px_rgb(0,0,0,0.01)] transition-all duration-300 ${openSections[id] ? "border-blue-200 ring-2 ring-blue-500/10 shadow-lg" : "border-gray-100"}`}
       >
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex flex-col sm:flex-row gap-3 justify-between sm:items-center mb-4">
           <div className="text-[11px] font-extrabold text-gray-400 uppercase tracking-widest flex items-center gap-2 flex-1 min-w-0">
-            {getFieldIcon(icon, 14)} {label}
-            {brief && brief.allowComments && renderSectionCommentBadge(id)}
+            {getFieldIcon(icon, 14)} 
+            <span>{label}</span>
+            {brief && brief.allowComments !== false && renderSectionCommentBadge(id)}
           </div>
-          {hasValue && (
-            <button
-              onClick={handleCopy}
-              className="flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 transition duration-150 shrink-0 ml-2"
-            >
-              {isCopied ? (
-                <>
-                  <Check size={13} className="text-emerald-500" /> Tersalin!
-                </>
-              ) : (
-                <>
-                  <Copy size={13} /> Salin {label}
-                </>
-              )}
-            </button>
-          )}
         </div>
         
         {hasValue ? (
-          <div className="bg-black/[0.015] p-5 rounded-2xl text-gray-800 font-medium text-sm leading-relaxed border border-black/[0.01]">
+          <div className="bg-black/[0.015] p-4 sm:p-5 rounded-xl sm:rounded-2xl text-gray-800 font-medium text-sm leading-relaxed border border-black/[0.01] overflow-hidden max-w-full break-words [overflow-wrap:anywhere]">
             {id === "briefCopywriting" && brief && !brief.briefCopywriting && brief.brief ? (
-              <div className="prose max-w-none text-gray-800 leading-relaxed font-medium">
+              <div className="prose max-w-none text-gray-800 leading-relaxed font-medium break-words [overflow-wrap:anywhere]">
                 <Markdown>{brief.brief}</Markdown>
               </div>
             ) : (
-              <div className="tiptap-prose" dangerouslySetInnerHTML={{ __html: fieldValue }} />
+              <div className="tiptap-prose break-words [overflow-wrap:anywhere]" dangerouslySetInnerHTML={{ __html: fieldValue }} />
             )}
           </div>
         ) : (
           <p className="text-gray-400 italic text-sm text-center py-4">{placeholder || `Tidak ada spesifikasi ${label.toLowerCase()} khusus.`}</p>
         )}
         
-        {brief && brief.allowComments && renderInlineCommentThread(id)}
+        {brief && brief.allowComments !== false && renderInlineCommentThread(id)}
       </div>
     );
   };
 
-  useEffect(() => {
+  const fetchBrief = async () => {
     if (!workspaceId || !contentId) {
       setError("ID Link tidak valid.");
       setLoading(false);
       return;
     }
+    setLoading(true);
+    try {
+      const docRef = doc(db, "workspaces", workspaceId, "content", contentId);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        const isPublic = !!data.isPublic;
+        const sharedUsers = data.sharedUsers || [];
+        const sharedUids = data.sharedUids || [];
+        const isOwner = currentUser && (data.userId === currentUser.uid || data.createdBy === currentUser.uid || data.ownerId === currentUser.uid);
+        const isSharedUser = currentUser && ((Array.isArray(sharedUids) && sharedUids.includes(currentUser.uid)) || sharedUsers.some((u: any) => u.uid === currentUser.uid || (u.email && currentUser.email && u.email.toLowerCase() === currentUser.email.toLowerCase()) || (userProfile?.username && u.username && u.username.toLowerCase() === userProfile.username.toLowerCase())));
+        if (isPublic || isOwner || isSharedUser) {
+          setBrief({ ...data, id: docSnap.id, workspaceId });
+          setComments(data.comments || []);
+          setError(null);
+        } else {
+          setError("Akses Ditolak: Brief konten ini bersifat privat.");
+        }
+      } else {
+        setError("Brief konten tidak ditemukan.");
+      }
+    } catch (err) {
+      console.error("Error loading public brief:", err);
+      setError("Gagal memuat brief konten.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    // Fetch workspace details for brand metadata
+  useEffect(() => {
+    if (!workspaceId || !contentId) return;
     getDoc(doc(db, "workspaces", workspaceId))
       .then((snap) => {
         if (snap.exists()) {
@@ -541,42 +565,39 @@ export function PublicBriefView() {
         console.error("Error loading workspace name:", err);
       });
 
-    const docRef = doc(db, "workspaces", workspaceId, "content", contentId);
-    
-    // Set up real-time snapshot listener so comments and updates stream instantly
-    const unsubscribe = onSnapshot(docRef, (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        const isPublic = !!data.isPublic;
-        const sharedUsers = data.sharedUsers || [];
-        
-        // Access checks
-        const isOwner = currentUser && (data.userId === currentUser.uid);
-        const isSharedUser = currentUser && sharedUsers.some((u: any) => 
-          u.uid === currentUser.uid || 
-          u.email?.toLowerCase() === currentUser.email?.toLowerCase() || 
-          (userProfile?.username && u.username?.toLowerCase() === userProfile.username?.toLowerCase())
-        );
-
-        if (isPublic || isOwner || isSharedUser) {
-          setBrief({ ...data, id: docSnap.id });
-          setComments(data.comments || []);
-          setError(null);
-        } else {
-          setError("Akses Ditolak: Brief konten ini bersifat privat dan hanya dibagikan ke pengguna Hubify Social tertentu.");
-        }
-      } else {
-        setError("Brief konten tidak ditemukan.");
-      }
-      setLoading(false);
-    }, (err) => {
-      console.error("Error loading public brief:", err);
-      setError("Gagal memuat brief konten. Pastikan link sudah benar dan memiliki akses publik.");
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
+    fetchBrief();
   }, [workspaceId, contentId, currentUser, userProfile]);
+
+  const getUserRole = () => {
+    if (!brief) return "none";
+    if (currentUser) {
+      if (
+        brief.userId === currentUser.uid ||
+        brief.createdBy === currentUser.uid ||
+        brief.ownerId === currentUser.uid
+      ) {
+        return "owner";
+      }
+      const sharedUsers = brief.sharedUsers || [];
+      const matched = sharedUsers.find(
+        (u: any) =>
+          u.uid === currentUser.uid ||
+          (u.email && currentUser.email && u.email.toLowerCase() === currentUser.email.toLowerCase()) ||
+          (userProfile?.username && u.username && u.username.toLowerCase() === userProfile.username.toLowerCase())
+      );
+      if (matched) {
+        return matched.role || "viewer";
+      }
+    }
+    if (brief.isPublic) {
+      return brief.linkAccessRole || brief.publicRole || "viewer";
+    }
+    return "none";
+  };
+
+  const userRole = getUserRole();
+  const canEdit = userRole === "owner" || userRole === "editor";
+  const canComment = userRole === "owner" || userRole === "editor" || userRole === "commenter";
 
   const getInitialLayoutFields = () => {
     if (brief && brief.layoutSettings && Array.isArray(brief.layoutSettings.fields)) {
@@ -608,6 +629,14 @@ export function PublicBriefView() {
     }
   }, [brief, workspace]);
 
+  useEffect(() => {
+    if (brief?.title) {
+      document.title = `${brief.title} - Hubify Social`;
+    } else {
+      document.title = "Public Content Brief - Hubify Social";
+    }
+  }, [brief?.title]);
+
   const handleCopyCaption = () => {
     if (!brief?.caption) return;
     navigator.clipboard.writeText(htmlToPlainText(brief.caption));
@@ -623,6 +652,10 @@ export function PublicBriefView() {
 
   const handleAddComment = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canComment) {
+      showToast("Akses Ditolak: Peran Anda Pelihat (Read-Only) dan tidak dapat menambahkan komentar.", "error");
+      return;
+    }
     if (!newComment.trim() || !visitorName.trim()) return;
 
     setSubmittingComment(true);
@@ -747,10 +780,10 @@ export function PublicBriefView() {
         )}
       </AnimatePresence>
       {/* Sticky Header */}
-      <header className="sticky top-0 bg-white/80 backdrop-blur-md border-b border-gray-100 z-30 px-6 py-3">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center shadow-sm border border-black/5">
+      <header className="sticky top-0 bg-white/80 backdrop-blur-md border-b border-gray-100 z-30 px-6 py-2.5">
+        <div className="max-w-6xl mx-auto flex md:grid md:grid-cols-3 items-center justify-between gap-4">
+          <div className="flex items-center gap-2.5 justify-start min-w-0">
+            <Link to="/" className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl overflow-hidden flex items-center justify-center shadow-sm border border-black/5 hover:opacity-80 transition">
               <img 
                 src="/icon.png" 
                 alt="Hubify Social" 
@@ -761,39 +794,115 @@ export function PublicBriefView() {
                   if (nextSibling) nextSibling.style.display = 'flex'; 
                 }} 
               />
-            </div>
-            <div className="hidden w-10 h-10 rounded-xl bg-gradient-to-tr from-[#1D4D7A] to-[#0B2A4A] items-center justify-center text-white font-extrabold text-lg shadow-sm">
+            </Link>
+            <div className="hidden w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-tr from-[#1D4D7A] to-[#0B2A4A] items-center justify-center text-white font-extrabold text-base shadow-sm">
               H
             </div>
-            <div>
-              <div className="text-sm font-black text-gray-900 leading-none">Hubify Social</div>
-              <div className="text-[10px] text-gray-400 font-bold tracking-wider uppercase mt-1">Shared Content Brief</div>
+            <div className="min-w-0">
+              <div className="text-xs sm:text-sm font-black text-gray-900 leading-none">Hubify Social</div>
+              <div className="text-[9px] text-gray-400 font-bold tracking-wider uppercase mt-1 truncate">Shared Brief</div>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100">
-              <Globe size={11} /> Publik
+          {/* Promo Banner Hubify Social */}
+          <div className="hidden md:flex justify-center min-w-0">
+            <Link
+              to="/"
+              className="flex items-center relative h-[48px] pl-14 pr-1.5 bg-[#EFF6FF]/75 hover:bg-[#EFF6FF]/95 text-gray-800 rounded-full cursor-pointer transition-all duration-300 hover:-translate-y-0.5 group shrink-0 w-full max-w-[360px] border border-blue-100/40 shadow-[0_2px_12px_rgba(37,99,235,0.04)]"
+              style={{
+                fontFamily: "Plus Jakarta Sans, sans-serif"
+              }}
+            >
+              {/* Mascot Character Huby - Waving Friendly */}
+              <div className="absolute -left-2 -bottom-0.5 h-12 w-12 flex items-end justify-center select-none pointer-events-none z-10">
+                <img 
+                  src="/Assets/Huby/huby-wave.png" 
+                  alt="Huby" 
+                  className="h-[48px] w-auto drop-shadow-[0_4px_8px_rgba(0,0,0,0.08)] group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 origin-bottom" 
+                  referrerPolicy="no-referrer"
+                />
+              </div>
+
+              {/* Glowing Subtle Accent Background */}
+              <div className="absolute top-0 right-0 w-24 h-full bg-gradient-to-l from-blue-100/25 to-transparent blur-md pointer-events-none rounded-r-full" />
+
+              <div className="flex items-center justify-between w-full gap-2 relative z-10">
+                <div className="text-left min-w-0 pr-1 flex flex-col justify-center">
+                  <span className="text-[13px] font-black leading-tight tracking-tight text-slate-700">
+                    Kelola Medsos
+                  </span>
+                  <span className="text-[17px] font-black leading-tight tracking-tight text-[#2563EB] -mt-0.5">
+                    Lebih Praktis! 🐧
+                  </span>
+                </div>
+
+                {/* Promo CTA Button */}
+                <div className="flex items-center gap-1 bg-[#2563EB] group-hover:bg-blue-700 text-white px-2.5 py-1.5 rounded-full shadow-[0_2px_4px_rgba(37,99,235,0.12)] shrink-0 transition-all duration-200 group-hover:scale-102 border border-blue-400/15">
+                  <span className="text-[9px] font-extrabold tracking-wider uppercase whitespace-nowrap">
+                    Coba Gratis
+                  </span>
+                  <Sparkles size={8} className="text-yellow-300 fill-yellow-300 animate-pulse" />
+                </div>
+              </div>
+            </Link>
+          </div>
+
+          <div className="flex items-center gap-2.5 justify-end shrink-0">
+            {userRole !== "none" && (
+              <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold border ${
+                userRole === "owner" || userRole === "editor"
+                  ? "bg-blue-50 text-blue-600 border-blue-200"
+                  : userRole === "commenter"
+                  ? "bg-amber-50 text-amber-700 border-amber-200"
+                  : "bg-gray-100 text-gray-600 border-gray-200"
+              }`}>
+                {userRole === "owner" && <Sparkles size={10} />}
+                {userRole === "editor" && <Edit3 size={10} />}
+                {userRole === "commenter" && <MessageSquare size={10} />}
+                {userRole === "viewer" && <Eye size={10} />}
+                {userRole === "owner" ? "Pemilik" : userRole === "editor" ? "Editor" : userRole === "commenter" ? "Komentator" : "Pelihat"}
+              </span>
+            )}
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-emerald-50 text-emerald-600 border border-emerald-100/60">
+              <Globe size={10} strokeWidth={2.5} /> Publik
             </span>
             <button
               onClick={handleCopyBriefLink}
-              className="p-2 hover:bg-gray-100 rounded-xl transition text-gray-500 hover:text-gray-800"
+              className="p-1.5 hover:bg-gray-50 text-gray-400 hover:text-gray-600 rounded-lg border border-gray-100 hover:border-gray-200 transition-all duration-200"
               title="Salin Link Bagikan"
             >
-              {copiedBrief ? <Check size={18} className="text-emerald-500" /> : <Share2 size={18} />}
+              {copiedBrief ? <Check size={14} className="text-emerald-500" /> : <Share2 size={14} />}
             </button>
 
             {isLoggedInUser && (
-              <div className="flex items-center gap-2.5 pl-3 border-l border-gray-100">
-                <img 
-                  src={userProfile?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(visitorName)}&background=2563EB&color=fff`}
-                  alt="Avatar"
-                  referrerPolicy="no-referrer"
-                  className="w-8 h-8 rounded-full object-cover border border-blue-100 shadow-sm"
-                />
-                <div className="hidden sm:flex flex-col text-left">
-                  <span className="text-[9px] font-extrabold text-gray-400 leading-none uppercase tracking-wider">Komentator</span>
-                  <span className="text-xs font-bold text-blue-600 leading-normal mt-0.5">{visitorName}</span>
+              <div className="relative group">
+                <button className="flex items-center gap-2 pl-2.5 border-l border-gray-150 cursor-pointer">
+                  <img 
+                    src={userProfile?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(visitorName)}&background=2563EB&color=fff`}
+                    alt="Avatar"
+                    referrerPolicy="no-referrer"
+                    className="w-7 h-7 rounded-full object-cover border border-blue-50 shadow-sm"
+                  />
+                  <div className="hidden lg:flex flex-col text-left">
+                    <span className="text-[8px] font-black text-gray-400 leading-none uppercase tracking-wider">Komentator</span>
+                    <span className="text-xs font-extrabold text-blue-600 leading-none mt-0.5">{visitorName}</span>
+                  </div>
+                </button>
+
+                <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.1)] border border-gray-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 overflow-hidden py-1">
+                  <button 
+                    onClick={async () => {
+                      try {
+                        await signOut(auth);
+                        navigate("/login");
+                      } catch (e) {
+                        console.error(e);
+                      }
+                    }}
+                    className="w-full text-left px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-red-50 hover:text-red-600 transition flex items-center gap-2"
+                  >
+                    <LogOut size={14} /> Keluar / Ganti Akun
+                  </button>
                 </div>
               </div>
             )}
@@ -801,28 +910,113 @@ export function PublicBriefView() {
         </div>
       </header>
 
-      {/* Main split-pane content */}
-      <main className="max-w-6xl w-full mx-auto px-4 lg:px-6 mt-8 flex flex-col lg:flex-row gap-6 items-start">
-        
-                {/* LEFT COLUMN: Properties */}
-        <div className="w-full lg:w-[380px] shrink-0 flex flex-col gap-6">
-<div className="bg-white border border-gray-100 rounded-[24px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.01)] flex flex-col gap-6">
-            
-            {/* Title Block */}
-            <div className="flex flex-col gap-2">
-              <h1 className="text-3xl font-black text-gray-900 tracking-tight leading-tight uppercase font-sans">
-                {brief.title || "Untitled Content"}
-              </h1>
-              <div className="text-xs text-gray-400 font-semibold tracking-wider uppercase flex items-center gap-1">
-                Workspace: <span className="text-gray-700 normal-case">{workspaceName}</span>
-              </div>
+      {/* Title & Metadata Header Block */}
+      <div className="max-w-6xl w-full mx-auto px-4 lg:px-6 mt-8 flex flex-col gap-4">
+        {/* Mobile Promo Banner (Visible only on mobile/tablet) */}
+        <div className="w-full md:hidden flex justify-center">
+          <Link
+            to="/"
+            className="flex items-center justify-center relative h-[48px] px-14 bg-[#EFF6FF]/80 hover:bg-[#EFF6FF]/95 text-gray-800 rounded-full cursor-pointer transition-all duration-300 hover:-translate-y-0.5 group w-full border border-blue-100/40 shadow-[0_4px_16px_rgba(37,99,235,0.06)]"
+            style={{
+              fontFamily: "Plus Jakarta Sans, sans-serif"
+            }}
+          >
+            {/* Mascot Character Huby - Waving Friendly */}
+            <div className="absolute -left-2 -bottom-0.5 h-12 w-12 flex items-end justify-center select-none pointer-events-none z-10">
+              <img 
+                src="/Assets/Huby/huby-wave.png" 
+                alt="Huby" 
+                className="h-[48px] w-auto drop-shadow-[0_4px_8px_rgba(0,0,0,0.08)] group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 origin-bottom" 
+                referrerPolicy="no-referrer"
+              />
             </div>
 
-            {/* Separator line */}
-            <hr className="border-gray-50" />
+            {/* Glowing Subtle Accent Background */}
+            <div className="absolute top-0 right-0 w-24 h-full bg-gradient-to-l from-blue-100/20 to-transparent blur-md pointer-events-none rounded-r-full" />
 
-            {/* Notion Style Properties */}
-            <div className="flex flex-col gap-3.5">
+            {/* Centered Main Text in One Line */}
+            <div className="relative z-10 flex items-center justify-center text-center w-full">
+              <span className="text-[14px] xs:text-[15px] sm:text-[16px] font-black leading-none tracking-tight text-slate-800 whitespace-nowrap">
+                Kelola Medsos Lebih <span className="text-[#2563EB]">Praktis</span>! 🐧
+              </span>
+            </div>
+
+            {/* Promo CTA Button */}
+            <div className="absolute right-1.5 flex items-center gap-1 bg-[#2563EB] group-hover:bg-blue-700 text-white px-2.5 py-1.5 rounded-full shadow-[0_2px_4px_rgba(37,99,235,0.12)] shrink-0 transition-all duration-200 group-hover:scale-102 border border-blue-400/15 z-10">
+              <span className="text-[9px] font-extrabold tracking-wider uppercase whitespace-nowrap">
+                Coba Gratis
+              </span>
+              <Sparkles size={8} className="text-yellow-300 fill-yellow-300 animate-pulse" />
+            </div>
+          </Link>
+        </div>
+
+        <div className="bg-white border border-gray-100 rounded-2xl sm:rounded-[24px] p-5 sm:p-6 shadow-[0_8px_30px_rgb(0,0,0,0.01)] flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[10px] text-blue-600 font-extrabold uppercase tracking-widest bg-blue-50 px-2.5 py-1 rounded-md">
+                Shared Brief
+              </span>
+              <span className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider">
+                Workspace: {workspaceName}
+              </span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-gray-900 tracking-tight leading-tight uppercase font-sans">
+              {brief.title || "Untitled Content"}
+            </h1>
+          </div>
+          
+          <div className="flex flex-wrap items-center gap-2 border-t border-gray-50 pt-4">
+            <span 
+              style={{ 
+                fontSize: 11, 
+                fontWeight: 800, 
+                color: statusColor, 
+                backgroundColor: getTranslucentColor(statusColor, "15") 
+              }} 
+              className="px-3 py-1 rounded-full uppercase tracking-wider"
+            >
+              {brief.status || "Draft"}
+            </span>
+            {brief.platform && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider" style={{ backgroundColor: pStyle.bg, color: pStyle.text }}>
+                {pStyle.label}
+              </span>
+            )}
+            {brief.contentType && (
+              <span 
+                style={{ 
+                  fontSize: 11, 
+                  fontWeight: 800, 
+                  color: typeColor, 
+                  backgroundColor: getTranslucentColor(typeColor, "15") 
+                }} 
+                className="px-3 py-1 rounded-full uppercase tracking-wider"
+              >
+                {brief.contentType}
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Main split-pane content */}
+      <main className="max-w-6xl w-full mx-auto px-4 lg:px-6 mt-6 flex flex-col lg:flex-row gap-6 items-start">
+        
+        {/* LEFT COLUMN: Properties (Collapsible on mobile, ordered second on mobile) */}
+        <div className="w-full lg:w-[380px] shrink-0 flex flex-col gap-6">
+          <div className="bg-white border border-gray-100 rounded-2xl sm:rounded-[24px] p-5 sm:p-6 shadow-[0_8px_30px_rgb(0,0,0,0.01)] flex flex-col gap-4">
+            
+            {/* Properties Card Header */}
+            <div className="flex items-center justify-between">
+              <h2 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                <Zap size={14} className="text-blue-500" />
+                Detail & Jadwal Konten
+              </h2>
+            </div>
+
+            {/* Notion Style Properties list */}
+            <div className="flex flex-col gap-4 border-t border-gray-50 pt-4">
               
               {/* Status */}
               <div className="flex items-center min-h-[28px]">
@@ -972,9 +1166,9 @@ export function PublicBriefView() {
               />
               
               {[
-                { id: "draft", label: "Brief & Konten" },
-                { id: "refs", label: "Aset & Referensi" },
-                { id: "metrics", label: "Metrik & Performa" }
+                { id: "draft", label: "Brief Konten" },
+                { id: "refs", label: "Aset" },
+                { id: "metrics", label: "Metrik" }
               ].map(({ id, label }) => (
                 <button
                   key={id}
@@ -1013,9 +1207,9 @@ export function PublicBriefView() {
                   
                   {/* Reference Image View if exists */}
                   {brief.referenceImage && (
-                    <div className="bg-white border border-gray-100 rounded-[24px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.01)]">
+                    <div className="bg-white border border-gray-100 rounded-2xl sm:rounded-[24px] p-4 sm:p-6 shadow-[0_8px_30px_rgb(0,0,0,0.01)]">
                       <div className="text-[11px] font-extrabold text-gray-400 uppercase tracking-widest mb-4">
-                        Aset / Gambar Referensi Utama
+                        Gambar Referensi
                       </div>
                       <div className="rounded-2xl overflow-hidden border border-gray-100 bg-gray-50 flex justify-center aspect-video w-full max-h-[420px]">
                         <img 
@@ -1030,9 +1224,9 @@ export function PublicBriefView() {
 
                   {/* Custom Fields / Bento Box Information */}
                   {brief.customFields && brief.customFields.length > 0 && (
-                    <div className="bg-white border border-gray-100 rounded-[24px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.01)]">
+                    <div className="bg-white border border-gray-100 rounded-2xl sm:rounded-[24px] p-4 sm:p-6 shadow-[0_8px_30px_rgb(0,0,0,0.01)]">
                       <div className="text-[11px] font-extrabold text-gray-400 uppercase tracking-widest mb-4">
-                        Informasi Tambahan Workspace
+                        Field Kustom
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {brief.customFields.map((cf: any, idx: number) => (
@@ -1050,9 +1244,9 @@ export function PublicBriefView() {
                   )}
 
                   {/* Reference Links & Attachments */}
-                  <div className="bg-white border border-gray-100 rounded-[24px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.01)]">
+                  <div className="bg-white border border-gray-100 rounded-2xl sm:rounded-[24px] p-4 sm:p-6 shadow-[0_8px_30px_rgb(0,0,0,0.01)]">
                     <div className="text-[11px] font-extrabold text-gray-400 uppercase tracking-widest mb-4">
-                      Tautan Referensi & Dokumen Lampiran
+                      Tautan & Referensi
                     </div>
                     {brief.referenceLinks && brief.referenceLinks.length > 0 ? (
                       <div className="flex flex-col gap-2.5">
@@ -1096,23 +1290,23 @@ export function PublicBriefView() {
                 <div className="flex flex-col gap-6">
                   
                   {/* Organic Metrics Card */}
-                  <div className="bg-white border border-gray-100 rounded-[24px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.01)]">
+                  <div className="bg-white border border-gray-100 rounded-2xl sm:rounded-[24px] p-4 sm:p-6 shadow-[0_8px_30px_rgb(0,0,0,0.01)]">
                     <div className="text-[11px] font-extrabold text-gray-400 uppercase tracking-widest mb-6 flex items-center gap-2">
-                      <TrendingUp size={14} className="text-emerald-500" /> Performa Organik Postingan
+                      <TrendingUp size={14} className="text-emerald-500" /> Organik
                     </div>
                     
                     {brief.metrics && Object.values(brief.metrics).some(v => v !== 0 && v !== "") ? (
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                         {[
-                          { key: "views", label: "Views / Tayangan", icon: <Eye size={14} /> },
-                          { key: "reach", label: "Reach / Jangkauan", icon: <TrendingUp size={14} /> },
-                          { key: "likes", label: "Likes / Suka", icon: <Heart size={14} /> },
-                          { key: "comments", label: "Comments", icon: <MessageSquare size={14} /> },
-                          { key: "reposts", label: "Reposts / Bagikan", icon: <Share2 size={14} /> },
-                          { key: "saves", label: "Saves / Simpan", icon: <Bookmark size={14} /> },
+                          { key: "views", label: "Views", icon: <Eye size={14} /> },
+                          { key: "reach", label: "Reach", icon: <TrendingUp size={14} /> },
+                          { key: "likes", label: "Likes", icon: <Heart size={14} /> },
+                          { key: "comments", label: "Komentar", icon: <MessageSquare size={14} /> },
+                          { key: "reposts", label: "Reposts", icon: <Share2 size={14} /> },
+                          { key: "saves", label: "Saves", icon: <Bookmark size={14} /> },
                           { key: "profileVisits", label: "Kunjungan Profil", icon: <User size={14} /> },
-                          { key: "bioLinkTaps", label: "Ketuk Link Bio", icon: <ExternalLink size={14} /> },
-                          { key: "follows", label: "Followers Baru", icon: <Award size={14} /> }
+                          { key: "bioLinkTaps", label: "Klik Link Bio", icon: <ExternalLink size={14} /> },
+                          { key: "follows", label: "Followers", icon: <Award size={14} /> }
                         ].map(({ key, label, icon }) => {
                           const val = brief.metrics?.[key];
                           if (val === undefined || val === null || val === "") return null;
@@ -1138,21 +1332,21 @@ export function PublicBriefView() {
 
                   {/* Paid / Ads Metrics Card */}
                   {brief.adsMetrics && Object.values(brief.adsMetrics).some(v => v !== 0 && v !== "") && (
-                    <div className="bg-white border border-gray-100 rounded-[24px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.01)]">
+                    <div className="bg-white border border-gray-100 rounded-2xl sm:rounded-[24px] p-4 sm:p-6 shadow-[0_8px_30px_rgb(0,0,0,0.01)]">
                       <div className="text-[11px] font-extrabold text-gray-400 uppercase tracking-widest mb-6 flex items-center gap-2">
-                        <TrendingUp size={14} className="text-blue-500" /> Performa Kampanye Berbayar (Ads)
+                        <TrendingUp size={14} className="text-blue-500" /> Iklan (Ads)
                       </div>
                       
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                         {[
                           { key: "views", label: "Views", icon: <Eye size={14} /> },
                           { key: "reach", label: "Reach", icon: <TrendingUp size={14} /> },
-                          { key: "clicks", label: "Clicks / Klik Link", icon: <ExternalLink size={14} /> },
-                          { key: "conversions", label: "Conversions / Konversi", icon: <Check size={14} /> },
-                          { key: "spendBudget", label: "Pengeluaran (Spend)", icon: <Sparkles size={14} /> },
-                          { key: "dailyBudget", label: "Anggaran Harian", icon: <Calendar size={14} /> },
+                          { key: "clicks", label: "Klik Link", icon: <ExternalLink size={14} /> },
+                          { key: "conversions", label: "Konversi", icon: <Check size={14} /> },
+                          { key: "spendBudget", label: "Total Spend", icon: <Sparkles size={14} /> },
+                          { key: "dailyBudget", label: "Budget Harian", icon: <Calendar size={14} /> },
                           { key: "duration", label: "Durasi Iklan", icon: <Clock size={14} /> },
-                          { key: "audience", label: "Target Audience", icon: <User size={14} /> }
+                          { key: "audience", label: "Audience", icon: <User size={14} /> }
                         ].map(({ key, label, icon }) => {
                           const val = brief.adsMetrics?.[key];
                           if (val === undefined || val === null || val === "") return null;
@@ -1191,8 +1385,8 @@ export function PublicBriefView() {
           </AnimatePresence>
 
           {/* Comment Thread Card Section */}
-          {brief.allowComments && (
-            <div className="bg-white border border-gray-100 rounded-[24px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.01)]">
+          {brief.allowComments !== false && (
+            <div className="bg-white border border-gray-100 rounded-2xl sm:rounded-[24px] p-4 sm:p-6 shadow-[0_8px_30px_rgb(0,0,0,0.01)]">
               <h2 className="text-lg font-black text-gray-900 mb-6 flex items-center gap-2 uppercase tracking-tight">
                 <MessageSquare size={18} className="text-blue-600" />
                 Kolaborasi Komentar & Masukan ({comments.length})
@@ -1329,6 +1523,14 @@ export function PublicBriefView() {
 
         </div>
       </main>
+
+      {/* Footer Section with Brand Copyright */}
+      <footer className="w-full max-w-6xl mx-auto px-6 pb-12 mt-12 border-t border-gray-100/60 pt-8 flex flex-col items-center gap-6">
+        {/* Brand Copyright */}
+        <div className="text-center text-[11px] text-gray-400 font-bold uppercase tracking-wider">
+          &copy; {new Date().getFullYear()} Hubify Social. Hak Cipta Dilindungi.
+        </div>
+      </footer>
     </div>
   );
 }
