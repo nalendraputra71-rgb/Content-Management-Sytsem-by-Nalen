@@ -4,31 +4,47 @@ service cloud.firestore {
     
     // ─── UTILS ───────────────────────────────────────────────────────────────
     function isSignedIn() { return request.auth != null; }
+    
+    // Pure token-based isAdmin check (avoids rules-engine document read cost)
     function isAdmin() { 
-      return isSignedIn() && (
-        (request.auth.token.email != null && (request.auth.token.email == 'nalendraputra71@gmail.com' || request.auth.token.email == 'NalendraPutra71@gmail.com')) ||
-        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', '') == 'admin')
+      return isSignedIn() && request.auth.token.email != null && (
+        request.auth.token.email == 'nalendraputra71@gmail.com' || 
+        request.auth.token.email == 'NalendraPutra71@gmail.com'
       ); 
     }
+    
     function incoming() { return request.resource.data; }
     function existing() { return resource.data; }
     function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
 
     // RBAC Helpers
-    function getMember(wsId) {
-      return get(/databases/$(database)/documents/workspaces/$(wsId)/members/$(request.auth.uid));
-    }
-    function isOwner(wsId) { 
-      return isSignedIn() && exists(/databases/$(database)/documents/workspaces/$(wsId)/members/$(request.auth.uid)) && 
-             get(/databases/$(database)/documents/workspaces/$(wsId)/members/$(request.auth.uid)).data.role == "owner"; 
-    }
-    function isEditor(wsId) { 
-      return isSignedIn() && exists(/databases/$(database)/documents/workspaces/$(wsId)/members/$(request.auth.uid)) && 
-             get(/databases/$(database)/documents/workspaces/$(wsId)/members/$(request.auth.uid)).data.role in ["owner", "editor"]; 
-    }
     function isMember(wsId) { 
       return isSignedIn() && exists(/databases/$(database)/documents/workspaces/$(wsId)/members/$(request.auth.uid)); 
+    }
+    
+    function isEditor(wsId) { 
+      return isSignedIn() && (
+        (resource != null && resource.data.get('ownerId', '') == request.auth.uid) ||
+        (resource != null && resource.data.get('userId', '') == request.auth.uid) ||
+        (exists(/databases/$(database)/documents/workspaces/$(wsId)/members/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/workspaces/$(wsId)/members/$(request.auth.uid)).data.role in ["owner", "editor"])
+      ); 
+    }
+
+    function isCommenter(wsId) {
+      return isSignedIn() && (
+        (exists(/databases/$(database)/documents/workspaces/$(wsId)/members/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/workspaces/$(wsId)/members/$(request.auth.uid)).data.role in ["owner", "editor", "commenter"]) ||
+        (resource != null && (request.auth.uid in resource.data.get('commenterUids', []) || request.auth.uid in resource.data.get('editorUids', [])))
+      );
+    }
+    
+    function isOwner(wsId) { 
+      return isSignedIn() && (
+        (resource != null && resource.data.get('ownerId', '') == request.auth.uid) ||
+        (exists(/databases/$(database)/documents/workspaces/$(wsId)/members/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/workspaces/$(wsId)/members/$(request.auth.uid)).data.role == "owner")
+      ); 
     }
 
     // ─── DEFAULT DENY ────────────────────────────────────────────────────────
@@ -36,7 +52,7 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
-    // ─── USERS ───────────────────────────────────────────────────────────────
+    // ─── CONFIG & PUBLIC DATA ────────────────────────────────────────────────
     match /config/{docId} {
       allow read: if true;
       allow write: if isAdmin();
@@ -67,42 +83,31 @@ service cloud.firestore {
       }
     }
 
-    // ─── DASHBOARD & TODOS ──────────────────────────────────────────────────
-    match /workspaces/{wsId}/dashboard/config {
-      allow read: if isMember(wsId);
-      allow write: if isEditor(wsId);
-    }
-    match /workspaces/{wsId}/todos/{todoId} {
-      allow read: if isMember(wsId);
-      allow create: if isEditor(wsId) && incoming().userId == request.auth.uid;
-      allow update: if isEditor(wsId) && (incoming().diff(existing()).affectedKeys().hasOnly(['completed', 'completedAt', 'text', 'dueDate', 'updatedAt', 'type']));
-      allow delete: if isEditor(wsId);
-    }
-
-    // Collection Group rule for memberships
+    // ─── COLLECTION GROUP RULES (EVALUATED FAST) ───────────────────────────
     match /{path=**}/members/{memberId} {
       allow read: if isSignedIn() && (
         memberId == request.auth.uid || 
-        resource.data.get('userId', '') == request.auth.uid
+        resource.data.get('userId', '') == request.auth.uid ||
+        isAdmin()
       );
     }
 
-    // Collection Group rule for content
     match /{path=**}/content/{contentId} {
       allow read: if isSignedIn() && (
-        resource.data.get('isPublic', false) == true || 
-        ('sharedUids' in resource.data && request.auth.uid in resource.data.sharedUids) ||
-        ('sharedEmails' in resource.data && request.auth.token.email != null && request.auth.token.email.lower() in resource.data.sharedEmails)
+        (resource != null && resource.data.get('userId', '') == request.auth.uid) ||
+        (resource != null && resource.data.get('sharedUids', []) is list && request.auth.uid in resource.data.get('sharedUids', [])) ||
+        (resource != null && resource.data.get('isPublic', false) == true) ||
+        isAdmin()
       );
     }
 
     // ─── ADMINS ───────────────────────────────────────────────────────────────
     match /admins/{adminId} {
       allow read: if isAdmin();
-      allow write: if isAdmin(); // Only admins can add other admins
+      allow write: if isAdmin();
     }
 
-    // ─── PLANS & PROMOS ───────────────────────────────────────────────────────────
+    // ─── PLANS & PROMOS ───────────────────────────────────────────────────────
     match /plans/{planId} {
        allow read: if true;
        allow write: if isAdmin();
@@ -112,27 +117,19 @@ service cloud.firestore {
        allow write: if isAdmin();
     }
 
-    // ─── TRANSACTIONS ───────────────────────────────────────────────────────────
+    // ─── TRANSACTIONS ─────────────────────────────────────────────────────────
     match /transactions/{txId} {
        allow read: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
        allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
        allow update, delete: if isAdmin();
     }
-    match /config/system {
-       allow read: if true;
-       allow write: if isAdmin();
-    }
     match /usernames/{username} {
       allow read: if isSignedIn();
-      allow create: if isSignedIn(); // Validated via transaction in UserProfile
+      allow create: if isSignedIn();
       allow update: if isSignedIn();
       allow delete: if isSignedIn() && (resource == null || resource.data.get('uid', request.auth.uid) == request.auth.uid);
     }
 
-    match /global_notifications/{notifId} {
-       allow read: if request.auth != null;
-       allow write: if isAdmin();
-    }
     match /tickets/{ticketId} {
        allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
        allow read: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
@@ -145,7 +142,7 @@ service cloud.firestore {
        allow read, update, delete: if isAdmin();
     }
 
-    // ─── WORKSPACES ──────────────────────────────────────────────────────────
+    // ─── SOC & CHATS ─────────────────────────────────────────────────────────
     match /soc_posts/{postId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn() && incoming().authorId == request.auth.uid;
@@ -178,89 +175,98 @@ service cloud.firestore {
 
     // ─── WORKSPACES ──────────────────────────────────────────────────────────
     match /workspaces/{wsId} {
-      allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || resource.data.get('publicLinkEnabled', false) == true || isAdmin());
-      allow get: if isMember(wsId) || (isSignedIn() && (resource == null || resource.data.get('publicLinkEnabled', false) == true || isAdmin()));
+      allow list: if isSignedIn() && (
+        resource.data.ownerId == request.auth.uid || 
+        resource.data.get('publicLinkEnabled', false) == true || 
+        isAdmin()
+      );
+      allow get: if isSignedIn() && (
+        resource.data.ownerId == request.auth.uid || 
+        resource.data.get('publicLinkEnabled', false) == true || 
+        isMember(wsId) || 
+        isAdmin()
+      );
       allow create: if isSignedIn() && incoming().ownerId == request.auth.uid;
-      allow delete: if isOwner(wsId) || isAdmin();
-      allow update: if (isEditor(wsId) || isAdmin()) && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'publicLinkEnabled', 'settings', 'avatar']);
+      allow delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isOwner(wsId) || isAdmin());
+      allow update: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isEditor(wsId) || isAdmin()) && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'publicLinkEnabled', 'settings', 'avatar']);
 
       // ─── MEMBERS ───────────────────────────────────────────────────────────
       match /members/{memberId} {
-        allow read: if isMember(wsId) || isAdmin();
-        allow create: if isSignedIn() && (
-          isOwner(wsId) || isAdmin() ||
-          (request.auth.uid == memberId && incoming().role == "owner" && 
-           getAfter(/databases/$(database)/documents/workspaces/$(wsId)).data.ownerId == request.auth.uid)
+        allow read: if isSignedIn() && (
+          memberId == request.auth.uid || 
+          resource.data.get('userId', '') == request.auth.uid ||
+          isMember(wsId) || 
+          isAdmin()
         );
-        allow delete: if isOwner(wsId) || isAdmin() || (request.auth.uid == memberId && existing().role != "owner");
-        allow update: if (isOwner(wsId) && incoming().diff(existing()).affectedKeys().hasOnly(['role'])) || (request.auth.uid == memberId && incoming().diff(existing()).affectedKeys().hasOnly(['status']) && incoming().status == "active") || isAdmin();
+        allow create: if isSignedIn() && (
+          request.auth.uid == memberId ||
+          isOwner(wsId) || 
+          isAdmin()
+        );
+        allow delete: if isSignedIn() && (request.auth.uid == memberId || isOwner(wsId) || isAdmin());
+        allow update: if isSignedIn() && ((isOwner(wsId) && incoming().diff(existing()).affectedKeys().hasOnly(['role'])) || (request.auth.uid == memberId && incoming().diff(existing()).affectedKeys().hasOnly(['status']) && incoming().status == "active") || isAdmin());
       }
 
       // ─── CONTENT ───────────────────────────────────────────────────────────
       match /content/{contentId} {
-        allow read: if isMember(wsId) || isAdmin() || 
-                    get(/databases/$(database)/documents/workspaces/$(wsId)).data.publicLinkEnabled == true || 
-                    (resource != null && (
-                      resource.data.get('isPublic', false) == true || 
-                      ('sharedUids' in resource.data && request.auth.uid in resource.data.sharedUids) ||
-                      ('sharedEmails' in resource.data && request.auth.token.email != null && request.auth.token.email.lower() in resource.data.sharedEmails)
-                    ));
-        allow create: if (isEditor(wsId) || isAdmin()) && incoming().workspaceId == wsId && (incoming().userId == request.auth.uid || isAdmin());
-        
-        // Strictly restrict deletion to Workspace Owner/Admin or Document Owner
-        allow delete: if isOwner(wsId) || isAdmin() || 
-                     (resource != null && (resource.data.get('userId', '') == request.auth.uid || resource.data.get('createdBy', '') == request.auth.uid || resource.data.get('ownerId', '') == request.auth.uid));
-        
-        allow update: if 
-          // 1. Workspace Owner/Admin or Document Creator/Owner can update anything
-          isOwner(wsId) || isAdmin() || 
-          (resource != null && (resource.data.get('userId', '') == request.auth.uid || resource.data.get('createdBy', '') == request.auth.uid || resource.data.get('ownerId', '') == request.auth.uid)) ||
-          
-          // 2. Editors can update content details BUT NOT sharing permissions/roles
-          (
-            (
-              isEditor(wsId) ||
-              (
-                resource != null && (
-                  ('editorUids' in resource.data && request.auth.uid in resource.data.editorUids) ||
-                  (resource.data.get('isPublic', false) == true && (resource.data.get('linkAccessRole', 'viewer') == 'editor' || resource.data.get('publicRole', 'viewer') == 'editor'))
-                )
-              )
-            ) &&
-            !incoming().diff(existing()).affectedKeys().hasAny(['sharedUsers', 'sharedUids', 'sharedEmails', 'editorUids', 'isPublic', 'publicRole', 'linkAccessRole'])
-          ) ||
-          
-          // 3. Viewers / Commenters can ONLY add comments
-          (
-            resource != null && 
-            (
-              resource.data.get('isPublic', false) == true || 
-              ('sharedUids' in resource.data && request.auth.uid in resource.data.sharedUids) ||
-              ('sharedEmails' in resource.data && request.auth.token.email != null && request.auth.token.email.lower() in resource.data.sharedEmails)
-            ) && 
-            incoming().diff(existing()).affectedKeys().hasOnly(['comments'])
+        allow read: if isSignedIn() && (
+          (resource != null && resource.data.get('userId', '') == request.auth.uid) ||
+          (resource != null && resource.data.get('sharedUids', []) is list && request.auth.uid in resource.data.get('sharedUids', [])) ||
+          (resource != null && resource.data.get('isPublic', false) == true) ||
+          isMember(wsId) || 
+          isAdmin()
+        );
+        allow create: if isSignedIn() && incoming().workspaceId == wsId && (incoming().userId == request.auth.uid || isAdmin() || isEditor(wsId));
+        allow delete: if isSignedIn() && (resource.data.userId == request.auth.uid || isEditor(wsId) || isAdmin());
+        allow update: if isSignedIn() && (
+          resource.data.userId == request.auth.uid || 
+          isEditor(wsId) || 
+          isAdmin() ||
+          (request.auth.uid in resource.data.get('editorUids', [])) ||
+          ((isCommenter(wsId) || resource.data.get('isPublic', false) == true) && incoming().diff(existing()).affectedKeys().hasOnly(['comments']))
+        );
+
+        match /history/{historyId} {
+          allow read: if isSignedIn() && (
+            (get(/databases/$(database)/documents/workspaces/$(wsId)/content/$(contentId)).data.userId == request.auth.uid) ||
+            (request.auth.uid in get(/databases/$(database)/documents/workspaces/$(wsId)/content/$(contentId)).data.get('sharedUids', [])) ||
+            (get(/databases/$(database)/documents/workspaces/$(wsId)/content/$(contentId)).data.get('isPublic', false) == true) ||
+            isMember(wsId) ||
+            isAdmin()
           );
+          allow create, update, delete: if isSignedIn() && (
+            (get(/databases/$(database)/documents/workspaces/$(wsId)/content/$(contentId)).data.userId == request.auth.uid) ||
+            isEditor(wsId) ||
+            isAdmin() ||
+            (request.auth.uid in get(/databases/$(database)/documents/workspaces/$(wsId)/content/$(contentId)).data.get('editorUids', []))
+          );
+        }
       }
 
-      // ─── CONNECTED ACCOUNTS & INBOX ───────────────────────────────────────
-      match /connectedAccounts/{accountId} {
-        allow read, write: if isSignedIn();
-      }
-
-      match /inbox/{messageId} {
-        allow read, write: if isSignedIn();
-      }
-
-      match /commentReplies/{commentId} {
-        allow read, write: if isSignedIn();
+      // ─── DASHBOARD, TODOS & AUXILIARY ────────────────────────────────────
+      match /dashboard/{dashboardId} {
+        allow read: if isSignedIn() && (isMember(wsId) || isAdmin());
+        allow write: if isSignedIn() && (isEditor(wsId) || isAdmin());
       }
 
       match /todos/{todoId} {
-        allow read, write: if isSignedIn();
+        allow read: if isSignedIn() && (isMember(wsId) || isAdmin());
+        allow write: if isSignedIn() && (isMember(wsId) || isAdmin());
       }
 
-      match /dashboard/{dashboardId} {
-        allow read, write: if isSignedIn();
+      match /connectedAccounts/{accountId} {
+        allow read: if isSignedIn() && (isMember(wsId) || isAdmin());
+        allow write: if isSignedIn() && (isEditor(wsId) || isAdmin());
+      }
+
+      match /inbox/{messageId} {
+        allow read: if isSignedIn() && (isMember(wsId) || isAdmin());
+        allow write: if isSignedIn() && (isEditor(wsId) || isAdmin());
+      }
+
+      match /commentReplies/{commentId} {
+        allow read: if isSignedIn() && (isMember(wsId) || isAdmin());
+        allow write: if isSignedIn() && (isMember(wsId) || isAdmin());
       }
     }
   }

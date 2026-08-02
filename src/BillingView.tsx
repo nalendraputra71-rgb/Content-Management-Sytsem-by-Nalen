@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { doc, updateDoc, collection, getDocs, setDoc, increment, query, where, limit, auth, signOut } from "./firebase";
+import { doc, updateDoc, collection, getDocs, setDoc, increment, query, where, auth, signOut } from "./firebase";
 import { db } from "./firebase";
 import { CARD, B, I } from "./data";
 import { motion, AnimatePresence } from "motion/react";
@@ -104,7 +104,7 @@ export function BillingView({ userProfile, onUpdate }: { userProfile: any, activ
     id: "free",
     name: dbFreePlan ? dbFreePlan.name.replace(/ \((Monthly|Annual)\)/i, '') : "Free Starter",
     desc: dbFreePlan?.desc || "Cocok untuk mencoba fitur dasar Hubify.",
-    features: generateBulletPoints(dbFreePlan || { limits: { workspaces: 1, socialAccounts: 3, aiGenerationPerMonth: 10 }, capabilities: { analyticsLevel: 'basic', autoPublishing: false } }, 'id'),
+    features: generateBulletPoints(dbFreePlan || { limits: { workspaces: 1, socialAccounts: 3, aiCreditsPerMonth: 100000 }, capabilities: { analyticsLevel: 'basic', autoPublishing: false } }, 'id'),
     priceMonthly: dbFreePlan?.price || 0,
     priceAnnual: dbFreePlan?.price || 0,
     priceAnnualTotal: dbFreePlan?.price || 0,
@@ -122,14 +122,16 @@ export function BillingView({ userProfile, onUpdate }: { userProfile: any, activ
 
     return {
       id: p.id,
-      name: p.name.replace(/ \((Monthly|Annual)\)/i, ''),
+      name: p.name.replace(/ \(.*\)/i, ''),
       desc: p.desc,
       features: generateBulletPoints(p, 'id'),
       priceMonthly,
       priceAnnual: Math.round(priceAnnualTotal / 12),
       priceAnnualTotal,
       popular: p.popular,
-      originalPrice: p.originalPrice || 0
+      originalPrice: p.originalPrice || 0,
+      limits: p.limits,
+      capabilities: p.capabilities
     };
   });
 
@@ -160,7 +162,7 @@ export function BillingView({ userProfile, onUpdate }: { userProfile: any, activ
     if (promo.targetType === "first_timer") {
       const auth = getAuth();
       if (auth.currentUser) {
-         const transSnap = await getDocs(query(collection(db, 'transactions'), where('userId', '==', auth.currentUser.uid), limit(100)));
+         const transSnap = await getDocs(query(collection(db, 'transactions'), where('userId', '==', auth.currentUser.uid)));
          const hasPurchased = transSnap.docs.some(d => d.data().status === 'PAID');
          if (hasPurchased) {
             setVoucherError("Voucher ini hanya berlaku untuk pengguna yang pertama kali melakukan perpanjangan.");
@@ -309,7 +311,7 @@ export function BillingView({ userProfile, onUpdate }: { userProfile: any, activ
         {/* Back Button & Logout */}
         <div className="flex items-center justify-between mb-8">
           <button 
-            onClick={() => window.location.href = "/profile"} 
+            onClick={() => window.location.href = "/?tab=settings"} 
             className="flex items-center gap-2 text-slate-500 hover:text-[#0B2A4A] transition-colors font-semibold text-sm focus:outline-none cursor-pointer"
           >
             <ArrowLeft size={16} /> Kembali ke Pengaturan Profil
@@ -500,7 +502,17 @@ export function BillingView({ userProfile, onUpdate }: { userProfile: any, activ
                 </tr>
               </thead>
               <tbody className="text-sm">
-                {getCompareRows(lang).map((row, i, arr) => {
+                
+                {(() => {
+                  const dbFreePlan = dbPlans.find(p => p.id === (isAnnual ? 'free-annual' : 'free-monthly'));
+                  const freeLimits = dbFreePlan?.limits || { workspaces: 1, socialAccounts: 1, teamMembers: 0, aiCreditsPerMonth: 10, storageMB: 150 };
+                  const freeCaps = dbFreePlan?.capabilities || { 
+                      publicLink: true, customColumn: false, organicPaid: true, csvImportExport: false, autoPublishing: false, 
+                      platformAnalytics: false, heatmaps: false, aiSummary: false, topBadAnalysis: false, demographics: false, pdfExport: false,
+                      aiAutoSave: false, aiModelText: "3.1 Flash", aiUsageText: "Terbatas", historyDays: 0, sharedBriefs: 20
+                  };
+                  return getCompareRows(lang, freeLimits, freeCaps);
+                })().map((row, i, arr) => {
                   const prevRow = i > 0 ? arr[i - 1] : null;
                   const showCategoryHeader = !prevRow || prevRow.category !== row.category;
                   const valFree = row.free;

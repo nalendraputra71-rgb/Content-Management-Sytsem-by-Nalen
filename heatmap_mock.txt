@@ -1,0 +1,22 @@
+  const HeatmapMock = () => (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "auto repeat(7, 1fr)",
+        gap: 4,
+        width: "100%",
+      }}
+    >
+      <div />
+      {["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"].map((d) => (
+        <div
+          key={d}
+          style={{
+            textAlign: "center",
+            fontSize: 11,
+            fontWeight: 800,
+            color: "rgba(44,32,22,0.5)",
+          }}
+        >
+          {d}
+        </div>

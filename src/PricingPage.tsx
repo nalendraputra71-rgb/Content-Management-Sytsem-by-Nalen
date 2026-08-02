@@ -17,57 +17,62 @@ export const getPlanTier = (plan: any) => {
   return 'plus';
 };
 
-export const getCompareRows = (lang: 'id' | 'en' = 'id') => [
+export const getCompareRows = (lang: 'id' | 'en' = 'id', freeLimits: any = {}, freeCaps: any = {}) => [
   // 1. Management & Limits
   {
     category: lang === 'id' ? 'Manajemen & Akses' : 'Management & Access',
     id: lang === 'id' ? 'Jumlah Workspace' : 'Workspaces',
-    free: '1',
+    free: (freeLimits.workspaces === -1 || freeLimits.workspaces === '-1') ? 'Unlimited' : `${freeLimits.workspaces ?? 1}`,
     getVal: (p: any) => {
       const v = p.limits?.workspaces;
-      return v === -1 || v === '-1' ? 'Unlimited' : `${v ?? 1}`;
+      return (v === -1 || v === '-1') ? 'Unlimited' : `${v ?? 1}`;
     }
   },
   {
     category: lang === 'id' ? 'Manajemen & Akses' : 'Management & Access',
-    id: lang === 'id' ? 'Integrasi Akun Sosmed' : 'Social Accounts',
-    free: '3 Akun',
+    id: lang === 'id' ? 'Integrasi Akun Sosmed (Segera)' : 'Social Accounts (Soon)',
+    free: (freeLimits.socialAccounts === -1 || freeLimits.socialAccounts === '-1') ? 'Unlimited' : `${freeLimits.socialAccounts ?? 1} Akun`,
     getVal: (p: any) => {
       const v = p.limits?.socialAccounts;
-      return v === -1 || v === '-1' ? 'Unlimited' : `${v ?? 10} Akun`;
+      return (v === -1 || v === '-1') ? 'Unlimited' : `${v ?? 1} Akun`;
     }
   },
   {
     category: lang === 'id' ? 'Manajemen & Akses' : 'Management & Access',
     id: lang === 'id' ? 'Anggota Tim & Kolaborasi' : 'Team Members',
-    free: '1 (Solo)',
+    free: (() => {
+      const v = freeLimits.teamMembers;
+      if (v === -1 || v === '-1') return 'Unlimited';
+      if (!v || v === 0) return '-';
+      return `${v}`;
+    })(),
     getVal: (p: any) => {
       const v = p.limits?.teamMembers;
       if (v === -1 || v === '-1') return 'Unlimited';
-      return v > 1 ? `${v} Member` : '1 (Solo)';
+      if (!v || v === 0) return '-';
+      return `${v}`;
     }
   },
   {
     category: lang === 'id' ? 'Manajemen & Akses' : 'Management & Access',
     id: lang === 'id' ? 'Penyimpanan Aset Media' : 'Asset Storage',
-    free: '100 MB',
+    free: (() => {
+      const v = freeLimits.storageMB;
+      if (v === -1 || v === '-1') return 'Unlimited';
+      return `${v ?? 50} MB`;
+    })(),
     getVal: (p: any) => {
       const v = p.limits?.storageMB;
       if (v === -1 || v === '-1') return 'Unlimited';
-      if (v >= 1000) return `${v / 1000} GB`;
-      return `${v ?? 1000} MB`;
+      return `${v ?? 50} MB`;
     }
   },
-
   // 2. Dashboard & Productivity
   {
     category: lang === 'id' ? 'Dashboard & Produktivitas' : 'Dashboard & Productivity',
     id: lang === 'id' ? 'Tren Terkini & Insight' : 'Up-to-Date Trends',
-    free: 'Dasar',
-    getVal: (p: any) => {
-      const tier = getPlanTier(p);
-      return tier === 'max' || tier === 'pro' ? 'Live + AI' : 'Live';
-    }
+    free: true,
+    getVal: () => true
   },
   {
     category: lang === 'id' ? 'Dashboard & Produktivitas' : 'Dashboard & Productivity',
@@ -78,12 +83,8 @@ export const getCompareRows = (lang: 'id' | 'en' = 'id') => [
   {
     category: lang === 'id' ? 'Dashboard & Produktivitas' : 'Dashboard & Productivity',
     id: lang === 'id' ? 'Metrik Progres Harian' : 'Daily Progress Metrics',
-    free: 'Dasar',
-    getVal: (p: any) => {
-      const tier = getPlanTier(p);
-      if (tier === 'max') return 'Custom Target';
-      return 'Lanjutan';
-    }
+    free: true,
+    getVal: () => true
   },
   {
     category: lang === 'id' ? 'Dashboard & Produktivitas' : 'Dashboard & Productivity',
@@ -94,166 +95,128 @@ export const getCompareRows = (lang: 'id' | 'en' = 'id') => [
   {
     category: lang === 'id' ? 'Dashboard & Produktivitas' : 'Dashboard & Productivity',
     id: lang === 'id' ? 'Brief Konten Bersama' : 'Shared Brief Content',
-    free: '-',
+    free: (() => {
+      const v = freeCaps.sharedBriefs;
+      if (v === -1 || v === '-1') return 'Unlimited';
+      return v ? `${v} Brief Konten` : '-';
+    })(),
     getVal: (p: any) => {
-      const tier = getPlanTier(p);
-      if (tier === 'max') return 'Unlimited';
-      if (tier === 'pro') return '25 Brief';
-      return '5 Brief';
+      const v = p.capabilities?.sharedBriefs;
+      if (v === -1 || v === '-1') return 'Unlimited';
+      return v ? `${v} Brief Konten` : '-';
     }
   },
-
   // 3. Hub.AI Assistant
   {
     category: lang === 'id' ? 'Hub.AI Assistant' : 'Hub.AI Assistant',
     id: lang === 'id' ? 'Model AI Gemini' : 'Gemini AI Models',
-    free: '3.1 Flash',
-    getVal: (p: any) => {
-      const tier = getPlanTier(p);
-      if (tier === 'max' || tier === 'pro') return '3.1 Pro, 3.5 & 3.1 Flash';
-      return '3.5 Flash & 3.1 Flash';
-    }
+    free: freeCaps.aiModelText || '3.1 Flash',
+    getVal: (p: any) => p.capabilities?.aiModelText || '3.1 Flash'
   },
   {
     category: lang === 'id' ? 'Hub.AI Assistant' : 'Hub.AI Assistant',
     id: lang === 'id' ? 'Auto-Save Chat ke Brief' : 'Auto-Save Chat to Brief',
-    free: '-',
-    getVal: () => true
+    free: freeCaps.aiAutoSave ? true : '-',
+    getVal: (p: any) => p.capabilities?.aiAutoSave ? true : '-'
   },
   {
     category: lang === 'id' ? 'Hub.AI Assistant' : 'Hub.AI Assistant',
     id: lang === 'id' ? 'Batas Generate AI / Bulan' : 'AI Generation / Month',
-    free: '10 Prompts',
-    getVal: (p: any) => {
-      const v = p.limits?.aiGenerationPerMonth;
-      if (v === -1 || v === '-1') return 'Unlimited';
-      return `${v ?? 100} Prompts`;
-    }
+    free: freeCaps.aiUsageText || 'Terbatas',
+    getVal: (p: any) => p.capabilities?.aiUsageText || 'Terbatas'
   },
-
   // 4. Content Calendar & Brief
   {
     category: lang === 'id' ? 'Kalender & Brief Konten' : 'Content Calendar & Brief',
     id: lang === 'id' ? 'Public / Shared Brief Link' : 'Public Shared Brief',
-    free: '-',
-    getVal: () => true
+    free: freeCaps.publicLink ? true : '-',
+    getVal: (p: any) => p.capabilities?.publicLink ? true : '-'
   },
   {
     category: lang === 'id' ? 'Kalender & Brief Konten' : 'Content Calendar & Brief',
     id: lang === 'id' ? 'Riwayat Edit Brief Konten' : 'Brief Edit History',
-    free: '-',
+    free: (() => {
+      const v = freeCaps.historyDays;
+      if (!v || v === 0) return '-';
+      if (v === -1) return 'Unlimited';
+      return `${v} Hari`;
+    })(),
     getVal: (p: any) => {
-      const tier = getPlanTier(p);
-      if (tier === 'max') return 'Unlimited';
-      if (tier === 'pro') return '30 Hari';
-      return '7 Hari';
+      const v = p.capabilities?.historyDays;
+      if (!v || v === 0) return '-';
+      if (v === -1) return 'Unlimited';
+      return `${v} Hari`;
     }
   },
   {
     category: lang === 'id' ? 'Kalender & Brief Konten' : 'Content Calendar & Brief',
     id: lang === 'id' ? 'Kustom Kolom Brief' : 'Brief Column Customization',
-    free: '-',
-    getVal: (p: any) => {
-      const tier = getPlanTier(p);
-      return tier === 'max' || tier === 'pro' ? 'Bebas' : 'Dasar';
-    }
+    free: freeCaps.customColumn ? true : '-',
+    getVal: (p: any) => p.capabilities?.customColumn ? true : '-'
   },
   {
     category: lang === 'id' ? 'Kalender & Brief Konten' : 'Content Calendar & Brief',
     id: lang === 'id' ? 'Pemisah Data Organik/Paid' : 'Organic vs Paid Split',
-    free: '-',
-    getVal: () => true
+    free: freeCaps.organicPaid ? true : '-',
+    getVal: (p: any) => p.capabilities?.organicPaid ? true : '-'
   },
   {
     category: lang === 'id' ? 'Kalender & Brief Konten' : 'Content Calendar & Brief',
     id: lang === 'id' ? 'Bulk Import & Export CSV/XLSX' : 'Bulk Import/Export',
-    free: '-',
-    getVal: (p: any) => {
-      const tier = getPlanTier(p);
-      return tier === 'max' || tier === 'pro' ? 'Import & Export' : 'Export CSV';
-    }
+    free: freeCaps.csvImportExport ? true : '-',
+    getVal: (p: any) => p.capabilities?.csvImportExport ? true : '-'
   },
   {
     category: lang === 'id' ? 'Kalender & Brief Konten' : 'Content Calendar & Brief',
-    id: lang === 'id' ? 'Penjadwalan Otomatis' : 'Auto Publishing',
-    free: false,
-    getVal: (p: any) => p.capabilities?.autoPublishing ?? true
+    id: lang === 'id' ? 'Penjadwalan Otomatis (Segera)' : 'Auto Publishing',
+    free: freeCaps.autoPublishing ? true : '-',
+    getVal: (p: any) => p.capabilities?.autoPublishing ? true : '-'
   },
-
   // 5. Analytics & Reports
   {
     category: lang === 'id' ? 'Analitik & Pelaporan' : 'Analytics & Reporting',
     id: lang === 'id' ? 'Analitik Per Platform' : 'Platform Analytics',
-    free: 'Dasar',
-    getVal: (p: any) => {
-      const tier = getPlanTier(p);
-      if (tier === 'max') return 'Real-time Custom';
-      if (tier === 'pro') return 'Mendalam';
-      return 'Lanjutan';
-    }
+    free: freeCaps.platformAnalytics ? true : '-',
+    getVal: (p: any) => p.capabilities?.platformAnalytics ? true : '-'
   },
   {
     category: lang === 'id' ? 'Analitik & Pelaporan' : 'Analytics & Reporting',
     id: lang === 'id' ? 'Grafik & Heatmap Aktivitas' : 'Charts & Heatmap',
-    free: '-',
-    getVal: (p: any) => {
-      const tier = getPlanTier(p);
-      return tier === 'max' || tier === 'pro' ? 'Grafik + Heatmap' : 'Grafik';
-    }
+    free: freeCaps.heatmaps ? true : '-',
+    getVal: (p: any) => p.capabilities?.heatmaps ? true : '-'
   },
   {
     category: lang === 'id' ? 'Analitik & Pelaporan' : 'Analytics & Reporting',
     id: lang === 'id' ? 'Rangkuman AI Otomatis' : 'AI Performance Summary',
-    free: '-',
-    getVal: (p: any) => {
-      const tier = getPlanTier(p);
-      if (tier === 'max') return 'Real-time';
-      if (tier === 'pro') return 'Harian';
-      return 'Mingguan';
-    }
+    free: freeCaps.aiSummary ? true : '-',
+    getVal: (p: any) => p.capabilities?.aiSummary ? true : '-'
   },
   {
     category: lang === 'id' ? 'Analitik & Pelaporan' : 'Analytics & Reporting',
     id: lang === 'id' ? 'Analisis Top & Bad Content' : 'Top & Bad Content Analysis',
-    free: 'Top 3',
-    getVal: (p: any) => {
-      const tier = getPlanTier(p);
-      return tier === 'max' || tier === 'pro' ? 'All Content' : 'Top 10';
-    }
+    free: freeCaps.topBadAnalysis ? true : '-',
+    getVal: (p: any) => p.capabilities?.topBadAnalysis ? true : '-'
   },
   {
     category: lang === 'id' ? 'Analitik & Pelaporan' : 'Analytics & Reporting',
-    id: lang === 'id' ? 'Data Demografi Per Platform' : 'Audience Demographics',
-    free: '-',
-    getVal: () => true
+    id: lang === 'id' ? 'Data Demografi Per Platform' : 'Platform Demographics',
+    free: freeCaps.demographics ? true : '-',
+    getVal: (p: any) => p.capabilities?.demographics ? true : '-'
   },
   {
     category: lang === 'id' ? 'Analitik & Pelaporan' : 'Analytics & Reporting',
     id: lang === 'id' ? 'Export Laporan PDF' : 'PDF Report Export',
-    free: '-',
-    getVal: (p: any) => {
-      const tier = getPlanTier(p);
-      if (tier === 'max') return 'White-label';
-      if (tier === 'pro') return 'Custom Logo';
-      return 'Standar';
-    }
-  },
-
-  // 6. Support & Services
-  {
-    category: lang === 'id' ? 'Layanan & Bantuan' : 'Support & Services',
-    id: lang === 'id' ? 'Dukungan Pelanggan' : 'Customer Support',
-    free: 'Komunitas',
-    getVal: (p: any) => {
-      const tier = getPlanTier(p);
-      if (tier === 'max') return '24/7 VIP Priority';
-      if (tier === 'pro') return 'Email Prioritas';
-      return 'Email Support';
-    }
+    free: freeCaps.pdfExport ? true : '-',
+    getVal: (p: any) => p.capabilities?.pdfExport ? true : '-'
   }
 ];
 
 export const generateBulletPoints = (plan: any, lang: 'id'|'en') => {
+  if (plan?.features && plan.features.length > 0) {
+    // If the plan has hardcoded features array (from the seeder), prefer using it for the card bullets
+    return plan.features;
+  }
+
   const limits = plan?.limits || {};
   const caps = plan?.capabilities || {};
   const bullets: string[] = [];
@@ -272,44 +235,22 @@ export const generateBulletPoints = (plan: any, lang: 'id'|'en') => {
     bullets.push(`${limits.socialAccounts} ${lang === 'id' ? 'Akun Sosmed' : 'Social Accounts'}`);
   }
 
-  // AI Generation
-  if (limits.aiGenerationPerMonth === -1 || limits.aiGenerationPerMonth === '-1') {
-    bullets.push("Hub.AI: Unlimited AI Generation");
-  } else {
-    bullets.push(`Hub.AI: ${limits.aiGenerationPerMonth || 100}x ${lang === 'id' ? 'Generate AI / Bulan' : 'AI Generation / Month'}`);
+  // AI Usage
+  if (caps.aiModelText) {
+    bullets.push(`Hub.AI: ${caps.aiModelText}`);
+  } else if (limits.aiCreditsPerMonth) {
+     bullets.push(`Hub.AI: ${limits.aiCreditsPerMonth} Credits`);
   }
 
   // Team Members
   if (limits.teamMembers === -1 || limits.teamMembers === '-1') {
-    bullets.push(lang === 'id' ? "Kolaborasi Tim Tak Terbatas" : "Unlimited Team Collaboration");
+    bullets.push(lang === 'id' ? "Anggota Tim Unlimited" : "Unlimited Team Members");
   } else if (limits.teamMembers > 1) {
-    bullets.push(lang === 'id' ? `Kolaborasi ${limits.teamMembers} Anggota Tim` : `${limits.teamMembers} Team Members Collaboration`);
+    bullets.push(`${limits.teamMembers} ${lang === 'id' ? 'Anggota Tim' : 'Team Members'}`);
+  } else if (limits.teamMembers === 1) {
+    bullets.push(lang === 'id' ? "1 Anggota (Solo)" : "1 Member (Solo)");
   }
-
-  // Analytics
-  if (caps.analyticsLevel === 'custom') {
-    bullets.push("Custom Analytics & Reporting");
-  } else {
-    bullets.push(lang === 'id' ? "Analitik Dasar" : "Basic Analytics");
-  }
-
-  // Export Reports
-  if (caps.exportReports === 'white-label') {
-    bullets.push("White-label Export & Branding");
-  }
-
-  // Support Level
-  if (caps.supportLevel === 'vip') {
-    bullets.push(lang === 'id' ? "Prioritas Dukungan 24/7 VIP" : "24/7 VIP Priority Support");
-  } else if (caps.supportLevel === 'priority') {
-    bullets.push(lang === 'id' ? "Dukungan Email Prioritas" : "Priority Email Support");
-  }
-
-  // Auto Publishing
-  if (!caps.autoPublishing) {
-    bullets.push(lang === 'id' ? "Kalender Konten Dasar" : "Basic Content Calendar");
-  }
-
+  
   return bullets;
 };
 
@@ -328,17 +269,17 @@ export function PricingPage() {
   const [featureRows, setFeatureRows] = useState<any[]>([]);
 
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, 'plans'), (snap) => {
-      if (!snap.empty) {
-        setPlans(snap.docs.map(d => ({ id: d.id, ...d.data() as any })));
-      }
-      setLoading(false);
-    }, (err) => {
-      console.warn("Failed to fetch plans:", err);
-      setLoading(false);
-    });
-
-    return () => unsub();
+    getDocs(collection(db, 'plans'))
+      .then((snap) => {
+        if (!snap.empty) {
+          setPlans(snap.docs.map(d => ({ id: d.id, ...d.data() as any })));
+        }
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.warn("Failed to fetch plans:", err);
+        setLoading(false);
+      });
   }, []);
 
   const formatLimit = (val: any) => {
@@ -388,66 +329,14 @@ export function PricingPage() {
   const activePlans = plans.filter(p => (isAnnual ? p.addMonths >= 12 : p.addMonths < 12) && !p.id.startsWith('free')).sort((a,b) => a.price - b.price);
 
   const dbFreePlan = plans.find(p => p.id === (isAnnual ? 'free-annual' : 'free-monthly'));
-  const freeLimits = dbFreePlan?.limits || { workspaces: 1, socialAccounts: 3, teamMembers: 1, aiGenerationPerMonth: 10, storageMB: 100 };
-  const freeCaps = dbFreePlan?.capabilities || { autoPublishing: false, analyticsLevel: 'basic', exportReports: 'none', contentApproval: false, commentManagement: false, supportLevel: 'community' };
+  const freeLimits = dbFreePlan?.limits || { workspaces: 1, socialAccounts: 1, teamMembers: 0, aiCreditsPerMonth: 10, storageMB: 150 };
+  const freeCaps = dbFreePlan?.capabilities || { 
+     publicLink: true, customColumn: false, organicPaid: true, csvImportExport: false, autoPublishing: false,
+     platformAnalytics: false, heatmaps: false, aiSummary: false, topBadAnalysis: false, demographics: false, pdfExport: false,
+     aiAutoSave: false, aiModelText: "3.1 Flash", aiUsageText: "Terbatas", historyDays: 0, sharedBriefs: 20
+  };
 
-  const compareRows = [
-    { 
-      id: 'Workspaces', en: 'Workspaces', type: 'text',
-      free: formatLimit(freeLimits.workspaces), 
-      getVal: (p: any) => formatLimit(p.limits?.workspaces ?? 1)
-    },
-    { 
-      id: 'Integrasi Akun Sosial', en: 'Social Account Integrations', type: 'text',
-      free: `${formatLimit(freeLimits.socialAccounts)} Akun`, 
-      getVal: (p: any) => `${formatLimit(p.limits?.socialAccounts ?? 10)} Akun`
-    },
-    { 
-      id: 'Anggota Tim', en: 'Team Members', type: 'text',
-      free: '1 (Solo)', 
-      getVal: (p: any) => p.limits?.teamMembers === 1 ? '1 (Solo)' : formatLimit(p.limits?.teamMembers ?? 1)
-    },
-    { 
-      id: 'Penjadwalan Otomatis', en: 'Auto-Publishing', type: 'boolean',
-      free: freeCaps.autoPublishing, 
-      getVal: (p: any) => p.capabilities?.autoPublishing ?? false
-    },
-    { 
-      id: 'Batas Generate AI / Bulan', en: 'AI Generation / Month', type: 'text',
-      free: `${formatLimit(freeLimits.aiGenerationPerMonth)} Prompts`, 
-      getVal: (p: any) => formatLimit(p.limits?.aiGenerationPerMonth ?? 100)
-    },
-    { 
-      id: 'Penyimpanan Aset (MB)', en: 'Asset Storage (MB)', type: 'text',
-      free: `${formatLimit(freeLimits.storageMB)} MB`, 
-      getVal: (p: any) => formatLimit(p.limits?.storageMB ?? 1000)
-    },
-    { 
-      id: 'Analisis Performa', en: 'Performance Analytics', type: 'text',
-      free: formatLevel(freeCaps.analyticsLevel, lang), 
-      getVal: (p: any) => formatLevel(p.capabilities?.analyticsLevel || 'basic', lang)
-    },
-    { 
-      id: 'Export Laporan', en: 'Export Reports', type: 'text',
-      free: formatLevel(freeCaps.exportReports, lang), 
-      getVal: (p: any) => formatLevel(p.capabilities?.exportReports || 'none', lang)
-    },
-    { 
-      id: 'Alur Persetujuan Konten', en: 'Content Approval Workflow', type: 'boolean',
-      free: freeCaps.contentApproval, 
-      getVal: (p: any) => p.capabilities?.contentApproval ?? false
-    },
-    { 
-      id: 'Manajemen Komentar', en: 'Comment Management', type: 'boolean',
-      free: freeCaps.commentManagement, 
-      getVal: (p: any) => p.capabilities?.commentManagement ?? false
-    },
-    { 
-      id: 'Dukungan Pelanggan', en: 'Customer Support', type: 'text',
-      free: formatLevel(freeCaps.supportLevel, lang), 
-      getVal: (p: any) => formatLevel(p.capabilities?.supportLevel || 'community', lang)
-    },
-  ];
+
 
   const handleLangChange = (l: 'id' | 'en') => {
     setLang(l);
@@ -688,7 +577,7 @@ export function PricingPage() {
                   </tr>
                 </thead>
                 <tbody className="text-sm">
-                  {getCompareRows(lang).map((row, i, arr) => {
+                  {getCompareRows(lang, freeLimits, freeCaps).map((row, i, arr) => {
                     const prevRow = i > 0 ? arr[i - 1] : null;
                     const showCategoryHeader = !prevRow || prevRow.category !== row.category;
                     const valFree = row.free;

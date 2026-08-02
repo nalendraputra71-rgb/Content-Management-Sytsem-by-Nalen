@@ -5,8 +5,8 @@ import { db, auth, onAuthStateChanged } from "./firebase";
 import { signOut } from "firebase/auth";
 import { motion, AnimatePresence } from "motion/react";
 import Markdown from "react-markdown";
-import { 
-   RefreshCw, Globe,
+import {
+  Globe,
   Copy,
   Check,
   MessageSquare,
@@ -38,7 +38,7 @@ import {
   ChevronDown,
   ChevronUp
 , LogOut } from "lucide-react";
-import { PlatformPreview } from "./components/PlatformPreview";
+import { PlatformPreview } from "./components/SocialStudio/PlatformPreview";
 import { htmlToPlainText } from "./data";
 
 // Platform colors & icons lookup
@@ -269,6 +269,7 @@ export function PublicBriefView() {
   };
 
   const renderSectionCommentBadge = (sectionKey: string) => {
+    if (!canComment || !showCommentUI) return null;
     const count = comments.filter(c => c.sectionId === sectionKey && !c.resolved).length;
     const isOpen = !!openSections[sectionKey];
 
@@ -295,6 +296,7 @@ export function PublicBriefView() {
   };
 
   const renderInlineCommentThread = (sectionKey: string) => {
+    if (!canComment || !showCommentUI) return null;
     const sectionComments = comments.filter(c => c.sectionId === sectionKey);
     const unresolvedComments = sectionComments.filter(c => !c.resolved);
     const resolvedComments = sectionComments.filter(c => c.resolved);
@@ -516,43 +518,14 @@ export function PublicBriefView() {
     );
   };
 
-  const fetchBrief = async () => {
+  useEffect(() => {
     if (!workspaceId || !contentId) {
       setError("ID Link tidak valid.");
       setLoading(false);
       return;
     }
-    setLoading(true);
-    try {
-      const docRef = doc(db, "workspaces", workspaceId, "content", contentId);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        const isPublic = !!data.isPublic;
-        const sharedUsers = data.sharedUsers || [];
-        const sharedUids = data.sharedUids || [];
-        const isOwner = currentUser && (data.userId === currentUser.uid || data.createdBy === currentUser.uid || data.ownerId === currentUser.uid);
-        const isSharedUser = currentUser && ((Array.isArray(sharedUids) && sharedUids.includes(currentUser.uid)) || sharedUsers.some((u: any) => u.uid === currentUser.uid || (u.email && currentUser.email && u.email.toLowerCase() === currentUser.email.toLowerCase()) || (userProfile?.username && u.username && u.username.toLowerCase() === userProfile.username.toLowerCase())));
-        if (isPublic || isOwner || isSharedUser) {
-          setBrief({ ...data, id: docSnap.id, workspaceId });
-          setComments(data.comments || []);
-          setError(null);
-        } else {
-          setError("Akses Ditolak: Brief konten ini bersifat privat.");
-        }
-      } else {
-        setError("Brief konten tidak ditemukan.");
-      }
-    } catch (err) {
-      console.error("Error loading public brief:", err);
-      setError("Gagal memuat brief konten.");
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  useEffect(() => {
-    if (!workspaceId || !contentId) return;
+    // Fetch workspace details for brand metadata
     getDoc(doc(db, "workspaces", workspaceId))
       .then((snap) => {
         if (snap.exists()) {
@@ -565,7 +538,49 @@ export function PublicBriefView() {
         console.error("Error loading workspace name:", err);
       });
 
-    fetchBrief();
+    const docRef = doc(db, "workspaces", workspaceId, "content", contentId);
+    
+    // Set up real-time snapshot listener so comments and updates stream instantly
+    const unsubscribe = onSnapshot(docRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        const isPublic = !!data.isPublic;
+        const sharedUsers = data.sharedUsers || [];
+        const sharedUids = data.sharedUids || [];
+        
+        // Access checks
+        const isOwner = currentUser && (
+          data.userId === currentUser.uid || 
+          data.createdBy === currentUser.uid || 
+          data.ownerId === currentUser.uid
+        );
+        const isSharedUser = currentUser && (
+          (Array.isArray(sharedUids) && sharedUids.includes(currentUser.uid)) ||
+          sharedUsers.some((u: any) => 
+            u.uid === currentUser.uid || 
+            (u.email && currentUser.email && u.email.toLowerCase() === currentUser.email.toLowerCase()) || 
+            (userProfile?.username && u.username && u.username.toLowerCase() === userProfile.username.toLowerCase())
+          )
+        );
+
+        if (isPublic || isOwner || isSharedUser) {
+          setBrief({ ...data, id: docSnap.id, workspaceId });
+          setComments(data.comments || []);
+          setError(null);
+        } else {
+          setError("Akses Ditolak: Brief konten ini bersifat privat dan hanya dibagikan ke pengguna Hubify Social tertentu.");
+        }
+      } else {
+        setError("Brief konten tidak ditemukan.");
+      }
+      setLoading(false);
+    }, (err) => {
+      console.error("Error loading public brief:", err);
+      setError("Gagal memuat brief konten. Pastikan link sudah benar dan memiliki akses publik.");
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, [workspaceId, contentId, currentUser, userProfile]);
 
   const getUserRole = () => {
@@ -598,6 +613,12 @@ export function PublicBriefView() {
   const userRole = getUserRole();
   const canEdit = userRole === "owner" || userRole === "editor";
   const canComment = userRole === "owner" || userRole === "editor" || userRole === "commenter";
+
+  const isSharedWithCommentAccess = brief ? 
+    (brief.isPublic && (brief.publicRole === "editor" || brief.publicRole === "commenter")) || 
+    (brief.sharedUsers && brief.sharedUsers.some((u: any) => u.role === "editor" || u.role === "commenter")) : false;
+  
+  const showCommentUI = isSharedWithCommentAccess || (comments && comments.length > 0) || userRole === "editor" || userRole === "commenter";
 
   const getInitialLayoutFields = () => {
     if (brief && brief.layoutSettings && Array.isArray(brief.layoutSettings.fields)) {
@@ -1385,7 +1406,7 @@ export function PublicBriefView() {
           </AnimatePresence>
 
           {/* Comment Thread Card Section */}
-          {brief.allowComments !== false && (
+          {brief.allowComments !== false && canComment && showCommentUI && (
             <div className="bg-white border border-gray-100 rounded-2xl sm:rounded-[24px] p-4 sm:p-6 shadow-[0_8px_30px_rgb(0,0,0,0.01)]">
               <h2 className="text-lg font-black text-gray-900 mb-6 flex items-center gap-2 uppercase tracking-tight">
                 <MessageSquare size={18} className="text-blue-600" />

@@ -566,7 +566,40 @@ export const emptyItem = (y:any,mo:any,d:any,pillars:any,platforms:any,pics:any,
 
 // ─── SEED ─────────────────────────────────────────────────────────────────────
 
-const baseSeed: any[] = [];
+
+const baseSeed: any[] = [
+  {
+    day: 5,
+    pillar: "Edukasi", platform: "Instagram", contentType: "Single Image", pic: "Andi", status: "Published",
+    title: "Tips Produktivitas WFH",
+    metrics: {views:5430, reach:3200, likes:450, comments:23, shares:45, saves:120}
+  },
+  {
+    day: 12,
+    pillar: "Promosi", platform: "TikTok", contentType: "Video", pic: "Budi", status: "Published",
+    title: "Promo Merdeka 50%",
+    metrics: {views:12400, reach:8900, likes:1200, comments:145, shares:430, saves:230}
+  },
+  {
+    day: 18,
+    pillar: "Branding", platform: "LinkedIn", contentType: "Carousel", pic: "Citra", status: "Published",
+    title: "Budaya Kerja Perusahaan",
+    metrics: {views:2100, reach:1500, likes:340, comments:45, shares:20, saves:50}
+  },
+  {
+    day: 25,
+    pillar: "Interaksi", platform: "Facebook", contentType: "Single Image", pic: "Andi", status: "Published",
+    title: "Q&A Bisnis Online",
+    metrics: {views:3400, reach:2100, likes:230, comments:80, shares:15, saves:10}
+  },
+  {
+    day: 28,
+    pillar: "Edukasi", platform: "Instagram", contentType: "Reels", pic: "Budi", status: "Published",
+    title: "Tutorial Fitur Baru",
+    metrics: {views:8900, reach:6500, likes:890, comments:76, shares:120, saves:340}
+  }
+];
+
 
 export const makeSeed = () => {
   let gId = 1;
@@ -574,7 +607,7 @@ export const makeSeed = () => {
   
   // Make 2025 Month 5 manually specifically based on the current context format
   baseSeed.forEach(x => {
-    fullSeed.push({id:String(gId++),year:2025,month:5,caption:"",briefCopywriting:"",objective:"",hook:"",cta:"",referenceText:"",referenceLink:"",referenceImage:"",linkAsset:"",linkUpload:"",archived:false,metricsUpdatedAt:null,...x});
+    fullSeed.push({id:String(gId++),year:new Date().getFullYear(),month:5,caption:"",briefCopywriting:"",objective:"",hook:"",cta:"",referenceText:"",referenceLink:"",referenceImage:"",linkAsset:"",linkUpload:"",archived:false,metricsUpdatedAt:null,...x});
   });
 
   // Generate Dummy Data for 2024
@@ -595,12 +628,12 @@ export const makeSeed = () => {
         };
         const item = {
             id:String(gId++),
-            year:2024,
+            year:new Date().getFullYear(),
             month:m,
             day: Math.floor(Math.random()*28)+1,
             caption:"",briefCopywriting:"",objective:"",hook:"",cta:"",referenceText:"",referenceLink:"",referenceImage:"",linkAsset:"",linkUpload:"",archived:false,metricsUpdatedAt:null,
             ...rnd,
-            title: rnd.title + ` (Archive 2024-${m})`,
+            title: rnd.title + ` (Archive 2026-${m})`,
             metrics: metrics
         };
         

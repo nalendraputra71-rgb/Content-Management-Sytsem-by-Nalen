@@ -9,7 +9,7 @@ import {
   DollarSign, Package, Tag, Clock, ChevronRight, UserPlus, Filter, Crown, Send, Layout,
   Trash2, Sparkles, HardDrive, Check, Percent
 } from "lucide-react";
-import { db, collection, getDocs, getDoc, doc, updateDoc, setDoc, deleteDoc, onSnapshot, query, where, addDoc, sendPasswordResetEmail, auth } from "./firebase";
+import { db, collection, getDocs, doc, updateDoc, setDoc, deleteDoc, onSnapshot, query, where, addDoc, sendPasswordResetEmail, auth, getCountFromServer, limit, getDoc } from "./firebase";
 import { fmt, B, CARD } from "./data";
 
 export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogout: () => void }) {
@@ -18,6 +18,8 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchEmail, setSearchEmail] = useState("");
+  const [totalUsersCount, setTotalUsersCount] = useState<number | null>(null);
+  const [proUsersCount, setProUsersCount] = useState<number | null>(null);
   const [selectedUser, setSelectedUser] = useState<any>(null);
 
   const [plans, setPlans] = useState<any[]>([]);
@@ -143,56 +145,94 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
     }
   };
 
-  const fetchAdminData = async () => {
-    setLoading(true);
-    setLoadingTickets(true);
-    try {
-      const [usersSnap, adminsSnap, plansSnap, promosSnap, transactionsSnap, ticketsSnap, configSnap, deletionSnap, featuresSnap] = await Promise.all([
-        getDocs(collection(db, "users")),
-        getDocs(query(collection(db, "users"), where("role", "==", "admin"))),
-        getDocs(collection(db, "plans")),
-        getDocs(collection(db, "promos")),
-        getDocs(collection(db, "transactions")),
-        getDocs(query(collection(db, "tickets"))),
-        getDoc(doc(db, "config", "system")),
-        getDocs(collection(db, "accountDeletionReasons")),
-        getDoc(doc(db, "config", "pricing_features"))
-      ]);
-
-      const usersData = usersSnap.docs.map(d => ({id: d.id, ...d.data()}));
-      setUsers(usersData as any[]);
-      if (selectedUser) {
-          const current = usersData.find((u: any) => u.id === selectedUser.id);
-          if (current) setSelectedUser(current as any);
+  useEffect(() => {
+    const fetchCounts = async () => {
+      try {
+        const totalSnap = await getCountFromServer(collection(db, "users"));
+        setTotalUsersCount(totalSnap.data().count);
+        
+        const proSnap = await getCountFromServer(query(collection(db, "users"), where("plan", "==", "pro")));
+        setProUsersCount(proSnap.data().count);
+      } catch (err) {
+        console.warn("Failed to fetch aggregate counts:", err);
       }
-      
-      setAdmins(adminsSnap.docs.map(d => ({id: d.id, ...d.data()})));
-      setPlans(plansSnap.docs.map(d => ({id: d.id, ...d.data()})));
-      setPromosList(promosSnap.docs.map(d => ({id: d.id, ...d.data()})));
-      setTransactions(transactionsSnap.docs.map(d => ({id: d.id, ...d.data()})));
-      
-      const ticketsData = ticketsSnap.docs.map(d => ({id: d.id, ...d.data()}));
-      setTickets(ticketsData.sort((a:any, b:any) => new Date(b.updatedAt||0).getTime() - new Date(a.updatedAt||0).getTime()));
-      if (selectedTicket) {
-          const current = ticketsData.find((d: any) => d.id === selectedTicket.id);
-          if (current) setSelectedTicket(current as any);
-      }
-      
-      if (configSnap.exists()) setSystemSettings(configSnap.data());
-      setDeletionReasons(deletionSnap.docs.map(d => ({id: d.id, ...d.data()})));
-      if (featuresSnap.exists() && featuresSnap.data().rows) {
-        setFeatureRows(featuresSnap.data().rows);
-      }
-    } catch (e) {
-      console.error("Admin fetch error:", e);
-    }
-    setLoading(false);
-    setLoadingTickets(false);
-  };
+    };
+    fetchCounts();
+  }, []);
 
   useEffect(() => {
-    fetchAdminData();
-  }, [selectedUser?.id, selectedTicket?.id]);
+    let unsubs: any[] = [];
+    
+    // Real-time synchronization for Users list with limit and query prefix search
+    const cleanSearch = searchEmail.trim().toLowerCase();
+    let qUsers;
+    if (cleanSearch) {
+      if (cleanSearch.includes("@")) {
+        qUsers = query(collection(db, "users"), where("email", "==", cleanSearch), limit(50));
+      } else {
+        qUsers = query(
+          collection(db, "users"), 
+          where("email", ">=", cleanSearch), 
+          where("email", "<=", cleanSearch + "\uf8ff"), 
+          limit(50)
+        );
+      }
+    } else {
+      qUsers = query(collection(db, "users"), limit(50));
+    }
+
+    getDocs(qUsers).then(snap => {
+      const data = snap.docs.map(d => ({id: d.id, ...(d.data() as any)}));
+      setUsers(data as any[]);
+      setLoading(false);
+      if (selectedUser) {
+          const current = data.find((u: any) => u.id === selectedUser.id);
+          if (current) setSelectedUser(current);
+      }
+    }).catch(err => { console.warn("Admin users fetch error:", err); setLoading(false); });
+
+    getDocs(query(collection(db, "users"), where("role", "==", "admin"))).then(snap => {
+      setAdmins(snap.docs.map(d => ({id: d.id, ...(d.data() as any)})));
+    }).catch(err => console.warn("Admin roles fetch error:", err));
+
+    getDocs(collection(db, "plans")).then(snap => {
+      setPlans(snap.docs.map(d => ({id: d.id, ...(d.data() as any)})));
+    }).catch(err => console.warn("Admin plans fetch error:", err));
+
+    getDocs(collection(db, "promos")).then(snap => {
+      setPromosList(snap.docs.map(d => ({id: d.id, ...(d.data() as any)})));
+    }).catch(err => console.warn("Admin promos fetch error:", err));
+
+    getDocs(query(collection(db, "transactions"), limit(200))).then(snap => {
+      setTransactions(snap.docs.map(d => ({id: d.id, ...(d.data() as any)})));
+    }).catch(err => console.warn("Admin transactions fetch error:", err));
+
+    getDocs(query(collection(db, "tickets"), limit(100))).then(snap => {
+      const data = snap.docs.map(d=>({id: d.id, ...(d.data() as any)}));
+      setTickets(data.sort((a:any, b:any) => new Date(b.updatedAt||0).getTime() - new Date(a.updatedAt||0).getTime()));
+      setLoadingTickets(false);
+      if (selectedTicket) {
+          const current = data.find((d: any) => d.id === selectedTicket.id);
+          if (current) setSelectedTicket(current);
+      }
+    }).catch(err => console.warn("Admin tickets fetch error:", err));
+
+    getDoc(doc(db, "config", "system")).then(snap => {
+      if (snap.exists()) setSystemSettings(snap.data());
+    }).catch(err => console.warn("Admin config fetch error:", err));
+
+    getDocs(collection(db, "accountDeletionReasons")).then(snap => {
+      setDeletionReasons(snap.docs.map(d => ({id: d.id, ...(d.data() as any)})));
+    }).catch(err => console.warn("Admin deletion reasons fetch error:", err));
+
+    getDoc(doc(db, "config", "pricing_features")).then(snap => {
+      if (snap.exists() && snap.data().rows) {
+        setFeatureRows(snap.data().rows);
+      }
+    }).catch(err => console.warn("Admin pricing features fetch error:", err));
+    
+    return () => { };
+  }, [searchEmail, selectedUser?.id, selectedTicket?.id]);
 
   const seedDefaultData = async () => {
     try {
@@ -208,7 +248,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
           addMonths: 1,
           popular: false,
           features: ["1 Workspace", "Hub.AI: 10x Generate AI / Bulan", "Analitik Dasar", "Kalender Konten"],
-          limits: { workspaces: 1, socialAccounts: 3, teamMembers: 1, aiGenerationPerMonth: 10, storageMB: 100 },
+          limits: { workspaces: 1, socialAccounts: 3, teamMembers: 1, aiCreditsPerMonth: 100000, storageMB: 100 },
           capabilities: { autoPublishing: false, analyticsLevel: 'basic', exportReports: 'none', contentApproval: false, commentManagement: false, supportLevel: 'community' }
         },
         {
@@ -220,7 +260,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
           addMonths: 12,
           popular: false,
           features: ["1 Workspace", "Hub.AI: 10x Generate AI / Bulan", "Analitik Dasar", "Kalender Konten"],
-          limits: { workspaces: 1, socialAccounts: 3, teamMembers: 1, aiGenerationPerMonth: 10, storageMB: 100 },
+          limits: { workspaces: 1, socialAccounts: 3, teamMembers: 1, aiCreditsPerMonth: 100000, storageMB: 100 },
           capabilities: { autoPublishing: false, analyticsLevel: 'basic', exportReports: 'none', contentApproval: false, commentManagement: false, supportLevel: 'community' }
         },
         {
@@ -232,7 +272,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
           addMonths: 1,
           popular: false,
           features: ["1 Workspace", "Hub.AI: 100x Generate AI / Bulan", "10 Akun Sosmed"],
-          limits: { workspaces: 1, socialAccounts: 10, teamMembers: 1, aiGenerationPerMonth: 100, storageMB: 1000 },
+          limits: { workspaces: 1, socialAccounts: 10, teamMembers: 1, aiCreditsPerMonth: 1000000, storageMB: 1000 },
           capabilities: { autoPublishing: true, analyticsLevel: 'advanced', exportReports: 'basic', contentApproval: false, commentManagement: true, supportLevel: 'email' }
         },
         {
@@ -244,7 +284,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
           addMonths: 12,
           popular: false,
           features: ["1 Workspace", "Hub.AI: 100x Generate AI / Bulan", "10 Akun Sosmed"],
-          limits: { workspaces: 1, socialAccounts: 10, teamMembers: 1, aiGenerationPerMonth: 100, storageMB: 1000 },
+          limits: { workspaces: 1, socialAccounts: 10, teamMembers: 1, aiCreditsPerMonth: 1000000, storageMB: 1000 },
           capabilities: { autoPublishing: true, analyticsLevel: 'advanced', exportReports: 'basic', contentApproval: false, commentManagement: true, supportLevel: 'email' }
         },
         {
@@ -256,7 +296,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
           addMonths: 1,
           popular: true,
           features: ["3 Workspaces", "Hub.AI: 500x Generate AI / Bulan", "Kolaborasi 5 Anggota Tim"],
-          limits: { workspaces: 3, socialAccounts: 30, teamMembers: 5, aiGenerationPerMonth: 500, storageMB: 10000 },
+          limits: { workspaces: 3, socialAccounts: 30, teamMembers: 5, aiCreditsPerMonth: 5000000, storageMB: 10000 },
           capabilities: { autoPublishing: true, analyticsLevel: 'advanced', exportReports: 'custom', contentApproval: true, commentManagement: true, supportLevel: 'priority' }
         },
         {
@@ -268,7 +308,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
           addMonths: 12,
           popular: true,
           features: ["3 Workspaces", "Hub.AI: 500x Generate AI / Bulan", "Kolaborasi 5 Anggota Tim"],
-          limits: { workspaces: 3, socialAccounts: 30, teamMembers: 5, aiGenerationPerMonth: 500, storageMB: 10000 },
+          limits: { workspaces: 3, socialAccounts: 30, teamMembers: 5, aiCreditsPerMonth: 5000000, storageMB: 10000 },
           capabilities: { autoPublishing: true, analyticsLevel: 'advanced', exportReports: 'custom', contentApproval: true, commentManagement: true, supportLevel: 'priority' }
         },
         {
@@ -280,7 +320,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
           addMonths: 1,
           popular: false,
           features: ["Unlimited Workspaces", "Hub.AI: Unlimited Generate AI", "Custom Analytics & Reporting", "White-label Export & Branding", "Prioritas Dukungan 24/7 VIP"],
-          limits: { workspaces: -1, socialAccounts: -1, teamMembers: -1, aiGenerationPerMonth: -1, storageMB: -1 },
+          limits: { workspaces: -1, socialAccounts: -1, teamMembers: -1, aiCreditsPerMonth: -1, storageMB: -1 },
           capabilities: { autoPublishing: true, analyticsLevel: 'custom', exportReports: 'white-label', contentApproval: true, commentManagement: true, supportLevel: 'vip' }
         },
         {
@@ -292,7 +332,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
           addMonths: 12,
           popular: false,
           features: ["Unlimited Workspaces", "Hub.AI: Unlimited Generate AI", "Custom Analytics & Reporting", "White-label Export & Branding", "Prioritas Dukungan 24/7 VIP"],
-          limits: { workspaces: -1, socialAccounts: -1, teamMembers: -1, aiGenerationPerMonth: -1, storageMB: -1 },
+          limits: { workspaces: -1, socialAccounts: -1, teamMembers: -1, aiCreditsPerMonth: -1, storageMB: -1 },
           capabilities: { autoPublishing: true, analyticsLevel: 'custom', exportReports: 'white-label', contentApproval: true, commentManagement: true, supportLevel: 'vip' }
         }
       ];
@@ -331,7 +371,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
         { key: 'socials', id: 'Integrasi Akun Sosial', en: 'Social Account Integrations', type: 'text', f: '3 Akun', s: '10 Akun', t: '30 Akun', a: 'Unlimited' },
         { key: 'members', id: 'Anggota Tim', en: 'Team Members', type: 'text', f: '1 (Solo)', s: '1 (Solo)', t: 'Hingga 3', a: 'Unlimited' },
         { key: 'publishing', id: 'Penjadwalan Otomatis', en: 'Auto-Publishing', type: 'boolean', f: false, s: true, t: true, a: true },
-        { key: 'ai_limit', id: 'Batas Generate AI / Bulan', en: 'AI Generation / Month', type: 'text', f: '10 Prompts', s: '100 Prompts', t: '500 Prompts', a: 'Unlimited' },
+        { key: 'ai_limit', id: 'Batas AI Credits / Bulan', en: 'AI Credits / Month', type: 'text', f: '100K Credits', s: '1M Credits', t: '5M Credits', a: 'Unlimited' },
         { key: 'storage', id: 'Penyimpanan Aset', en: 'Asset Storage', type: 'text', f: '100 MB', s: '1 GB', t: '5 GB', a: 'Unlimited' },
         { key: 'analytics', id: 'Analisis Performa', en: 'Performance Analytics', type: 'text', f: 'Dasar', s: 'Lanjutan', t: 'Lanjutan', a: 'Mendalam' },
         { key: 'export', id: 'Export Laporan', en: 'Export Reports', type: 'text', f: 'Tidak', s: 'Ya', t: 'Ya (Kustom)', a: 'Ya (White-label)' },
@@ -368,22 +408,40 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
        const originalPrice_annual = Number(fd.get("originalPrice_annual")) || 0;
        const popular = fd.get("popular") === "on";
 
+       
        const limits = {
           workspaces: Number(fd.get("workspaces")),
           socialAccounts: Number(fd.get("socialAccounts")),
           teamMembers: Number(fd.get("teamMembers")),
-          aiGenerationPerMonth: Number(fd.get("aiGenerationPerMonth")),
+          aiCreditsPerMonth: Number(fd.get("aiCreditsPerMonth")),
           storageMB: Number(fd.get("storageMB"))
        };
-
+       
        const capabilities = {
-          autoPublishing: true,
-          analyticsLevel: fd.get("analyticsLevel"),
-          exportReports: "custom",
-          contentApproval: true,
-          commentManagement: true,
-          supportLevel: fd.get("supportLevel")
+          publicLink: fd.get("cap_publicLink") === "on",
+          customColumn: fd.get("cap_customColumn") === "on",
+          organicPaid: fd.get("cap_organicPaid") === "on",
+          csvImportExport: fd.get("cap_csvImportExport") === "on",
+          autoPublishing: fd.get("cap_autoPublishing") === "on",
+          analytics: fd.get("cap_analytics") === "on",
+          platformAnalytics: fd.get("cap_platformAnalytics") === "on",
+          heatmaps: fd.get("cap_heatmaps") === "on",
+          aiSummary: fd.get("cap_aiSummary") === "on",
+          topBadAnalysis: fd.get("cap_topBadAnalysis") === "on",
+          demographics: fd.get("cap_demographics") === "on",
+          pdfExport: fd.get("cap_pdfExport") === "on",
+          aiAutoSave: fd.get("cap_aiAutoSave") === "on",
+          aiModelText: fd.get("cap_aiModelText"),
+          allowedModels: [
+            fd.get("cap_model_gemini-3.1-flash-lite") === "on" ? "gemini-3.1-flash-lite" : null,
+            fd.get("cap_model_gemini-3.6-flash") === "on" ? "gemini-3.6-flash" : null,
+            fd.get("cap_model_gemini-3.1-pro-preview") === "on" ? "gemini-3.1-pro-preview" : null
+          ].filter(Boolean),
+          aiUsageText: fd.get("cap_aiUsageText"),
+          historyDays: Number(fd.get("cap_historyDays")),
+          sharedBriefs: Number(fd.get("cap_sharedBriefs"))
        };
+
 
        const baseId = editingPlan?.id ? editingPlan.id : name.toLowerCase().trim().replace(/\s+/g, '-');
 
@@ -595,10 +653,6 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
              <div style={{width:6, height:6, borderRadius:"50%", background:"#10B981", boxShadow:"0 0 8px #10B981"}} />
              Sistem Operasional Aktif
           </div>
-          <button onClick={fetchAdminData} style={{display:"flex", alignItems:"center", gap:6, padding:"6px 14px", borderRadius:20, border:"1px solid rgba(0,0,0,0.1)", background:"white", cursor:"pointer", fontSize: 12, fontWeight: 600, color: "#4B5563"}} className="hover:bg-stone-50 transition-colors">
-            {loading ? <span className="animate-spin text-stone-400"><RefreshCw size={14}/></span> : <RefreshCw size={14} />}
-            Refresh
-          </button>
         </div>
       </div>
 
@@ -652,16 +706,16 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                         <div style={{fontSize:11, color:"#10B981", fontWeight:700, background:"rgba(16,185,129,0.08)", padding:"4px 8px", borderRadius:8}}>+12%</div>
                       </div>
                       <div style={{fontSize:12, color:"#6B7280", fontWeight:600, textTransform:"uppercase", letterSpacing:"0.5px"}}>{lang === "id" ? "Total User Terdaftar" : "Total Registered Users"}</div>
-                      <div style={{fontSize:32, fontWeight:800, color:"#111827", marginTop:6}}>{users.length}</div>
+                      <div style={{fontSize:32, fontWeight:800, color:"#111827", marginTop:6}}>{totalUsersCount !== null ? totalUsersCount : (loading ? "..." : users.length)}</div>
                     </div>
                     <div style={{background:"#FFFFFF", borderRadius:20, padding:24, border:"1px solid rgba(0,0,0,0.04)", boxShadow:"0 1px 3px rgba(0,0,0,0.01), 0 10px 30px rgba(0,0,0,0.02)"}}>
                       <div style={{display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:16}}>
                         <div style={{width:44, height:44, background:"rgba(59,130,246,0.08)", borderRadius:12, display:"flex", alignItems:"center", justifyContent:"center"}}>
-                          <Package size={20} color="var(--theme-primary)"/>
+                           <Package size={20} color="var(--theme-primary)"/>
                         </div>
                       </div>
                       <div style={{fontSize:12, color:"#6B7280", fontWeight:600, textTransform:"uppercase", letterSpacing:"0.5px"}}>{lang === "id" ? "User Premium (Pro)" : "Premium Users (Pro)"}</div>
-                      <div style={{fontSize:32, fontWeight:800, color:"#111827", marginTop:6}}>{users.filter(u=>u.plan==="pro").length}</div>
+                      <div style={{fontSize:32, fontWeight:800, color:"#111827", marginTop:6}}>{proUsersCount !== null ? proUsersCount : users.filter(u=>u.plan==="pro").length}</div>
                     </div>
                     <div style={{background:"#FFFFFF", borderRadius:20, padding:24, border:"1px solid rgba(0,0,0,0.04)", boxShadow:"0 1px 3px rgba(0,0,0,0.01), 0 10px 30px rgba(0,0,0,0.02)"}}>
                       <div style={{display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:16}}>
@@ -749,7 +803,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                   <div style={{display:"flex", alignItems:"center", gap:12}}>
                     <div style={{display:"flex", alignItems:"center", background:"#FFFFFF", padding:"10px 16px", borderRadius:12, border:"1px solid rgba(0,0,0,0.06)", width: 320, boxShadow:"0 1px 3px rgba(0,0,0,0.01)"}}>
                       <Search size={18} color="#9CA3AF" style={{marginRight:10}}/>
-                      <input placeholder="Cari email user..." value={searchEmail} onChange={e=>setSearchEmail(e.target.value)} style={{border:"none", outline:"none", flex:1, fontSize:13, background:"transparent", color:"#111827", fontWeight:600}} />
+                      <input id="admin-search-email" placeholder="Cari email user..." value={searchEmail} onChange={e=>setSearchEmail(e.target.value)} style={{border:"none", outline:"none", flex:1, fontSize:13, background:"transparent", color:"#111827", fontWeight:600}} />
                     </div>
                     <button onClick={() => alert(lang === "id" ? "Fitur Tambah User Manual akan segera tersedia." : "Manual Add User feature will be available soon.")} style={{background:"var(--theme-primary)", color:"white", border:"none", padding:"12px 20px", borderRadius:12, fontSize:13, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", gap:8}} className="btn-hover">
                       <UserPlus size={16} /> Tambah User
@@ -955,7 +1009,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                     </div>
                     <div style={CARD({padding:24, borderRadius:20})}>
                        <div style={{fontSize:11, color:"#6B7280", fontWeight:700, textTransform:"uppercase", letterSpacing:"0.5px"}}>MRR (Estimated)</div>
-                       <div style={{fontSize:32, fontWeight:800, color:"#111827", marginTop:8, letterSpacing:"-1px"}}>{fmtRp(users.filter(u=>u.plan==="pro").length * 99000)}</div>
+                       <div style={{fontSize:32, fontWeight:800, color:"#111827", marginTop:8, letterSpacing:"-1px"}}>{fmtRp((proUsersCount !== null ? proUsersCount : users.filter(u=>u.plan==="pro").length) * 99000)}</div>
                        <div style={{fontSize:12, color:"#2196F3", fontWeight:700, marginTop:8}}>Monthly Recurring Revenue</div>
                     </div>
                     <div style={CARD({padding:24, borderRadius:20})}>
@@ -1180,7 +1234,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                                 <div style={{width: 24, height: 24, borderRadius: 8, background: "rgba(37,99,235,0.05)", display: "flex", alignItems: "center", justifyContent: "center"}}>
                                   <Sparkles size={12} color="var(--theme-primary, #2563EB)" />
                                 </div>
-                                <span>{p.limits?.aiGenerationPerMonth === -1 ? "Unlimited" : p.limits?.aiGenerationPerMonth} AI /bln</span>
+                                <span>{p.limits?.aiCreditsPerMonth === -1 ? "Unlimited" : p.limits?.aiCreditsPerMonth} Credits/bln</span>
                               </div>
                               <div style={{display: "flex", alignItems: "center", gap: 8, fontSize: 12, fontWeight: 600, color: "#111827"}}>
                                 <div style={{width: 24, height: 24, borderRadius: 8, background: "rgba(0,0,0,0.03)", display: "flex", alignItems: "center", justifyContent: "center"}}>
@@ -1922,7 +1976,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                       <div style={{display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12}}>
                         <div>
                           <label style={{display:"block", fontSize:11, fontWeight:800, color:"rgba(17,24,39,0.4)", textTransform:"uppercase", marginBottom:6, letterSpacing: "0.5px"}}>Akses AI (Kredit/Bulan)</label>
-                          <input name="aiGenerationPerMonth" type="number" placeholder="100" defaultValue={editingPlan.limits?.aiGenerationPerMonth ?? 50} required style={{width:"100%", padding:"11px 14px", borderRadius:12, border:"1px solid rgba(0,0,0,0.08)", background: "rgba(0,0,0,0.02)", fontSize:14}} />
+                          <input name="aiCreditsPerMonth" type="number" placeholder="100" defaultValue={editingPlan.limits?.aiCreditsPerMonth ?? 500000} required style={{width:"100%", padding:"11px 14px", borderRadius:12, border:"1px solid rgba(0,0,0,0.08)", background: "rgba(0,0,0,0.02)", fontSize:14}} />
                         </div>
                         <div>
                           <label style={{display:"block", fontSize:11, fontWeight:800, color:"rgba(17,24,39,0.4)", textTransform:"uppercase", marginBottom:6, letterSpacing: "0.5px"}}>Batas Anggota Tim</label>
@@ -1935,37 +1989,76 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                       </div>
                    </div>
 
+                   
                    {/* 4. CAPABILITIES TAB */}
                    <div style={{display: modalPlanTab === "capabilities" ? "flex" : "none", flexDirection: "column", gap: 16}}>
                       <div style={{marginBottom: 4}}>
                         <h4 style={{margin: 0, fontSize: 14, fontWeight: 800, color: "#111827"}}>Layanan & Fitur Premium</h4>
-                        <p style={{margin: "4px 0 0 0", fontSize: 12, color: "rgba(17,24,39,0.4)"}}>Aktifkan atau pilih tingkat kapabilitas fitur yang disediakan paket ini.</p>
+                        <p style={{margin: "4px 0 0 0", fontSize: 12, color: "rgba(17,24,39,0.4)"}}>Centang fitur yang tersedia untuk paket ini.</p>
                       </div>
 
-                      <div style={{display:"grid", gridTemplateColumns:"1fr", gap:16}}>
-                        <div>
-                          <label style={{display:"block", fontSize:11, fontWeight:800, color:"rgba(17,24,39,0.4)", textTransform:"uppercase", marginBottom:6, letterSpacing: "0.5px"}}>Level Modul Analitik</label>
-                          <select name="analyticsLevel" defaultValue={editingPlan.capabilities?.analyticsLevel || 'basic'} style={{width:"100%", padding:"11px 14px", borderRadius:12, border:"1px solid rgba(0,0,0,0.08)", fontSize:13, background:"#FFFFFF", cursor: "pointer"}}>
-                            <option value="basic">Analitik Dasar</option>
-                            <option value="advanced">Analitik Lanjutan (Demografi & Grafik)</option>
-                            <option value="custom">Mendalam & Laporan Kustom</option>
-                          </select>
+                      <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:16}}>
+                        {/* Kalender & Brief Konten */}
+                        <div style={{display:"flex", flexDirection:"column", gap:12}}>
+                          <h5 style={{margin:0, fontSize:12, color:"#2563EB", textTransform:"uppercase", fontWeight:800}}>Kalender & Brief</h5>
+                          <label style={{display:"flex", alignItems:"center", gap:8, fontSize:13, fontWeight:600}}><input type="checkbox" name="cap_publicLink" defaultChecked={editingPlan.capabilities?.publicLink ?? false} /> Public / Shared Brief Link</label>
+                          <label style={{display:"flex", alignItems:"center", gap:8, fontSize:13, fontWeight:600}}><input type="checkbox" name="cap_customColumn" defaultChecked={editingPlan.capabilities?.customColumn ?? false} /> Kustom Kolom Brief</label>
+                          <label style={{display:"flex", alignItems:"center", gap:8, fontSize:13, fontWeight:600}}><input type="checkbox" name="cap_organicPaid" defaultChecked={editingPlan.capabilities?.organicPaid ?? false} /> Pemisah Data Organik/Paid</label>
+                          <label style={{display:"flex", alignItems:"center", gap:8, fontSize:13, fontWeight:600}}><input type="checkbox" name="cap_csvImportExport" defaultChecked={editingPlan.capabilities?.csvImportExport ?? false} /> Bulk Import & Export CSV/XLSX</label>
+                          <label style={{display:"flex", alignItems:"center", gap:8, fontSize:13, fontWeight:600}}><input type="checkbox" name="cap_autoPublishing" defaultChecked={editingPlan.capabilities?.autoPublishing ?? false} /> Penjadwalan Otomatis (Segera)</label>
+                        </div>
+
+                        {/* Analitik & Pelaporan */}
+                        <div style={{display:"flex", flexDirection:"column", gap:12}}>
+                          <h5 style={{margin:0, fontSize:12, color:"#2563EB", textTransform:"uppercase", fontWeight:800}}>Analitik & Pelaporan</h5>
+                          <label style={{display:"flex", alignItems:"center", gap:8, fontSize:13, fontWeight:600}}><input type="checkbox" name="cap_analytics" defaultChecked={editingPlan.capabilities?.analytics ?? false} /> Akses Menu Analitik</label>
+                          <label style={{display:"flex", alignItems:"center", gap:8, fontSize:13, fontWeight:600}}><input type="checkbox" name="cap_platformAnalytics" defaultChecked={editingPlan.capabilities?.platformAnalytics ?? false} /> Analitik Per Platform</label>
+                          <label style={{display:"flex", alignItems:"center", gap:8, fontSize:13, fontWeight:600}}><input type="checkbox" name="cap_heatmaps" defaultChecked={editingPlan.capabilities?.heatmaps ?? false} /> Grafik & Heatmap Aktivitas</label>
+                          <label style={{display:"flex", alignItems:"center", gap:8, fontSize:13, fontWeight:600}}><input type="checkbox" name="cap_aiSummary" defaultChecked={editingPlan.capabilities?.aiSummary ?? false} /> Rangkuman AI Otomatis</label>
+                          <label style={{display:"flex", alignItems:"center", gap:8, fontSize:13, fontWeight:600}}><input type="checkbox" name="cap_topBadAnalysis" defaultChecked={editingPlan.capabilities?.topBadAnalysis ?? false} /> Analisis Top & Bad Content</label>
+                          <label style={{display:"flex", alignItems:"center", gap:8, fontSize:13, fontWeight:600}}><input type="checkbox" name="cap_demographics" defaultChecked={editingPlan.capabilities?.demographics ?? false} /> Data Demografi Per Platform</label>
+                          <label style={{display:"flex", alignItems:"center", gap:8, fontSize:13, fontWeight:600}}><input type="checkbox" name="cap_pdfExport" defaultChecked={editingPlan.capabilities?.pdfExport ?? false} /> Export Laporan PDF</label>
                         </div>
                       </div>
 
-                      <div>
-                        <label style={{display:"block", fontSize:11, fontWeight:800, color:"rgba(17,24,39,0.4)", textTransform:"uppercase", marginBottom:6, letterSpacing: "0.5px"}}>Tingkat Dukungan CS</label>
-                        <select name="supportLevel" defaultValue={editingPlan.capabilities?.supportLevel || 'community'} style={{width:"100%", padding:"11px 14px", borderRadius:12, border:"1px solid rgba(0,0,0,0.08)", fontSize:13, background:"#FFFFFF", cursor: "pointer"}}>
-                          <option value="community">Komunitas & Pusat Bantuan</option>
-                          <option value="email">Email Reguler (Respon 48 Jam)</option>
-                          <option value="priority">Email Prioritas (Respon &lt;12 Jam)</option>
-                          <option value="vip">Dukungan VIP 24/7 (Live Chat & WA)</option>
-                        </select>
+                      <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginTop:8}}>
+                        {/* Dashboard & AI */}
+                        <div style={{display:"flex", flexDirection:"column", gap:12}}>
+                           <h5 style={{margin:0, fontSize:12, color:"#2563EB", textTransform:"uppercase", fontWeight:800}}>Hub.AI Assistant</h5>
+                           <label style={{display:"flex", alignItems:"center", gap:8, fontSize:13, fontWeight:600}}><input type="checkbox" name="cap_aiAutoSave" defaultChecked={editingPlan.capabilities?.aiAutoSave ?? false} /> Auto-Save Chat ke Brief</label>
+                           <label style={{display:"flex", alignItems:"center", gap:8, fontSize:13, fontWeight:600}}>
+                             Teks Model AI Gemini (Pricing):
+                             <input type="text" name="cap_aiModelText" defaultValue={editingPlan.capabilities?.aiModelText || "3.1 Flash"} style={{padding:"6px", borderRadius:"6px", border:"1px solid #ccc", width:"120px"}} />
+                           </label>
+                           <div style={{display: "flex", flexDirection: "column", gap: 6, paddingLeft: 12, borderLeft: "2px solid #E5E7EB", marginTop: 4}}>
+                              <span style={{fontSize: 11, fontWeight: 700, color: "rgba(17,24,39,0.5)"}}>Akses Model AI (Hub.AI):</span>
+                              <label style={{display:"flex", alignItems:"center", gap:8, fontSize:12, fontWeight:500}}><input type="checkbox" name="cap_model_gemini-3.1-flash-lite" defaultChecked={editingPlan.capabilities?.allowedModels?.includes("gemini-3.1-flash-lite") ?? false} /> Gemini 3.1 Flash Lite</label>
+                              <label style={{display:"flex", alignItems:"center", gap:8, fontSize:12, fontWeight:500}}><input type="checkbox" name="cap_model_gemini-3.6-flash" defaultChecked={editingPlan.capabilities?.allowedModels?.some(m => m === "gemini-3.6-flash" || m === "gemini-3.5-flash") ?? false} /> Gemini 3.6 Flash</label>
+                              <label style={{display:"flex", alignItems:"center", gap:8, fontSize:12, fontWeight:500}}><input type="checkbox" name="cap_model_gemini-3.1-pro-preview" defaultChecked={editingPlan.capabilities?.allowedModels?.some(m => m === "gemini-3.1-pro-preview" || m === "gemini-3.1-pro") ?? false} /> Gemini 3.1 Pro Preview</label>
+                           </div>
+                           <label style={{display:"flex", alignItems:"center", gap:8, fontSize:13, fontWeight:600}}>
+                             Teks Limit Credit AI / Bulan (Pricing):
+                             <input type="text" name="cap_aiUsageText" defaultValue={editingPlan.capabilities?.aiUsageText || "Terbatas"} style={{padding:"6px", borderRadius:"6px", border:"1px solid #ccc", width:"120px"}} />
+                           </label>
+                        </div>
+                        
+                        {/* Limits Extensions */}
+                        <div style={{display:"flex", flexDirection:"column", gap:12}}>
+                           <h5 style={{margin:0, fontSize:12, color:"#2563EB", textTransform:"uppercase", fontWeight:800}}>Limit Spesifik</h5>
+                           <label style={{display:"block", fontSize:13, fontWeight:600}}>
+                             Riwayat Edit Brief (Hari):
+                             <input type="number" name="cap_historyDays" defaultValue={editingPlan.capabilities?.historyDays ?? 0} placeholder="0 untuk tidak ada" style={{display:"block", marginTop:4, padding:"6px", borderRadius:"6px", border:"1px solid #ccc", width:"100%"}} />
+                           </label>
+                           <label style={{display:"block", fontSize:13, fontWeight:600}}>
+                             Brief Konten Bersama:
+                             <input type="number" name="cap_sharedBriefs" defaultValue={editingPlan.capabilities?.sharedBriefs ?? 20} placeholder="-1 untuk Unlimited" style={{display:"block", marginTop:4, padding:"6px", borderRadius:"6px", border:"1px solid #ccc", width:"100%"}} />
+                           </label>
+                        </div>
                       </div>
                    </div>
                  </div>
                </div>
-
+               
                {/* Modal Sticky Footer */}
                <div style={{display:"flex", justifyContent: "flex-end", gap:12, padding: "16px 24px", background: "rgba(0,0,0,0.015)", borderTop: "1px solid rgba(0,0,0,0.03)", flexShrink: 0}}>
                  <button type="button" onClick={()=>setShowPlanModal(false)} style={{background:"transparent", border:"1px solid rgba(0,0,0,0.08)", color: "#111827", padding:"10px 20px", borderRadius:12, fontSize:13, fontWeight:700, cursor:"pointer", transition: "all 0.2s"}} className="hover-bg-light">Batal</button>

@@ -189,16 +189,17 @@ export function SocHubView({ user, profile }: any) {
       setViewedProfile(null);
       return;
     }
-    const unsub = onSnapshot(doc(db, "users", viewedUserId), (docSnap) => {
-      if (docSnap.exists()) {
-        setViewedProfile({uid: docSnap.id, ...docSnap.data()});
-      } else {
-        setViewedProfile(null);
-      }
-    }, (error) => {
-      console.warn("User fetch snippet error:", error);
-    });
-    return () => unsub();
+    getDoc(doc(db, "users", viewedUserId))
+      .then((docSnap) => {
+        if (docSnap.exists()) {
+          setViewedProfile({uid: docSnap.id, ...docSnap.data()});
+        } else {
+          setViewedProfile(null);
+        }
+      })
+      .catch((error) => {
+        console.warn("User fetch snippet error:", error);
+      });
   }, [viewedUserId]);
 
   useEffect(() => {
@@ -206,11 +207,9 @@ export function SocHubView({ user, profile }: any) {
       setSearchResults([]);
       return;
     }
-    const q = query(collection(db, "users"), limit(100)); // Simplified search, no complex text search in firestore
-    
-    // Add simple debounce
-    const timeoutId = setTimeout(() => {
-      getDocs(q).then((snap) => {
+    const q = query(collection(db, "users"), limit(50)); // Simplified search, no complex text search in firestore
+    getDocs(q)
+      .then((snap) => {
         const allUsers = snap.docs.map(d => ({uid: d.id, ...(d.data() as any)}));
         const lowerQuery = searchQuery.toLowerCase();
         setSearchResults(allUsers.filter((u: any) => 
@@ -218,39 +217,38 @@ export function SocHubView({ user, profile }: any) {
           (u.nickname && u.nickname.toLowerCase().includes(lowerQuery)) ||
           (u.username && u.username.toLowerCase().includes(lowerQuery))
         ));
-      }).catch((error) => { 
-        console.warn("Pencarian global dibatasi demi keamanan privasi. Harap gunakan pencarian spesifik nanti.");
+      })
+      .catch((error) => { 
+        console.warn("Pencarian global dibatasi demi keamanan privasi. Harap gunakan pencarian spesifik nanti."); 
         setSearchResults([]); 
       });
-    }, 500);
-
-    return () => clearTimeout(timeoutId);
   }, [searchQuery]);
 
   useEffect(() => {
-    if (!user || view !== "feed") return;
+    if (!user) return;
     // Fetch some recent users (up to 5 for suggestions)
     const q = query(collection(db, "users"), limit(5));
-    getDocs(q).then((snap) => {
-      setSuggestedUsers(snap.docs.map(d => ({id: d.id, ...d.data()})).filter(u => u.id !== user.uid));
-    }).catch((error) => { 
-      // Supress error text since we disabled list access for standard users for privacy
-      setSuggestedUsers([]); 
-    });
+    getDocs(q)
+      .then((snap) => {
+        setSuggestedUsers(snap.docs.map(d => ({id: d.id, ...d.data()})).filter(u => u.id !== user.uid));
+      })
+      .catch((error) => { 
+        // Supress error text since we disabled list access for standard users for privacy
+        setSuggestedUsers([]); 
+      });
   }, [user]);
 
   useEffect(() => {
-    if (view !== "post" && view !== "feed") return;
-    const q = query(collection(db, "soc_posts"), where("replyTo", "==", null), orderBy("createdAt", "desc"), limit(20));
+    const q = query(collection(db, "soc_posts"), where("replyTo", "==", null), orderBy("createdAt", "desc"), limit(40));
     const unsub = onSnapshot(q, (snap) => {
       setPosts(snap.docs.map(d => ({id: d.id, ...d.data()})));
     }, (error) => { console.error("Snapshot error on", "q", error); });
     return () => unsub();
-  }, [view]);
+  }, []);
 
   useEffect(() => {
     if (view !== "post" || !selectedPost) return;
-    const q = query(collection(db, "soc_posts"), where("replyTo", "==", selectedPost.id), orderBy("createdAt", "asc"), limit(100));
+    const q = query(collection(db, "soc_posts"), where("replyTo", "==", selectedPost.id), orderBy("createdAt", "asc"), limit(40));
     const unsub = onSnapshot(q, (snap) => {
       setReplies(snap.docs.map(d => ({id: d.id, ...d.data()})));
     }, (error) => { console.error("Snapshot error on", "q", error); });
@@ -259,27 +257,27 @@ export function SocHubView({ user, profile }: any) {
 
   
   useEffect(() => {
-    if (!user || view !== "chats") return;
-    const q = query(collection(db, "soc_chats"), where("participants", "array-contains", user.uid), orderBy("updatedAt", "desc"), limit(50));
+    if (!user) return;
+    const q = query(collection(db, "soc_chats"), where("participants", "array-contains", user.uid), orderBy("updatedAt", "desc"), limit(20));
     const unsub = onSnapshot(q, (snap) => {
       setChats(snap.docs.map(d => ({id: d.id, ...d.data()})));
     }, (error) => { console.error("Snapshot error on", "q", error); });
     return () => unsub();
-  }, [user, view]);
+  }, [user]);
 
   useEffect(() => {
-    if (!user || view !== "activity") return;
-    const q = query(collection(db, "notifications"), where("userId", "==", user.uid), orderBy("createdAt", "desc"), limit(50));
+    if (!user) return;
+    const q = query(collection(db, "notifications"), where("userId", "==", user.uid), orderBy("createdAt", "desc"), limit(20));
     const unsub = onSnapshot(q, (snap) => {
       setActivities(snap.docs.map(d => ({id: d.id, ...d.data()})));
     }, (error) => { console.error("Snapshot error on", "q", error); });
     return () => unsub();
-  }, [user, view]);
+  }, [user]);
 
   useEffect(() => {
     if (!chatUser || !user) return;
     let chatId = user.uid < chatUser.uid ? `${user.uid}_${chatUser.uid}` : `${chatUser.uid}_${user.uid}`;
-    const q = query(collection(db, "soc_messages"), where("chatId", "==", chatId), orderBy("createdAt", "asc"), limit(100));
+    const q = query(collection(db, "soc_messages"), where("chatId", "==", chatId), orderBy("createdAt", "asc"), limit(50));
     const unsub = onSnapshot(q, (snap) => {
       setMessages(snap.docs.map(d => ({id: d.id, ...d.data()})));
     }, (error) => { console.error("Snapshot error on", "q", error); });
@@ -347,7 +345,7 @@ export function SocHubView({ user, profile }: any) {
   };
 
   const handleLike = async (post: any) => {
-    if (!user || view !== "feed") return;
+    if (!user) return;
     const ref = doc(db, "soc_posts", post.id);
     const likes = post.likes || [];
     const hasLiked = likes.includes(user.uid);
@@ -364,7 +362,7 @@ export function SocHubView({ user, profile }: any) {
   };
 
   const handleRepost = async (post: any) => {
-    if (!user || view !== "feed") return;
+    if (!user) return;
     const ref = doc(db, "soc_posts", post.id);
     const reposts = post.reposts || [];
     const hasReposted = reposts.includes(user.uid);
@@ -381,7 +379,7 @@ export function SocHubView({ user, profile }: any) {
   };
   
   const handleVote = async (postId: string, optionId: string) => {
-    if (!user || view !== "feed") return;
+    if (!user) return;
     const postRef = doc(db, "soc_posts", postId);
     const postSnap = await getDoc(postRef);
     if (!postSnap.exists()) return;
@@ -536,7 +534,7 @@ export function SocHubView({ user, profile }: any) {
   };
 
   const handleSaveBio = async () => {
-    if (!user || view !== "feed") return;
+    if (!user) return;
     try {
       await updateDoc(doc(db, "users", user.uid), { bio: bioInput.trim() });
       setIsEditingBio(false);

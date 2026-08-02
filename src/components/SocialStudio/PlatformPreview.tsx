@@ -327,7 +327,7 @@ export const PlatformPreview: React.FC<PlatformPreviewProps> = ({
       {/* Header */}
       <div style={{ position: "absolute", top: 24, left: 12, right: 12, display: "flex", alignItems: "center", gap: 10 }}>
         <div style={{ width: 32, height: 32, borderRadius: 16, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", color: "#333", fontSize: 12, fontWeight: "bold" }}>{avatar}</div>
-        <div style={{ flex: 1, fontSize: 13, fontWeight: 600, color: "white", textShadow: "0 1px 2px rgba(0,0,0,0.5)" }}>{name} <span style={{opacity:0.8, fontWeight: 400}}>2h</span></div>
+        <div style={{ position: "absolute", top: 24, left: 12, right: 12, display: "flex", alignItems: "center", gap: 10 } as any}>{name} <span style={{opacity:0.8, fontWeight: 400}}>2h</span></div>
         <MoreHorizontal size={20} color="white" />
       </div>
       {/* Text Overlay */}

@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<body>
+<form id="f">
+  <div style="display:none;">
+    <input type="checkbox" name="c1" checked>
+  </div>
+  <input type="checkbox" name="c2" checked>
+</form>
+<script>
+  const fd = new FormData(document.getElementById('f'));
+  console.log(fd.get('c1'), fd.get('c2'));
+</script>
+</body>
+</html>

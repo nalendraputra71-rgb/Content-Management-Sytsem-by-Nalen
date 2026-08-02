@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, CheckCircle2, ShieldCheck, Zap, Tag, Trash2, AlertCircle } from 'lucide-react';
-import { db, doc, getDoc, getDocs, collection, updateDoc, addDoc, increment, query, where, limit } from './firebase';
+import { db, doc, getDoc, getDocs, collection, updateDoc, addDoc, increment, query, where } from './firebase';
 import { generateBulletPoints } from './PricingPage';
 
 export function OrderSummary({ user, profile }: { user: any, profile: any }) {
@@ -170,7 +170,7 @@ export function OrderSummary({ user, profile }: { user: any, profile: any }) {
       // Validation 4: First Timer Check
       if (pData.targetType === 'first_timer') {
         if (user) {
-          const transSnap = await getDocs(query(collection(db, 'transactions'), where('userId', '==', user.uid), limit(100)));
+          const transSnap = await getDocs(query(collection(db, 'transactions'), where('userId', '==', user.uid)));
           const hasPurchased = transSnap.docs.some(d => d.data().status === 'PAID');
           if (hasPurchased) {
             setPromoError('Voucher ini hanya berlaku untuk perpanjangan pertama kali.');

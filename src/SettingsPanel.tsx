@@ -7,13 +7,17 @@ import { useNavigate } from "react-router-dom";
 import {
   auth,
   db,
+  googleProvider,
   signOut,
   updatePassword,
   updateProfile,
   EmailAuthProvider,
   reauthenticateWithCredential,
+  reauthenticateWithPopup,
+  deleteUser,
   sendEmailVerification,
   doc,
+  deleteDoc,
   updateDoc,
   runTransaction,
   collection,
@@ -21,6 +25,7 @@ import {
   where,
   getDocs,
   addDoc,
+  limit,
 } from "./firebase";
 import {
   User,
@@ -55,6 +60,7 @@ import {
   Building2,
   CalendarDays,
   Tag,
+  GripVertical,
 } from "lucide-react";
 
 export const HOLIDAY_API_OPTIONS = [
@@ -106,6 +112,7 @@ export function SettingsPanel({
   isOwner,
   planDetails,
   activeWorkspace,
+  onBack,
 }: any) {
   const navigate = useNavigate();
   const { lang, setLang } = useI18n();
@@ -143,6 +150,9 @@ export function SettingsPanel({
   const [deleteReason, setDeleteReason] = useState("");
   const [customReason, setCustomReason] = useState("");
   const [showDeleteWorkspaceConfirm, setShowDeleteWorkspaceConfirm] = useState(false);
+  const [showReauthModal, setShowReauthModal] = useState(false);
+  const [reauthPassword, setReauthPassword] = useState("");
+  const [reauthError, setReauthError] = useState("");
 
   const DELETE_REASONS = [
     "Terlalu mahal",
@@ -389,40 +399,138 @@ export function SettingsPanel({
     }
   };
 
+  const executeAccountDeletion = async (userToAuth: any) => {
+    const uid = userToAuth.uid;
+    const finalReason = deleteReason === "Lainnya" ? customReason : deleteReason;
+
+    // 1. Record deletion reason log
+    try {
+      await addDoc(collection(db, "accountDeletionReasons"), {
+        reason: finalReason,
+        uid: uid,
+        email: userToAuth.email || "",
+        deletedAt: new Date().toISOString(),
+      });
+    } catch (e) {
+      console.warn("Error logging deletion reason:", e);
+    }
+
+    // 2. Delete user's username document if set
+    if (profile?.username) {
+      try {
+        await deleteDoc(doc(db, "usernames", profile.username));
+      } catch (e) {
+        console.warn("Error deleting username mapping doc:", e);
+      }
+    }
+
+    // 3. Delete user subcollections (/users/{uid}/aiChats & /users/{uid}/hubaiConfig)
+    try {
+      const chatsSnap = await getDocs(collection(db, "users", uid, "aiChats"));
+      for (const d of chatsSnap.docs) {
+        await deleteDoc(doc(db, "users", uid, "aiChats", d.id));
+      }
+      const configSnap = await getDocs(collection(db, "users", uid, "hubaiConfig"));
+      for (const d of configSnap.docs) {
+        await deleteDoc(doc(db, "users", uid, "hubaiConfig", d.id));
+      }
+    } catch (e) {
+      console.warn("Error deleting user subcollections:", e);
+    }
+
+    // 4. Delete user-owned workspaces
+    try {
+      const wsQuery = query(collection(db, "workspaces"), where("ownerId", "==", uid));
+      const wsSnap = await getDocs(wsQuery);
+      for (const d of wsSnap.docs) {
+        await deleteDoc(doc(db, "workspaces", d.id));
+      }
+    } catch (e) {
+      console.warn("Error deleting owned workspaces:", e);
+    }
+
+    // 5. Delete Firestore user document
+    try {
+      await deleteDoc(doc(db, "users", uid));
+    } catch (e) {
+      console.warn("Error deleting user doc:", e);
+    }
+
+    // 6. Delete Firebase Auth User
+    await deleteUser(userToAuth);
+
+    // 7. Sign out and redirect to login
+    try { await signOut(auth); } catch (e) {}
+    window.location.href = "/login";
+  };
+
   const handleDeleteAccount = async () => {
     if (!deleteReason) {
       setMessage({ text: "Harap pilih alasan menghapus akun.", type: "error" });
       return;
     }
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      setMessage({ text: "Tidak ada user aktif.", type: "error" });
+      return;
+    }
+
     setLoadingProfile(true);
     try {
-      const uid = auth.currentUser?.uid;
-      if (!uid) throw new Error("Tidak ada user.");
-
-      const finalReason = deleteReason === "Lainnya" ? customReason : deleteReason;
-
-      await addDoc(collection(db, "accountDeletionReasons"), {
-        reason: finalReason,
-        deletedAt: new Date().toISOString(),
-      });
-
-      await runTransaction(db, async (t) => {
-        t.delete(doc(db, "users", uid));
-      });
-
-      await auth.currentUser?.delete();
-      window.location.href = "/login";
+      await executeAccountDeletion(currentUser);
     } catch (e: any) {
       if (e.code === "auth/requires-recent-login") {
-        setMessage({
-          text: "Demi keamanan, harap logout dan login kembali sebelum menghapus akun.",
-          type: "error",
-        });
-        setShowDeleteConfirm(false);
+        const isGoogleUser = currentUser.providerData.some(
+          (p) => p.providerId === "google.com"
+        );
+        if (isGoogleUser) {
+          try {
+            await reauthenticateWithPopup(currentUser, googleProvider);
+            await executeAccountDeletion(currentUser);
+            return;
+          } catch (reauthErr: any) {
+            setMessage({
+              text: "Gagal memverifikasi ulang akun Google: " + reauthErr.message,
+              type: "error",
+            });
+            setShowDeleteConfirm(false);
+            setLoadingProfile(false);
+            return;
+          }
+        } else {
+          setShowDeleteConfirm(false);
+          setShowReauthModal(true);
+          setLoadingProfile(false);
+          return;
+        }
       } else {
         setMessage({ text: "Gagal menghapus akun: " + e.message, type: "error" });
+        setLoadingProfile(false);
       }
-    } finally {
+    }
+  };
+
+  const handlePasswordReauthAndDelete = async () => {
+    if (!reauthPassword) {
+      setReauthError("Masukkan kata sandi Anda.");
+      return;
+    }
+    const currentUser = auth.currentUser;
+    if (!currentUser || !currentUser.email) return;
+
+    setLoadingProfile(true);
+    setReauthError("");
+    try {
+      const cred = EmailAuthProvider.credential(currentUser.email, reauthPassword);
+      await reauthenticateWithCredential(currentUser, cred);
+      setShowReauthModal(false);
+      await executeAccountDeletion(currentUser);
+    } catch (e: any) {
+      setReauthError(
+        e.code === "auth/wrong-password" || e.code === "auth/invalid-credential"
+          ? "Kata sandi yang Anda masukkan salah."
+          : e.message
+      );
       setLoadingProfile(false);
     }
   };
@@ -431,7 +539,7 @@ export function SettingsPanel({
     setShowTxModal(true);
     setLoadingTx(true);
     try {
-      const q = query(collection(db, "transactions"), where("userId", "==", profile.uid), limit(100));
+      const q = query(collection(db, "transactions"), where("userId", "==", profile.uid), limit(50));
       const snap = await getDocs(q);
       const tMap = snap.docs
         .map((d) => ({ id: d.id, ...d.data() }))
@@ -622,6 +730,43 @@ export function SettingsPanel({
     setLocalStatuses((p: any) => p.map((x: any, idx: number) => (idx === i ? { ...x, name, color } : x)));
   const delStatus = (i: number) => setLocalStatuses((s: any) => s.filter((_: any, idx: number) => idx !== i));
 
+  // Drag and Drop Logic
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [draggedType, setDraggedType] = useState<string | null>(null);
+
+  const handleDragStart = (e: React.DragEvent, index: number, type: string) => {
+    setDraggedIndex(index);
+    setDraggedType(type);
+    if (e.dataTransfer) {
+      e.dataTransfer.effectAllowed = "move";
+      // Firefox requires some data to be set to allow dragging
+      e.dataTransfer.setData("text/plain", "");
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (e: React.DragEvent, index: number, type: string, list: any[], setter: any) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedType !== type || draggedIndex === index) return;
+    
+    const newList = [...list];
+    const item = newList[draggedIndex];
+    newList.splice(draggedIndex, 1);
+    newList.splice(index, 0, item);
+    
+    setter(newList);
+    setDraggedIndex(null);
+    setDraggedType(null);
+  };
+  
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setDraggedType(null);
+  };
+
   // Holiday CRUD
   const addHoliday = () => {
     if (!newHKey || !newHVal.trim()) return;
@@ -734,7 +879,14 @@ export function SettingsPanel({
       {/* Navigation Top Bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 bg-white border border-black/[0.03] shadow-[0_2px_12px_-4px_rgba(0,0,0,0.01)] rounded-2xl p-3.5 md:p-4">
         <button
-          onClick={() => navigate("/")}
+          onClick={() => {
+            if (onBack) {
+              onBack();
+            } else {
+              navigate("/");
+              window.location.href = "/";
+            }
+          }}
           className="group flex items-center gap-2 text-xs font-bold text-neutral-500 hover:text-black transition-all bg-black/[0.03] hover:bg-black/[0.06] px-4 py-2.5 rounded-xl border border-transparent cursor-pointer"
         >
           <ArrowLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" />
@@ -803,7 +955,7 @@ export function SettingsPanel({
             </label>
 
             <h3 className="text-sm font-black tracking-tight text-neutral-900 line-clamp-1 max-w-full px-2">
-              {profile?.fullName || "Kreator Hubify"}
+              {profile?.nickname || profile?.fullName || "Kreator Hubify"}
             </h3>
             <p className="text-[11px] font-bold text-blue-600 mb-2">@{profile?.username || "username"}</p>
 
@@ -818,8 +970,7 @@ export function SettingsPanel({
                 }`}
               >
                 {profile?.plan === "vip" && <Crown size={10} />}
-                {planDetails?.name
-                  ? planDetails.name
+                {planDetails?.name ? planDetails.name.replace(/\s*\(?(annual|monthly|tahunan|bulanan)\)?/gi, '').replace(/\s+plan/gi, '').trim()
                   : profile?.plan === "vip"
                   ? "VIP Pass"
                   : profile?.activeUntil && new Date(profile.activeUntil) > new Date()
@@ -1006,7 +1157,7 @@ export function SettingsPanel({
                           </span>
                           <span className="text-sm font-black text-neutral-900">
                             {(() => {
-                              const maxReq = planDetails?.maxAiGenerations || 50;
+                              const maxReq = planDetails?.aiTokenLimit || 50;
                               const todayStr = new Date().toISOString().split("T")[0];
                               const usedReq = profile?.lastAiRequestDate === todayStr ? profile?.aiRequestsToday || 0 : 0;
                               return `${usedReq} / ${maxReq}`;
@@ -1016,7 +1167,7 @@ export function SettingsPanel({
 
                         <div className="w-full h-1.5 bg-black/[0.03] rounded-full overflow-hidden">
                           {(() => {
-                            const maxReq = planDetails?.maxAiGenerations || 50;
+                            const maxReq = planDetails?.aiTokenLimit || 50;
                             const todayStr = new Date().toISOString().split("T")[0];
                             const usedReq = profile?.lastAiRequestDate === todayStr ? profile?.aiRequestsToday || 0 : 0;
                             const usedPercent = Math.min((usedReq / maxReq) * 100, 100);
@@ -1055,8 +1206,7 @@ export function SettingsPanel({
                         
                         <div className="flex items-center gap-2 mb-3">
                           <h3 className="text-xl font-black text-neutral-900">
-                            {planDetails?.name
-                              ? planDetails.name
+                            {planDetails?.name ? planDetails.name.replace(/\s*\(?(annual|monthly|tahunan|bulanan)\)?/gi, '').replace(/\s+plan/gi, '').trim()
                               : profile?.plan === "vip"
                               ? "VIP Lifetime"
                               : profile?.activeUntil && new Date(profile.activeUntil) > new Date()
@@ -1382,7 +1532,17 @@ export function SettingsPanel({
                   {/* Pillars List */}
                   <div className="flex flex-col gap-2 pt-2">
                     {localPillars.map((p: any, i: number) => (
-                      <div key={i} className="flex items-center gap-3 p-3 bg-white border border-black/[0.03] rounded-2xl shadow-2xs">
+                      <div 
+                        key={i} 
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, i, 'pillars')}
+                        onDragOver={handleDragOver}
+                        onDrop={(e) => handleDrop(e, i, 'pillars', localPillars, setLocalPillars)}
+                        onDragEnd={handleDragEnd}
+                        className={`flex items-center gap-3 p-3 bg-white border border-black/[0.03] rounded-2xl shadow-2xs ${draggedIndex === i && draggedType === 'pillars' ? 'opacity-50' : ''}`}>
+                        <div className="cursor-grab active:cursor-grabbing text-neutral-300 hover:text-neutral-500">
+                          <GripVertical size={16} />
+                        </div>
                         <ColorPickerSelect value={p.color} onChange={(val) => editPillar(i, p.name, val)} />
                         <input
                           value={p.name}
@@ -1433,7 +1593,17 @@ export function SettingsPanel({
 
                   <div className="flex flex-col gap-2 pt-2">
                     {localContentTypes.map((p: any, i: number) => (
-                      <div key={i} className="flex items-center gap-3 p-3 bg-white border border-black/[0.03] rounded-2xl shadow-2xs">
+                      <div 
+                        key={i} 
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, i, 'contentTypes')}
+                        onDragOver={handleDragOver}
+                        onDrop={(e) => handleDrop(e, i, 'contentTypes', localContentTypes, setLocalContentTypes)}
+                        onDragEnd={handleDragEnd}
+                        className={`flex items-center gap-3 p-3 bg-white border border-black/[0.03] rounded-2xl shadow-2xs ${draggedIndex === i && draggedType === 'contentTypes' ? 'opacity-50' : ''}`}>
+                        <div className="cursor-grab active:cursor-grabbing text-neutral-300 hover:text-neutral-500">
+                          <GripVertical size={16} />
+                        </div>
                         <ColorPickerSelect value={p.color} onChange={(val) => editContentType(i, p.name, val)} />
                         <input
                           value={p.name}
@@ -1484,7 +1654,17 @@ export function SettingsPanel({
 
                   <div className="flex flex-col gap-2 pt-2">
                     {localPics.map((p: any, i: number) => (
-                      <div key={i} className="flex items-center gap-3 p-3 bg-white border border-black/[0.03] rounded-2xl shadow-2xs">
+                      <div 
+                        key={i} 
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, i, 'pics')}
+                        onDragOver={handleDragOver}
+                        onDrop={(e) => handleDrop(e, i, 'pics', localPics, setLocalPics)}
+                        onDragEnd={handleDragEnd}
+                        className={`flex items-center gap-3 p-3 bg-white border border-black/[0.03] rounded-2xl shadow-2xs ${draggedIndex === i && draggedType === 'pics' ? 'opacity-50' : ''}`}>
+                        <div className="cursor-grab active:cursor-grabbing text-neutral-300 hover:text-neutral-500">
+                          <GripVertical size={16} />
+                        </div>
                         <ColorPickerSelect value={p.color} onChange={(val) => editPic(i, p.name, val)} />
                         <input
                           value={p.name}
@@ -1535,7 +1715,17 @@ export function SettingsPanel({
 
                   <div className="flex flex-col gap-2 pt-2">
                     {localStatuses.map((p: any, i: number) => (
-                      <div key={i} className="flex items-center gap-3 p-3 bg-white border border-black/[0.03] rounded-2xl shadow-2xs">
+                      <div 
+                        key={i} 
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, i, 'statuses')}
+                        onDragOver={handleDragOver}
+                        onDrop={(e) => handleDrop(e, i, 'statuses', localStatuses, setLocalStatuses)}
+                        onDragEnd={handleDragEnd}
+                        className={`flex items-center gap-3 p-3 bg-white border border-black/[0.03] rounded-2xl shadow-2xs ${draggedIndex === i && draggedType === 'statuses' ? 'opacity-50' : ''}`}>
+                        <div className="cursor-grab active:cursor-grabbing text-neutral-300 hover:text-neutral-500">
+                          <GripVertical size={16} />
+                        </div>
                         <ColorPickerSelect value={p.color} onChange={(val) => editStatus(i, p.name, val)} />
                         <input
                           value={p.name}
@@ -1895,6 +2085,75 @@ export function SettingsPanel({
                   className="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-extrabold uppercase tracking-wider py-3 text-[10px] rounded-xl cursor-pointer"
                 >
                   Ya, Hapus
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {/* Re-authenticate Password Modal */}
+        {showReauthModal && (
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-md z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-3xl max-w-md w-full p-6 md:p-8 text-left border border-black/[0.04] shadow-2xl"
+            >
+              <h3 className="text-base font-bold text-neutral-900 mb-2 flex items-center gap-1.5">
+                <Lock size={18} className="text-blue-600" />
+                {lang === "id" ? "Konfirmasi Kata Sandi" : "Confirm Password"}
+              </h3>
+              <p className="text-xs text-neutral-500 leading-relaxed mb-5 font-medium">
+                {lang === "id"
+                  ? "Sesi Anda memerlukan verifikasi ulang demi keamanan. Masukkan kata sandi Anda untuk menghapus akun secara permanen."
+                  : "Your session requires re-authentication for security. Enter your password to permanently delete your account."}
+              </p>
+
+              {reauthError && (
+                <div className="mb-4 bg-rose-50 border border-rose-200 text-rose-700 p-3 rounded-xl text-xs font-semibold flex items-center gap-2">
+                  <AlertCircle size={15} className="shrink-0" />
+                  <span>{reauthError}</span>
+                </div>
+              )}
+
+              <div className="mb-6">
+                <label className="text-[10px] font-extrabold text-neutral-400 uppercase tracking-widest block mb-2">
+                  {lang === "id" ? "Kata Sandi" : "Password"}
+                </label>
+                <input
+                  type="password"
+                  value={reauthPassword}
+                  onChange={(e) => setReauthPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full text-xs font-bold bg-[#FAFAFA] border border-black/[0.03] focus:bg-white focus:border-blue-600 rounded-xl px-3.5 py-3 outline-none transition-all text-black"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4 border-t border-black/[0.03]">
+                <button
+                  disabled={loadingProfile}
+                  onClick={() => {
+                    setShowReauthModal(false);
+                    setReauthPassword("");
+                    setReauthError("");
+                  }}
+                  className="flex-1 bg-neutral-50 hover:bg-neutral-100 text-neutral-700 font-extrabold uppercase tracking-wider py-3.5 text-[10px] rounded-xl transition-all border border-neutral-200/50 cursor-pointer"
+                >
+                  {lang === "id" ? "Batal" : "Cancel"}
+                </button>
+                <button
+                  disabled={loadingProfile || !reauthPassword}
+                  onClick={handlePasswordReauthAndDelete}
+                  className="flex-1 bg-rose-600 hover:bg-rose-700 disabled:bg-rose-300 text-white font-extrabold uppercase tracking-wider py-3.5 text-[10px] rounded-xl transition-all shadow-sm cursor-pointer"
+                >
+                  {loadingProfile
+                    ? lang === "id"
+                      ? "Memproses..."
+                      : "Processing..."
+                    : lang === "id"
+                    ? "Hapus Akun"
+                    : "Delete Account"}
                 </button>
               </div>
             </motion.div>

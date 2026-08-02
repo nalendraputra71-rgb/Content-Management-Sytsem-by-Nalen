@@ -222,7 +222,7 @@ export function Header({ profile }: any) {
                 letterSpacing: "-1px",
                 fontVariantNumeric: "tabular-nums",
                 display: "flex",
-                alignItems: "baseline",
+                alignItems: "center",
                 gap: 4,
                 cursor: "pointer",
               }}
@@ -407,7 +407,8 @@ function ChatSupportPanel({
     let unsub: any;
     const q = query(
       collection(db, "tickets"),
-      where("userId", "==", userId), limit(20)
+      where("userId", "==", userId),
+      limit(25),
     );
     unsub = onSnapshot(
       q,
@@ -1091,7 +1092,7 @@ export function Sidebar({
     deleteAll,
     markAllRead,
     handleInviteAction,
-  } = useNotifications(profile);
+  } = useNotifications(profile, showNotifPanel);
 
   const unreadCount = notifications.filter((n) => n.unread).length;
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -1100,25 +1101,10 @@ export function Sidebar({
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, unread: false } : n)),
     );
-    if (id.startsWith("personal_")) {
-      const dbId = id.replace("personal_", "");
-      try {
-        await updateDoc(doc(db, "notifications", dbId), { read: true });
-        const targetNotif = notifications.find((n) => n.id === id);
-        if (targetNotif?.type === "content_share" || targetNotif?.link === "/dashboard") {
-          setShowNotifPanel(false);
-          setTab("dashboard");
-          if (targetNotif?.workspaceId && targetNotif?.contentId) {
-            window.open(`/shared-brief/${targetNotif.workspaceId}/${targetNotif.contentId}`, "_blank");
-          }
-        }
-      } catch (e) {
-        console.error("Error updating notification read status:", e);
-      }
-    }
     if (id.startsWith("ticket_")) {
       const dbId = id.replace("ticket_", "");
       try {
+        
         await updateDoc(doc(db, "tickets", dbId), { readByUser: true });
         // Also open chat support so they can reply
         setShowNotifPanel(false);
@@ -2933,7 +2919,7 @@ export function Sidebar({
                           style={{
                             display: "flex",
                             flexWrap: "wrap",
-                            alignItems: "baseline",
+                            alignItems: "center",
                             gap: 4,
                           }}
                         >
@@ -2947,7 +2933,7 @@ export function Sidebar({
                               lineHeight: 1.2,
                             }}
                           >
-                            {profile?.fullName || user?.displayName || "User"}
+                            {profile?.nickname || profile?.fullName || user?.displayName || "User"}
                           </span>
                           <span
                             style={{
@@ -2969,16 +2955,22 @@ export function Sidebar({
                               display: "inline-flex",
                               alignItems: "center",
                               gap: 3,
-                              marginTop: 2,
+                              marginTop: 0, // removed margin to align perfectly
                             }}
                           >
                             {profile?.plan === "vip" && <Crown size={9} />}
-                            {profile?.plan === "vip"
-                              ? "VIP"
-                              : profile?.activeUntil &&
-                                  new Date(profile.activeUntil) > new Date()
-                                ? "PRO"
-                                : "FREE"}
+                            {(() => {
+                              if (profile?.plan === "vip") return "VIP";
+                              if (planDetails?.name) {
+                                let name = planDetails.name;
+                                name = name.replace(/\s*\(?(annual|monthly|tahunan|bulanan)\)?/gi, ''); // remove (Annual), (Monthly), etc.
+                                name = name.replace(/\s*-\s*(annual|monthly|tahunan|bulanan)/gi, '');
+                                name = name.replace(/\s+plan/gi, ''); // remove the word 'Plan'
+                                return name.trim().toUpperCase();
+                              }
+                              if (profile?.plan === "trial") return "TRIAL";
+                              return profile?.activeUntil && new Date(profile.activeUntil) > new Date() ? "PRO" : "FREE";
+                            })()}
                           </span>
                         </div>
                         <div
@@ -3781,6 +3773,7 @@ export function NavBar({
             </button>
 
             {/* Share */}
+            {onShare && (
             <button
               onClick={onShare}
               style={{
@@ -3800,6 +3793,7 @@ export function NavBar({
             >
               <Share2 size={15} />
             </button>
+            )}
           </div>
         </div>
 
@@ -4287,6 +4281,7 @@ export function NavBar({
           </AnimatePresence>
         </motion.div>
 
+        {onShare && (
         <button
           className="hover-scale btn-hover shadow-sm"
           onClick={onShare}
@@ -4306,6 +4301,7 @@ export function NavBar({
         >
           <Share2 size={16} />
         </button>
+        )}
       </div>
 
       {/* Upgrade Limit Modal Popup */}

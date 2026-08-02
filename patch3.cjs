@@ -1,20 +1,16 @@
 const fs = require('fs');
-let code = fs.readFileSync('server.ts', 'utf8');
+let content = fs.readFileSync('src/layouts/MainLayout.tsx', 'utf8');
 
-code = code.replace(
-  /const docSnap = await docRef\.get\(\);\s*if \(\!docSnap\.exists\) \{\s*return res\.status\(404\)\.json\(\{ error: "Account not connected" \}\);\s*\}\s*const accountData = docSnap\.data\(\);\s*const \{ accessToken, accountId \} = accountData as any;\s*if \(\!accessToken\) \{/g,
-  `let accessToken = clientAccessToken as string;
-    let accountId = clientAccountId as string;
-    if (!accessToken || !accountId) {
-      const docSnap = await docRef.get();
-      if (!docSnap.exists) {
-        return res.status(404).json({ error: "Account not connected" });
-      }
-      const accountData = docSnap.data();
-      accessToken = accountData?.accessToken;
-      accountId = accountData?.accountId;
-    }
-    if (!accessToken) {`
+const eventRoleCheck = `\n    if (workspace.userRole === "viewer" || workspace.userRole === "commenter") return alert("Akses ditolak: Anda tidak memiliki izin untuk mengelola event.");`;
+
+content = content.replace(
+  /onOpenAddEvent={\(\) => { setEditingEvent\(null\); setShowEventModal\(true\); }}/,
+  `onOpenAddEvent={() => { if (workspace?.userRole === "viewer" || workspace?.userRole === "commenter") { alert("Akses ditolak: Anda tidak memiliki izin untuk mengelola event."); return; } setEditingEvent(null); setShowEventModal(true); }}`
 );
 
-fs.writeFileSync('server.ts', code);
+content = content.replace(
+  /onEditCustomEvent={\(ev: any\) => { setEditingEvent\(ev\); setShowEventModal\(true\); }}/g,
+  `onEditCustomEvent={(ev: any) => { if (workspace?.userRole === "viewer" || workspace?.userRole === "commenter") { alert("Akses ditolak: Anda tidak memiliki izin untuk mengelola event."); return; } setEditingEvent(ev); setShowEventModal(true); }}`
+);
+
+fs.writeFileSync('src/layouts/MainLayout.tsx', content);

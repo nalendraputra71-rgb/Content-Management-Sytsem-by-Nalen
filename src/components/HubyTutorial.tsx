@@ -232,16 +232,16 @@ export function HubyTutorial({
 
   // Auto trigger tour if profile exists and tour is not completed
   useEffect(() => {
-    if (profile && profile.completedTour !== true && !hasAutoTriggered.current) {
-      hasAutoTriggered.current = true;
+    if (profile?.uid && profile.completedTour !== true && !hasAutoTriggered.current) {
       const timer = setTimeout(() => {
+        hasAutoTriggered.current = true;
         setIsActive(true);
         setCurrentStep(0);
         setTab("dashboard");
-      }, 1500);
+      }, 1000);
       return () => clearTimeout(timer);
     }
-  }, [profile, setTab]);
+  }, [profile?.uid, profile?.completedTour, setTab]);
 
   // Handle step and selector rect calculations
   useEffect(() => {

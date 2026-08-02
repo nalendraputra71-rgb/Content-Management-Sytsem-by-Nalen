@@ -12,10 +12,14 @@ import {
   sendEmailVerification,
   sendPasswordResetEmail,
   reauthenticateWithCredential,
+  reauthenticateWithPopup,
+  deleteUser,
   EmailAuthProvider
 } from 'firebase/auth';
 import { 
   initializeFirestore, 
+  enableMultiTabIndexedDbPersistence,
+  enableIndexedDbPersistence,
   doc, 
   setDoc, 
   getDoc, 
@@ -29,12 +33,14 @@ import {
   deleteDoc,
   writeBatch,
   getDocFromServer,
+  getCountFromServer,
   where,
   limit,
   orderBy,
   runTransaction,
   serverTimestamp,
-  increment
+  increment,
+  documentId
 } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
 
@@ -44,6 +50,26 @@ export const db = initializeFirestore(app, {
   experimentalForceLongPolling: true,
   useFetchStreams: false
 } as any, firebaseConfig.firestoreDatabaseId);
+
+// Enable Firestore Local Cache Persistence
+if (typeof window !== "undefined") {
+  enableMultiTabIndexedDbPersistence(db)
+    .catch((err) => {
+      if (err.code === 'failed-precondition') {
+        // Multiple tabs open, persistence can only be enabled in one tab at a time.
+        console.warn("Firestore multi-tab persistence failed-precondition, falling back.");
+      } else if (err.code === 'unimplemented') {
+        // The current browser does not support all of the features required to enable persistence
+        console.warn("Firestore persistence is unimplemented in this browser.");
+      } else {
+        // Try falling back to single-tab persistence if supported
+        enableIndexedDbPersistence(db).catch((singleErr) => {
+          console.warn("Firestore single-tab persistence fallback failed:", singleErr);
+        });
+      }
+    });
+}
+
 export const googleProvider = new GoogleAuthProvider();
 
 export { 
@@ -58,6 +84,8 @@ export {
   sendEmailVerification,
   sendPasswordResetEmail,
   reauthenticateWithCredential,
+  reauthenticateWithPopup,
+  deleteUser,
   EmailAuthProvider,
   doc,
   setDoc,
@@ -72,12 +100,14 @@ export {
   deleteDoc,
   writeBatch,
   getDocFromServer,
+  getCountFromServer,
   where,
   limit,
   orderBy,
   runTransaction,
   serverTimestamp,
-  increment
+  increment,
+  documentId
 };
 
 // Error handler helper
@@ -94,26 +124,7 @@ export interface FirestoreErrorInfo {
   }
 }
 
-export function checkAndNotifyQuotaError(error: any): boolean {
-  if (!error) return false;
-  const errMsg = error.message || String(error);
-  if (
-    errMsg.includes("Quota limit exceeded") || 
-    errMsg.includes("Quota exceeded") || 
-    errMsg.includes("RESOURCE_EXHAUSTED") || 
-    errMsg.includes("quota limit exceeded") || 
-    errMsg.includes("quota metric") ||
-    errMsg.includes("daily read units") ||
-    errMsg.includes("quota checks")
-  ) {
-    window.dispatchEvent(new CustomEvent("firestore-quota-exceeded", { detail: errMsg }));
-    return true;
-  }
-  return false;
-}
-
 export function handleFirestoreError(error: any, op: FirestoreErrorInfo['operationType'], path: string | null = null): void {
-  checkAndNotifyQuotaError(error);
   const user = auth.currentUser;
   const errorInfo: FirestoreErrorInfo = {
     error: error.message || String(error),
@@ -150,12 +161,11 @@ export async function testFirestoreConnection() {
 }
 
 // Request AI processing, incrementing quota usage in Firestore
-export async function callAiWithQuota(uid: string, plan: string | undefined, payload: any, maxAiGenerations: number = 50): Promise<any> {
+export async function callAiWithQuota(uid: string, plan: string | undefined, payload: any, maxAiTokens: number = 100000): Promise<any> {
     const userDocRef = doc(db, 'users', uid);
     const userSnap = await getDoc(userDocRef);
     let aiTokensUsed = 0;
-    let aiRequestsToday = 0;
-    let lastAiRequestDate = "";
+    let lastAiRequestMonth = "";
     
     const currentUser = auth.currentUser;
     let isAdmin = currentUser?.email?.toLowerCase() === "nalendraputra71@gmail.com";
@@ -163,25 +173,23 @@ export async function callAiWithQuota(uid: string, plan: string | undefined, pay
     if (userSnap.exists()) {
         const data = userSnap.data();
         aiTokensUsed = data?.aiTokensUsed || 0;
-        aiRequestsToday = data?.aiRequestsToday || 0;
-        lastAiRequestDate = data?.lastAiRequestDate || "";
+        lastAiRequestMonth = data?.lastAiRequestMonth || "";
         if (data?.role === "admin" || data?.email?.toLowerCase() === "nalendraputra71@gmail.com") {
             isAdmin = true;
         }
     }
 
-    const todayDate = new Date().toISOString().split('T')[0];
-    if (lastAiRequestDate !== todayDate) {
-        aiRequestsToday = 0;
+    const currentMonth = new Date().toISOString().substring(0, 7); // e.g., "2026-08"
+    if (lastAiRequestMonth !== currentMonth) {
+        aiTokensUsed = 0;
     }
 
-    const MAX_REQUESTS = isAdmin ? 99999 : (plan === 'vip' ? 99999 : (maxAiGenerations || 50));
+    const MAX_TOKENS = isAdmin ? 999999999 : (maxAiTokens === -1 ? 999999999 : (maxAiTokens || 100000));
     
-    if (!isAdmin && aiRequestsToday >= MAX_REQUESTS) {
-        throw new Error(`Limit AI habis (${aiRequestsToday}/${MAX_REQUESTS} request). Silakan upgrade plan Anda.`);
+    if (!isAdmin && aiTokensUsed >= MAX_TOKENS) {
+        throw new Error(`Credit AI Anda bulan ini habis (${aiTokensUsed.toLocaleString()}/${MAX_TOKENS.toLocaleString()} credits). Silakan upgrade plan Anda.`);
     }
 
-    // Dapatkan ID Token untuk verifikasi di sisi server
     let token = "";
     if (currentUser) {
         token = await currentUser.getIdToken();
@@ -191,13 +199,13 @@ export async function callAiWithQuota(uid: string, plan: string | undefined, pay
         method: "POST",
         headers: { 
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}` 
+            "Authorization": `Bearer ${token}`
         },
         body: JSON.stringify(payload)
     });
-    
+
     if (!req.ok) {
-        let errorMsg = "Gagal menghubungi server AI";
+        let errorMsg = `Server error (${req.status})`;
         try {
             const err = await req.json();
             errorMsg = err.error || errorMsg;
@@ -209,12 +217,20 @@ export async function callAiWithQuota(uid: string, plan: string | undefined, pay
     
     const data = await req.json();
     
+    // Hitung Multiplier berdasarkan model
+    const model = payload.model || "gemini-3.6-flash";
+    let multiplier = 10; // default gemini-3.6-flash
+    if (model.includes("gemini-3.1-flash-lite")) multiplier = 1;
+    else if (model.includes("gemini-3.6-flash")) multiplier = 10;
+    else if (model.includes("gemini-3.1-pro")) multiplier = 25;
+
+    const rawTokens = data.usage?.totalTokenCount || 0;
+    const billedTokens = rawTokens * multiplier;
+
     try {
         await updateDoc(userDocRef, {
-            aiTokensUsed: increment(data.usage?.totalTokenCount || 0),
-            aiRequestsCount: increment(1),
-            aiRequestsToday: increment(1),
-            lastAiRequestDate: todayDate
+            aiTokensUsed: lastAiRequestMonth !== currentMonth ? billedTokens : increment(billedTokens),
+            lastAiRequestMonth: currentMonth
         });
     } catch (e) {
         console.error("Gagal update token stat user", e);

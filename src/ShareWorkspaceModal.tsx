@@ -1,3 +1,4 @@
+import { usePlanLimits } from "./hooks/usePlanLimits";
 import { useI18n } from "./i18n";
 import React, { useState, useEffect } from "react";
 import { db, collection, query, where, getDocs, doc, setDoc, deleteDoc, updateDoc, limit } from "./firebase";
@@ -7,6 +8,7 @@ import { motion, AnimatePresence } from "motion/react";
 
 export const ShareWorkspaceModal: React.FC<{ workspace: any, userProfile: any, planDetails?: any, onClose: () => void }> = ({ workspace, userProfile, planDetails, onClose }) => {
   const { lang } = useI18n();
+  const { checkCanAddTeamMember, maxTeamMembers } = usePlanLimits(planDetails);
 
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("viewer");
@@ -49,10 +51,7 @@ export const ShareWorkspaceModal: React.FC<{ workspace: any, userProfile: any, p
   };
 
   const inviteMember = async (userToInvite: any) => {
-    const maxTeamMembers = planDetails?.maxTeamMembers || 0;
-    // Members array includes the owner. So if maxTeamMembers is 0, they can't invite anyone (length > 1).
-    // Or we just check members.length >= maxTeamMembers + 1 (since 1 is the owner)
-    if (members.length >= (maxTeamMembers + 1) && userProfile?.plan !== "vip") {
+    if (!checkCanAddTeamMember(members.length - 1)) {
        alert(`Batas maksimal anggota tim untuk paket Anda adalah ${maxTeamMembers} (diluar Anda). Silakan upgrade paket untuk mengundang lebih banyak anggota.`);
        return;
     }

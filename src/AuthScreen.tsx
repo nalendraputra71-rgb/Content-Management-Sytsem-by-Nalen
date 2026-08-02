@@ -5,7 +5,7 @@ import {
   auth, db, googleProvider, signInWithPopup, 
   createUserWithEmailAndPassword, signInWithEmailAndPassword,
   sendEmailVerification, sendPasswordResetEmail,
-  doc, setDoc, getDoc, runTransaction, collection
+  doc, setDoc, getDoc, runTransaction, collection, writeBatch
 } from "./firebase";
 import { motion, AnimatePresence } from "motion/react";
 
@@ -72,7 +72,9 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
          const cRole = user.email?.toLowerCase() === "nalendraputra71@gmail.com" ? "admin" : "user";
          const cPlan = user.email?.toLowerCase() === "nalendraputra71@gmail.com" ? "pro" : "trial";
 
-         await setDoc(userRef, {
+         const batch = writeBatch(db);
+
+         batch.set(userRef, {
            uid: user.uid,
            email: user.email,
            fullName: providedFullName || user.displayName || "Your Name",
@@ -82,24 +84,31 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
            plan: cPlan,
            activeUntil: activeUntil.toISOString(),
            hasUsedPromo: false,
+           completedTour: false,
+           emailVerified: user.emailVerified || false,
            role: cRole,
            createdAt: new Date().toISOString()
          });
 
+         const defaultWsName = providedNickname?.trim() || providedFullName?.trim() || user.displayName || "Workspace";
+
          const wsRef = doc(collection(db, "workspaces"));
-         await setDoc(wsRef, {
-           name: "Content Management",
+         batch.set(wsRef, {
+           name: defaultWsName,
            ownerId: user.uid,
            settings: {
-             title: "Content Management",
-             tagline: "Content Management System"
+             title: defaultWsName,
+             tagline: `${defaultWsName} Workspace`
            }
          });
-         await setDoc(doc(db, "workspaces", wsRef.id, "members", user.uid), {
+
+         batch.set(doc(db, "workspaces", wsRef.id, "members", user.uid), {
            userId: user.uid,
            workspaceId: wsRef.id,
            role: "owner"
          });
+
+         await batch.commit();
       }
       onUserCreated(user);
     } catch (e: any) {

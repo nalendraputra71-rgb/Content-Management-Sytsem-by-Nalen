@@ -1159,7 +1159,7 @@ apiRoutes.post("/gemini", apiLimiter, async (req, res) => {
 
     const {
       prompt,
-      model = "gemini-3.5-flash",
+      model = "gemini-3.6-flash",
       system,
       history = [],
       useSearchGrounding,

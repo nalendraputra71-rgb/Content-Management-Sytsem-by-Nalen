@@ -1,35 +1,45 @@
 const fs = require('fs');
-let code = fs.readFileSync('src/PublicBriefView.tsx', 'utf8');
+let content = fs.readFileSync('src/ContentModal.tsx', 'utf8');
 
-// 1. Remove order classes from LEFT COLUMN
-code = code.replace(/<div className="w-full lg:w-\[380px\] shrink-0 flex flex-col gap-6 order-2 lg:order-1">/, '<div className="w-full lg:w-[380px] shrink-0 flex flex-col gap-6">');
+// Match everything from <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+// to </button>}</div></div>
+const targetRegex = /<div style=\{\{ display: "flex", alignItems: "center", gap: 8 \}\}>\s*\{renderSectionCommentBadge\(id\)\}\s*\{fieldValue && \(\s*<button[\s\S]*?<\/button>\s*\)\}\s*<\/div>\s*<\/div>/;
 
-// 2. Remove order classes from MIDDLE COLUMN
-code = code.replace(/<div className="flex-1 w-full flex flex-col gap-6 min-w-0 order-1 lg:order-2">/, '<div className="flex-1 w-full flex flex-col gap-6 min-w-0">');
+const replacement = `<div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              {fieldValue && (
+                <button 
+                 onClick={handleCopy} 
+                 onMouseOver={(e: any) => {
+                  if (!isCopied) {
+                    e.currentTarget.style.background = "rgba(0,0,0,0.06)";
+                  }
+                }}
+                onMouseOut={(e: any) => {
+                  if (!isCopied) {
+                    e.currentTarget.style.background = "rgba(0,0,0,0.03)";
+                  }
+                }}
+                style={{ 
+                   background: isCopied ? "rgba(16,185,129,0.06)" : "rgba(0,0,0,0.03)", 
+                   border: "none", 
+                   color: isCopied ? "#059669" : "#4B5563", 
+                   padding: "6px", 
+                   borderRadius: 6, 
+                   cursor: isCopied ? "default" : "pointer", 
+                   display: "flex", 
+                   alignItems: "center", 
+                   justifyContent: "center",
+                   transition: "all 0.2s ease"
+                }}
+                title={lang === "id" ? "Salin" : "Copy"}
+              >
+                {isCopied ? <Check size={14} /> : <Copy size={14} />}
+              </button>
+              )}
+              {renderSectionCommentBadge(id)}
+            </div>
+          </div>`;
 
-// 3. Remove the toggle button for mobile props
-// Look for the <button> inside the <h2>...</h2> block
-code = code.replace(
-  /<div className="flex items-center justify-between">\s*<h2 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">\s*<Zap size=\{14\} className="text-blue-500" \/>\s*Detail & Jadwal Konten\s*<\/h2>\s*<button[\s\S]*?<\/button>\s*<\/div>/,
-  `<div className="flex items-center justify-between">
-              <h2 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                <Zap size={14} className="text-blue-500" />
-                Detail & Jadwal Konten
-              </h2>
-            </div>`
-);
+content = content.replace(targetRegex, replacement);
 
-// 4. Remove the dynamic showMobileProps class
-code = code.replace(
-  /<div className=\{\`flex flex-col gap-4 border-t border-gray-50 pt-4 lg:flex \$\{showMobileProps \? "flex" : "hidden lg:flex"\}\`\}>/,
-  '<div className="flex flex-col gap-4 border-t border-gray-50 pt-4">'
-);
-
-// 5. Add document.title update
-// Let's insert the useEffect right after the useEffect for fetching data
-code = code.replace(
-  /(useEffect\(\(\) => \{\s*if \(brief\) \{\s*setLayoutFields\(getInitialLayoutFields\(\)\);\s*\}\s*\}, \[brief, workspace\]\);)/,
-  `$1\n\n  useEffect(() => {\n    if (brief?.title) {\n      document.title = \`\${brief.title} - Hubify Social\`;\n    } else {\n      document.title = "Public Content Brief - Hubify Social";\n    }\n  }, [brief?.title]);`
-);
-
-fs.writeFileSync('src/PublicBriefView.tsx', code);
+fs.writeFileSync('src/ContentModal.tsx', content);

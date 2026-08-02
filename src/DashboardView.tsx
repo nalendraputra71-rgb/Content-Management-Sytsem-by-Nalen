@@ -16,8 +16,8 @@ import {
   Heart, Bookmark, Activity, Award, Zap, ChevronDown, MousePointerClick, Repeat, ExternalLink
 } from "lucide-react";
 import { 
-  doc, setDoc, updateDoc, onSnapshot, 
-  collection, collectionGroup, query, where, orderBy, getDocs, limit, addDoc, deleteDoc, serverTimestamp 
+  doc, setDoc, updateDoc, onSnapshot, getDoc,
+  collection, collectionGroup, query, where, orderBy, getDocs, addDoc, deleteDoc, serverTimestamp, limit 
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { B, CARD, TRANS, I, SS, gss, TAB } from "./data";
@@ -140,23 +140,23 @@ export function DashboardView({ user, profile, activeWorkspace, content, theme, 
   // Sync Layout & Config
   useEffect(() => {
     if (!activeWorkspace?.id) return;
-    const unsub = onSnapshot(doc(db, "workspaces", activeWorkspace.id, "dashboard", "config"), (snap) => {
-      if (snap.exists()) {
-        const d = snap.data();
-        if (d.layout) {
-          const existingIds = d.layout.map((x:any) => x.id);
-          const missing = DEFAULT_LAYOUT.filter(x => !existingIds.includes(x.id));
-          setLayout([...d.layout, ...missing]);
+    getDoc(doc(db, "workspaces", activeWorkspace.id, "dashboard", "config"))
+      .then((snap) => {
+        if (snap.exists()) {
+          const d = snap.data();
+          if (d.layout) {
+            const existingIds = d.layout.map((x:any) => x.id);
+            const missing = DEFAULT_LAYOUT.filter(x => !existingIds.includes(x.id));
+            setLayout([...d.layout, ...missing]);
+          }
+          setConfig((prev: any) => ({ ...prev, ...d, goals: d.goals || prev.goals })); 
         }
-        // Safely spread goals to ensure object structure exists
-        setConfig((prev: any) => ({ ...prev, ...d, goals: d.goals || prev.goals })); 
-      }
-      setLoading(false);
-    }, (error) => {
-      console.warn("Config snapshot error:", error);
-      setLoading(false);
-    });
-    return unsub;
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.warn("Config snapshot error:", error);
+        setLoading(false);
+      });
   }, [activeWorkspace?.id]);
 
   // Sync Todos
@@ -164,7 +164,8 @@ export function DashboardView({ user, profile, activeWorkspace, content, theme, 
     if (!activeWorkspace?.id) return;
     const q = query(
       collection(db, "workspaces", activeWorkspace.id, "todos"),
-      orderBy("createdAt", "desc"), limit(20)
+      orderBy("createdAt", "desc"),
+      limit(50)
     );
     const unsub = onSnapshot(q, (snap) => {
       setTodos(snap.docs.map(d => ({ id: d.id, ...d.data() })));
@@ -176,20 +177,30 @@ export function DashboardView({ user, profile, activeWorkspace, content, theme, 
 
   // Sync Shared with Me Content Briefs
   useEffect(() => {
-    const currentUid = user?.uid;
-    const currentEmail = (profile?.email || user?.email || "").toLowerCase();
-
-    if (!currentUid && !currentEmail) {
+    if (!user?.uid) {
       setSharedLoading(false);
       return;
     }
     setSharedLoading(true);
-    const fetchSharedBriefs = async () => {
-      let uidBriefs: Record<string, any> = {};
-      let emailBriefs: Record<string, any> = {};
-      const mergeAndSet = () => {
-        const mergedMap = { ...uidBriefs, ...emailBriefs };
-        const briefs = Object.values(mergedMap);
+    
+    const q = query(
+      collectionGroup(db, "content"),
+      where("sharedUids", "array-contains", user.uid),
+      limit(30)
+    );
+
+    getDocs(q)
+      .then((snap) => {
+        const briefs = snap.docs.map(docSnap => {
+          const data = docSnap.data();
+          const wsId = data.workspaceId || docSnap.ref.parent?.parent?.id || "";
+          return {
+            id: docSnap.id,
+            workspaceId: wsId,
+            ...data
+          };
+        });
+        // Sort in-memory to avoid compound index requirements
         briefs.sort((a: any, b: any) => {
           const tA = a.updatedAt?.toMillis ? a.updatedAt.toMillis() : (a.updatedAt || 0);
           const tB = b.updatedAt?.toMillis ? b.updatedAt.toMillis() : (b.updatedAt || 0);
@@ -197,35 +208,12 @@ export function DashboardView({ user, profile, activeWorkspace, content, theme, 
         });
         setSharedBriefs(briefs);
         setSharedLoading(false);
-      };
-      try {
-        if (currentUid) {
-          const qUid = query(collectionGroup(db, "content"), where("sharedUids", "array-contains", currentUid), limit(20));
-          const snap = await getDocs(qUid);
-          snap.docs.forEach(docSnap => {
-            const data = docSnap.data();
-            const wsId = data.workspaceId || docSnap.ref.parent?.parent?.id || "";
-            uidBriefs[docSnap.id] = { id: docSnap.id, workspaceId: wsId, ...data };
-          });
-        }
-        if (currentEmail) {
-          const qEmail = query(collectionGroup(db, "content"), where("sharedEmails", "array-contains", currentEmail), limit(20));
-          const snap = await getDocs(qEmail);
-          snap.docs.forEach(docSnap => {
-            const data = docSnap.data();
-            const wsId = data.workspaceId || docSnap.ref.parent?.parent?.id || "";
-            emailBriefs[docSnap.id] = { id: docSnap.id, workspaceId: wsId, ...data };
-          });
-        }
-        mergeAndSet();
-      } catch (err) {
-        console.error("Error loading shared briefs:", err);
+      })
+      .catch((error) => {
+        console.warn("Error loading shared briefs:", error);
         setSharedLoading(false);
-      }
-    };
-    fetchSharedBriefs();
-
-  }, [user?.uid, profile?.email, user?.email]);
+      });
+  }, [user?.uid]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
