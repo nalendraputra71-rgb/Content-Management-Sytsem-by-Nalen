@@ -1295,7 +1295,7 @@ PENTING:
             model: selectedAiModel,
             workspaceId: workspaceId,
           },
-          planDetails?.aiTokenLimit || 50,
+          planDetails?.aiTokenLimitDaily || 50, planDetails?.aiTokenLimit || 50,
         );
 
         updatedHistory.push({ role: "assistant", content: data.text });
@@ -1534,7 +1534,7 @@ PENTING:
           system:
             "Output dalam Markdown yang bersih, profesional, dan to the point.",
         },
-        planDetails?.aiTokenLimit || 50,
+        planDetails?.aiTokenLimitDaily || 50, planDetails?.aiTokenLimit || 50,
       );
       setAiReport(data.text);
     } catch (err: any) {

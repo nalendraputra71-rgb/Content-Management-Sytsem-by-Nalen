@@ -23,6 +23,7 @@ export function usePlanLimits(passedPlanDetails?: any) {
   const maxWorkspaces = getLimit('workspaces', planDetails?.maxWorkspaces ?? 1);
   const maxSocialAccounts = getLimit('socialAccounts', planDetails?.maxSocialAccounts ?? 3);
   const aiTokenLimit = getLimit('aiCreditsPerMonth', planDetails?.aiTokenLimit ?? 10);
+  const aiTokenLimitDaily = getLimit('aiCreditsPerDay', planDetails?.aiTokenLimitDaily ?? 10);
   const maxTeamMembers = getLimit('teamMembers', planDetails?.maxTeamMembers ?? 0);
   const storageMB = getLimit('storageMB', planDetails?.storageMB ?? 100);
 
@@ -64,6 +65,7 @@ export function usePlanLimits(passedPlanDetails?: any) {
     maxWorkspaces,
     maxSocialAccounts,
     aiTokenLimit,
+    aiTokenLimitDaily,
     maxTeamMembers,
     storageMB,
     checkCanAddWorkspace,

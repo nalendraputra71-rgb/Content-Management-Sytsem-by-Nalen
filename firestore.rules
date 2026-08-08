@@ -24,8 +24,8 @@ service cloud.firestore {
     
     function isEditor(wsId) { 
       return isSignedIn() && (
-        (resource != null && resource.data.get('ownerId', '') == request.auth.uid) ||
-        (resource != null && resource.data.get('userId', '') == request.auth.uid) ||
+        (resource != null && resource.data.ownerId == request.auth.uid) ||
+        (resource != null && resource.data.userId == request.auth.uid) ||
         (exists(/databases/$(database)/documents/workspaces/$(wsId)/members/$(request.auth.uid)) && 
          get(/databases/$(database)/documents/workspaces/$(wsId)/members/$(request.auth.uid)).data.role in ["owner", "editor"])
       ); 
@@ -41,7 +41,7 @@ service cloud.firestore {
     
     function isOwner(wsId) { 
       return isSignedIn() && (
-        (resource != null && resource.data.get('ownerId', '') == request.auth.uid) ||
+        (resource != null && resource.data.ownerId == request.auth.uid) ||
         (exists(/databases/$(database)/documents/workspaces/$(wsId)/members/$(request.auth.uid)) && 
          get(/databases/$(database)/documents/workspaces/$(wsId)/members/$(request.auth.uid)).data.role == "owner")
       ); 
@@ -87,14 +87,14 @@ service cloud.firestore {
     match /{path=**}/members/{memberId} {
       allow read: if isSignedIn() && (
         memberId == request.auth.uid || 
-        resource.data.get('userId', '') == request.auth.uid ||
+        resource.data.userId == request.auth.uid ||
         isAdmin()
       );
     }
 
     match /{path=**}/content/{contentId} {
       allow read: if isSignedIn() && (
-        (resource != null && resource.data.get('userId', '') == request.auth.uid) ||
+        (resource != null && resource.data.userId == request.auth.uid) ||
         (resource != null && resource.data.get('sharedUids', []) is list && request.auth.uid in resource.data.get('sharedUids', [])) ||
         (resource != null && resource.data.get('isPublic', false) == true) ||
         isAdmin()
@@ -175,17 +175,8 @@ service cloud.firestore {
 
     // ─── WORKSPACES ──────────────────────────────────────────────────────────
     match /workspaces/{wsId} {
-      allow list: if isSignedIn() && (
-        resource.data.ownerId == request.auth.uid || 
-        resource.data.get('publicLinkEnabled', false) == true || 
-        isAdmin()
-      );
-      allow get: if isSignedIn() && (
-        resource.data.ownerId == request.auth.uid || 
-        resource.data.get('publicLinkEnabled', false) == true || 
-        isMember(wsId) || 
-        isAdmin()
-      );
+      allow list: if (isSignedIn() && (resource.data.ownerId == request.auth.uid || isAdmin())) || resource.data.get('publicLinkEnabled', false) == true;
+      allow get: if (isSignedIn() && (resource.data.ownerId == request.auth.uid || isMember(wsId) || isAdmin())) || resource.data.get('publicLinkEnabled', false) == true;
       allow create: if isSignedIn() && incoming().ownerId == request.auth.uid;
       allow delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isOwner(wsId) || isAdmin());
       allow update: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isEditor(wsId) || isAdmin()) && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'publicLinkEnabled', 'settings', 'avatar']);
@@ -194,7 +185,7 @@ service cloud.firestore {
       match /members/{memberId} {
         allow read: if isSignedIn() && (
           memberId == request.auth.uid || 
-          resource.data.get('userId', '') == request.auth.uid ||
+          resource.data.userId == request.auth.uid ||
           isMember(wsId) || 
           isAdmin()
         );
@@ -209,13 +200,12 @@ service cloud.firestore {
 
       // ─── CONTENT ───────────────────────────────────────────────────────────
       match /content/{contentId} {
-        allow read: if isSignedIn() && (
-          (resource != null && resource.data.get('userId', '') == request.auth.uid) ||
+        allow read: if (isSignedIn() && (
+          (resource != null && resource.data.userId == request.auth.uid) ||
           (resource != null && resource.data.get('sharedUids', []) is list && request.auth.uid in resource.data.get('sharedUids', [])) ||
-          (resource != null && resource.data.get('isPublic', false) == true) ||
           isMember(wsId) || 
           isAdmin()
-        );
+        )) || (resource != null && resource.data.get('isPublic', false) == true) || get(/databases/$(database)/documents/workspaces/$(wsId)).data.get('publicLinkEnabled', false) == true;
         allow create: if isSignedIn() && incoming().workspaceId == wsId && (incoming().userId == request.auth.uid || isAdmin() || isEditor(wsId));
         allow delete: if isSignedIn() && (resource.data.userId == request.auth.uid || isEditor(wsId) || isAdmin());
         allow update: if isSignedIn() && (
@@ -227,13 +217,12 @@ service cloud.firestore {
         );
 
         match /history/{historyId} {
-          allow read: if isSignedIn() && (
+          allow read: if (isSignedIn() && (
             (get(/databases/$(database)/documents/workspaces/$(wsId)/content/$(contentId)).data.userId == request.auth.uid) ||
             (request.auth.uid in get(/databases/$(database)/documents/workspaces/$(wsId)/content/$(contentId)).data.get('sharedUids', [])) ||
-            (get(/databases/$(database)/documents/workspaces/$(wsId)/content/$(contentId)).data.get('isPublic', false) == true) ||
             isMember(wsId) ||
             isAdmin()
-          );
+          )) || (get(/databases/$(database)/documents/workspaces/$(wsId)/content/$(contentId)).data.get('isPublic', false) == true) || get(/databases/$(database)/documents/workspaces/$(wsId)).data.get('publicLinkEnabled', false) == true;
           allow create, update, delete: if isSignedIn() && (
             (get(/databases/$(database)/documents/workspaces/$(wsId)/content/$(contentId)).data.userId == request.auth.uid) ||
             isEditor(wsId) ||

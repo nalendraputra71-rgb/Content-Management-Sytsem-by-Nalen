@@ -256,13 +256,17 @@ export const generateBulletPoints = (plan: any, lang: 'id'|'en') => {
 
 export function PricingPage() {
   const navigate = useNavigate();
+  const { lang, setLang } = useI18n();
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
 
+  useEffect(() => {
+    document.title = lang === 'id' ? 'Harga Paket - Hubify Social' : 'Pricing Plans - Hubify Social';
+  }, [lang]);
+
   const [isAnnual, setIsAnnual] = useState(false);
-  const { lang, setLang } = useI18n();
 
   const [plans, setPlans] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -405,7 +409,7 @@ export function PricingPage() {
 
 
   return (
-    <div className="font-sans text-slate-900 bg-white min-h-screen overflow-x-hidden flex flex-col">
+    <div className="font-sans text-slate-900 bg-white min-h-screen overflow-x-clip flex flex-col">
       {/* Navbar */}
       <PublicHeader currentLang={lang} onLangChange={handleLangChange} />
 
@@ -508,14 +512,16 @@ export function PricingPage() {
               const discountPercent = hasDiscount ? Math.round(((mainOriginalPrice - mainPrice) / mainOriginalPrice) * 100) : 0;
 
               return (
-                <div key={plan.id} className={`${isPopular ? 'bg-[#0B2A4A] shadow-2xl border-blue-900 transform lg:-translate-y-4' : 'bg-white shadow-md border-slate-200 hover:shadow-xl'} rounded-3xl p-6 border transition-shadow flex flex-col h-full relative`}>
+                <div key={plan.id} className={`${isPopular ? 'bg-[#0B2A4A] shadow-2xl border-blue-900' : 'bg-white shadow-md border-slate-200 hover:shadow-xl'} rounded-3xl p-6 border transition-shadow flex flex-col h-full relative`}>
                   {isPopular && (
                     <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-lg whitespace-nowrap">
                       {lang === 'id' ? 'Paling Populer' : 'Most Popular'}
                     </div>
                   )}
-                  <div className={`mb-6 ${isPopular ? 'mt-4' : 'mt-2'}`}>
-                    <div className={`text-lg font-bold ${isPopular ? 'text-white' : 'text-[#0B2A4A]'} mb-2`}>{plan.name.replace(/ \((Monthly|Annual)\)/i, '')}</div>
+                  <div className="mb-6 mt-2">
+                    <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+                      <div className={`text-lg font-bold ${isPopular ? 'text-white' : 'text-[#0B2A4A]'}`}>{plan.name.replace(/ \((Monthly|Annual)\)/i, '')}</div>
+                    </div>
                     <div className="flex flex-col gap-1 mb-2">
                       {hasDiscount && (
                         <div className="flex items-center gap-1.5 flex-wrap">
@@ -552,25 +558,43 @@ export function PricingPage() {
                       </li>
                     ))}
                   </ul>
-                  <button onClick={() => navigate(`/checkout-preview?plan=${plan.id}&cycle=${isAnnual ? 'annual' : 'monthly'}`)} className={`w-full py-3 rounded-xl font-bold transition-colors mt-auto ${isPopular ? 'bg-white text-[#0B2A4A] hover:bg-slate-100 shadow-lg' : 'bg-blue-50 text-blue-700 hover:bg-blue-100'}`}>
-                    {lang === 'id' ? `Pilih ${plan.name.split(' ')[0]}` : `Choose ${plan.name.split(' ')[0]}`}
-                  </button>
+                  <div className="flex flex-col mt-auto w-full">
+                    {plan.trialEnabled ? (
+                      <button 
+                        onClick={() => navigate(`/checkout-preview?plan=${plan.id}&cycle=${isAnnual ? 'annual' : 'monthly'}&trial=true`)} 
+                        className={`w-full py-3 rounded-xl font-bold text-xs md:text-sm transition-all duration-200 ${
+                          isPopular 
+                            ? "bg-white text-[#0B2A4A] hover:bg-slate-100 shadow-md" 
+                            : "bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
+                        }`}
+                      >
+                        {lang === 'id' ? `Mulai Trial ${plan.trialDays} Hari` : `Start ${plan.trialDays}-Day Trial`}
+                      </button>
+                    ) : (
+                      <button 
+                        onClick={() => navigate(`/checkout-preview?plan=${plan.id}&cycle=${isAnnual ? 'annual' : 'monthly'}`)} 
+                        className={`w-full py-3 rounded-xl font-bold transition-colors mt-auto ${isPopular ? 'bg-white text-[#0B2A4A] hover:bg-slate-100 shadow-lg' : 'bg-blue-50 text-blue-700 hover:bg-blue-100'}`}
+                      >
+                        {lang === 'id' ? `Pilih ${plan.name.split(' ')[0]}` : `Choose ${plan.name.split(' ')[0]}`}
+                      </button>
+                    )}
+                  </div>
                 </div>
               );
             })}
           </div>
 
           {/* Feature Comparison */}
-          <div className="max-w-6xl mx-auto mb-24 overflow-x-auto">
+          <div className="max-w-6xl mx-auto mb-24">
             <h3 className="text-2xl font-bold text-center text-[#0B2A4A] mb-8">{lang === 'id' ? 'Perbandingan Fitur Lengkap' : 'Detailed Feature Comparison'}</h3>
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 min-w-[800px] overflow-hidden">
-              <table className="w-full text-left border-collapse">
-                <thead>
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-x-auto lg:overflow-x-visible">
+              <table className="w-full text-left border-collapse min-w-[800px]">
+                <thead className="sticky top-[76px] z-20 shadow-sm">
                   <tr className="bg-slate-100 border-b border-slate-200">
-                    <th className="py-4 px-6 font-bold text-slate-700 w-1/3">{lang === 'id' ? 'Fitur' : 'Feature'}</th>
-                    <th className="py-4 px-4 font-bold text-slate-700 text-center">Free</th>
+                    <th className="py-4 px-6 font-bold text-slate-700 w-1/3 bg-slate-100">{lang === 'id' ? 'Fitur' : 'Feature'}</th>
+                    <th className="py-4 px-4 font-bold text-slate-700 text-center bg-slate-100">Free</th>
                     {activePlans.map(plan => (
-                      <th key={plan.id} className={`py-4 px-4 font-bold text-center ${plan.popular ? 'text-blue-700 bg-blue-50/80' : 'text-[#0B2A4A]'}`}>
+                      <th key={plan.id} className={`py-4 px-4 font-bold text-center ${plan.popular ? 'text-blue-700 bg-blue-50' : 'text-[#0B2A4A] bg-slate-100'}`}>
                         {plan.name.replace(/ \((Monthly|Annual)\)/i, '')}
                       </th>
                     ))}

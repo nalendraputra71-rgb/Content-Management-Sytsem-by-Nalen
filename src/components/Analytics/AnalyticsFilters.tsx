@@ -23,17 +23,45 @@ export function CustomDropdown({ value, options = [], onChange, style }: { value
     <div ref={ref} style={{ position: "relative", ...style }}>
       <button 
         onClick={() => setOpen(!open)} 
-        className="hover-scale"
-        style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "10px 20px", borderRadius: "9999px", border: "1px solid rgba(255,255,255,0.7)", background: "rgba(255,255,255,0.5)", backdropFilter: "none", fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#2C2016" }}
+        className="hover:bg-slate-50 transition-all duration-150 shadow-sm"
+        style={{ 
+          width: "100%", 
+          display: "flex", 
+          alignItems: "center", 
+          justifyContent: "space-between", 
+          gap: 10, 
+          padding: "8px 14px", 
+          borderRadius: "12px", 
+          border: "1px solid #E2E8F0", 
+          background: "#FFFFFF", 
+          fontSize: "12px", 
+          fontWeight: 700, 
+          cursor: "pointer", 
+          color: "#0F172A" 
+        }}
       >
-        <span>{displayLabel}</span>
-        <ChevronDown size={14} color="rgba(44,32,22,0.5)" style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'all 0.2s' }} />
+        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{displayLabel}</span>
+        <ChevronDown size={14} color="#64748B" style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'all 0.2s' }} />
       </button>
       <AnimatePresence>
         {open && (
           <motion.div 
             initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }} transition={{ duration: 0.15 }}
-            style={{ position: "absolute", top: "100%", right: 0, marginTop: 4, background: "rgba(255,255,255,0.85)", backdropFilter: "none", WebkitBackdropFilter: "none", border: "1px solid rgba(255,255,255,0.8)", borderRadius: 12, padding: 6, zIndex: 100, boxShadow: "0 10px 40px rgba(0,0,0,0.1)", minWidth: 120, overflowY: "auto", maxHeight: 200 }}
+            style={{ 
+              position: "absolute", 
+              top: "100%", 
+              right: 0, 
+              marginTop: 6, 
+              background: "#FFFFFF", 
+              border: "1px solid #E2E8F0", 
+              borderRadius: 12, 
+              padding: 5, 
+              zIndex: 100, 
+              boxShadow: "0 10px 25px -5px rgba(0,0,0,0.08), 0 8px 10px -6px rgba(0,0,0,0.08)", 
+              minWidth: 140, 
+              overflowY: "auto", 
+              maxHeight: 220 
+            }}
           >
             {options.map((o, i) => {
               const val = typeof o === 'string' ? o : o.id;
@@ -42,8 +70,18 @@ export function CustomDropdown({ value, options = [], onChange, style }: { value
                 <div 
                   key={i} 
                   onClick={() => { onChange(val); setOpen(false); }}
-                  style={{ padding: "8px 12px", borderRadius: 8, fontSize: 12, fontWeight: isSelected?800:600, cursor: "pointer", background: isSelected ? "rgba(59,130,246,0.1)" : "transparent", color: isSelected ? "#3B82F6" : "#2C2016", transition: "all 0.1s", whiteSpace: "nowrap" }}
-                  onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = "rgba(255,255,255,0.6)"; }}
+                  style={{ 
+                    padding: "7px 11px", 
+                    borderRadius: 8, 
+                    fontSize: 12, 
+                    fontWeight: isSelected ? 700 : 500, 
+                    cursor: "pointer", 
+                    background: isSelected ? "#EFF6FF" : "transparent", 
+                    color: isSelected ? "#2563EB" : "#334155", 
+                    transition: "all 0.1s", 
+                    whiteSpace: "nowrap" 
+                  }}
+                  onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = "#F1F5F9"; }}
                   onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = "transparent"; }}
                 >
                   {typeof o === 'string' ? o : o.label}

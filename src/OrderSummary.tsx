@@ -21,6 +21,7 @@ export function OrderSummary({ user, profile }: { user: any, profile: any }) {
   const [loadingPlans, setLoadingPlans] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [systemConfig, setSystemConfig] = useState<any>(null);
 
   // Promo / Coupon states
   const [promoCodeInput, setPromoCodeInput] = useState('');
@@ -46,7 +47,18 @@ export function OrderSummary({ user, profile }: { user: any, profile: any }) {
         setLoadingPlans(false);
       }
     };
+    const fetchSystemConfig = async () => {
+      try {
+        const snap = await getDoc(doc(db, "config", "system"));
+        if (snap.exists()) {
+          setSystemConfig(snap.data());
+        }
+      } catch (err) {
+        console.warn("Failed to fetch system config:", err);
+      }
+    };
     fetchPlans();
+    fetchSystemConfig();
   }, []);
 
   // Find matched plan from database or fallback to hardcoded
@@ -59,6 +71,12 @@ export function OrderSummary({ user, profile }: { user: any, profile: any }) {
       return matchesSlug && isAnnualPlan;
     });
   }
+
+  const isTrialUrl = searchParams.get('trial') === 'true';
+  const hasUsedThisTrial = systemConfig?.trialLimitMode === 'per_plan'
+    ? (profile?.usedTrialPlans || []).includes(matchedPlan?.id)
+    : !matchedPlan ? true : !!profile?.hasUsedTrial;
+  const hasTrialAccess = isTrialUrl && matchedPlan?.trialEnabled && !hasUsedThisTrial;
 
   let planName = 'Free Starter';
   let originalPrice = 0;
@@ -78,12 +96,12 @@ export function OrderSummary({ user, profile }: { user: any, profile: any }) {
   } else if (matchedPlan) {
     planName = matchedPlan.name.replace(/ \((Monthly|Annual)\)/i, '');
     originalPrice = matchedPlan.originalPrice || matchedPlan.price;
-    finalPrice = matchedPlan.price;
+    finalPrice = hasTrialAccess ? 0 : matchedPlan.price;
     features = generateBulletPoints(matchedPlan, 'id');
   } else if (plan === 'solo') {
     planName = 'Solo Creator';
     originalPrice = matchedPlan ? matchedPlan.originalPrice || matchedPlan.price : (isAnnual ? 1188000 : 99000);
-    finalPrice = matchedPlan ? matchedPlan.price : (isAnnual ? 948000 : 99000);
+    finalPrice = hasTrialAccess ? 0 : (matchedPlan ? matchedPlan.price : (isAnnual ? 948000 : 99000));
     features = matchedPlan?.features || [
       "1 Workspace", 
       "10 Akun Sosmed", 
@@ -92,7 +110,7 @@ export function OrderSummary({ user, profile }: { user: any, profile: any }) {
   } else if (plan === 'team') {
     planName = 'Team';
     originalPrice = matchedPlan ? matchedPlan.originalPrice || matchedPlan.price : (isAnnual ? 3588000 : 299000);
-    finalPrice = matchedPlan ? matchedPlan.price : (isAnnual ? 2868000 : 299000);
+    finalPrice = hasTrialAccess ? 0 : (matchedPlan ? matchedPlan.price : (isAnnual ? 2868000 : 299000));
     features = matchedPlan?.features || [
       "3 Workspaces", 
       "30 Akun Sosmed", 
@@ -102,7 +120,7 @@ export function OrderSummary({ user, profile }: { user: any, profile: any }) {
   } else if (plan === 'agency') {
     planName = 'Agency';
     originalPrice = matchedPlan ? matchedPlan.originalPrice || matchedPlan.price : (isAnnual ? 10788000 : 899000);
-    finalPrice = matchedPlan ? matchedPlan.price : (isAnnual ? 8988000 : 899000);
+    finalPrice = hasTrialAccess ? 0 : (matchedPlan ? matchedPlan.price : (isAnnual ? 8988000 : 899000));
     features = matchedPlan?.features || [
       "Unlimited Workspaces", 
       "Unlimited Akun Sosmed", 
@@ -211,6 +229,52 @@ export function OrderSummary({ user, profile }: { user: any, profile: any }) {
 
     setLoading(true);
     setError('');
+
+    if (hasTrialAccess) {
+      try {
+        const userRef = doc(db, 'users', user.uid);
+        const trialDurationDays = matchedPlan?.trialDays || 7;
+        const expiryDate = new Date();
+        expiryDate.setDate(expiryDate.getDate() + trialDurationDays);
+
+        const existingUsedPlans = profile?.usedTrialPlans || [];
+        const targetPlanId = matchedPlan?.id || 'plus-monthly';
+        const updatedUsedPlans = existingUsedPlans.includes(targetPlanId)
+          ? existingUsedPlans
+          : [...existingUsedPlans, targetPlanId];
+
+        const trialData = {
+          plan: 'trial',
+          trialPlanId: targetPlanId,
+          activeUntil: expiryDate.toISOString(),
+          subscriptionStatus: 'pro',
+          trialStartedAt: new Date().toISOString(),
+          hasUsedTrial: true,
+          usedTrialPlans: updatedUsedPlans
+        };
+
+        await updateDoc(userRef, trialData);
+
+        await addDoc(collection(db, "transactions"), {
+          userId: user.uid,
+          userEmail: profile?.email || user.email || 'unknown',
+          amount: 0,
+          planName: `${planName} (Trial Gratis)`,
+          paymentMethod: 'Free Trial',
+          status: 'PAID',
+          externalId: `trial_${matchedPlan?.id || 'plus'}_${user.uid}_${Date.now()}`,
+          timestamp: new Date().toISOString()
+        });
+
+        alert(`Selamat! Anda berhasil mengaktifkan uji coba gratis ${planName} selama ${trialDurationDays} hari.`);
+        navigate('/billing?payment=success');
+      } catch (err: any) {
+        console.error("Direct trial activation error:", err);
+        setError('Gagal mengaktifkan uji coba gratis: ' + (err.message || 'Terjadi kesalahan sistem.'));
+        setLoading(false);
+      }
+      return;
+    }
 
     // If final price after promo discount is Rp 0 (Free), bypass payment flow entirely
     if (finalPriceAfterPromo === 0) {
@@ -434,7 +498,7 @@ export function OrderSummary({ user, profile }: { user: any, profile: any }) {
 
                     {packageDiscount > 0 && (
                       <div className="flex justify-between text-emerald-600">
-                        <span>Diskon Spesial</span>
+                        <span>{hasTrialAccess ? `Trial Gratis ${matchedPlan?.trialDays || 7} Hari` : "Diskon Spesial"}</span>
                         <span>- Rp {packageDiscount.toLocaleString('id-ID')}</span>
                       </div>
                     )}
@@ -477,7 +541,7 @@ export function OrderSummary({ user, profile }: { user: any, profile: any }) {
                     disabled={loading}
                     className="w-full bg-[#1D4D7A] text-white font-bold py-4 px-4 rounded-xl hover:bg-[#0B2A4A] transition-all flex justify-center items-center gap-2 shadow-lg shadow-[#1D4D7A]/20 disabled:opacity-70 disabled:cursor-not-allowed"
                   >
-                    {loading ? 'Memproses...' : (user ? (finalPriceAfterPromo === 0 ? 'Aktifkan Paket Sekarang' : 'Lanjut ke Pembayaran') : 'Daftar & Bayar')}
+                    {loading ? 'Memproses...' : (hasTrialAccess ? 'Mulai Uji Coba Gratis Sekarang' : (user ? (finalPriceAfterPromo === 0 ? 'Aktifkan Paket Sekarang' : 'Lanjut ke Pembayaran') : 'Daftar & Bayar'))}
                   </button>
 
                   <div className="mt-4 flex items-center justify-center gap-2 text-xs font-semibold text-slate-400">

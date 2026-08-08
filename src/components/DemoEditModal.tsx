@@ -3,16 +3,49 @@ import { motion, AnimatePresence } from "motion/react";
 import { X, Users, SlidersHorizontal, Check } from "lucide-react";
 
 function getBlankDemographics(platform: string) {
+  const platLower = (platform || "").toLowerCase();
+  
+  let ageBrackets = [
+    { range: "13-17", value: 5 },
+    { range: "18-24", value: 40 },
+    { range: "25-34", value: 35 },
+    { range: "35-44", value: 15 },
+    { range: "45+", value: 5 },
+  ];
+
+  if (platLower.includes("tiktok")) {
+    ageBrackets = [
+      { range: "18-24", value: 45 },
+      { range: "25-34", value: 35 },
+      { range: "35-44", value: 12 },
+      { range: "45-54", value: 6 },
+      { range: "55+", value: 2 },
+    ];
+  } else if (platLower.includes("instagram") || platLower.includes("facebook") || platLower.includes("meta") || platLower.includes("threads")) {
+    ageBrackets = [
+      { range: "18-24", value: 30 },
+      { range: "25-34", value: 38 },
+      { range: "35-44", value: 18 },
+      { range: "45-54", value: 8 },
+      { range: "55-64", value: 4 },
+      { range: "65+", value: 2 },
+    ];
+  } else if (platLower.includes("youtube")) {
+    ageBrackets = [
+      { range: "13-17", value: 5 },
+      { range: "18-24", value: 25 },
+      { range: "25-34", value: 35 },
+      { range: "35-44", value: 20 },
+      { range: "45-54", value: 10 },
+      { range: "55-64", value: 4 },
+      { range: "65+", value: 1 },
+    ];
+  }
+
   return {
     platform,
     gender: { male: 50, female: 50 },
-    age: [
-      { range: "13-17", value: 5 },
-      { range: "18-24", value: 40 },
-      { range: "25-34", value: 35 },
-      { range: "35-44", value: 15 },
-      { range: "45+", value: 5 },
-    ],
+    age: ageBrackets,
     cities: [
       { name: "Jakarta", percentage: 35 },
       { name: "Surabaya", percentage: 25 },
@@ -132,9 +165,11 @@ export function DemoEditModal({
                     </select>
                   </div>
                 </div>
-                <div className="flex items-center gap-1.5 text-[11px] font-bold text-blue-700 bg-blue-100/50 px-3 py-1 rounded-full border border-blue-200/30">
-                  <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse" />
-                  <span>{lang === "id" ? "Mengedit data untuk:" : "Editing data for:"} <strong className="text-blue-900 font-extrabold">{editingPlatform}</strong></span>
+                <div className="flex items-center flex-wrap gap-2.5">
+                  <div className="flex items-center gap-1.5 text-[11px] font-bold text-blue-700 bg-blue-100/50 px-3 py-1.5 rounded-xl border border-blue-200/30">
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse" />
+                    <span>{lang === "id" ? "Mengedit data:" : "Editing data:"} <strong className="text-blue-900 font-extrabold">{editingPlatform}</strong></span>
+                  </div>
                 </div>
               </div>
 
@@ -166,14 +201,15 @@ export function DemoEditModal({
                         type="range" 
                         min="0" 
                         max="100" 
+                        step="0.01"
                         value={editDemoData.gender.female}
                         onChange={(e) => {
-                          const val = parseInt(e.target.value) || 0;
+                          const val = parseFloat(e.target.value) || 0;
                           setEditDemoData((prev: any) => ({
                             ...prev,
                             gender: {
-                              female: val,
-                              male: 100 - val
+                              female: parseFloat(val.toFixed(2)),
+                              male: parseFloat((100 - val).toFixed(2))
                             }
                           }));
                         }}
@@ -192,10 +228,11 @@ export function DemoEditModal({
                     </h4>
                     {/* Sum Tracker */}
                     {(() => {
-                      const totalAge = editDemoData.age.reduce((acc: number, item: any) => acc + (parseInt(item.value) || 0), 0);
+                      const totalAge = parseFloat(editDemoData.age.reduce((acc: number, item: any) => acc + (parseFloat(item.value) || 0), 0).toFixed(2));
+                      const isValid = Math.abs(totalAge - 100) < 0.15;
                       return (
-                        <span className={`text-xs font-bold px-2 py-0.5 rounded-lg ${totalAge === 100 ? "text-emerald-600 bg-emerald-50" : "text-amber-600 bg-amber-50"}`}>
-                          Total: {totalAge}% {totalAge !== 100 && lang === "id" ? "(Harus 100%)" : "(Must be 100%)"}
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-lg ${isValid ? "text-emerald-600 bg-emerald-50" : "text-amber-600 bg-amber-50"}`}>
+                          Total: {totalAge}% {(!isValid && lang === "id") ? "(Harus ~100%)" : !isValid ? "(Must be ~100%)" : ""}
                         </span>
                       );
                     })()}
@@ -209,9 +246,11 @@ export function DemoEditModal({
                             type="number" 
                             min="0"
                             max="100"
+                            step="any"
                             value={item.value}
                             onChange={(e) => {
-                              const val = Math.min(100, Math.max(0, parseInt(e.target.value) || 0));
+                              const rawVal = e.target.value;
+                              const val = rawVal === "" ? "" : Math.min(100, Math.max(0, parseFloat(rawVal) || 0));
                               const newAge = [...editDemoData.age];
                               newAge[idx] = { ...newAge[idx], value: val };
                               setEditDemoData((prev: any) => ({ ...prev, age: newAge }));
@@ -236,7 +275,7 @@ export function DemoEditModal({
                         <span>{lang === "id" ? "3. Kota Teratas" : "3. Top Cities"}</span>
                       </h4>
                       {(() => {
-                        const total = editDemoData.cities.reduce((acc: number, item: any) => acc + (parseInt(item.percentage) || 0), 0);
+                        const total = parseFloat(editDemoData.cities.reduce((acc: number, item: any) => acc + (parseFloat(item.percentage) || 0), 0).toFixed(2));
                         return <span className="text-[10px] font-bold text-gray-400">Total: {total}%</span>;
                       })()}
                     </div>
@@ -259,9 +298,11 @@ export function DemoEditModal({
                               type="number" 
                               min="0"
                               max="100"
+                              step="any"
                               value={city.percentage}
                               onChange={(e) => {
-                                const val = Math.min(100, Math.max(0, parseInt(e.target.value) || 0));
+                                const rawVal = e.target.value;
+                                const val = rawVal === "" ? "" : Math.min(100, Math.max(0, parseFloat(rawVal) || 0));
                                 const newCities = [...editDemoData.cities];
                                 newCities[idx] = { ...newCities[idx], percentage: val };
                                 setEditDemoData((prev: any) => ({ ...prev, cities: newCities }));
@@ -283,7 +324,7 @@ export function DemoEditModal({
                         <span>{lang === "id" ? "4. Negara Teratas" : "4. Top Countries"}</span>
                       </h4>
                       {(() => {
-                        const total = editDemoData.countries.reduce((acc: number, item: any) => acc + (parseInt(item.percentage) || 0), 0);
+                        const total = parseFloat(editDemoData.countries.reduce((acc: number, item: any) => acc + (parseFloat(item.percentage) || 0), 0).toFixed(2));
                         return <span className="text-[10px] font-bold text-gray-400">Total: {total}%</span>;
                       })()}
                     </div>
@@ -306,9 +347,11 @@ export function DemoEditModal({
                               type="number" 
                               min="0"
                               max="100"
+                              step="any"
                               value={country.percentage}
                               onChange={(e) => {
-                                const val = Math.min(100, Math.max(0, parseInt(e.target.value) || 0));
+                                const rawVal = e.target.value;
+                                const val = rawVal === "" ? "" : Math.min(100, Math.max(0, parseFloat(rawVal) || 0));
                                 const newCountries = [...editDemoData.countries];
                                 newCountries[idx] = { ...newCountries[idx], percentage: val };
                                 setEditDemoData((prev: any) => ({ ...prev, countries: newCountries }));
@@ -330,7 +373,7 @@ export function DemoEditModal({
                         <span>{lang === "id" ? "5. Minat Audiens" : "5. Audience Interests"}</span>
                       </h4>
                       {(() => {
-                        const total = editDemoData.interests.reduce((acc: number, item: any) => acc + (parseInt(item.percentage) || 0), 0);
+                        const total = parseFloat(editDemoData.interests.reduce((acc: number, item: any) => acc + (parseFloat(item.percentage) || 0), 0).toFixed(2));
                         return <span className="text-[10px] font-bold text-gray-400">Total: {total}%</span>;
                       })()}
                     </div>
@@ -353,9 +396,11 @@ export function DemoEditModal({
                               type="number" 
                               min="0"
                               max="100"
+                              step="any"
                               value={interest.percentage}
                               onChange={(e) => {
-                                const val = Math.min(100, Math.max(0, parseInt(e.target.value) || 0));
+                                const rawVal = e.target.value;
+                                const val = rawVal === "" ? "" : Math.min(100, Math.max(0, parseFloat(rawVal) || 0));
                                 const newInts = [...editDemoData.interests];
                                 newInts[idx] = { ...newInts[idx], percentage: val };
                                 setEditDemoData((prev: any) => ({ ...prev, interests: newInts }));
@@ -379,10 +424,11 @@ export function DemoEditModal({
                       <span>{lang === "id" ? "6. Perangkat / Devices" : "6. Devices"}</span>
                     </h4>
                     {(() => {
-                      const totalDevices = editDemoData.devices.reduce((acc: number, item: any) => acc + (parseInt(item.percentage) || 0), 0);
+                      const totalDevices = parseFloat(editDemoData.devices.reduce((acc: number, item: any) => acc + (parseFloat(item.percentage) || 0), 0).toFixed(2));
+                      const isValid = Math.abs(totalDevices - 100) < 0.15;
                       return (
-                        <span className={`text-xs font-bold px-2 py-0.5 rounded-lg ${totalDevices === 100 ? "text-emerald-600 bg-emerald-50" : "text-amber-600 bg-amber-50"}`}>
-                          Total: {totalDevices}% {totalDevices !== 100 && lang === "id" ? "(Harus 100%)" : "(Must be 100%)"}
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-lg ${isValid ? "text-emerald-600 bg-emerald-50" : "text-amber-600 bg-amber-50"}`}>
+                          Total: {totalDevices}% {(!isValid && lang === "id") ? "(Harus ~100%)" : !isValid ? "(Must be ~100%)" : ""}
                         </span>
                       );
                     })()}
@@ -396,9 +442,11 @@ export function DemoEditModal({
                             type="number" 
                             min="0"
                             max="100"
+                            step="any"
                             value={device.percentage}
                             onChange={(e) => {
-                              const val = Math.min(100, Math.max(0, parseInt(e.target.value) || 0));
+                              const rawVal = e.target.value;
+                              const val = rawVal === "" ? "" : Math.min(100, Math.max(0, parseFloat(rawVal) || 0));
                               const newDevs = [...editDemoData.devices];
                               newDevs[idx] = { ...newDevs[idx], percentage: val };
                               setEditDemoData((prev: any) => ({ ...prev, devices: newDevs }));

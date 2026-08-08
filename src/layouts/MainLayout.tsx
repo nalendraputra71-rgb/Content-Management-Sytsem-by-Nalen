@@ -11,7 +11,7 @@ import {
 import { 
   auth, db, onAuthStateChanged, signOut,
   doc, setDoc, getDoc, collection, collectionGroup, query, onSnapshot, deleteDoc, writeBatch, updateDoc,
-  handleFirestoreError, testFirestoreConnection, where, getDocs, documentId
+  handleFirestoreError, testFirestoreConnection, where, getDocs, documentId, increment
 } from "../firebase";
 
 import { AppRoutes } from "../AppRoutes";
@@ -633,6 +633,7 @@ export function Dashboard({ user, profile, planDetails, onUpdateProfile, current
   const [exEnd, setExEnd] = useState("");
   const [exPlatform, setExPlatform] = useState("All");
   const [exOption, setExOption] = useState("all"); // "all", "range"
+  const [isExportLoading, setIsExportLoading] = useState(false);
 
   const isRestricted = useMemo(() => {
     if (!profile?.activeUntil) return false;
@@ -778,14 +779,17 @@ export function Dashboard({ user, profile, planDetails, onUpdateProfile, current
           return;
         }
 
-        const wsQuery = query(collection(db, "workspaces"), where(documentId(), "in", wsIds));
-        const wsSnap = await getDocs(wsQuery);
+        // Fetch each workspace individually to guarantee 'get' rules are evaluated instead of 'list' rules
+        const wsPromises = wsIds.map(id => getDoc(doc(db, "workspaces", id)));
+        const wsSnaps = await Promise.all(wsPromises);
         
-        const list = wsSnap.docs.map(docSnap => ({
-          ...docSnap.data(),
-          id: docSnap.id,
-          userRole: userRoles[docSnap.id] || "viewer"
-        }));
+        const list = wsSnaps
+          .filter(snap => snap.exists())
+          .map(docSnap => ({
+            ...docSnap.data(),
+            id: docSnap.id,
+            userRole: userRoles[docSnap.id] || "viewer"
+          }));
 
         setWorkspaces(list);
         
@@ -1061,6 +1065,24 @@ export function Dashboard({ user, profile, planDetails, onUpdateProfile, current
     // Clean up undefined values before saving to Firestore to prevent silent or synchronous failures
     const cleanData = JSON.parse(JSON.stringify(data));
 
+    const prevDataForSize = !isNew && content ? content.find(c => c.id === itemId) : null;
+    let storageDiffMB = 0;
+    try {
+        const oldSize = prevDataForSize && prevDataForSize.referenceImage ? (prevDataForSize.referenceImage.length * 0.75) / (1024 * 1024) : 0;
+        const newSize = cleanData.referenceImage ? (cleanData.referenceImage.length * 0.75) / (1024 * 1024) : 0;
+        storageDiffMB = newSize - oldSize;
+    } catch(e) {}
+
+    const isOwner = workspace.ownerId === user.uid || workspace.createdBy === user.uid;
+    if (storageDiffMB > 0 && isOwner) {
+       const currentStorage = profile?.storageUsed || 0;
+       const maxStorage = planDetails?.maxStorageMB || 100;
+       if (currentStorage + storageDiffMB > maxStorage) {
+          if (closeModal) alert(`Gagal menyimpan: Kapasitas penyimpanan penuh (Maks: ${maxStorage} MB).`);
+          return;
+       }
+    }
+
     let changedFields: any[] = [];
     const prevData = !isNew && content ? content.find(c => c.id === itemId) : null;
     if (prevData) {
@@ -1216,6 +1238,11 @@ export function Dashboard({ user, profile, planDetails, onUpdateProfile, current
         await setDoc(doc(db, "workspaces", targetWorkspaceId, "content", itemId, "history", newHistoryEntry.id), newHistoryEntry);
       }
       console.log("Save successful!");
+      if (storageDiffMB !== 0 && isOwner) {
+         try {
+             await updateDoc(doc(db, "users", user.uid), { storageUsed: increment(storageDiffMB) });
+         } catch(e) { console.error("Failed to update storage", e); }
+      }
       if (closeModal) {
         setModal(null);
       } else if (isNew) {
@@ -1376,7 +1403,7 @@ export function Dashboard({ user, profile, planDetails, onUpdateProfile, current
       await updateDoc(wsRef, fsUpdates);
       
       if (settingsUpdates.title) {
-        document.title = settingsUpdates.title;
+        document.title = `${settingsUpdates.title} - Hubify Social`;
       }
       
       if (renames && (Object.keys(renames.pillars || {}).length > 0 || Object.keys(renames.platforms || {}).length > 0 || Object.keys(renames.contentTypes || {}).length > 0 || Object.keys(renames.pics || {}).length > 0 || Object.keys(renames.statuses || {}).length > 0)) {
@@ -1480,7 +1507,7 @@ export function Dashboard({ user, profile, planDetails, onUpdateProfile, current
   };
 
   useEffect(() => {
-    if (title) document.title = title;
+    if (title) document.title = `${title} - Hubify Social`;
   }, [title]);
 
   const handleBulkImport = async (items: any[]) => {
@@ -1596,11 +1623,15 @@ export function Dashboard({ user, profile, planDetails, onUpdateProfile, current
         onRenameWorkspace={async (wsId: string, newName: string) => {
           try {
             await updateDoc(doc(db, "workspaces", wsId), { name: newName });
+            setWorkspaces(prev => prev.map(w => w.id === wsId ? { ...w, name: newName } : w));
+            if (workspace?.id === wsId) setWorkspace(prev => prev ? { ...prev, name: newName } : null);
           } catch(e: any) { handleFirestoreError(e, 'update'); }
         }}
         onUpdateWorkspace={async (wsId: string, updates: any) => {
           try {
             await updateDoc(doc(db, "workspaces", wsId), updates);
+            setWorkspaces(prev => prev.map(w => w.id === wsId ? { ...w, ...updates } : w));
+            if (workspace?.id === wsId) setWorkspace(prev => prev ? { ...prev, ...updates } : null);
           } catch(e: any) { handleFirestoreError(e, 'update'); }
         }}
         onTitleChange={async (newTitle: string) => {
@@ -1702,6 +1733,7 @@ export function Dashboard({ user, profile, planDetails, onUpdateProfile, current
         {(!["dashboard", "settings", "admin", "soc_hub"].includes(tab) && !tab.startsWith("social")) && (
           <Header 
             profile={profile}
+            tab={tab}
           />
         )}
       
@@ -1751,6 +1783,10 @@ export function Dashboard({ user, profile, planDetails, onUpdateProfile, current
               alert("Fitur Bulk Import/Export CSV tidak tersedia di paket Anda. Silakan upgrade paket.");
               return;
             }
+            const pad = (num: number) => String(num).padStart(2, "0");
+            const lastDay = new Date(year, month, 0).getDate();
+            setExStart(`${year}-${pad(month)}-01`);
+            setExEnd(`${year}-${pad(month)}-${pad(lastDay)}`);
             setExportModal(true); 
           }}
           isRestricted={isRestricted}
@@ -1867,119 +1903,211 @@ export function Dashboard({ user, profile, planDetails, onUpdateProfile, current
       <AnimatePresence>
         {exportModal && <motion.div key="export" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} transition={{ duration: 0.15 }} style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.8)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center", padding:16}}>
           <motion.div initial={{scale:0.95, opacity:0, y:20}} animate={{scale:1, opacity:1, y:0}} exit={{scale:0.95, opacity:0, y:20}} transition={{ type: "spring", damping: 25, stiffness: 300 }} style={{...CARD({width:"100%", maxWidth:440, padding:32, borderRadius:24, boxShadow:"0 20px 40px rgba(0,0,0,0.2)", position:"relative"}), background: "#FFFFFF", backdropFilter: "none", WebkitBackdropFilter: "none"}}>
-             <button className="hover-scale" onClick={()=>setExportModal(false)} style={{position:"absolute",top:20,right:20,background:"rgba(44,32,22,0.05)",border:"none",borderRadius:"50%",width:32,height:32,cursor:"pointer",fontSize:18,color:"#2C2016",display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
-             <h3 style={{fontSize:20, fontWeight:700, margin:"0 0 8px", color:"#2C2016", display:"flex", alignItems:"center", gap:8}}><Download size={20} />{lang === "id" ? " Ekspor Data (XLSX)" : " Export Data (XLSX)"}</h3>
-             <p style={{fontSize:14, color:"rgba(44,32,22,0.6)", marginBottom:24, lineHeight:1.5}}>{lang === "id" ? "Unduh data konten workspace " : "Download workspace "}<strong style={{color:"var(--theme-primary)"}}>{workspace?.name}</strong>{lang === "id" ? " dalam format Excel." : " content data in Excel format."}</p>
+             <h3 style={{fontSize:20, fontWeight:700, marginBottom:24, color:"#2C2016"}}>{lang === "id" ? "Ekspor Data Konten" : "Export Content Data"}</h3>
              
-             <div style={{display:"flex", flexDirection:"column", gap:16, marginBottom: 28, textAlign: "left"}}>
-                <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:12}}>
-                  <label style={{
-                    display:"flex", alignItems:"center", gap:10, fontSize:14, cursor:"pointer",
-                    padding: 14, borderRadius: 12, border: exOption === "all" ? "2px solid var(--theme-primary)" : "1px solid rgba(44,32,22,0.1)",
-                    background: exOption === "all" ? "rgba(var(--theme-primary-rgb), 0.05)" : "white",
-                    fontWeight: exOption === "all" ? 700 : 500, color: "#2C2016", transition: "all 0.2s"
-                  }}>
-                    <input type="radio" name="exOpt" checked={exOption === "all"} onChange={()=>setExOption("all")} style={{display:"none"}} />
-                    <div style={{width:18, height:18, borderRadius:"50%", border: exOption === "all" ? "5px solid var(--theme-primary)" : "2px solid rgba(44,32,22,0.2)"}}></div>
-                    {lang === "id" ? "Semua Data" : "All Data"}
-                  </label>
-                  <label style={{
-                    display:"flex", alignItems:"center", gap:10, fontSize:14, cursor:"pointer",
-                    padding: 14, borderRadius: 12, border: exOption === "filter" ? "2px solid var(--theme-primary)" : "1px solid rgba(44,32,22,0.1)",
-                    background: exOption === "filter" ? "rgba(var(--theme-primary-rgb), 0.05)" : "white",
-                    fontWeight: exOption === "filter" ? 700 : 500, color: "#2C2016", transition: "all 0.2s"
-                  }}>
-                    <input type="radio" name="exOpt" checked={exOption === "filter"} onChange={()=>setExOption("filter")} style={{display:"none"}} />
-                    <div style={{width:18, height:18, borderRadius:"50%", border: exOption === "filter" ? "5px solid var(--theme-primary)" : "2px solid rgba(44,32,22,0.2)"}}></div>
-                    {lang === "id" ? "Filter Spesifik" : "Specific Filter"}
-                  </label>
-                </div>
+             <div style={{display:"flex", flexDirection:"column", gap:16, marginBottom:24}}>
+                  <div style={{display:"flex", gap:12}}>
+                    <label style={{
+                      display: "flex", alignItems: "center", gap: 10, flex: 1, padding: "14px 18px", borderRadius: 16, border: "1px solid rgba(44,32,22,0.08)", cursor: "pointer", background: exOption === "all" ? "rgba(var(--theme-primary-rgb), 0.04)" : "white",
+                      fontWeight: exOption === "all" ? 700 : 500, color: "#2C2016", transition: "all 0.2s"
+                    }}>
+                      <input type="radio" name="exOpt" checked={exOption === "all"} onChange={()=>setExOption("all")} style={{display:"none"}} />
+                      <div style={{width:18, height:18, borderRadius:"50%", border: exOption === "all" ? "5px solid var(--theme-primary)" : "2px solid rgba(44,32,22,0.2)"}}></div>
+                      {lang === "id" ? "Semua Data" : "All Data"}
+                    </label>
 
-                <AnimatePresence>
-                  {exOption === "filter" && (
-                     <motion.div initial={{opacity:0, height:0}} animate={{opacity:1, height:"auto"}} exit={{opacity:0, height:0}} style={{overflow:"hidden"}}>
-                       <div style={{display:"flex", flexDirection:"column", gap:16, marginTop: 4, padding: 16, background: "rgba(44,32,22,0.02)", border: "1px solid rgba(44,32,22,0.06)", borderRadius: 16}}>
-                         <div style={{display:"flex", gap:12}}>
-                           <div style={{flex:1}}>
-                             <label style={{display:"block", fontSize:12, fontWeight:700, marginBottom:6, color:"rgba(44,32,22,0.7)"}}>{lang === "id" ? "Dari Tanggal" : "From Date"}</label>
-                             <input type="date" value={exStart} onChange={(e)=>setExStart(e.target.value)} style={{width:"100%", padding:"10px 14px", borderRadius:10, border:"1px solid rgba(44,32,22,0.1)", fontSize:13, outline:"none", fontFamily:"inherit", color:"#2C2016"}} />
+                    <label style={{
+                      display: "flex", alignItems: "center", gap: 10, flex: 1, padding: "14px 18px", borderRadius: 16, border: "1px solid rgba(44,32,22,0.08)", cursor: "pointer", background: exOption === "filter" ? "rgba(var(--theme-primary-rgb), 0.04)" : "white",
+                      fontWeight: exOption === "filter" ? 700 : 500, color: "#2C2016", transition: "all 0.2s"
+                    }}>
+                      <input type="radio" name="exOpt" checked={exOption === "filter"} onChange={()=>setExOption("filter")} style={{display:"none"}} />
+                      <div style={{width:18, height:18, borderRadius:"50%", border: exOption === "filter" ? "5px solid var(--theme-primary)" : "2px solid rgba(44,32,22,0.2)"}}></div>
+                      {lang === "id" ? "Filter Spesifik" : "Specific Filter"}
+                    </label>
+                  </div>
+
+                  <AnimatePresence>
+                    {exOption === "filter" && (
+                       <motion.div initial={{opacity:0, height:0}} animate={{opacity:1, height:"auto"}} exit={{opacity:0, height:0}} style={{overflow:"hidden"}}>
+                         <div style={{display:"flex", flexDirection:"column", gap:16, marginTop: 4, padding: 16, background: "rgba(44,32,22,0.02)", border: "1px solid rgba(44,32,22,0.06)", borderRadius: 16}}>
+                           <div style={{display:"flex", gap:12}}>
+                             <div style={{flex:1}}>
+                               <label style={{display:"block", fontSize:12, fontWeight:700, marginBottom:6, color:"rgba(44,32,22,0.7)"}}>{lang === "id" ? "Dari Tanggal" : "From Date"}</label>
+                               <input type="date" value={exStart} onChange={(e)=>setExStart(e.target.value)} style={{width:"100%", padding:"10px 14px", borderRadius:10, border:"1px solid rgba(44,32,22,0.1)", fontSize:13, outline:"none", fontFamily:"inherit", color:"#2C2016"}} />
+                             </div>
+                             <div style={{flex:1}}>
+                               <label style={{display:"block", fontSize:12, fontWeight:700, marginBottom:6, color:"rgba(44,32,22,0.7)"}}>{lang === "id" ? "Sampai Tanggal" : "To Date"}</label>
+                               <input type="date" value={exEnd} onChange={(e)=>setExEnd(e.target.value)} style={{width:"100%", padding:"10px 14px", borderRadius:10, border:"1px solid rgba(44,32,22,0.1)", fontSize:13, outline:"none", fontFamily:"inherit", color:"#2C2016"}} />
+                             </div>
                            </div>
-                           <div style={{flex:1}}>
-                             <label style={{display:"block", fontSize:12, fontWeight:700, marginBottom:6, color:"rgba(44,32,22,0.7)"}}>{lang === "id" ? "Sampai Tanggal" : "To Date"}</label>
-                             <input type="date" value={exEnd} onChange={(e)=>setExEnd(e.target.value)} style={{width:"100%", padding:"10px 14px", borderRadius:10, border:"1px solid rgba(44,32,22,0.1)", fontSize:13, outline:"none", fontFamily:"inherit", color:"#2C2016"}} />
+                           <div>
+                             <label style={{display:"block", fontSize:12, fontWeight:700, marginBottom:6, color:"rgba(44,32,22,0.7)"}}>{lang === "id" ? "Platform Tertentu" : "Specific Platform"}</label>
+                             <select value={exPlatform} onChange={(e)=>setExPlatform(e.target.value)} style={{width:"100%", padding:"10px 14px", borderRadius:10, border:"1px solid rgba(44,32,22,0.1)", fontSize:13, outline:"none", fontFamily:"inherit", color:"#2C2016", backgroundColor:"white"}}>
+                               <option value="All">{lang === "id" ? "Semua Platform" : "All Platforms"}</option>
+                               {platforms.map((p: any, i) => { const val = typeof p === "string" ? p : (p.name || p.id || ""); return <option key={val || i} value={val}>{val}</option>; })}
+                             </select>
                            </div>
                          </div>
-                         <div>
-                           <label style={{display:"block", fontSize:12, fontWeight:700, marginBottom:6, color:"rgba(44,32,22,0.7)"}}>{lang === "id" ? "Platform Tertentu" : "Specific Platform"}</label>
-                           <select value={exPlatform} onChange={(e)=>setExPlatform(e.target.value)} style={{width:"100%", padding:"10px 14px", borderRadius:10, border:"1px solid rgba(44,32,22,0.1)", fontSize:13, outline:"none", fontFamily:"inherit", color:"#2C2016", backgroundColor:"white"}}>
-                             <option value="All">{lang === "id" ? "Semua Platform" : "All Platforms"}</option>
-                             {platforms.map((p:any, i:number) => { const val = typeof p === "string" ? p : (p.name || p.id || ""); return <option key={val || i} value={val}>{val}</option>; })}
-                           </select>
-                         </div>
-                       </div>
-                     </motion.div>
-                  )}
-        </AnimatePresence>
+                       </motion.div>
+                    )}
+                  </AnimatePresence>
              </div>
 
              <div style={{display:"flex",gap:12}}>
-                 <button className="hover-scale" onClick={()=>setExportModal(false)} style={{...B(false), flex:1, height:48, fontSize:14, borderRadius:24}}>{lang === "id" ? "Batal" : "Cancel"}</button>
-                 <button className="btn-hover hover-scale" onClick={() => {
-                let toExport = content;
-                if (exOption === "filter") {
-                   if (exStart && exEnd) {
-                      const sd = new Date(exStart);
-                      const ed = new Date(exEnd);
-                      toExport = toExport.filter((c:any) => {
-                         const cd = new Date(c.year, c.month - 1, c.day);
-                         return cd >= sd && cd <= ed;
-                      });
-                   }
-                   if (exPlatform !== "All") {
-                      toExport = toExport.filter((c:any) => String(c.platform).includes(exPlatform));
-                   }
-                }
+                  <button className="hover-scale" disabled={isExportLoading} onClick={()=>setExportModal(false)} style={{...B(false), flex:1, height:48, fontSize:14, borderRadius:24}}>{lang === "id" ? "Batal" : "Cancel"}</button>
+                  <button className="btn-hover hover-scale" disabled={isExportLoading} onClick={async () => {
+                 if (isExportLoading) return;
+                 setIsExportLoading(true);
+                 let toExport = [];
+                 try {
+                     const contentRef = collection(db, "workspaces", workspace.id, "content");
+                     const snap = await getDocs(contentRef);
+                     toExport = snap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+                 } catch (e) {
+                     console.error("Failed to fetch all content for export:", e);
+                     toExport = [...content];
+                 }
 
-                if (toExport.length === 0) {
-                   alert(lang === "id" ? "Tidak ada data yang sesuai dengan filter tersebut." : "No data matching the filter.");
-                   return;
-                }
+                 if (exOption === "filter") {
+                    if (exStart && exEnd) {
+                        const pad = (num) => String(num).padStart(2, "0");
+                        toExport = toExport.filter((c) => {
+                           const itemDateStr = `${c.year}-${pad(c.month)}-${pad(c.day)}`;
+                           return itemDateStr >= exStart && itemDateStr <= exEnd;
+                        });
+                     }
+                    if (exPlatform !== "All") {
+                       toExport = toExport.filter((c) => String(c.platform).includes(exPlatform));
+                    }
+                 }
 
-                const exportData = toExport.map((c: any) => ({
-                    "ID System (Jangan Diubah)": c.id || "",
-                    "Judul Konten": c.title || "",
-                    "Tanggal (1-31)": c.day || 1,
-                    "Bulan (1-12)": c.month || 1,
-                    "Tahun": c.year || 2025,
-                    "Jam (0-23)": c.uploadHour || 9,
-                    "Menit": c.uploadMinute || 0,
-                    "Pillar": c.pillar || "",
-                    "Platform": c.platform || "",
-                    "Tipe Konten": c.contentType || "",
-                    "PIC": c.pic || "",
-                    "Status Konten": c.status || "",
-                    "Status Ads": c.isAds ? "Y" : "N",
-                    "Views": c.metrics?.views || 0,
-                    "Reach": c.metrics?.reach || 0,
-                    "Likes": c.metrics?.likes || 0,
-                    "Comments": c.metrics?.comments || 0,
-                    "Shares": c.metrics?.shares || 0,
-                    "Saves": c.metrics?.saves || 0,
-                    "Objective": htmlToPlainText(c.objective || ""),
-                    "Brief Konten": htmlToPlainText(c.briefCopywriting || ""),
-                    "Caption": htmlToPlainText(c.caption || ""),
-                    "Link Aset": c.linkAsset || "",
-                    "Link Sosmed": c.linkSosmed || c.linkUpload || "",
-                    "Link Referensi": Array.isArray(c.referenceLinks) ? c.referenceLinks.join(", ") : ""
-                }));
-                import("xlsx").then((XLSX) => {
-                const ws = XLSX.utils.json_to_sheet(exportData);
-                const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, "Content");
-                XLSX.writeFile(wb, `Export_${workspace?.name}.xlsx`);
-                setExportModal(false);
-             });
-             }} style={{...B(true, "var(--theme-primary)"), flex:2, height:48, fontSize:14, borderRadius:24, display:"flex", alignItems:"center", justifyContent:"center", gap:8}}>{lang === "id" ? "Unduh File Excel" : "Download Excel File"}</button>
+                 if (toExport.length === 0) {
+                    alert(lang === "id" ? "Tidak ada data yang sesuai dengan filter tersebut." : "No data matching the filter.");
+                    setIsExportLoading(false);
+                    return;
+                 }
+
+                 // Urutkan data secara kronologis (dari tanggal paling lama ke paling baru)
+                 toExport.sort((a, b) => {
+                     const yA = Number(a.year) || 0;
+                     const yB = Number(b.year) || 0;
+                     if (yA !== yB) return yA - yB;
+
+                     const mA = Number(a.month) || 0;
+                     const mB = Number(b.month) || 0;
+                     if (mA !== mB) return mA - mB;
+
+                     const dA = Number(a.day) || 0;
+                     const dB = Number(b.day) || 0;
+                     if (dA !== dB) return dA - dB;
+
+                     const hA = Number(a.uploadHour) || 0;
+                     const hB = Number(b.uploadHour) || 0;
+                     if (hA !== hB) return hA - hB;
+
+                     const minA = Number(a.uploadMinute) || 0;
+                     const minB = Number(b.uploadMinute) || 0;
+                     return minA - minB;
+                 });
+
+                 const exportData = toExport.map((c: any) => {
+                      const row: any = {
+                          // 1. Metadata & Jadwal
+                          "ID System (Jangan Diubah)": c.id || "",
+                          "Platform": c.platform || "",
+                          "Tanggal (1-31)": c.day || 1,
+                          "Bulan (1-12)": c.month || 1,
+                          "Tahun": c.year || 2025,
+                          "Jam (0-23)": c.uploadHour || 9,
+                          "Menit": c.uploadMinute || 0,
+                          "Judul Konten": c.title || "",
+                          "PIC": c.pic || "",
+                          "Pillar": c.pillar || "",
+                          "Tipe Konten": c.contentType || "",
+                          "Status Konten": c.status || "",
+                          "Status Ads": c.isAds ? "Y" : "N",
+                          
+                          // 2. Copywriting & Strategy
+                          "Objective": htmlToPlainText(c.objective || ""),
+                          "Hook": htmlToPlainText(c.hook || ""),
+                          "CTA": htmlToPlainText(c.cta || ""),
+                          "Caption": htmlToPlainText(c.caption || ""),
+                          "Brief Konten": htmlToPlainText(c.briefCopywriting || ""),
+                          
+                          // 3. Assets & Reference
+                          "Link Aset": c.linkAsset || "",
+                          "Link Sosmed": c.linkSosmed || c.linkUpload || "",
+                          "Teks Referensi": c.referenceText || "",
+                          "Link Referensi": Array.isArray(c.referenceLinks) ? c.referenceLinks.join(", ") : "",
+                          
+                          // 4. Organic Metrics
+                          "Views (Organik)": c.metrics?.views || 0,
+                          "Reach (Organik)": c.metrics?.reach || 0,
+                          "Likes (Organik)": c.metrics?.likes || 0,
+                          "Comments (Organik)": c.metrics?.comments || 0,
+                          "Reposts (Organik)": c.metrics?.reposts || 0,
+                          "Shares (Organik)": c.metrics?.shares || 0,
+                          "Saves (Organik)": c.metrics?.saves || 0,
+                          "Profile Visits (Organik)": c.metrics?.profileVisits || 0,
+                          "Bio Link Taps (Organik)": c.metrics?.bioLinkTaps || 0,
+                          "Follows (Organik)": c.metrics?.follows || 0,
+
+                          // 5. Ads Metrics
+                          "Views (Ads)": c.adsMetrics?.views || 0,
+                          "Reach (Ads)": c.adsMetrics?.reach || 0,
+                          "Likes (Ads)": c.adsMetrics?.likes || 0,
+                          "Comments (Ads)": c.adsMetrics?.comments || 0,
+                          "Reposts (Ads)": c.adsMetrics?.reposts || 0,
+                          "Shares (Ads)": c.adsMetrics?.shares || 0,
+                          "Saves (Ads)": c.adsMetrics?.saves || 0,
+                          "Profile Visits (Ads)": c.adsMetrics?.profileVisits || 0,
+                          "Bio Link Taps (Ads)": c.adsMetrics?.bioLinkTaps || 0,
+                          "Follows (Ads)": c.adsMetrics?.follows || 0,
+                          "Clicks (Ads)": c.adsMetrics?.clicks || 0,
+                          "Conversions (Ads)": c.adsMetrics?.conversions || 0,
+                          "Conversations Started (Ads)": c.adsMetrics?.msgConvStarted || 0,
+                          "3s Plays (Ads)": c.adsMetrics?.threeSecPlays || 0,
+                          "Spend Budget (Ads)": c.adsMetrics?.spendBudget || 0,
+                          "Daily Budget (Ads)": c.adsMetrics?.dailyBudget || 0,
+                          "Duration Days (Ads)": c.adsMetrics?.duration || 0,
+                          "CPR Profile Visit (Ads)": c.adsMetrics?.cprProfileVisit || 0,
+                          "Audience Target (Ads)": c.adsMetrics?.audience || ""
+                      };
+
+                      // Add custom fields
+                      if (Array.isArray(c.customFields)) {
+                          c.customFields.forEach((cf) => {
+                              if (cf && cf.name) {
+                                  row[`Field: ${cf.name}`] = cf.value || "";
+                              }
+                          });
+                      }
+
+                      return row;
+                 });
+                 import("xlsx").then((XLSX) => {
+                     const ws = XLSX.utils.json_to_sheet(exportData);
+                     const wb = XLSX.utils.book_new();
+                     XLSX.utils.book_append_sheet(wb, ws, "Content");
+                     
+                     // Format nama file: Export_Content_[Nama Workspace]_[Tanggal Ekspor YYYY-MM-DD].xlsx
+                     const now = new Date();
+                     const padDate = (num) => String(num).padStart(2, "0");
+                     const formattedDate = `${now.getFullYear()}-${padDate(now.getMonth() + 1)}-${padDate(now.getDate())}`;
+                     const safeWorkspaceName = (workspace?.name || "Workspace").replace(/[^a-zA-Z0-9_-]/g, "_");
+                     const finalFileName = `Export_Content_${safeWorkspaceName}_${formattedDate}.xlsx`;
+                     
+                     XLSX.writeFile(wb, finalFileName);
+                     setExportModal(false);
+                     setIsExportLoading(false);
+                 }).catch((err) => {
+                     console.error("XLSX load error:", err);
+                     setIsExportLoading(false);
+                 });
+              }} style={{...B(true, "var(--theme-primary)"), flex:2, height:48, fontSize:14, borderRadius:24, display:"flex", alignItems:"center", justifyContent:"center", gap:8}}>
+                  {isExportLoading && <Loader2 className="animate-spin" size={16} />}
+                  {isExportLoading ? (lang === "id" ? "Memproses..." : "Processing...") : (lang === "id" ? "Unduh File Excel" : "Download Excel File")}
+              </button>
              </div>
           </motion.div>
         </motion.div>}

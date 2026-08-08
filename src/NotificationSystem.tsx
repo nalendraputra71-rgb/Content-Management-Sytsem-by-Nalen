@@ -364,112 +364,221 @@ export function NotificationToast({ toast, onClose, onClick, onInviteAction }: {
   );
 }
 
-export function NotificationPanel({ notifications, onClose, onRead, onContactSupport, deleteNotif, deleteAll, markAllRead, onInviteAction }: { notifications: any[], onClose: () => void, onRead: (id: string) => void, onContactSupport: () => void, deleteNotif: (id:string)=>void, deleteAll: ()=>void, markAllRead?: () => void, onInviteAction?: (wsId:string, mId:string, action:'accept'|'reject') => void }) {
+export function NotificationPanel({ notifications, onClose, onRead, onContactSupport, deleteNotif, deleteAll, markAllRead, onInviteAction }: { notifications: any[], onClose?: () => void, onRead: (id: string) => void, onContactSupport: () => void, deleteNotif: (id:string)=>void, deleteAll: ()=>void, markAllRead?: () => void, onInviteAction?: (wsId:string, mId:string, action:'accept'|'reject') => void }) {
   const { lang } = useI18n();
-  const visibleNotifs = notifications;
-  
+  const [filter, setFilter] = useState<'all' | 'unread' | 'invite'>('all');
+
+  const unreadCount = notifications.filter(n => n.unread).length;
+
+  const filteredNotifs = notifications.filter(n => {
+    if (filter === 'unread') return n.unread;
+    if (filter === 'invite') return n.type === 'invite';
+    return true;
+  });
+
   return (
-    <motion.div 
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -20 }}
-      style={{ display: "flex", flexDirection: "column", height: "100%", whiteSpace: "normal" }}
-    >
-      <div style={{padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid rgba(255,255,255,0.05)"}}>
-        <h3 style={{margin: 0, fontSize: 12, fontWeight: 800, color: "rgba(255,255,255,0.8)", textTransform:"uppercase", letterSpacing:1, display:"flex", alignItems:"center", gap:8}}>
-          Notifikasi
-        </h3>
-        <div style={{display:"flex", gap: 8, alignItems: "center"}}>
-          {visibleNotifs.some(n => n.unread) && (
-            <button onClick={markAllRead} style={{background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.6)", padding:4, display: "flex", alignItems: "center", gap: 4}} className="hover:text-[var(--theme-primary)] transition-colors" title="Tandai Semua Dibaca">
-              <CheckCheck size={14}/>
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="pb-5 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-orange-50 text-[var(--theme-primary)] flex items-center justify-center font-semibold shrink-0 border border-orange-100">
+            <Bell size={20} className="text-[#EA580C]" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-base font-bold text-gray-900">
+                {lang === "id" ? "Pusat Notifikasi" : "Notification Center"}
+              </h2>
+              {unreadCount > 0 && (
+                <span className="px-2.5 py-0.5 text-xs font-bold rounded-full bg-orange-100/80 text-[#EA580C] border border-orange-200/50">
+                  {unreadCount} {lang === "id" ? "Baru" : "New"}
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-gray-500 mt-0.5">
+              {lang === "id" ? "Daftar pembaruan akun, tiket bantuan, dan undangan workspace." : "Your account updates, support tickets, and workspace invites."}
+            </p>
+          </div>
+        </div>
+
+        {/* Header Actions */}
+        <div className="flex items-center gap-2">
+          {unreadCount > 0 && markAllRead && (
+            <button 
+              onClick={markAllRead} 
+              className="px-3 py-1.5 text-xs font-semibold text-gray-700 hover:text-gray-900 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-1.5 border border-gray-200/60 cursor-pointer"
+              title={lang === "id" ? "Tandai Semua Dibaca" : "Mark all read"}
+            >
+              <CheckCheck size={14} className="text-emerald-600"/>
+              <span>{lang === "id" ? "Tandai Dibaca" : "Mark Read"}</span>
             </button>
           )}
-          {visibleNotifs.length > 0 && (
-            <button onClick={deleteAll} style={{background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.6)", padding:4}} className="hover-scale hover:text-[var(--theme-primary)]" title="Hapus Semua">
-              <Trash2 size={16}/>
+          
+          {notifications.length > 0 && (
+            <button 
+              onClick={deleteAll} 
+              className="px-3 py-1.5 text-xs font-semibold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg transition-colors flex items-center gap-1.5 border border-rose-100 cursor-pointer"
+              title={lang === "id" ? "Hapus Semua" : "Clear All"}
+            >
+              <Trash2 size={14}/>
+              <span>{lang === "id" ? "Hapus Semua" : "Clear All"}</span>
             </button>
           )}
-          <button onClick={onClose} style={{background: "rgba(255,255,255,0.1)", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.8)", display:"flex", alignItems:"center", justifyContent:"center", width: 24, height: 24, borderRadius: 12}} className="hover-scale" title="Kembali">
-            <X size={14}/>
-          </button>
         </div>
       </div>
-      <div style={{flex: 1, overflowY: "auto", padding: "12px", display:"flex", flexDirection:"column", gap:8}}>
+
+      {/* Filter Tabs */}
+      {notifications.length > 0 && (
+        <div className="py-3 border-b border-gray-100 flex items-center gap-2 text-xs">
+          <button
+            onClick={() => setFilter('all')}
+            className={`px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer ${
+              filter === 'all'
+                ? 'bg-neutral-100 text-gray-900 shadow-2xs font-bold'
+                : 'text-gray-500 hover:text-gray-800'
+            }`}
+          >
+            {lang === "id" ? "Semua" : "All"} ({notifications.length})
+          </button>
+
+          <button
+            onClick={() => setFilter('unread')}
+            className={`px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer ${
+              filter === 'unread'
+                ? 'bg-neutral-100 text-gray-900 shadow-2xs font-bold'
+                : 'text-gray-500 hover:text-gray-800'
+            }`}
+          >
+            {lang === "id" ? "Belum Dibaca" : "Unread"} ({unreadCount})
+          </button>
+
+          {notifications.some(n => n.type === 'invite') && (
+            <button
+              onClick={() => setFilter('invite')}
+              className={`px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer ${
+                filter === 'invite'
+                  ? 'bg-neutral-100 text-gray-900 shadow-2xs font-bold'
+                  : 'text-gray-500 hover:text-gray-800'
+              }`}
+            >
+              {lang === "id" ? "Undangan" : "Invites"}
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Main List */}
+      <div className="flex-1 overflow-y-auto py-4 space-y-3">
         <AnimatePresence mode="popLayout">
-          {visibleNotifs.length === 0 && (
-            <motion.div initial={{opacity:0, scale:0.95}} animate={{opacity:1, scale:1}} exit={{opacity:0, scale:0.95}} style={{padding: 40, textAlign: "center", color: "rgba(255,255,255,0.4)", display: "flex", flexDirection: "column", alignItems: "center", gap: 12}}>
-              <div style={{width: 48, height: 48, borderRadius: 24, background: "rgba(255,255,255,0.05)", display: "flex", alignItems: "center", justifyContent: "center"}}>
-                <Bell size={20} color="rgba(255,255,255,0.3)" />
+          {filteredNotifs.length === 0 && (
+            <motion.div 
+              initial={{opacity:0, scale:0.98}} 
+              animate={{opacity:1, scale:1}} 
+              exit={{opacity:0, scale:0.98}} 
+              className="py-16 px-4 text-center flex flex-col items-center justify-center gap-3"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-gray-100 border border-gray-200/60 text-gray-400 flex items-center justify-center">
+                <Bell size={22} />
               </div>
-              <div style={{fontSize: 12, fontWeight: 500}}>{lang === "id" ? "Belum ada notifikasi." : "No notifications."}</div>
+              <div>
+                <h4 className="text-sm font-bold text-gray-800">
+                  {lang === "id" ? "Tidak Ada Notifikasi" : "No Notifications"}
+                </h4>
+                <p className="text-xs text-gray-500 mt-1 max-w-xs">
+                  {filter === 'unread' 
+                    ? (lang === "id" ? "Semua notifikasi sudah Anda baca." : "You have read all notifications.")
+                    : (lang === "id" ? "Belum ada notifikasi baru untuk Anda." : "No new notifications for you right now.")}
+                </p>
+              </div>
             </motion.div>
           )}
-          {visibleNotifs.map((n) => (
+
+          {filteredNotifs.map((n) => (
             <motion.div
                layout
-               initial={{opacity: 0, y: 10}}
+               initial={{opacity: 0, y: 8}}
                animate={{opacity: 1, y: 0}}
                exit={{opacity: 0, scale: 0.95}}
                key={n.id} 
                onClick={() => onRead(n.id)}
-               style={{
-                 display: "flex", gap: 12, padding: 12, borderRadius: 12, 
-                 background: n.unread ? "rgba(255, 107, 0, 0.1)" : "transparent",
-                 cursor: "pointer", transition: "all 0.2s", position: "relative"
-               }}
-               className="hover:bg-[rgba(255,255,255,0.05)] group"
+               className={`group relative p-4 rounded-xl border transition-all cursor-pointer flex gap-3.5 items-start ${
+                 n.unread 
+                   ? "bg-orange-50/40 border-orange-200 shadow-2xs" 
+                   : "bg-white border-gray-100 hover:border-gray-200 hover:shadow-2xs"
+               }`}
             >
-              <div style={{width: 28, height: 28, borderRadius: 14, background: "white", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, position:"relative"}}>
-                {n.icon}
-                {n.unread && (
-                   <div style={{position: "absolute", top: -2, right: -2, width: 8, height: 8, borderRadius: 4, background: "var(--theme-primary)", border: "2px solid #1E293B"}} />
-                )}
+              {/* Icon Container */}
+              <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5 border ${
+                n.unread ? "bg-white border-orange-100 shadow-2xs" : "bg-gray-50 border-gray-200/40"
+              }`}>
+                {typeof n.icon === "string" ? n.icon : React.cloneElement(n.icon as React.ReactElement<any>, { size: 16 })}
               </div>
-              <div style={{flex: 1, paddingRight: 16}}>
-                <div style={{fontSize: 12, fontWeight: n.unread ? 800 : 600, color: n.unread ? "white" : "rgba(255,255,255,0.7)", marginBottom: 2}}>{n.title}</div>
-                {n.unread ? (
-                  <div style={{fontSize: 12, color: "rgba(255,255,255,0.8)", lineHeight: 1.4, marginBottom: 6}}>
-                      {n.desc}
-                      {n.type === "invite" && (
-                          <div style={{display: "flex", gap: 8, marginTop: 8}}>
-                              <button onClick={(e)=>{ e.stopPropagation(); onInviteAction?.(n.workspaceId, n.memberId, 'accept'); }} style={{flex:1, padding:"6px", background:"#3B82F6", border:"none", borderRadius:6, color:"white", fontSize:11, fontWeight:700, cursor:"pointer"}}>{lang === "id" ? "Terima" : "Accept"}</button>
-                              <button onClick={(e)=>{ e.stopPropagation(); onInviteAction?.(n.workspaceId, n.memberId, 'reject'); }} style={{flex:1, padding:"6px", background:"rgba(255,255,255,0.1)", border:"none", borderRadius:6, color:"white", fontSize:11, fontWeight:700, cursor:"pointer"}}>{lang === "id" ? "Tolak" : "Reject"}</button>
-                          </div>
-                      )}
-                  </div>
-                ) : (
-                  <div style={{fontSize: 11, color: "rgba(255,255,255,0.5)", lineHeight: 1.4, marginBottom: 4, ...(n.type === "invite" ? {} : {display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden"})}}>
-                      {n.desc}
-                      {n.type === "invite" && (
-                          <div style={{display: "flex", gap: 8, marginTop: 8}}>
-                              <button onClick={(e)=>{ e.stopPropagation(); onInviteAction?.(n.workspaceId, n.memberId, 'accept'); }} style={{flex:1, padding:"6px", background:"#3B82F6", border:"none", borderRadius:6, color:"white", fontSize:11, fontWeight:700, cursor:"pointer"}}>{lang === "id" ? "Terima" : "Accept"}</button>
-                              <button onClick={(e)=>{ e.stopPropagation(); onInviteAction?.(n.workspaceId, n.memberId, 'reject'); }} style={{flex:1, padding:"6px", background:"rgba(255,255,255,0.1)", border:"none", borderRadius:6, color:"white", fontSize:11, fontWeight:700, cursor:"pointer"}}>{lang === "id" ? "Tolak" : "Reject"}</button>
-                          </div>
-                      )}
+
+              {/* Text Content */}
+              <div className="flex-1 min-w-0 pr-6">
+                <div className="flex items-center gap-2 mb-1">
+                  <h5 className={`text-xs font-bold ${n.unread ? "text-gray-900" : "text-gray-700"}`}>
+                    {n.title}
+                  </h5>
+                  {n.unread && (
+                    <span className="w-2 h-2 rounded-full bg-[#EA580C] shrink-0" />
+                  )}
+                </div>
+
+                <p className={`text-xs leading-relaxed ${n.unread ? "text-gray-800 font-medium" : "text-gray-600"}`}>
+                  {n.desc}
+                </p>
+
+                {/* Workspace Invite Action Buttons */}
+                {n.type === "invite" && (
+                  <div className="flex items-center gap-2 mt-3 pt-2.5 border-t border-gray-200/60">
+                    <button 
+                      onClick={(e)=>{ e.stopPropagation(); onInviteAction?.(n.workspaceId, n.memberId, 'accept'); }} 
+                      className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition-colors cursor-pointer shadow-2xs"
+                    >
+                      {lang === "id" ? "Terima Undangan" : "Accept Invite"}
+                    </button>
+                    <button 
+                      onClick={(e)=>{ e.stopPropagation(); onInviteAction?.(n.workspaceId, n.memberId, 'reject'); }} 
+                      className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
+                    >
+                      {lang === "id" ? "Tolak" : "Reject"}
+                    </button>
                   </div>
                 )}
-                <div style={{fontSize: 10, color: "rgba(255,255,255,0.4)", fontWeight: 600}}>{n.time}</div>
+
+                {/* Timestamp */}
+                <div className="mt-2 text-[10px] text-gray-400 font-medium">
+                  {n.time}
+                </div>
               </div>
+
+              {/* Delete button */}
               <button 
-                 onClick={(e) => { e.stopPropagation(); deleteNotif(n.id); }} 
-                 style={{background:"none", border:"none", color:"rgba(255,255,255,0.4)", position:"absolute", top:12, right:8, cursor:"pointer", padding:4}}
-                 className="opacity-0 group-hover:opacity-100 hover:text-[var(--theme-primary)] transition-all"
-                 title="Hapus Notifikasi"
+                onClick={(e) => { e.stopPropagation(); deleteNotif(n.id); }} 
+                className="absolute top-3.5 right-3 text-gray-400 hover:text-rose-600 opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-rose-50 transition-all cursor-pointer"
+                title={lang === "id" ? "Hapus Notifikasi" : "Delete"}
               >
-                 <Trash2 size={14} />
+                <Trash2 size={14} />
               </button>
             </motion.div>
           ))}
         </AnimatePresence>
       </div>
-      
-      {/* Footer Area */}
-      <div style={{padding:"16px", marginTop:"auto", borderTop: "1px solid rgba(255,255,255,0.05)", display:"flex", justifyContent:"center"}}>
-         <button onClick={onContactSupport} style={{display:"flex", alignItems:"center", gap: 8, background:"none", border:"none", color:"rgba(255,255,255,0.6)", fontSize:12, fontWeight:600, cursor:"pointer", transition:"all 0.2s"}} className="hover:text-white" title="Hubungi Kami untuk Saran dan Kendala">
-            <HelpCircle size={16}/> CS / Saran
-         </button>
+
+      {/* Footer CS / Support link */}
+      <div className="pt-4 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
+        <span className="text-gray-400 font-medium">
+          {lang === "id" ? "Ada kendala atau masukan?" : "Have feedback or issues?"}
+        </span>
+        <button 
+          onClick={onContactSupport} 
+          className="text-[#EA580C] hover:text-[#C2410C] font-bold flex items-center gap-1.5 cursor-pointer transition-colors"
+        >
+          <HelpCircle size={14}/>
+          <span>{lang === "id" ? "Hubungi CS / Saran" : "Contact CS"}</span>
+        </button>
       </div>
-    </motion.div>
+    </div>
   );
 }

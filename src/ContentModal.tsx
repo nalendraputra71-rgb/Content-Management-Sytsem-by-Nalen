@@ -1087,7 +1087,7 @@ export function ContentModal({modal, workspace, userProfile, planDetails, onSave
   };
 
 
-  const { aiTokenLimit, hasCapability } = usePlanLimits(planDetails);
+  const { aiTokenLimit, aiTokenLimitDaily, hasCapability } = usePlanLimits(planDetails);
 
   const addCustomField = () => {
     if (!canEdit) return;
@@ -1139,7 +1139,7 @@ export function ContentModal({modal, workspace, userProfile, planDetails, onSave
         
         Berikan evaluasi singkat dan 3 poin saran perbaikan untuk meningkatkan engagement. Format dalam Bahasa Indonesia, singkat, padat, dan teknis.`;
         
-        const data = await callAiWithQuota(auth.currentUser?.uid || 'anon', userProfile?.plan, { prompt, model: planDetails?.capabilities?.allowedModels?.[0] || "gemini-3.6-flash" }, aiTokenLimit);
+        const data = await callAiWithQuota(auth.currentUser?.uid || 'anon', userProfile?.plan, { prompt, model: planDetails?.capabilities?.allowedModels?.[0] || "gemini-3.6-flash" }, aiTokenLimitDaily, aiTokenLimit);
         setAiResult(data.text || lang === "id" ? "Tidak ada respon dari AI." : "No response from AI.");
     } catch (e: any) {
         console.error("AI Error:", e);
@@ -1856,7 +1856,7 @@ export function ContentModal({modal, workspace, userProfile, planDetails, onSave
         
         Tuliskan HANYA hasil caption akhirnya saja. Jangan berikan pengantar/penutup eksplanasi. Sertakan hashtag yang relevan sesuai dengan platform. Outputkan dalam format tag HTML dasar seperti <p>, <strong>, <em>, <br> untuk styling format typography-nya.`;
         
-        const data = await callAiWithQuota(auth.currentUser?.uid || 'anon', userProfile?.plan, { prompt, model: planDetails?.capabilities?.allowedModels?.[0] || "gemini-3.6-flash" }, aiTokenLimit);
+        const data = await callAiWithQuota(auth.currentUser?.uid || 'anon', userProfile?.plan, { prompt, model: planDetails?.capabilities?.allowedModels?.[0] || "gemini-3.6-flash" }, aiTokenLimitDaily, aiTokenLimit);
         set("caption", (data.text || "").trim());
         showToast("Caption berhasil dibuat oleh Gemini!", "success");
     } catch (e: any) {

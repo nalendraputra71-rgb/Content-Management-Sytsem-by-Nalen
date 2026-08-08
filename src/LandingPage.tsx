@@ -201,12 +201,17 @@ function MediaWithFallback({ src, alt, className, isVideo = false }: { src: stri
 export function LandingPage() {
   const navigate = useNavigate();
   const [scrollY, setScrollY] = useState(0);
+
   const [selectedFeatureTab, setSelectedFeatureTab] = useState<'calendar' | 'trends' | 'scheduler' | 'hubai' | 'heatmap'>('calendar');
   const [trendsPlatform, setTrendsPlatform] = useState<'tiktok' | 'instagram' | 'twitter'>('tiktok');
   const [aiChatHistory, setAiChatHistory] = useState<Array<{ sender: 'user' | 'ai', text: string }>>([]);
   const [isAiTyping, setIsAiTyping] = useState(false);
 
   const { lang, setLang } = useI18n();
+
+  useEffect(() => {
+    document.title = lang === 'id' ? 'Hubify Social - Manajemen Media Sosial AI' : 'Hubify Social - AI Social Media Management';
+  }, [lang]);
 
   useEffect(() => {
     // Reset AI Chat history when language changes

@@ -65,6 +65,21 @@ function SimulatedStreamMarkdown({
 }
 
 export function HubAiTab({ ctx }: { ctx: any }) {
+  const [showModelMenu, setShowModelMenu] = useState(false);
+  const modelMenuRef = React.useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (modelMenuRef.current && !modelMenuRef.current.contains(event.target as Node)) {
+        setShowModelMenu(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   const {
     isMobileHubAi,
     mobileHubAiView,
@@ -457,7 +472,7 @@ export function HubAiTab({ ctx }: { ctx: any }) {
                         color: "rgba(25,53,70,0.6)",
                       }}
                     >
-                      {lang === "id" ? "Batas HUB.AI" : "HUB.AI Limit"}
+                      {lang === "id" ? "Kuota Harian HUB.AI" : "Daily HUB.AI Quota"}
                     </span>
                     <span
                       style={{
@@ -472,11 +487,37 @@ export function HubAiTab({ ctx }: { ctx: any }) {
                           user?.email?.toLowerCase() ===
                             "nalendraputra71@gmail.com";
                         if (isSuperAdmin) return "Unlimited";
-                        const maxReq = planDetails?.aiTokenLimit || 100000;
-const currentMonth = new Date().toISOString().substring(0, 7);
-const usedReq = profile?.lastAiRequestMonth === currentMonth ? (profile?.aiTokensUsed || 0) : 0;
-if (maxReq === -1) return `${usedReq.toLocaleString()} / ∞`;
-return `${usedReq.toLocaleString()} / ${maxReq.toLocaleString()}`;
+                        const maxDaily = planDetails?.aiTokenLimitDaily || 50;
+                        const maxMonthly = planDetails?.aiTokenLimit || 50;
+                        const now = new Date();
+                        const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+                        
+                        let resetDay = 1;
+                        if (profile?.activeUntil) resetDay = new Date(profile.activeUntil).getDate();
+                        else if (profile?.createdAt) resetDay = new Date(profile.createdAt).getDate();
+                        let cycleStartMonth = now.getMonth();
+                        let cycleStartYear = now.getFullYear();
+                        if (now.getDate() < resetDay) {
+                            cycleStartMonth -= 1;
+                            if (cycleStartMonth < 0) { cycleStartMonth = 11; cycleStartYear -= 1; }
+                        }
+                        const actualResetDay = Math.min(resetDay, new Date(cycleStartYear, cycleStartMonth + 1, 0).getDate());
+                        const currentMonth = `${cycleStartYear}-${String(cycleStartMonth + 1).padStart(2, '0')}-${String(actualResetDay).padStart(2, '0')}`;
+
+                        const usedDaily = profile?.lastAiRequestDate === todayStr ? (profile?.aiCreditsToday || profile?.aiRequestsToday || 0) : 0;
+                        const usedMonthly = profile?.lastAiRequestMonth === currentMonth ? (profile?.aiTokensUsed || 0) : 0;
+                        
+                        const dailyPercent = maxDaily === -1 ? 0 : Math.min((usedDaily / maxDaily) * 100, 100);
+                        const monthlyPercent = maxMonthly === -1 ? 0 : Math.min((usedMonthly / maxMonthly) * 100, 100);
+                        
+                        const dailyStr = `${Math.round(dailyPercent)}% ${lang === "id" ? "digunakan" : "used"}`;
+                        const monthlyStr = `${lang === "id" ? "Bulan ini" : "Monthly"}: ${Math.round(monthlyPercent)}% ${lang === "id" ? "digunakan" : "used"}`;
+                        return (
+                           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
+                             <span>{dailyStr}</span>
+                             <span style={{ fontSize: 10, color: "rgba(25,53,70,0.5)" }}>{monthlyStr}</span>
+                           </div>
+                        );
                       })()}
                     </span>
                   </div>
@@ -505,10 +546,11 @@ return `${usedReq.toLocaleString()} / ${maxReq.toLocaleString()}`;
                             }}
                           />
                         );
-                      const maxReq = planDetails?.aiTokenLimit || 100000;
-const currentMonth = new Date().toISOString().substring(0, 7);
-const usedReq = profile?.lastAiRequestMonth === currentMonth ? (profile?.aiTokensUsed || 0) : 0;
-const usedPercent = maxReq === -1 ? 0 : Math.min((usedReq / maxReq) * 100, 100);
+                      const maxReq = planDetails?.aiTokenLimitDaily || 50;
+                      const now = new Date();
+                      const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+                      const usedReq = profile?.lastAiRequestDate === todayStr ? (profile?.aiCreditsToday || profile?.aiRequestsToday || 0) : 0;
+                      const usedPercent = maxReq === -1 ? 0 : Math.min((usedReq / maxReq) * 100, 100);
                       return (
                         <div
                           style={{
@@ -2100,48 +2142,121 @@ const usedPercent = maxReq === -1 ? 0 : Math.min((usedReq / maxReq) * 100, 100);
                           }}
                         >
                           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-  <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-    <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(17,24,39,0.6)", display: 'flex', justifyContent: 'space-between' }}>
-      <span>Credits:</span>
-      <span>{(ctx.profile?.aiTokensUsed || 0).toLocaleString()} / {ctx.planDetails?.aiTokenLimit === -1 ? "∞" : (ctx.planDetails?.aiTokenLimit || 100000).toLocaleString()}</span>
-    </div>
-    <div style={{ width: 120, height: 4, background: "rgba(0,0,0,0.06)", borderRadius: 2, overflow: "hidden" }}>
-      <div style={{ 
-        width: ctx.planDetails?.aiTokenLimit === -1 ? "100%" : `${Math.min(100, ((ctx.profile?.aiTokensUsed || 0) / (ctx.planDetails?.aiTokenLimit || 100000)) * 100)}%`, 
-        height: "100%", 
-        background: (ctx.planDetails?.aiTokenLimit !== -1 && (ctx.profile?.aiTokensUsed || 0) >= (ctx.planDetails?.aiTokenLimit || 100000) * 0.9) ? "#EF4444" : "#1B7FDC",
-        borderRadius: 2
-      }} />
-    </div>
-  </div>
-  <select
-    value={selectedAiModel}
-    onChange={(e) => setSelectedAiModel(e.target.value)}
-    style={{
-      background: "rgba(27,127,220,0.05)",
-      border: "1px solid rgba(27,127,220,0.2)",
-      borderRadius: 14,
-      padding: "4px 8px",
-      fontSize: 10,
-      fontWeight: 600,
-      color: "#1B7FDC",
-      outline: "none",
-      cursor: "pointer",
-    }}
-  >
-    {(() => {
-       const allModels = [
-         { value: "gemini-3.1-flash-lite", label: "Gemini 3.1 Flash Lite (1x)" },
-         { value: "gemini-3.6-flash", label: "Gemini 3.6 Flash (10x)" },
-         { value: "gemini-3.1-pro-preview", label: "Gemini 3.1 Pro Preview (25x)" }
-       ];
-       const allowedModels = (ctx.planDetails?.capabilities?.allowedModels || ["gemini-3.6-flash"]).map((m: string) => m === "gemini-3.5-flash" ? "gemini-3.6-flash" : m === "gemini-3.1-pro" ? "gemini-3.1-pro-preview" : m);
-       const visibleModels = allModels.filter(m => allowedModels.includes(m.value));
-       if (visibleModels.length === 0) visibleModels.push(allModels[1]);
-       return visibleModels.map(m => <option key={m.value} value={m.value}>{m.label}</option>);
-    })()}
-  </select>
-</div>
+                            {(() => {
+                              const allModels = [
+                                { value: "gemini-3.1-flash-lite", label: "Gemini 3.1 Flash Lite (1x)" },
+                                { value: "gemini-3.6-flash", label: "Gemini 3.6 Flash (10x)" },
+                                { value: "gemini-3.1-pro-preview", label: "Gemini 3.1 Pro Preview (25x)" }
+                              ];
+                              const allowedModels = (ctx.planDetails?.capabilities?.allowedModels || ["gemini-3.6-flash"]).map((m: string) => m === "gemini-3.5-flash" ? "gemini-3.6-flash" : m === "gemini-3.1-pro" ? "gemini-3.1-pro-preview" : m);
+                              const visibleModels = allModels.filter(m => allowedModels.includes(m.value));
+                              if (visibleModels.length === 0) visibleModels.push(allModels[1]);
+                              const currentModelObj = visibleModels.find(m => m.value === selectedAiModel) || visibleModels[0];
+
+                              return (
+                                <div ref={modelMenuRef} style={{ position: "relative" }}>
+                                  <button
+                                    onClick={() => setShowModelMenu(!showModelMenu)}
+                                    className="hover-bg"
+                                    style={{
+                                      background: "rgba(27,127,220,0.05)",
+                                      border: "1px solid rgba(27,127,220,0.18)",
+                                      borderRadius: 14,
+                                      padding: "5px 12px",
+                                      fontSize: 10,
+                                      fontWeight: 600,
+                                      color: "#1B7FDC",
+                                      outline: "none",
+                                      cursor: "pointer",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: 6,
+                                      transition: "all 0.15s ease",
+                                    }}
+                                  >
+                                    <Sparkles size={11} className="text-[#1B7FDC]" />
+                                    <span>{currentModelObj?.label || "Select Model"}</span>
+                                    <ChevronDown size={11} style={{ transform: showModelMenu ? "rotate(180deg)" : "none", transition: "transform 0.15s ease" }} />
+                                  </button>
+
+                                  <AnimatePresence>
+                                    {showModelMenu && (
+                                      <motion.div
+                                        initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                                        exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                                        transition={{ duration: 0.15 }}
+                                        style={{
+                                          position: "absolute",
+                                          bottom: "calc(100% + 8px)",
+                                          right: 0,
+                                          background: "white",
+                                          border: "1px solid rgba(0,0,0,0.08)",
+                                          borderRadius: 12,
+                                          boxShadow: "0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.05)",
+                                          padding: 6,
+                                          minWidth: 230,
+                                          zIndex: 50,
+                                          display: "flex",
+                                          flexDirection: "column",
+                                          gap: 2,
+                                        }}
+                                      >
+                                        <div style={{ padding: "6px 8px 4px 8px", fontSize: 9, fontWeight: 700, color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                                          {lang === "id" ? "Pilih Model AI" : "Select AI Model"}
+                                        </div>
+                                        {visibleModels.map((m) => {
+                                          const isSelected = m.value === selectedAiModel;
+                                          return (
+                                            <button
+                                              key={m.value}
+                                              onClick={() => {
+                                                setSelectedAiModel(m.value);
+                                                setShowModelMenu(false);
+                                              }}
+                                              style={{
+                                                background: isSelected ? "rgba(27,127,220,0.06)" : "transparent",
+                                                border: "none",
+                                                borderRadius: 8,
+                                                padding: "8px 10px",
+                                                fontSize: 11,
+                                                fontWeight: isSelected ? 700 : 500,
+                                                color: isSelected ? "#1B7FDC" : "#475569",
+                                                cursor: "pointer",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "space-between",
+                                                gap: 8,
+                                                textAlign: "left",
+                                                transition: "all 0.15s ease",
+                                              }}
+                                              onMouseEnter={(e) => {
+                                                if (!isSelected) {
+                                                  e.currentTarget.style.background = "rgba(0,0,0,0.02)";
+                                                  e.currentTarget.style.color = "#1e293b";
+                                                }
+                                              }}
+                                              onMouseLeave={(e) => {
+                                                if (!isSelected) {
+                                                  e.currentTarget.style.background = "transparent";
+                                                  e.currentTarget.style.color = "#475569";
+                                                }
+                                              }}
+                                            >
+                                              <span>{m.label}</span>
+                                              {isSelected && (
+                                                <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#1B7FDC" }} />
+                                              )}
+                                            </button>
+                                          );
+                                        })}
+                                      </motion.div>
+                                    )}
+                                  </AnimatePresence>
+                                </div>
+                              );
+                            })()}
+                          </div>
                           <button
                             onClick={() =>
                               alert(

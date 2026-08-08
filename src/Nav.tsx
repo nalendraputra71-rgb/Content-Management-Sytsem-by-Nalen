@@ -50,12 +50,12 @@ import { eng, fmt, YEARS, B, I, TAB, MONTHS, MONTHS_EN, CustomDropdown, getPlatf
 import {
   useNotifications,
   NotificationToast,
-  NotificationPanel,
+
 } from "./NotificationSystem";
 import { MenuToggle } from "./MenuToggle";
 import { ColorPickerSelect } from "./components/ColorPickerSelect";
 
-export function Header({ profile }: any) {
+export function Header({ profile, tab }: any) {
   const { lang } = useI18n();
   const [time, setTime] = useState(new Date());
   const [clockMenu, setClockMenu] = useState(false);
@@ -87,12 +87,71 @@ export function Header({ profile }: any) {
     greetingIcon = "🌇";
   }
 
+  const getPageInfo = () => {
+    const active = tab || "content_planner";
+    if (active === "content_planner") {
+      return {
+        title: lang === "id" ? "Kalender" : "Calendar",
+        desc: lang === "id" 
+          ? "Rencanakan dan jadwalkan postingan media sosial Anda dengan mudah." 
+          : "Plan and schedule your social media posts with ease."
+      };
+    }
+    if (active === "analytics-overview" || active === "analytics") {
+      return {
+        title: "Overview",
+        desc: lang === "id"
+          ? "Pantau ringkasan performa konten Anda secara keseluruhan dengan data real-time."
+          : "Monitor overall content performance summaries with real-time data."
+      };
+    }
+    if (active === "analytics-content") {
+      return {
+        title: lang === "id" ? "Konten" : "Content",
+        desc: lang === "id"
+          ? "Analisis detail performa setiap postingan dan jenis konten Anda."
+          : "Analyze the detailed performance of each post and your content types."
+      };
+    }
+    if (active === "analytics-trends") {
+      return {
+        title: lang === "id" ? "Tren" : "Trends",
+        desc: lang === "id"
+          ? "Lacak grafik pertumbuhan metrik utama dan efektivitas kampanye dari waktu ke waktu."
+          : "Track growth graphics of key metrics and campaign effectiveness over time."
+      };
+    }
+    if (active === "analytics-activity") {
+      return {
+        title: lang === "id" ? "Audiens" : "Audience",
+        desc: lang === "id"
+          ? "Identifikasi waktu terbaik dan interaksi tertinggi audiens berdasarkan waktu posting."
+          : "Identify the best times and highest interactions of your audience based on posting times."
+      };
+    }
+    if (active === "inbox") {
+      return {
+        title: "Inbox",
+        desc: lang === "id" ? "Kelola semua pesan masuk dan komentar Anda." : "Manage all your incoming messages and comments."
+      };
+    }
+    if (active === "competitors") {
+      return {
+        title: lang === "id" ? "Pesaing" : "Competitors",
+        desc: lang === "id" ? "Pantau aktivitas dan performa kompetitor Anda." : "Track the activity and performance of your competitors."
+      };
+    }
+    return null;
+  };
+
+  const pageInfo = getPageInfo();
+
   return (
     <div
-      className="hidden md:flex px-5 py-5 md:px-10 md:pt-8 md:pb-4"
+      className="hidden md:flex px-5 py-2.5 md:px-10 md:pt-4 md:pb-2.5"
       style={{
         position: "relative",
-        alignItems: "flex-start",
+        alignItems: "center",
         justifyContent: "space-between",
         zIndex: 100,
         borderBottom: "1px solid rgba(44,32,22,0.06)",
@@ -104,35 +163,66 @@ export function Header({ profile }: any) {
         animate={{ opacity: 1, y: 0 }}
         style={{
           display: "flex",
-          flexDirection: "column",
-          gap: 16,
+          alignItems: "center",
           flex: 1,
           maxWidth: 800,
         }}
       >
-        <h1
-          className="text-xl md:text-[27px] leading-tight"
-          style={{
-            fontWeight: 900,
-            color: "#2C2016",
-            letterSpacing: "-1px",
-            margin: 0,
-            lineHeight: 1.1,
-          }}
-        >
-          {greeting},<br />
-          <span style={{ color: "var(--theme-primary)" }}>
-            {profile?.nickname || profile?.fullName?.split(" ")[0] || "Kreator"}
-            ! {greetingIcon}
-          </span>
-        </h1>
+        {pageInfo ? (
+          <div className="flex items-center gap-3">
+            {/* Page Title with Hover explanation */}
+            <div className="relative group cursor-pointer flex items-center py-1">
+              <span 
+                className="text-lg md:text-xl font-black text-slate-900 tracking-tight transition-all duration-150 hover:text-blue-600"
+              >
+                {pageInfo.title}
+              </span>
+              
+              {/* Elegant Hover Tooltip */}
+              <div className="absolute left-0 top-full mt-2 hidden group-hover:block bg-slate-900 text-white text-[11px] leading-normal font-medium py-2 px-3 rounded-xl shadow-xl max-w-[280px] min-w-[200px] z-[999] border border-slate-800 animate-in fade-in slide-in-from-top-1 duration-200">
+                <p className="m-0 text-slate-100 font-semibold">{pageInfo.title}</p>
+                <p className="m-0 mt-1 text-slate-300 font-normal leading-relaxed">{pageInfo.desc}</p>
+              </div>
+            </div>
+
+            {/* Vertical Divider Line */}
+            <div className="h-4 w-[1.5px] bg-slate-200" />
+
+            {/* Greeting */}
+            <span
+              className="text-sm md:text-base font-bold text-slate-500 flex items-center gap-1"
+            >
+              {greeting},{" "}
+              <span className="text-blue-600 font-extrabold">
+                {profile?.nickname || profile?.fullName?.split(" ")[0] || "Kreator"}
+                ! {greetingIcon}
+              </span>
+            </span>
+          </div>
+        ) : (
+          <h1
+            className="text-lg md:text-xl"
+            style={{
+              fontWeight: 900,
+              color: "#2C2016",
+              letterSpacing: "-0.5px",
+              margin: 0,
+              lineHeight: 1.2,
+            }}
+          >
+            {greeting},{" "}
+            <span style={{ color: "var(--theme-primary)" }}>
+              {profile?.nickname || profile?.fullName?.split(" ")[0] || "Kreator"}
+              ! {greetingIcon}
+            </span>
+          </h1>
+        )}
       </motion.div>
 
       <div
         style={{
           display: "flex",
-          flexDirection: "column",
-          alignItems: "flex-end",
+          alignItems: "center",
           gap: 16,
         }}
       >
@@ -140,14 +230,14 @@ export function Header({ profile }: any) {
           style={{
             display: "flex",
             alignItems: "center",
-            gap: 24,
+            gap: 16,
             position: "relative",
           }}
         >
           {clockSettings.type === "analog" ? (
             <div
               onClick={() => setClockMenu(!clockMenu)}
-              className="w-10 h-10 md:w-16 md:h-16 border-[3px] md:border-4 border-[#2C2016]"
+              className="w-8 h-8 md:w-11 md:h-11 border-[2.5px] md:border-3 border-[#2C2016]"
               style={{
                 borderRadius: "50%",
                 background: "white",
@@ -215,7 +305,7 @@ export function Header({ profile }: any) {
           ) : (
             <div
               onClick={() => setClockMenu(!clockMenu)}
-              className="text-xl md:text-[32px]"
+              className="text-base md:text-[20px]"
               style={{
                 fontWeight: 900,
                 color: "#2C2016",
@@ -382,27 +472,44 @@ export function Header({ profile }: any) {
   );
 }
 
-function ChatSupportPanel({
+export function ChatSupportPanel({
   onClose,
   userId,
   userEmail,
   userProfile,
+  inline
 }: {
-  onClose: () => void;
+  onClose?: () => void;
   userId: string;
   userEmail: string;
   userProfile: any;
+  inline?: boolean;
 }) {
+  const { lang } = useI18n();
   const [view, setView] = useState<"form" | "history" | "thread">("form");
-  const [ticketSubject, setTicketSubject] = useState("Pertanyaan/Bantuan Umum");
+  const [ticketSubject, setTicketSubject] = useState(
+    lang === "id" ? "Pertanyaan/Bantuan Umum" : "General Inquiry/Help"
+  );
   const [ticketMsg, setTicketMsg] = useState("");
-  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const [allTickets, setAllTickets] = useState<any[]>([]);
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
   const [initialLoading, setInitialLoading] = useState(true);
+
+  const categories = lang === "id"
+    ? ["Pertanyaan/Bantuan Umum", "Saran & Masukan", "Laporan Bug/Eror", "Laporan Pembayaran"]
+    : ["General Inquiry/Help", "Feedback & Suggestion", "Bug/Error Report", "Billing & Payment"];
+
+  const unreadCount = allTickets.filter(
+    (t) => t.status === "open" && t.messages?.some((m: any) => m.sender === "admin")
+  ).length;
+
+  useEffect(() => {
+    setTicketSubject(lang === "id" ? "Pertanyaan/Bantuan Umum" : "General Inquiry/Help");
+  }, [lang]);
+
   useEffect(() => {
     let unsub: any;
     const q = query(
@@ -438,10 +545,9 @@ function ChatSupportPanel({
 
   const handleSendReply = async () => {
     const el = document.getElementById("chat_input") as HTMLInputElement;
-    const text = el.value;
+    const text = el?.value?.trim();
     if (!text || !selectedTicket) return;
     try {
-      
       await updateDoc(doc(db, "tickets", selectedTicket.id), {
         messages: [
           ...(selectedTicket.messages || []),
@@ -449,21 +555,20 @@ function ChatSupportPanel({
         ],
         updatedAt: new Date().toISOString(),
       });
-      el.value = "";
+      if (el) el.value = "";
     } catch (e: any) {
       alert(e.message);
     }
   };
 
   const handleSendForm = async () => {
-    if (!ticketMsg) return;
+    if (!ticketMsg.trim()) return;
     setLoading(true);
     try {
-      
       await addDoc(collection(db, "tickets"), {
         userId,
         userEmail,
-        username: userProfile?.username || "",
+        username: userProfile?.nickname || userProfile?.username || userProfile?.email || "",
         subject: ticketSubject,
         messages: [
           {
@@ -488,470 +593,588 @@ function ChatSupportPanel({
     }
   };
 
-  if (initialLoading) return null;
+  if (initialLoading) {
+    return (
+      <div className="w-full flex items-center justify-center p-12">
+        <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20, scale: 0.95 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: 20, scale: 0.95 }}
-      style={{
-        position: "fixed",
-        bottom: 24,
-        right: 24,
-        width: 380,
-        background: "white",
-        borderRadius: 24,
-        boxShadow: "0 24px 64px rgba(0,0,0,0.2)",
-        border: "1px solid rgba(44,32,22,0.1)",
-        zIndex: 500,
-        display: "flex",
-        flexDirection: "column",
-        overflow: "hidden",
-      }}
-    >
-      <div
-        style={{
-          background: "#2C2016",
-          padding: "18px 24px",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          color: "white",
-        }}
-      >
-        <div>
-          <h4 style={{ margin: 0, fontSize: 15, fontWeight: 800 }}>
-            Hubungi Support
-          </h4>
-          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>
-            Kendala & Saran Konten
+  if (inline) {
+    return (
+      <div className="flex flex-col gap-6 w-full h-full">
+        {/* Header */}
+        <div className="pb-5 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-semibold shrink-0 border border-blue-100">
+              <MessageSquare size={20} className="animate-pulse" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-gray-900">
+                {lang === "id" ? "Bantuan & Saran Hubify" : "Hubify Support & Feedback"}
+              </h2>
+              <p className="text-xs text-gray-500 mt-0.5">
+                {lang === "id" ? "Sampaikan masukan, ide pengembangan, atau kendala teknis." : "Send suggestions, feature ideas, or technical questions."}
+              </p>
+            </div>
           </div>
         </div>
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          {view !== "form" && (
-            <button
-              onClick={() => setView("form")}
-              style={{
-                background: "rgba(255,255,255,0.1)",
-                border: "none",
-                padding: "6px 12px",
-                borderRadius: 10,
-                fontSize: 10,
-                fontWeight: 700,
-                color: "white",
-                cursor: "pointer",
-              }}
-            >
-              Kirim Baru
-            </button>
-          )}
-          <button
-            onClick={onClose}
-            style={{
-              background: "none",
-              border: "none",
-              color: "rgba(255,255,255,0.6)",
-              cursor: "pointer",
-            }}
-            className="hover-scale"
-          >
-            <X size={18} />
-          </button>
-        </div>
-      </div>
 
-      <div style={{ display: "flex", borderBottom: "1px solid #EEE" }}>
-        <button
-          onClick={() => setView("form")}
-          style={{
-            flex: 1,
-            padding: 14,
-            borderTop: "none",
-            borderRight: "none",
-            borderLeft: "none",
-            borderBottom: `3px solid ${view === "form" ? "var(--theme-primary)" : "transparent"}`,
-            background: "white",
-            fontSize: 12,
-            fontWeight: 800,
-            color: view === "form" ? "var(--theme-primary)" : "#999",
-            cursor: "pointer",
-          }}
-        >
-          Formulir
-        </button>
-        <button
-          onClick={() => setView("history")}
-          style={{
-            flex: 1,
-            padding: 14,
-            borderTop: "none",
-            borderRight: "none",
-            borderLeft: "none",
-            borderBottom: `3px solid ${view === "history" ? "var(--theme-primary)" : "transparent"}`,
-            background: "white",
-            fontSize: 12,
-            fontWeight: 800,
-            color: view === "history" ? "var(--theme-primary)" : "#999",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 6,
-          }}
-        >
-          Histori{" "}
-          {allTickets.length > 0 && (
-            <span
-              style={{
-                fontSize: 9,
-                background: "#F5F5F5",
-                padding: "2px 6px",
-                borderRadius: 10,
-              }}
-            >
-              {allTickets.length}
-            </span>
-          )}
-        </button>
-      </div>
+        {/* 2-Column Responsive Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* Column 1: New Ticket Form (lg:col-span-6) */}
+          <div className="lg:col-span-6 flex flex-col gap-5">
+            <h3 className="text-sm font-bold text-gray-800 flex items-center gap-2">
+              <Sparkles size={16} className="text-blue-500" />
+              <span>{lang === "id" ? "Kirim Tiket Baru" : "Submit New Request"}</span>
+            </h3>
 
-      <div style={{ height: 400, overflowY: "auto", background: "#FAFAFA" }}>
-        {view === "form" && (
-          <div
-            style={{
-              padding: 24,
-              display: "flex",
-              flexDirection: "column",
-              gap: 16,
-            }}
-          >
             {showSuccess ? (
-              <div style={{ textAlign: "center", padding: "40px 0" }}>
-                <div
-                  style={{
-                    width: 64,
-                    height: 64,
-                    borderRadius: "50%",
-                    background: "#E5F4EE",
-                    color: "#2D7A5E",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: 32,
-                    margin: "0 auto 16px",
-                  }}
-                >
-                  ✓
+              <motion.div 
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="flex flex-col items-center justify-center text-center py-10 px-4 bg-emerald-50/50 border border-emerald-100 rounded-2xl"
+              >
+                <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 mb-3 shadow-2xs">
+                  <Check size={22} strokeWidth={3} />
                 </div>
-                <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 8 }}>
-                  Berhasil Dikirim!
-                </h3>
-                <p style={{ fontSize: 13, color: "#666" }}>
-                  Laporan Anda telah kami terima.
+                <h4 className="text-sm font-bold text-gray-900 mb-1">
+                  {lang === "id" ? "Tiket Berhasil Dikirim!" : "Ticket Sent Successfully!"}
+                </h4>
+                <p className="text-xs text-gray-500 leading-relaxed max-w-xs">
+                  {lang === "id"
+                    ? "Terima kasih atas masukannya. Tim kami akan segera meninjau laporan ini."
+                    : "Your feedback has been received. Our team will review your report and get back to you shortly."}
                 </p>
-              </div>
+              </motion.div>
             ) : (
-              <>
+              <div className="space-y-4">
+                {/* Categories selection */}
                 <div>
-                  <label
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 800,
-                      color: "#999",
-                      textTransform: "uppercase",
-                      display: "block",
-                      marginBottom: 6,
-                    }}
-                  >
-                    Pilih Kategori
+                  <label className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block mb-2">
+                    {lang === "id" ? "Pilih Kategori" : "Choose Category"}
                   </label>
-                  <CustomDropdown
-                    value={ticketSubject}
-                    onChange={setTicketSubject}
-                    options={[
-                      "Pertanyaan/Bantuan Umum",
-                      "Saran & Masukan (Feedback)",
-                      "Laporan Bug/Eror",
-                      "Laporan Pembayaran",
-                    ]}
-                    style={{ ...I({}) }}
-                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    {categories.map((cat) => (
+                      <button
+                        key={cat}
+                        type="button"
+                        onClick={() => setTicketSubject(cat)}
+                        className={`px-3 py-2.5 rounded-xl border text-[11px] font-bold transition-all text-left flex items-start justify-between cursor-pointer ${
+                          ticketSubject === cat
+                            ? "border-blue-600 bg-blue-50 text-blue-700 font-extrabold shadow-2xs"
+                            : "border-gray-200/80 hover:border-gray-300 bg-white text-gray-600 hover:text-gray-900"
+                        }`}
+                      >
+                        <span className="leading-tight">{cat}</span>
+                        {ticketSubject === cat && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-1 flex-shrink-0 ml-1" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
                 </div>
+
+                {/* Detail Message textarea */}
                 <div>
-                  <label
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 800,
-                      color: "#999",
-                      textTransform: "uppercase",
-                      display: "block",
-                      marginBottom: 6,
-                    }}
-                  >
-                    Detail Masukan / Kendala
+                  <label className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block mb-2">
+                    {lang === "id" ? "Detail Masukan atau Kendala" : "Message Detail"}
                   </label>
                   <textarea
                     value={ticketMsg}
                     onChange={(e) => setTicketMsg(e.target.value)}
-                    placeholder="Tuliskan di sini..."
-                    style={{
-                      ...I({
-                        minHeight: 150,
-                        resize: "none",
-                        fontFamily: "inherit",
-                      }),
-                    }}
+                    placeholder={
+                      lang === "id"
+                        ? "Tuliskan laporan atau saran Anda secara detail di sini..."
+                        : "Describe your feedback or issue clearly here..."
+                    }
+                    className="w-full min-h-[140px] text-xs font-medium rounded-xl px-4 py-3 outline-none border border-gray-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-100/30 text-gray-800 placeholder-gray-400 shadow-2xs resize-none transition-all"
                   />
                 </div>
+
+                {/* Submit button */}
                 <button
                   onClick={handleSendForm}
-                  disabled={loading || !ticketMsg}
-                  style={{
-                    ...B(true),
-                    width: "100%",
-                    height: 48,
-                    marginTop: 8,
-                  }}
+                  disabled={loading || !ticketMsg.trim()}
+                  className={`w-full py-3 rounded-xl text-xs font-bold uppercase tracking-wider text-white transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                    loading || !ticketMsg.trim()
+                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                      : "bg-blue-600 hover:bg-blue-700 shadow-2xs hover:shadow-sm"
+                  }`}
                 >
-                  {loading ? "Mengirim..." : "Kirim Sekarang"}
+                  {loading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>{lang === "id" ? "Mengirim..." : "Submitting..."}</span>
+                    </>
+                  ) : (
+                    <span>{lang === "id" ? "Kirim Sekarang" : "Submit Ticket"}</span>
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Column 2: Ticket History (lg:col-span-6) */}
+          <div className="lg:col-span-6 flex flex-col gap-5">
+            <h3 className="text-sm font-bold text-gray-800 flex items-center gap-2">
+              <Clock size={16} className="text-gray-500" />
+              <span>{lang === "id" ? "Riwayat Bantuan & Saran Anda" : "Your Ticket & Feedback History"}</span>
+            </h3>
+
+            <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
+              {allTickets.map((t) => {
+                const isUnresolved = t.status === "open";
+                const isExpanded = selectedTicket?.id === t.id;
+                const hasAdminReply = t.messages?.some((m: any) => m.sender === "admin");
+
+                return (
+                  <div
+                    key={t.id}
+                    className={`bg-white border rounded-xl transition-all ${
+                      isExpanded 
+                        ? "border-blue-300 ring-2 ring-blue-50/50 shadow-2xs" 
+                        : "border-gray-100 hover:border-gray-200 hover:shadow-2xs"
+                    }`}
+                  >
+                    {/* Compact Card Header */}
+                    <div
+                      onClick={() => setSelectedTicket(selectedTicket?.id === t.id ? null : t)}
+                      className="p-3.5 cursor-pointer flex items-center justify-between gap-3"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-[10px] font-semibold text-gray-400">
+                            #{t.id.slice(-6).toUpperCase()}
+                          </span>
+                          <span
+                            className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                              isUnresolved
+                                ? "bg-blue-50 text-blue-600 border border-blue-100"
+                                : "bg-gray-100 text-gray-500"
+                            }`}
+                          >
+                            {t.status === "open" ? (lang === "id" ? "Buka" : "Open") : (lang === "id" ? "Selesai" : "Resolved")}
+                          </span>
+                          {hasAdminReply && isUnresolved && (
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                          )}
+                        </div>
+                        <h4 className="text-xs font-bold text-gray-800 truncate">
+                          {t.subject}
+                        </h4>
+                      </div>
+                      <ChevronRight 
+                        size={16} 
+                        className={`text-gray-400 transition-transform duration-200 ${isExpanded ? "rotate-90 text-blue-500" : ""}`} 
+                      />
+                    </div>
+
+                    {/* Accordion Expanded Content */}
+                    {isExpanded && (
+                      <div className="px-4 pb-4 pt-2 border-t border-gray-100 bg-gray-50/40 rounded-b-xl space-y-3">
+                        {/* Messages Feed */}
+                        <div className="space-y-3 max-h-[220px] overflow-y-auto pr-1">
+                          {(t.messages || []).map((m: any, i: number) => {
+                            const isUser = m.sender === "user";
+                            return (
+                              <div
+                                key={i}
+                                className={`flex flex-col max-w-[90%] ${
+                                  isUser ? "ml-auto items-end" : "mr-auto items-start"
+                                }`}
+                              >
+                                <div
+                                  className={`px-3.5 py-2 text-xs font-medium leading-relaxed rounded-2xl ${
+                                    isUser
+                                      ? "bg-blue-600 text-white rounded-tr-xs shadow-2xs"
+                                      : "bg-white text-gray-800 border border-gray-200 rounded-tl-xs shadow-2xs"
+                                  }`}
+                                >
+                                  {m.text}
+                                </div>
+                                <span className="text-[9px] text-gray-400 font-medium mt-1 px-1">
+                                  {isUser ? (lang === "id" ? "Anda • " : "You • ") : (lang === "id" ? "Admin Hubify • " : "Hubify Admin • ")}
+                                  {new Date(m.timestamp).toLocaleTimeString([], {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        {/* Reply Form (Only if ticket is unresolved) */}
+                        {isUnresolved && (
+                          <div className="flex gap-2 pt-2 border-t border-gray-100">
+                            <input
+                              id="chat_input"
+                              type="text"
+                              placeholder={lang === "id" ? "Tulis balasan Anda..." : "Type your reply..."}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") handleSendReply();
+                              }}
+                              className="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-1.5 text-xs outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100/30 font-medium placeholder-gray-400 transition-all"
+                            />
+                            <button
+                              onClick={handleSendReply}
+                              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl cursor-pointer transition-colors shrink-0"
+                            >
+                              {lang === "id" ? "Balas" : "Reply"}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+
+              {allTickets.length === 0 && (
+                <div className="flex flex-col items-center justify-center text-center py-16 bg-gray-50/30 rounded-2xl border border-gray-100/60">
+                  <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 mb-2">
+                    <MessageSquare size={16} />
+                  </div>
+                  <h4 className="text-xs font-bold text-gray-700">
+                    {lang === "id" ? "Belum Ada Riwayat" : "No Support History"}
+                  </h4>
+                  <p className="text-[11px] text-gray-500 leading-relaxed max-w-xs mt-1">
+                    {lang === "id"
+                      ? "Laporan atau saran yang Anda kirimkan sebelumnya akan terekam di sini."
+                      : "Your previous support requests or feedback will appear here."}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <motion.div
+      initial={inline ? { opacity: 0 } : { opacity: 0, y: 20, scale: 0.95 }}
+      animate={inline ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
+      exit={inline ? { opacity: 0 } : { opacity: 0, y: 20, scale: 0.95 }}
+      className={`bg-white rounded-3xl border border-neutral-200/60 flex flex-col overflow-hidden transition-all duration-300 ${
+        inline
+          ? "w-full h-full shadow-sm"
+          : "fixed bottom-6 right-6 w-[380px] h-[580px] shadow-2xl z-[500]"
+      }`}
+    >
+      {/* HEADER BAR */}
+      <div className="bg-[#FCFCFC] border-b border-neutral-200/60 px-6 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
+            <MessageSquare size={18} className="animate-pulse" />
+          </div>
+          <div>
+            <h4 className="text-sm font-black text-neutral-900 leading-none">
+              {lang === "id" ? "Pusat Bantuan Hubify" : "Hubify Support Center"}
+            </h4>
+            <span className="text-[10px] font-bold text-neutral-400 tracking-wider uppercase mt-0.5 block">
+              {lang === "id" ? "Solusi & Feedback Instan" : "Instant Support & Feedback"}
+            </span>
+          </div>
+        </div>
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-full hover:bg-neutral-100 flex items-center justify-center text-neutral-400 hover:text-neutral-600 transition-all cursor-pointer"
+          >
+            <X size={16} />
+          </button>
+        )}
+      </div>
+
+      {/* NAVIGATION TABS (Only visible if not viewing a single thread) */}
+      {view !== "thread" && (
+        <div className="flex bg-[#FAFAFA] border-b border-neutral-100 p-1 gap-1">
+          <button
+            onClick={() => setView("form")}
+            className={`flex-1 py-3 px-4 text-xs font-black uppercase tracking-wider rounded-2xl transition-all cursor-pointer text-center ${
+              view === "form"
+                ? "bg-white text-blue-600 shadow-sm border border-neutral-200/40"
+                : "text-neutral-400 hover:text-neutral-600"
+            }`}
+          >
+            {lang === "id" ? "Kirim Tiket" : "Create Ticket"}
+          </button>
+          <button
+            onClick={() => setView("history")}
+            className={`flex-1 py-3 px-4 text-xs font-black uppercase tracking-wider rounded-2xl transition-all cursor-pointer flex items-center justify-center gap-2 ${
+              view === "history"
+                ? "bg-white text-blue-600 shadow-sm border border-neutral-200/40"
+                : "text-neutral-400 hover:text-neutral-600"
+            }`}
+          >
+            {lang === "id" ? "Riwayat Bantuan" : "Ticket History"}
+            {allTickets.length > 0 && (
+              <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-black ${
+                unreadCount > 0 
+                  ? "bg-emerald-500 text-white animate-bounce" 
+                  : "bg-neutral-200 text-neutral-600"
+              }`}>
+                {allTickets.length}
+              </span>
+            )}
+          </button>
+        </div>
+      )}
+
+      {/* CONTENT AREA */}
+      <div className="flex-1 overflow-y-auto bg-white p-6">
+        {/* VIEW: FORM */}
+        {view === "form" && (
+          <div className="flex flex-col gap-5 h-full">
+            {showSuccess ? (
+              <motion.div 
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="flex flex-col items-center justify-center text-center py-12 px-4 my-auto"
+              >
+                <div className="w-16 h-16 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 mb-4 shadow-sm">
+                  <Check size={28} strokeWidth={3} />
+                </div>
+                <h3 className="text-base font-black text-neutral-900 mb-1.5">
+                  {lang === "id" ? "Tiket Berhasil Dikirim!" : "Ticket Sent Successfully!"}
+                </h3>
+                <p className="text-xs text-neutral-400 font-medium leading-relaxed max-w-xs">
+                  {lang === "id"
+                    ? "Saran atau kendala Anda telah kami terima. Tim kami akan segera meninjau laporan ini."
+                    : "Your ticket has been received. Our team will review your report and get back to you shortly."}
+                </p>
+              </motion.div>
+            ) : (
+              <>
+                <div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-4">
+                  <div className="flex gap-2.5">
+                    <Sparkles className="text-blue-500 flex-shrink-0 mt-0.5" size={14} />
+                    <p className="text-xs text-blue-800 font-semibold leading-relaxed">
+                      {lang === "id"
+                        ? "Sampaikan masukan, ide pengembangan, atau kendala teknis yang Anda alami. Kami sangat senang mendengar saran dari Anda!"
+                        : "Tell us about your feedback, ideas, or technical questions. We'd love to assist you and improve your experience!"}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Categories */}
+                <div>
+                  <label className="text-[10px] font-extrabold text-neutral-400 uppercase tracking-widest block mb-2.5">
+                    {lang === "id" ? "Pilih Kategori" : "Choose Category"}
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {categories.map((cat) => (
+                      <button
+                        key={cat}
+                        type="button"
+                        onClick={() => setTicketSubject(cat)}
+                        className={`px-3 py-2.5 rounded-xl border text-[11px] font-extrabold transition-all text-left flex items-start justify-between cursor-pointer ${
+                          ticketSubject === cat
+                            ? "border-blue-600 bg-blue-50/40 text-blue-700 shadow-sm"
+                            : "border-neutral-200/60 hover:border-neutral-300 bg-white text-neutral-600 hover:text-neutral-900"
+                        }`}
+                      >
+                        <span className="leading-tight">{cat}</span>
+                        {ticketSubject === cat && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-1 flex-shrink-0 ml-1" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Detail Message */}
+                <div className="flex-1 flex flex-col">
+                  <label className="text-[10px] font-extrabold text-neutral-400 uppercase tracking-widest block mb-2">
+                    {lang === "id" ? "Detail Masukan atau Kendala" : "Message Detail"}
+                  </label>
+                  <textarea
+                    value={ticketMsg}
+                    onChange={(e) => setTicketMsg(e.target.value)}
+                    placeholder={
+                      lang === "id"
+                        ? "Tuliskan laporan atau saran Anda secara detail di sini..."
+                        : "Describe your feedback or issue clearly here..."
+                    }
+                    className="w-full flex-1 min-h-[120px] text-xs font-bold rounded-xl px-4 py-3 outline-none border border-neutral-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-100/50 text-neutral-800 placeholder-neutral-400 shadow-sm resize-none transition-all"
+                  />
+                </div>
+
+                {/* Submit button */}
+                <button
+                  onClick={handleSendForm}
+                  disabled={loading || !ticketMsg.trim()}
+                  className={`w-full py-3.5 rounded-xl text-xs font-black uppercase tracking-wider text-white transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer ${
+                    loading || !ticketMsg.trim()
+                      ? "bg-neutral-300 shadow-none cursor-not-allowed text-neutral-500"
+                      : "bg-blue-600 hover:bg-blue-700 shadow-blue-100/50 hover:shadow-lg hover:shadow-blue-200/50 active:scale-[0.98]"
+                  }`}
+                >
+                  {loading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>{lang === "id" ? "Mengirim..." : "Submitting..."}</span>
+                    </>
+                  ) : (
+                    <span>{lang === "id" ? "Kirim Sekarang" : "Submit Ticket"}</span>
+                  )}
                 </button>
               </>
             )}
           </div>
         )}
 
+        {/* VIEW: HISTORY */}
         {view === "history" && (
-          <div
-            style={{
-              padding: 16,
-              display: "flex",
-              flexDirection: "column",
-              gap: open ? 12 : 0,
-            }}
-          >
-            {allTickets.map((t) => (
-              <div
-                key={t.id}
-                onClick={() => {
-                  setSelectedTicket(t);
-                  setView("thread");
-                }}
-                style={{
-                  background: "white",
-                  padding: 16,
-                  borderRadius: 16,
-                  border: "1px solid #EEE",
-                  cursor: "pointer",
-                }}
-                className="hover-scale"
-              >
+          <div className="flex flex-col gap-3">
+            {allTickets.map((t) => {
+              const hasAdminReply = t.messages?.some((m: any) => m.sender === "admin");
+              const isUnresolved = t.status === "open";
+              return (
                 <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginBottom: 8,
+                  key={t.id}
+                  onClick={() => {
+                    setSelectedTicket(t);
+                    setView("thread");
                   }}
+                  className="group bg-white hover:bg-[#FAFAFA] border border-neutral-200/60 p-4 rounded-2xl cursor-pointer transition-all hover:border-blue-200 hover:shadow-sm"
                 >
-                  <div style={{ fontSize: 10, fontWeight: 800, color: "#CCC" }}>
-                    #{t.id.slice(-6).toUpperCase()}
+                  <div className="flex justify-between items-center mb-2.5">
+                    <span className="text-[9px] font-black tracking-wider text-neutral-400 uppercase">
+                      #{t.id.slice(-6).toUpperCase()}
+                    </span>
+                    <span
+                      className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${
+                        isUnresolved
+                          ? "bg-blue-50 border border-blue-100 text-blue-600"
+                          : "bg-neutral-100 border border-neutral-200 text-neutral-500"
+                      }`}
+                    >
+                      {t.status === "open" ? (lang === "id" ? "Buka" : "Open") : (lang === "id" ? "Selesai" : "Resolved")}
+                    </span>
                   </div>
-                  <div
-                    style={{
-                      fontSize: 9,
-                      fontWeight: 800,
-                      background: t.status === "open" ? "#E3F2FD" : "#F5F5F5",
-                      color: t.status === "open" ? "#2196F3" : "#666",
-                      padding: "2px 8px",
-                      borderRadius: 6,
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    {t.status}
+
+                  <h5 className="text-xs font-black text-neutral-800 leading-snug group-hover:text-blue-700 transition-colors mb-2">
+                    {t.subject}
+                  </h5>
+
+                  <div className="flex items-center justify-between text-[10px] text-neutral-400 font-semibold mt-1">
+                    <span className="flex items-center gap-1">
+                      <Clock size={11} />
+                      {new Date(t.updatedAt).toLocaleDateString(lang === "id" ? "id-ID" : "en-US", {
+                        dateStyle: "medium",
+                      })}
+                    </span>
+                    <span className="text-neutral-400">
+                      {t.messages?.length || 0} {lang === "id" ? "Pesan" : "Messages"}
+                    </span>
                   </div>
+
+                  {hasAdminReply && isUnresolved && (
+                    <div className="mt-3 py-1.5 px-3 bg-emerald-50/50 border border-emerald-100 rounded-xl text-[10px] text-emerald-700 font-extrabold flex items-center gap-1.5">
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+                      <span>{lang === "id" ? "Ada balasan dari tim Hubify" : "New reply from Hubify team"}</span>
+                    </div>
+                  )}
                 </div>
-                <div
-                  style={{
-                    fontSize: 14,
-                    fontWeight: 800,
-                    color: "#2C2016",
-                    marginBottom: 4,
-                  }}
-                >
-                  {t.subject}
-                </div>
-                <div
-                  style={{
-                    fontSize: 11,
-                    color: "#666",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                  }}
-                >
-                  <Clock size={12} />{" "}
-                  {new Date(t.updatedAt).toLocaleDateString("id-ID", {
-                    dateStyle: "medium",
-                  })}
-                </div>
-                {t.messages.some((m: any) => m.sender === "admin") && (
-                  <div
-                    style={{
-                      marginTop: 12,
-                      padding: "8px 12px",
-                      background: "rgba(76,175,80,0.05)",
-                      borderRadius: 10,
-                      fontSize: 11,
-                      color: "#2D7A5E",
-                      fontWeight: 700,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}
-                  >
-                    <MessageCircle size={14} /> Ada balasan dari admin
-                  </div>
-                )}
-              </div>
-            ))}
+              );
+            })}
+
             {allTickets.length === 0 && (
-              <div
-                style={{
-                  padding: 60,
-                  textAlign: "center",
-                  color: "#BBB",
-                  fontSize: 13,
-                }}
-              >
-                Belum ada histori kendala.
+              <div className="flex flex-col items-center justify-center text-center py-20 px-4">
+                <div className="w-12 h-12 rounded-full bg-neutral-50 border border-neutral-100 flex items-center justify-center text-neutral-300 mb-3">
+                  <MessageSquare size={20} />
+                </div>
+                <h4 className="text-xs font-black text-neutral-700 mb-1">
+                  {lang === "id" ? "Belum Ada Riwayat" : "No Support History"}
+                </h4>
+                <p className="text-[11px] text-neutral-400 font-medium leading-relaxed max-w-xs">
+                  {lang === "id"
+                    ? "Semua laporan saran atau kendala bantuan Anda akan terekam di sini."
+                    : "Your feedback and technical assistance cases will be securely logged here."}
+                </p>
               </div>
             )}
           </div>
         )}
 
+        {/* VIEW: THREAD */}
         {view === "thread" && selectedTicket && (
-          <div
-            style={{ display: "flex", flexDirection: "column", height: "100%" }}
-          >
-            <div
-              style={{
-                padding: 12,
-                background: "white",
-                borderBottom: "1px solid #EEE",
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-              }}
-            >
+          <div className="flex flex-col h-full -mx-6 -my-6 bg-[#FAFAFA]">
+            {/* THREAD HEADER */}
+            <div className="bg-white border-b border-neutral-200/60 px-6 py-3.5 flex items-center gap-3">
               <button
                 onClick={() => setView("history")}
-                style={{
-                  background: "#F5F5F5",
-                  border: "none",
-                  width: 32,
-                  height: 32,
-                  borderRadius: 16,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  cursor: "pointer",
-                }}
+                className="w-8 h-8 rounded-full bg-neutral-50 hover:bg-neutral-100 border border-neutral-200/40 flex items-center justify-center text-neutral-500 hover:text-neutral-800 transition-all cursor-pointer"
               >
-                <ChevronLeft size={18} />
+                <ChevronLeft size={16} />
               </button>
-              <div style={{ fontSize: 13, fontWeight: 800 }}>
-                {selectedTicket.subject}
+              <div className="min-w-0">
+                <span className="text-[9px] font-black text-neutral-400 tracking-wider block uppercase mb-0.5">
+                  #{selectedTicket.id.slice(-6).toUpperCase()}
+                </span>
+                <h5 className="text-xs font-black text-neutral-800 truncate max-w-[200px]">
+                  {selectedTicket.subject}
+                </h5>
               </div>
+              <span className={`ml-auto text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${
+                selectedTicket.status === "open"
+                  ? "bg-blue-50 border border-blue-100 text-blue-600"
+                  : "bg-neutral-100 border border-neutral-200 text-neutral-500"
+              }`}>
+                {selectedTicket.status === "open" ? (lang === "id" ? "Buka" : "Open") : (lang === "id" ? "Selesai" : "Resolved")}
+              </span>
             </div>
-            <div
-              style={{
-                flex: 1,
-                padding: 16,
-                overflowY: "auto",
-                display: "flex",
-                flexDirection: "column",
-                gap: open ? 12 : 0,
-              }}
-            >
-              {(selectedTicket.messages || []).map((m: any, i: number) => (
-                <div
-                  key={i}
-                  style={{
-                    alignSelf: m.sender === "user" ? "flex-end" : "flex-start",
-                    maxWidth: "85%",
-                  }}
-                >
+
+            {/* MESSAGE CHAT LIST */}
+            <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-4">
+              {(selectedTicket.messages || []).map((m: any, i: number) => {
+                const isUser = m.sender === "user";
+                return (
                   <div
-                    style={{
-                      background:
-                        m.sender === "user" ? "var(--theme-primary)" : "white",
-                      color: m.sender === "user" ? "white" : "#333",
-                      padding: "10px 14px",
-                      borderRadius:
-                        m.sender === "user"
-                          ? "16px 16px 4px 16px"
-                          : "16px 16px 16px 4px",
-                      fontSize: 13,
-                      boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
-                      border: m.sender === "user" ? "none" : "1px solid #EEE",
-                    }}
+                    key={i}
+                    className={`flex flex-col max-w-[80%] ${
+                      isUser ? "self-end items-end" : "self-start items-start"
+                    }`}
                   >
-                    {m.text}
+                    <div
+                      className={`px-4 py-2.5 text-xs font-semibold shadow-sm leading-relaxed ${
+                        isUser
+                          ? "bg-blue-600 text-white rounded-2xl rounded-tr-sm"
+                          : "bg-white text-neutral-800 rounded-2xl rounded-tl-sm border border-neutral-200/60"
+                      }`}
+                    >
+                      {m.text}
+                    </div>
+                    <span className="text-[9px] text-neutral-400 font-bold mt-1 px-1">
+                      {isUser ? (lang === "id" ? "Anda • " : "You • ") : (lang === "id" ? "Admin Hubify • " : "Hubify Admin • ")}
+                      {new Date(m.timestamp).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
                   </div>
-                  <div
-                    style={{
-                      fontSize: 9,
-                      color: "#999",
-                      marginTop: 4,
-                      textAlign: m.sender === "user" ? "right" : "left",
-                    }}
-                  >
-                    {new Date(m.timestamp).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
-            <div
-              style={{
-                padding: 16,
-                background: "white",
-                borderTop: "1px solid #EEE",
-                display: "flex",
-                gap: 10,
-              }}
-            >
+
+            {/* REPLY BOX */}
+            <div className="p-4 bg-white border-t border-neutral-200/60 flex gap-2">
               <input
                 id="chat_input"
-                placeholder="Tulis balasan..."
+                placeholder={lang === "id" ? "Tulis balasan Anda..." : "Write your response..."}
                 onKeyDown={(e) => e.key === "Enter" && handleSendReply()}
-                style={{
-                  flex: 1,
-                  border: "1px solid #EEE",
-                  borderRadius: 12,
-                  padding: "8px 12px",
-                  fontSize: 13,
-                  outline: "none",
-                }}
+                className="flex-1 text-xs font-bold bg-neutral-50 hover:bg-neutral-100/50 focus:bg-white border border-neutral-200 rounded-xl px-4 py-2.5 outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-100/50 text-neutral-800 transition-all"
               />
               <button
                 onClick={handleSendReply}
-                style={{
-                  background: "var(--theme-primary)",
-                  color: "white",
-                  border: "none",
-                  width: 40,
-                  height: 40,
-                  borderRadius: 20,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  cursor: "pointer",
-                }}
+                className="w-10 h-10 rounded-xl bg-blue-600 hover:bg-blue-700 hover:shadow-md hover:shadow-blue-200/50 text-white flex items-center justify-center cursor-pointer transition-all active:scale-95"
               >
-                <Plus size={20} />
+                <Plus size={18} strokeWidth={2.5} />
               </button>
             </div>
           </div>
@@ -1081,39 +1304,15 @@ export function Sidebar({
 
   
   const [upgradeModalFeature, setUpgradeModalFeature] = useState<string | null>(null);
-  const [showNotifPanel, setShowNotifPanel] = useState(false);
-  const [showChatSupport, setShowChatSupport] = useState(false);
   const {
     notifications,
-    setNotifications,
     toast,
     setToast,
-    deleteNotif,
-    deleteAll,
-    markAllRead,
     handleInviteAction,
-  } = useNotifications(profile, showNotifPanel);
+  } = useNotifications(profile, false);
 
   const unreadCount = notifications.filter((n) => n.unread).length;
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-
-  const handleRead = async (id: string) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, unread: false } : n)),
-    );
-    if (id.startsWith("ticket_")) {
-      const dbId = id.replace("ticket_", "");
-      try {
-        
-        await updateDoc(doc(db, "tickets", dbId), { readByUser: true });
-        // Also open chat support so they can reply
-        setShowNotifPanel(false);
-        setShowChatSupport(true);
-      } catch (e) {
-        console.error(e);
-      }
-    }
-  };
 
   const handleLogout = () => {
     setShowLogoutConfirm(true);
@@ -1139,8 +1338,10 @@ export function Sidebar({
         toast={toast}
         onClose={() => setToast(null)}
         onClick={() => {
-          setShowNotifPanel(true);
-          setOpen(true);
+          setTab("settings");
+          setTimeout(() => {
+            window.dispatchEvent(new CustomEvent("openSettingsTab", { detail: "notifications" }));
+          }, 100);
         }}
         onInviteAction={handleInviteAction}
       />
@@ -1253,11 +1454,12 @@ export function Sidebar({
                       style={{
                         fontWeight: 800,
                         color: "white",
-                        fontSize: 24,
+                        fontSize: 20,
                         letterSpacing: "-0.5px",
+                        lineHeight: 1.1,
                       }}
                     >
-                      Hubify
+                      Hubify Social
                     </div>
                   </motion.div>
                 )}
@@ -1290,39 +1492,6 @@ export function Sidebar({
             >
               {open ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
             </button>
-            {open && (
-              <div style={{ position: "absolute", right: 28 }}>
-                <button
-                  onClick={() => setShowNotifPanel(!showNotifPanel)}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    color: showNotifPanel
-                      ? "var(--theme-primary)"
-                      : "rgba(255,255,255,0.6)",
-                    cursor: "pointer",
-                    display: "flex",
-                    position: "relative",
-                  }}
-                  className="hover-scale"
-                >
-                  <Bell size={20} />
-                  {unreadCount > 0 && (
-                    <div
-                      style={{
-                        position: "absolute",
-                        top: -2,
-                        right: -2,
-                        background: "var(--theme-primary)",
-                        width: 8,
-                        height: 8,
-                        borderRadius: 4,
-                      }}
-                    />
-                  )}
-                </button>
-              </div>
-            )}
           </div>
 
           <>
@@ -1345,44 +1514,8 @@ export function Sidebar({
                   transition: "opacity 0.2s ease",
                 }}
               >
-                <AnimatePresence mode="wait">
-                  {showNotifPanel ? (
-                    <motion.div
-                      key="notif"
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -20 }}
-                      style={{
-                        flex: 1,
-                        display: "flex",
-                        flexDirection: "column",
-                        height: "100%",
-                        width: 230,
-                      }}
-                    >
-                      <NotificationPanel
-                        notifications={notifications}
-                        onClose={() => setShowNotifPanel(false)}
-                        onRead={handleRead}
-                        deleteNotif={deleteNotif}
-                        deleteAll={deleteAll}
-                        markAllRead={markAllRead}
-                        onContactSupport={() => {
-                          setShowNotifPanel(false);
-                          setShowChatSupport(true);
-                        }}
-                        onInviteAction={handleInviteAction}
-                      />
-                    </motion.div>
-                  ) : (
-                    <motion.div
-                      key="menu"
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: 20 }}
-                      style={{ padding: open ? "20px 16px" : "20px 12px" }}
-                    >
-                      {/* Workspaces Section */}
+                <div style={{ padding: open ? "20px 16px" : "20px 12px" }}>
+                  {/* Workspaces Section */}
                       <div style={{ marginBottom: 24, position: "relative" }}>
                         <div
                           onClick={() => {
@@ -2849,10 +2982,8 @@ export function Sidebar({
                           </button>
                         ))}
                       </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
               </div>
+            </div>
 
               <div
                 style={{
@@ -2862,7 +2993,7 @@ export function Sidebar({
               >
                 <div
                   onClick={() => {
-                    navigate("/profile");
+                    navigate("/billing");
                   }}
                   className="hover-scale"
                   style={{
@@ -2960,16 +3091,14 @@ export function Sidebar({
                           >
                             {profile?.plan === "vip" && <Crown size={9} />}
                             {(() => {
-                              if (profile?.plan === "vip") return "VIP";
                               if (planDetails?.name) {
                                 let name = planDetails.name;
-                                name = name.replace(/\s*\(?(annual|monthly|tahunan|bulanan)\)?/gi, ''); // remove (Annual), (Monthly), etc.
+                                name = name.replace(/\s*\(?(annual|monthly|tahunan|bulanan)\)?/gi, '');
                                 name = name.replace(/\s*-\s*(annual|monthly|tahunan|bulanan)/gi, '');
-                                name = name.replace(/\s+plan/gi, ''); // remove the word 'Plan'
+                                name = name.replace(/\s+plan/gi, '');
                                 return name.trim().toUpperCase();
                               }
-                              if (profile?.plan === "trial") return "TRIAL";
-                              return profile?.activeUntil && new Date(profile.activeUntil) > new Date() ? "PRO" : "FREE";
+                              return profile?.plan ? profile.plan.toUpperCase() : "FREE";
                             })()}
                           </span>
                         </div>
@@ -2981,7 +3110,7 @@ export function Sidebar({
                             marginTop: 2,
                           }}
                         >
-                          Pengaturan Profil
+                          {lang === "id" ? "Pengaturan Langganan" : "Subscription Settings"}
                         </div>
                       </motion.div>
                     )}
@@ -3029,10 +3158,25 @@ export function Sidebar({
                       alignItems: "center",
                       justifyContent: "center",
                       transition: "all 0.3s ease",
+                      position: "relative",
                     }}
                     title="Pengaturan"
                   >
                     <Settings size={16} />
+                    {unreadCount > 0 && (
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: 4,
+                          right: "25%",
+                          width: 8,
+                          height: 8,
+                          borderRadius: "50%",
+                          background: "#E11D48",
+                          border: "2px solid #2C2016",
+                        }}
+                      />
+                    )}
                   </button>
                 </div>
               </div>
@@ -3620,18 +3764,6 @@ export function Sidebar({
                   </div>
                 </motion.div>
               </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Chat Support Window Prototype */}
-          <AnimatePresence>
-            {showChatSupport && user?.uid && (
-              <ChatSupportPanel
-                onClose={() => setShowChatSupport(false)}
-                userId={user.uid}
-                userEmail={profile?.email}
-                userProfile={profile}
-              />
             )}
           </AnimatePresence>
         </div>
@@ -5510,6 +5642,9 @@ export function BottomBar({
   const [showMoreSheet, setShowMoreSheet] = useState(false);
   const [showCreateMenu, setShowCreateMenu] = useState(false);
 
+  const { notifications } = useNotifications(profile, false);
+  const unreadCount = notifications.filter((n) => n.unread).length;
+
   const isSuperAdmin =
     profile?.role === "admin" ||
     profile?.email?.toLowerCase() === "nalendraputra71@gmail.com" ||
@@ -5587,7 +5722,29 @@ export function BottomBar({
     { id: "analytics-activity", ic: <Users size={18} />, lb: "Audience" },
     ...SOCIAL_STUDIO.map(item => item.id === "social-dashboard" ? { ...item, lb: "Integrasi Sosmed" } : item),
     ...EXTRA,
-    { id: "settings", ic: <Settings size={18} />, lb: "Pengaturan" },
+    { 
+      id: "settings", 
+      ic: (
+        <div style={{ position: "relative" }}>
+          <Settings size={18} />
+          {unreadCount > 0 && (
+            <div
+              style={{
+                position: "absolute",
+                top: -2,
+                right: -4,
+                width: 8,
+                height: 8,
+                borderRadius: "50%",
+                background: "#E11D48",
+                border: "1px solid white",
+              }}
+            />
+          )}
+        </div>
+      ), 
+      lb: "Pengaturan" 
+    },
     { id: "profile", ic: <img src={profile?.avatar || user?.photoURL || `https://ui-avatars.com/api/?name=${user?.displayName}`} style={{ width: 18, height: 18, borderRadius: "50%", objectFit: "cover" }} />, lb: "Profile" }
   ];
 
@@ -5814,9 +5971,26 @@ export function BottomBar({
             width: 60,
             height: "100%",
             outline: "none",
+            position: "relative"
           }}
         >
-          <Menu size={20} strokeWidth={!isTabInBottomBar ? 2.5 : 2} />
+          <div style={{ position: "relative" }}>
+            <Menu size={20} strokeWidth={!isTabInBottomBar ? 2.5 : 2} />
+            {unreadCount > 0 && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: -2,
+                  right: -4,
+                  width: 8,
+                  height: 8,
+                  borderRadius: "50%",
+                  background: "#E11D48",
+                  border: "2px solid white",
+                }}
+              />
+            )}
+          </div>
           <span style={{ fontSize: 10, fontWeight: !isTabInBottomBar ? 700 : 500 }}>Lainnya</span>
         </button>
       </div>

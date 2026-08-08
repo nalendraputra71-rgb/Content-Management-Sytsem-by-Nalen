@@ -11,8 +11,12 @@ import { TiktokIcon, ThreadsIcon } from './components/social-icons';
 
 
 export function TermsOfService() {
-  useEffect(() => { window.scrollTo(0, 0); }, []);
   const { lang, setLang } = useI18n();
+
+  useEffect(() => { 
+    window.scrollTo(0, 0); 
+    document.title = lang === 'id' ? 'Syarat & Ketentuan - Hubify Social' : 'Terms of Service - Hubify Social';
+  }, [lang]);
 
   const handleLangChange = (l: 'id' | 'en') => {
     setLang(l);
@@ -114,8 +118,12 @@ export function TermsOfService() {
 }
 
 export function PrivacyPolicy() {
-  useEffect(() => { window.scrollTo(0, 0); }, []);
   const { lang, setLang } = useI18n();
+
+  useEffect(() => { 
+    window.scrollTo(0, 0); 
+    document.title = lang === 'id' ? 'Kebijakan Privasi - Hubify Social' : 'Privacy Policy - Hubify Social';
+  }, [lang]);
 
   const handleLangChange = (l: 'id' | 'en') => {
     setLang(l);
@@ -247,8 +255,12 @@ export function PrivacyPolicy() {
 }
 
 export function FAQ() {
-  useEffect(() => { window.scrollTo(0, 0); }, []);
   const { lang, setLang } = useI18n();
+
+  useEffect(() => { 
+    window.scrollTo(0, 0); 
+    document.title = lang === 'id' ? 'FAQ - Hubify Social' : 'FAQ - Hubify Social';
+  }, [lang]);
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>('all');
 
@@ -587,8 +599,12 @@ export function FAQ() {
 }
 
 export function Guides() {
-  useEffect(() => { window.scrollTo(0, 0); }, []);
   const { lang, setLang } = useI18n();
+
+  useEffect(() => { 
+    window.scrollTo(0, 0); 
+    document.title = lang === 'id' ? 'Panduan - Hubify Social' : 'Guides - Hubify Social';
+  }, [lang]);
   const [activeGuideId, setActiveGuideId] = useState('workspace');
 
   const handleLangChange = (l: 'id' | 'en') => {
@@ -1849,8 +1865,12 @@ export function Guides() {
 }
 
 export function AboutUs() {
-  useEffect(() => { window.scrollTo(0, 0); }, []);
   const { lang, setLang } = useI18n();
+
+  useEffect(() => { 
+    window.scrollTo(0, 0); 
+    document.title = lang === 'id' ? 'Tentang Kami - Hubify Social' : 'About Us - Hubify Social';
+  }, [lang]);
 
   const handleLangChange = (l: 'id' | 'en') => {
     setLang(l);
@@ -2049,8 +2069,12 @@ export function AboutUs() {
 }
 
 export function RefundPolicy() {
-  useEffect(() => { window.scrollTo(0, 0); }, []);
   const { lang, setLang } = useI18n();
+
+  useEffect(() => { 
+    window.scrollTo(0, 0); 
+    document.title = lang === 'id' ? 'Kebijakan Pengembalian - Hubify Social' : 'Refund Policy - Hubify Social';
+  }, [lang]);
 
   const handleLangChange = (l: 'id' | 'en') => {
     setLang(l);

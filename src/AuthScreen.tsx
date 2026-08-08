@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useI18n } from "./i18n";
 import { 
   auth, db, googleProvider, signInWithPopup, 
@@ -12,6 +12,7 @@ import { motion, AnimatePresence } from "motion/react";
 export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: any) => void, currentUser?: any }) {
   const { lang, setLang } = useI18n();
   const location = useLocation();
+  const navigate = useNavigate();
   const initialMode = location.state?.mode || "signup";
   const [mode, setMode] = useState<"login" | "signup" | "forgot">(initialMode);
   
@@ -21,6 +22,10 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
       setMode(location.state.mode);
     }
   }, [location.state?.mode]);
+
+  useEffect(() => {
+    document.title = lang === 'id' ? 'Masuk / Daftar - Hubify Social' : 'Log In / Sign Up - Hubify Social';
+  }, [lang]);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -57,7 +62,8 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
         case 'auth/invalid-email': return "The email format is invalid.";
         case 'auth/weak-password': return "Password is too weak, must be at least 6 characters.";
         case 'auth/network-request-failed': return "Network error, please check your connection.";
-        default: return "Oops, something went wrong. Please try again soon.";
+                case 'auth/unauthorized-domain': return "Domain ini belum diizinkan di Firebase. Tambahkan hubifysocial.com ke Firebase Console > Authentication > Settings > Authorized domains.";
+        default: return "Oops: " + (e.message || e.code || "Unknown error");
       }
     }
   };
@@ -67,10 +73,32 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
       const userRef = doc(db, "users", user.uid);
       const snap = await getDoc(userRef);
       if (!snap.exists()) {
-         const activeUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30-Day Free Trial
+         let trialDaysVal = 30;
+         let trialEnabledVal = true;
+         let sysTrialPlanId = "pro-monthly";
+         
+         try {
+           const sysSnap = await getDoc(doc(db, "config", "system"));
+           if (sysSnap.exists()) {
+             const sysData = sysSnap.data();
+             if (sysData.trialDays !== undefined) trialDaysVal = Number(sysData.trialDays);
+             if (sysData.trialEnabled !== undefined) trialEnabledVal = sysData.trialEnabled !== false;
+             if (sysData.trialPlanId !== undefined) sysTrialPlanId = sysData.trialPlanId;
+           }
+         } catch (e) {
+           console.warn("Failed to fetch system trial configuration, falling back to defaults:", e);
+         }
+
+         let activeUntil = new Date();
+         if (!trialEnabledVal) {
+           // If trial is disabled, the new user's plan is "free" and their subscription is set as expired/inactive
+           activeUntil.setFullYear(2000);
+         } else {
+           activeUntil = new Date(Date.now() + trialDaysVal * 24 * 60 * 60 * 1000);
+         }
          
          const cRole = user.email?.toLowerCase() === "nalendraputra71@gmail.com" ? "admin" : "user";
-         const cPlan = user.email?.toLowerCase() === "nalendraputra71@gmail.com" ? "pro" : "trial";
+         const cPlan = user.email?.toLowerCase() === "nalendraputra71@gmail.com" ? "pro" : (trialEnabledVal ? "trial" : "free");
 
          const batch = writeBatch(db);
 
@@ -87,7 +115,12 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
            completedTour: false,
            emailVerified: user.emailVerified || false,
            role: cRole,
-           createdAt: new Date().toISOString()
+           createdAt: new Date().toISOString(),
+           ...(trialEnabledVal && cRole !== "admin" ? {
+             hasUsedTrial: true,
+             usedTrialPlans: [sysTrialPlanId],
+             trialStartedAt: new Date().toISOString()
+           } : {})
          });
 
          const defaultWsName = providedNickname?.trim() || providedFullName?.trim() || user.displayName || "Workspace";
@@ -194,12 +227,12 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
           
           <div className="relative z-10 flex items-center gap-3 mb-12">
             <div className="w-10 h-10 rounded-2xl overflow-hidden shadow-lg flex items-center justify-center">
-              <img src="/icon.png" alt="Hubify" className="w-full h-full object-cover scale-110" onError={(e) => { (e.currentTarget.parentElement as HTMLElement).style.display = 'none'; (e.currentTarget.parentElement!.nextElementSibling as HTMLElement).style.display = 'flex' }} />
+              <img src="/icon.png" alt="Hubify Social" className="w-full h-full object-cover scale-110" onError={(e) => { (e.currentTarget.parentElement as HTMLElement).style.display = 'none'; (e.currentTarget.parentElement!.nextElementSibling as HTMLElement).style.display = 'flex' }} />
             </div>
             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-400 to-blue-200 hidden items-center justify-center text-[#0B2A4A] font-extrabold text-xl shadow-lg">
               H
             </div>
-            <span className="text-2xl font-extrabold tracking-tight">Hubify</span>
+            <span className="text-2xl font-extrabold tracking-tight">Hubify Social</span>
           </div>
 
           <div className="relative z-10 mt-auto mb-8">
@@ -244,7 +277,7 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
         {/* Right: Form */}
         <div className="w-full md:w-[55%] p-6 md:p-10 flex flex-col relative overflow-y-auto bg-white">
           <div className="flex items-center justify-between mb-4">
-            <button onClick={() => window.location.href = '#/'} className="flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-[#1D4D7A] transition-colors shrink-0 w-fit">
+            <button onClick={() => navigate("/")} className="flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-[#1D4D7A] transition-colors shrink-0 w-fit">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
               {lang === 'id' ? 'Kembali' : 'Back'}
             </button>
@@ -342,7 +375,7 @@ export function AuthScreen({ onUserCreated, currentUser }: { onUserCreated: (u: 
 
                     <div className="mt-6 text-center text-xs font-medium text-slate-500 bg-slate-50 p-3 rounded-xl border border-slate-100">
                       {mode === "login" ? (
-                        <>{lang === 'id' ? 'Belum gabung sama Hubify?' : 'New to Hubify?'} <button onClick={() => setMode("signup")} className="text-[#1D4D7A] font-bold hover:underline">{lang === 'id' ? 'Daftar sekarang' : 'Sign up now'}</button></>
+                        <>{lang === 'id' ? 'Belum gabung sama Hubify Social?' : 'New to Hubify Social?'} <button onClick={() => setMode("signup")} className="text-[#1D4D7A] font-bold hover:underline">{lang === 'id' ? 'Daftar sekarang' : 'Sign up now'}</button></>
                       ) : (
                         <>{lang === 'id' ? 'Udah punya akun?' : 'Already have an account?'} <button onClick={() => setMode("login")} className="text-[#1D4D7A] font-bold hover:underline">{lang === 'id' ? 'Masuk di sini' : 'Log in here'}</button></>
                       )}

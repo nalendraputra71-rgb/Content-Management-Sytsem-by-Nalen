@@ -26,6 +26,7 @@ import {
   getDocs,
   addDoc,
   limit,
+  increment,
 } from "./firebase";
 import {
   User,
@@ -52,6 +53,7 @@ import {
   Users,
   ClipboardList,
   Settings,
+  HardDrive,
   Globe,
   Plus,
   RefreshCw,
@@ -61,7 +63,11 @@ import {
   CalendarDays,
   Tag,
   GripVertical,
+  Bell,
+  MessageCircle,
 } from "lucide-react";
+import { NotificationPanel, useNotifications } from "./NotificationSystem";
+import { ChatSupportPanel } from "./Nav";
 
 export const HOLIDAY_API_OPTIONS = [
   { id: "id-skb", name: "Indonesia (Libur Nasional & Cuti Bersama)", country: "ID", color: "#E11D48", isCustomApi: true },
@@ -97,7 +103,9 @@ type TabCategory =
   | "statuses"
   | "holidays"
   | "language"
-  | "danger";
+  | "danger"
+  | "notifications"
+  | "support";
 
 export function SettingsPanel({
   initialSettings,
@@ -118,6 +126,16 @@ export function SettingsPanel({
   const { lang, setLang } = useI18n();
   const [activeTab, setActiveTab] = useState<TabCategory>("profile");
   const [message, setMessage] = useState({ text: "", type: "" });
+
+  useEffect(() => {
+    const handleOpenTab = (e: any) => {
+      if (e.detail) {
+        setActiveTab(e.detail);
+      }
+    };
+    window.addEventListener("openSettingsTab", handleOpenTab);
+    return () => window.removeEventListener("openSettingsTab", handleOpenTab);
+  }, []);
 
   // Mobile layout check
   const [isMobile, setIsMobile] = useState(false);
@@ -208,6 +226,33 @@ export function SettingsPanel({
   const [savingWs, setSavingWs] = useState(false);
   const [saveWsSuccess, setSaveWsSuccess] = useState(false);
   const [savingTheme, setSavingTheme] = useState(false);
+
+  // NOTIFICATIONS
+  const {
+    notifications,
+    setNotifications,
+    toast,
+    setToast,
+    deleteNotif,
+    deleteAll,
+    markAllRead,
+    handleInviteAction,
+  } = useNotifications(profile, activeTab === "notifications");
+
+  const handleReadNotif = async (id: string) => {
+    setNotifications((prev: any) =>
+      prev.map((n: any) => (n.id === id ? { ...n, unread: false } : n)),
+    );
+    if (id.startsWith("ticket_")) {
+      const dbId = id.replace("ticket_", "");
+      try {
+        await updateDoc(doc(db, "tickets", dbId), { readByUser: true });
+        setActiveTab("support");
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  };
 
   // Sync profile state when profile prop changes
   useEffect(() => {
@@ -337,10 +382,25 @@ export function SettingsPanel({
         ctx?.drawImage(img, sx, sy, size, size, 0, 0, 256, 256);
         const base64 = canvas.toDataURL("image/jpeg", 0.8);
 
+        const oldSize = profile.avatar ? (profile.avatar.length * 0.75) / (1024 * 1024) : 0;
+        const newSize = (base64.length * 0.75) / (1024 * 1024);
+        const storageDiffMB = newSize - oldSize;
+        
+        const currentStorage = profile.storageUsed || 0;
+        const maxStorage = planDetails?.maxStorageMB || 100;
+
+        if (storageDiffMB > 0 && currentStorage + storageDiffMB > maxStorage) {
+            setMessage({ text: `Kapasitas penyimpanan penuh. Batas paket Anda adalah ${maxStorage} MB.`, type: "error" });
+            return;
+        }
+
         setLoadingProfile(true);
         try {
           const uRef = doc(db, "users", profile.uid);
-          await updateDoc(uRef, { avatar: base64 });
+          await updateDoc(uRef, { 
+             avatar: base64,
+             storageUsed: increment(storageDiffMB)
+          });
 
           if (auth.currentUser) await updateProfile(auth.currentUser, { photoURL: base64 });
           await onUpdateProfile({ ...profile, avatar: base64 });
@@ -860,6 +920,13 @@ export function SettingsPanel({
       ],
     },
     {
+      title: lang === "id" ? "Bantuan & Notifikasi" : "Help & Notifications",
+      items: [
+        { id: "notifications" as TabCategory, label: lang === "id" ? "Notifikasi" : "Notifications", icon: Bell },
+        { id: "support" as TabCategory, label: lang === "id" ? "Bantuan & Saran" : "Support & Feedback", icon: MessageCircle },
+      ],
+    },
+    {
       title: lang === "id" ? "Pengaturan Lainnya" : "Other Settings",
       items: [
         { id: "language" as TabCategory, label: lang === "id" ? "Bahasa" : "Language", icon: Globe },
@@ -970,12 +1037,8 @@ export function SettingsPanel({
                 }`}
               >
                 {profile?.plan === "vip" && <Crown size={10} />}
-                {planDetails?.name ? planDetails.name.replace(/\s*\(?(annual|monthly|tahunan|bulanan)\)?/gi, '').replace(/\s+plan/gi, '').trim()
-                  : profile?.plan === "vip"
-                  ? "VIP Pass"
-                  : profile?.activeUntil && new Date(profile.activeUntil) > new Date()
-                  ? "PRO Member"
-                  : "FREE Account"}
+                {planDetails?.name ? planDetails.name.replace(/\s*\(?(annual|monthly|tahunan|bulanan)\)?/gi, '').replace(/\s+plan/gi, '').trim().toUpperCase()
+                  : profile?.plan ? profile.plan.toUpperCase() : "FREE"}
               </span>
 
               {activeWorkspace?.name && (
@@ -1048,7 +1111,14 @@ export function SettingsPanel({
 
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-2">
                     {/* Form Controls */}
-                    <div className="flex flex-col gap-4">
+                    <div className="bg-[#FCFCFC] border border-neutral-200/60 p-6 rounded-3xl flex flex-col gap-5">
+                      <div className="flex items-center gap-1.5 pb-3 border-b border-black/[0.03]">
+                        <User className="text-blue-600" size={16} />
+                        <h4 className="text-xs font-black uppercase tracking-wider text-neutral-900">
+                          {lang === "id" ? "Detail Profil" : "Profile Details"}
+                        </h4>
+                      </div>
+
                       <div>
                         <div className="flex justify-between items-center mb-1.5">
                           <label className="text-[10px] font-extrabold text-neutral-400 uppercase tracking-widest block">
@@ -1082,7 +1152,7 @@ export function SettingsPanel({
                           className={`w-full text-xs font-bold rounded-xl px-4 py-3 outline-none transition-all ${
                             !isEditingProfile
                               ? "bg-black/[0.01] text-neutral-500 border border-transparent cursor-not-allowed"
-                              : "bg-[#FAFAFA] border border-black/[0.03] focus:bg-white focus:border-blue-600 focus:ring-4 focus:ring-blue-100/50 text-black"
+                              : "bg-white border border-neutral-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-100/50 text-black shadow-sm"
                           }`}
                           placeholder="Full Name"
                         />
@@ -1099,7 +1169,7 @@ export function SettingsPanel({
                           className={`w-full text-xs font-bold rounded-xl px-4 py-3 outline-none transition-all ${
                             !isEditingProfile
                               ? "bg-black/[0.01] text-neutral-500 border border-transparent cursor-not-allowed"
-                              : "bg-[#FAFAFA] border border-black/[0.03] focus:bg-white focus:border-blue-600 focus:ring-4 focus:ring-blue-100/50 text-black"
+                              : "bg-white border border-neutral-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-100/50 text-black shadow-sm"
                           }`}
                           placeholder="Your Nickname"
                         />
@@ -1118,7 +1188,7 @@ export function SettingsPanel({
                             className={`w-full text-xs font-bold rounded-xl pl-8 pr-4 py-3 outline-none transition-all ${
                               !isEditingProfile
                                 ? "bg-black/[0.01] text-neutral-500 border border-transparent cursor-not-allowed"
-                                : "bg-[#FAFAFA] border border-black/[0.03] focus:bg-white focus:border-blue-600 focus:ring-4 focus:ring-blue-100/50 text-black"
+                                : "bg-white border border-neutral-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-100/50 text-black shadow-sm"
                             }`}
                           />
                         </div>
@@ -1136,49 +1206,183 @@ export function SettingsPanel({
                       )}
                     </div>
 
-                    {/* AI Quota Card */}
-                    <div className="bg-black/[0.01] border border-black/[0.02] p-5 rounded-3xl flex flex-col justify-between">
-                      <div>
-                        <div className="flex items-center gap-1.5 mb-2">
-                          <Sparkles className="text-blue-600" size={16} />
-                          <h4 className="text-xs font-black uppercase tracking-wider text-neutral-900">
-                            {lang === "id" ? "Kuota Harian HUB.AI" : "Daily HUB.AI Quota"}
-                          </h4>
-                        </div>
-                        <p className="text-[11px] text-neutral-400 leading-normal font-medium mb-4">
-                          {lang === "id"
-                            ? "Setiap interaksi dengan asisten Hubify (pembuatan konten, analisis takarir, dan riset) terhitung di kuota harian Anda."
-                            : "Each social optimization, caption builder request, or chat request consumes from your daily allowance."}
-                        </p>
-
-                        <div className="flex justify-between items-end mb-2">
-                          <span className="text-[10px] font-extrabold text-neutral-400 uppercase">
-                            {lang === "id" ? "Penggunaan Hari Ini" : "Used Today"}
-                          </span>
-                          <span className="text-sm font-black text-neutral-900">
-                            {(() => {
-                              const maxReq = planDetails?.aiTokenLimit || 50;
-                              const todayStr = new Date().toISOString().split("T")[0];
-                              const usedReq = profile?.lastAiRequestDate === todayStr ? profile?.aiRequestsToday || 0 : 0;
-                              return `${usedReq} / ${maxReq}`;
-                            })()}
-                          </span>
-                        </div>
-
-                        <div className="w-full h-1.5 bg-black/[0.03] rounded-full overflow-hidden">
-                          {(() => {
-                            const maxReq = planDetails?.aiTokenLimit || 50;
-                            const todayStr = new Date().toISOString().split("T")[0];
-                            const usedReq = profile?.lastAiRequestDate === todayStr ? profile?.aiRequestsToday || 0 : 0;
-                            const usedPercent = Math.min((usedReq / maxReq) * 100, 100);
-                            return <div className="h-full bg-blue-600 rounded-full transition-all duration-500" style={{ width: `${usedPercent}%` }} />;
-                          })()}
+                    {/* Quota & Storage Stack */}
+                    <div className="flex flex-col gap-6">
+                      {/* Usage Limits Card */}
+                      <div className="bg-[#FCFCFC] border border-neutral-200/60 p-6 rounded-3xl flex flex-col justify-between">
+                        <div>
+                          <div className="flex items-center gap-2 pb-3 mb-4 border-b border-black/[0.03]">
+                            <Sparkles className="text-blue-600 animate-pulse" size={16} />
+                            <h4 className="text-xs font-black uppercase tracking-wider text-neutral-900">
+                              {lang === "id" ? "Batas Penggunaan" : "Usage limits"}
+                            </h4>
+                            <span className="ml-auto px-2 py-0.5 rounded bg-neutral-100 border border-neutral-200 text-[9px] font-black tracking-wider text-neutral-600 uppercase">
+                              {planDetails?.name ? planDetails.name.replace(/\s*\(?(annual|monthly|tahunan|bulanan)\)?/gi, '').replace(/\s+plan/gi, '').trim().toUpperCase() : (lang === "id" ? "GRATIS" : "FREE")}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-neutral-400 font-medium mb-5 leading-relaxed">
+                            {lang === "id"
+                              ? "Batas paket Anda menentukan seberapa banyak Anda dapat menggunakan Hub.AI. Model dan fitur tingkat lanjut dapat menggunakan lebih banyak kuota."
+                              : "Your plan's limits determine how much you can use Hub.AI over time. Advanced models and features can take up more usage."}
+                          </p>
+                      
+                          <div className="flex flex-col gap-5">
+                            {/* Daily Usage row */}
+                            <div>
+                              <div className="flex justify-between items-end mb-2">
+                                <span className="text-[10px] font-extrabold text-neutral-400 uppercase tracking-wider">
+                                  {lang === "id" ? "Penggunaan Hari Ini" : "Current usage"}
+                                </span>
+                                <span className="text-xs font-black text-neutral-900">
+                                  {(() => {
+                                    const maxReq = planDetails?.aiTokenLimitDaily || 50;
+                                    if (maxReq === -1) return `0% ${lang === "id" ? "digunakan" : "used"}`;
+                                    const todayStr = new Date().toISOString().split("T")[0];
+                                    const usedReq = profile?.lastAiRequestDate === todayStr ? (profile?.aiCreditsToday || profile?.aiRequestsToday || 0) : 0;
+                                    const usedPercent = Math.min((usedReq / maxReq) * 100, 100);
+                                    return `${Math.round(usedPercent)}% ${lang === "id" ? "digunakan" : "used"}`;
+                                  })()}
+                                </span>
+                              </div>
+                              <div className="w-full h-1.5 bg-black/[0.03] rounded-full overflow-hidden mb-2">
+                                {(() => {
+                                  const maxReq = planDetails?.aiTokenLimitDaily || 50;
+                                  const now = new Date();
+                                  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+                                  const usedReq = profile?.lastAiRequestDate === todayStr ? (profile?.aiCreditsToday || profile?.aiRequestsToday || 0) : 0;
+                                  const usedPercent = maxReq === -1 ? 0 : Math.min((usedReq / maxReq) * 100, 100);
+                                  return <div className="h-full bg-blue-600 rounded-full transition-all duration-500 shadow-[0_0_8px_rgba(37,99,235,0.4)]" style={{ width: `${usedPercent}%` }} />;
+                                })()}
+                              </div>
+                              <div className="text-[9px] font-bold text-neutral-400">
+                                {lang === "id" ? "Direset otomatis pada 00:00" : "Resets automatically at 12:00 AM"}
+                              </div>
+                            </div>
+                      
+                            {/* Monthly Limit row */}
+                            <div>
+                              <div className="flex justify-between items-end mb-2">
+                                <span className="text-[10px] font-extrabold text-neutral-400 uppercase tracking-wider">
+                                  {lang === "id" ? "Batas Bulanan" : "Monthly limit"}
+                                </span>
+                                <span className="text-xs font-black text-neutral-900">
+                                  {(() => {
+                                    const maxReq = planDetails?.aiTokenLimit || 1000;
+                                    if (maxReq === -1) return `0% ${lang === "id" ? "digunakan" : "used"}`;
+                                    const now = new Date();
+                                    let resetDay = 1;
+                                    if (profile?.activeUntil) resetDay = new Date(profile.activeUntil).getDate();
+                                    else if (profile?.createdAt) resetDay = new Date(profile.createdAt).getDate();
+                                    let cycleStartMonth = now.getMonth();
+                                    let cycleStartYear = now.getFullYear();
+                                    if (now.getDate() < resetDay) {
+                                        cycleStartMonth -= 1;
+                                        if (cycleStartMonth < 0) { cycleStartMonth = 11; cycleStartYear -= 1; }
+                                    }
+                                    const actualResetDay = Math.min(resetDay, new Date(cycleStartYear, cycleStartMonth + 1, 0).getDate());
+                                    const currentMonth = `${cycleStartYear}-${String(cycleStartMonth + 1).padStart(2, '0')}-${String(actualResetDay).padStart(2, '0')}`;
+                                    const usedReq = profile?.lastAiRequestMonth === currentMonth ? (profile?.aiTokensUsed || 0) : 0;
+                                    const usedPercent = Math.min((usedReq / maxReq) * 100, 100);
+                                    return `${Math.round(usedPercent)}% ${lang === "id" ? "digunakan" : "used"}`;
+                                  })()}
+                                </span>
+                              </div>
+                              <div className="w-full h-1.5 bg-black/[0.03] rounded-full overflow-hidden mb-2">
+                                {(() => {
+                                  const maxReq = planDetails?.aiTokenLimit || 1000;
+                                  const now = new Date();
+                                  let resetDay = 1;
+                                  if (profile?.activeUntil) resetDay = new Date(profile.activeUntil).getDate();
+                                  else if (profile?.createdAt) resetDay = new Date(profile.createdAt).getDate();
+                                  let cycleStartMonth = now.getMonth();
+                                  let cycleStartYear = now.getFullYear();
+                                  if (now.getDate() < resetDay) {
+                                      cycleStartMonth -= 1;
+                                      if (cycleStartMonth < 0) { cycleStartMonth = 11; cycleStartYear -= 1; }
+                                  }
+                                  const actualResetDay = Math.min(resetDay, new Date(cycleStartYear, cycleStartMonth + 1, 0).getDate());
+                                  const currentMonth = `${cycleStartYear}-${String(cycleStartMonth + 1).padStart(2, '0')}-${String(actualResetDay).padStart(2, '0')}`;
+                                  const usedReq = profile?.lastAiRequestMonth === currentMonth ? (profile?.aiTokensUsed || 0) : 0;
+                                  const usedPercent = maxReq === -1 ? 0 : Math.min((usedReq / maxReq) * 100, 100);
+                                  return <div className="h-full bg-indigo-600 rounded-full transition-all duration-500 shadow-[0_0_8px_rgba(79,70,229,0.4)]" style={{ width: `${usedPercent}%` }} />;
+                                })()}
+                              </div>
+                              <div className="text-[9px] font-bold text-neutral-400">
+                                {(() => {
+                                   const now = new Date();
+                                   let resetDay = 1;
+                                   if (profile?.activeUntil) resetDay = new Date(profile.activeUntil).getDate();
+                                   else if (profile?.createdAt) resetDay = new Date(profile.createdAt).getDate();
+                                   let nextResetMonth = now.getMonth();
+                                   let nextResetYear = now.getFullYear();
+                                   if (now.getDate() >= resetDay) {
+                                       nextResetMonth += 1;
+                                       if (nextResetMonth > 11) { nextResetMonth = 0; nextResetYear += 1; }
+                                   }
+                                   const maxDays = new Date(nextResetYear, nextResetMonth + 1, 0).getDate();
+                                   const actualResetDay = Math.min(resetDay, maxDays);
+                                   const nextMonth = new Date(nextResetYear, nextResetMonth, actualResetDay);
+                                   return (lang === "id" ? "Direset pada tanggal " : "Resets on ") + nextMonth.toLocaleDateString(lang === "id" ? 'id-ID' : 'en-US', { month: 'short', day: 'numeric' });
+                                })()}
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </div>
 
-                      <div className="mt-6 pt-4 border-t border-black/[0.03] flex items-center justify-between text-[11px] text-neutral-400 font-medium">
-                        <span>Status Kuota</span>
-                        <span className="text-emerald-600 font-bold">✓ Reset Otomatis 24j</span>
+                      {/* Asset Storage Card */}
+                      <div className="bg-[#FCFCFC] border border-neutral-200/60 p-6 rounded-3xl flex flex-col justify-between">
+                        <div>
+                          <div className="flex items-center gap-1.5 pb-3 mb-4 border-b border-black/[0.03]">
+                            <HardDrive className="text-indigo-600" size={16} />
+                            <h4 className="text-xs font-black uppercase tracking-wider text-neutral-900">
+                              {lang === "id" ? "Penyimpanan Media" : "Media Storage"}
+                            </h4>
+                          </div>
+                          <p className="text-[11px] text-neutral-400 font-medium mb-5 leading-relaxed">
+                            {lang === "id"
+                              ? "Kapasitas penyimpanan gambar referensi konten dan avatar profil Anda."
+                              : "Storage usage for content reference images and profile avatars."}
+                          </p>
+
+                          <div className="flex justify-between items-end mb-2">
+                            <span className="text-[10px] font-extrabold text-neutral-400 uppercase tracking-wider">
+                              {lang === "id" ? "Kapasitas Terpakai" : "Storage Used"}
+                            </span>
+                            <span className="text-xs font-black text-neutral-900">
+                              {(() => {
+                                const usedMB = profile?.storageUsed || 0;
+                                const maxMB = planDetails?.maxStorageMB || 100;
+                                return `${usedMB.toFixed(2)} MB / ${maxMB} MB`;
+                              })()}
+                            </span>
+                          </div>
+
+                          <div className="w-full h-1.5 bg-black/[0.03] rounded-full overflow-hidden mb-2">
+                            {(() => {
+                              const usedMB = profile?.storageUsed || 0;
+                              const maxMB = planDetails?.maxStorageMB || 100;
+                              const usedPercent = Math.min((usedMB / maxMB) * 100, 100);
+                              return <div className="h-full bg-violet-600 rounded-full transition-all duration-500 shadow-[0_0_8px_rgba(124,58,237,0.4)]" style={{ width: `${usedPercent}%` }} />;
+                            })()}
+                          </div>
+                        </div>
+
+                        <div className="mt-4 pt-4 border-t border-black/[0.03] flex items-center justify-between text-[10px] text-neutral-400 font-bold uppercase tracking-wider">
+                          <span>{lang === "id" ? "Status Penyimpanan" : "Storage Status"}</span>
+                          {(() => {
+                            const usedMB = profile?.storageUsed || 0;
+                            const maxMB = planDetails?.maxStorageMB || 100;
+                            const usedPercent = (usedMB / maxMB) * 100;
+                            if (usedPercent >= 90) {
+                              return <span className="text-red-600 font-bold">{lang === "id" ? "Hampir Penuh" : "Almost Full"}</span>;
+                            } else if (usedPercent >= 75) {
+                              return <span className="text-amber-600 font-bold">{lang === "id" ? "Peringatan" : "Warning"}</span>;
+                            } else {
+                              return <span className="text-emerald-600 font-bold">✓ {lang === "id" ? "Normal" : "Good"}</span>;
+                            }
+                          })()}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1206,12 +1410,8 @@ export function SettingsPanel({
                         
                         <div className="flex items-center gap-2 mb-3">
                           <h3 className="text-xl font-black text-neutral-900">
-                            {planDetails?.name ? planDetails.name.replace(/\s*\(?(annual|monthly|tahunan|bulanan)\)?/gi, '').replace(/\s+plan/gi, '').trim()
-                              : profile?.plan === "vip"
-                              ? "VIP Lifetime"
-                              : profile?.activeUntil && new Date(profile.activeUntil) > new Date()
-                              ? "Premium PRO"
-                              : "Free Account"}
+                            {planDetails?.name ? planDetails.name.replace(/\s*\(?(annual|monthly|tahunan|bulanan)\)?/gi, '').replace(/\s+plan/gi, '').trim().toUpperCase()
+                              : profile?.plan ? profile.plan.toUpperCase() : "FREE"}
                           </h3>
                           {profile?.plan === "vip" && <Crown className="text-amber-500 shrink-0" size={18} />}
                         </div>
@@ -1974,6 +2174,34 @@ export function SettingsPanel({
                       </div>
                     )}
                   </div>
+                </div>
+              )}
+
+              {/* TAB 13: NOTIFICATIONS */}
+              {activeTab === "notifications" && (
+                <div className="flex flex-col gap-6" style={{ height: "calc(100vh - 120px)" }}>
+                  <NotificationPanel
+                    notifications={notifications}
+                    onClose={() => {}}
+                    onRead={handleReadNotif}
+                    deleteNotif={deleteNotif}
+                    deleteAll={deleteAll}
+                    markAllRead={markAllRead}
+                    onInviteAction={handleInviteAction}
+                    onContactSupport={() => setActiveTab("support")}
+                  />
+                </div>
+              )}
+
+              {/* TAB 14: SUPPORT */}
+              {activeTab === "support" && (
+                <div className="flex flex-col gap-6" style={{ height: "calc(100vh - 120px)" }}>
+                  <ChatSupportPanel
+                    userId={profile?.uid || ""}
+                    userEmail={profile?.email || ""}
+                    userProfile={profile}
+                    inline={true}
+                  />
                 </div>
               )}
 

@@ -351,17 +351,32 @@ export function AnalyticsView({
   const [platformChartType, setPlatformChartType] = useState("doughnut");
   const [picChartType, setPicChartType] = useState("doughnut");
   const [heatmapMetric, setHeatmapMetric] = useState("engagement");
-  const [activeSubTabState, setActiveSubTabState] = useState("overview");
-  const activeSubTab = activeSubTabProp !== undefined ? activeSubTabProp : activeSubTabState;
-  const setActiveSubTab = setActiveSubTabProp !== undefined ? setActiveSubTabProp : setActiveSubTabState;
-
-  // States for Cetak Laporan PDF
-  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
-
+  const [demoPlatformFilter, setDemoPlatformFilter] = useState("all");
 
   const platformNames = useMemo(() => {
     return (platforms || []).map((p: any) => typeof p === 'string' ? p : p.name);
   }, [platforms]);
+
+  const demoPlatformOptions = useMemo(() => {
+    const list = [
+      { id: "all", label: lang === "id" ? "Semua Platform" : "All Platforms" }
+    ];
+    platformNames.forEach((name: string) => {
+      list.push({ id: name.toLowerCase(), label: name });
+    });
+    return list;
+  }, [platformNames, lang]);
+
+  useEffect(() => {
+    if (platformFilter) {
+      setDemoPlatformFilter(platformFilter.toLowerCase());
+    }
+  }, [platformFilter]);
+
+  const [activeSubTabState, setActiveSubTabState] = useState("overview");
+  const activeSubTab = activeSubTabProp !== undefined ? activeSubTabProp : activeSubTabState;
+  const setActiveSubTab = setActiveSubTabProp !== undefined ? setActiveSubTabProp : setActiveSubTabState;
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
 
   const handleOpenPrintModal = () => {
     if (!hasCapability('pdfExport')) {
@@ -995,7 +1010,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
 2. Evaluasi Konten: Analisis pola dari konten yang berhasil (Winners) vs kurang berhasil (Losers), apa yang membedakannya (misalnya topik, pilar, atau platform).
 3. Next Step Pengembangan Konten: Berikan 3-5 saran konkrit dan actionable untuk pembuatan konten berikutnya berdasarkan data di atas.`;
 
-      const data = await callAiWithQuota(auth.currentUser?.uid || 'anon', userProfile?.plan, { prompt, model: planDetails?.capabilities?.allowedModels?.[0] || "gemini-3.6-flash" }, planDetails?.aiTokenLimit);
+      const data = await callAiWithQuota(auth.currentUser?.uid || 'anon', userProfile?.plan, { prompt, model: planDetails?.capabilities?.allowedModels?.[0] || "gemini-3.6-flash" }, planDetails?.aiTokenLimitDaily, planDetails?.aiTokenLimit);
       setAiInsight(data.text || lang === "id" ? "Tidak ada respon dari AI." : "No response from AI.");
     } catch(e:any) {
       console.error("AI Error:", e);
@@ -1018,24 +1033,9 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
       <div ref={topAnchorRef} className="absolute top-0 left-0 h-[1px] w-full" />
       
       {/* Header */}
-      <div className="pt-4 md:pt-6 pb-2 flex justify-between items-start md:items-end gap-4">
-         <div className="min-w-0 flex-1">
-           <h1 className="text-2xl font-extrabold m-0 text-gray-900 tracking-tight flex items-center gap-2">
-             {activeSubTab === "overview" && "Overview"}
-             {activeSubTab === "content" && "Content"}
-             {activeSubTab === "trends" && "Trends"}
-             {activeSubTab === "activity" && "Audience"}
-             <Sparkles size={20} className="text-blue-600 shrink-0" />
-           </h1>
-           <p className="text-sm text-gray-500 mt-1">
-             {activeSubTab === "overview" && "Monitor overall content performance summaries with real-time data."}
-             {activeSubTab === "content" && "Analyze the detailed performance of each post and your content types."}
-             {activeSubTab === "trends" && "Track growth graphics of key metrics and campaign effectiveness over time."}
-             {activeSubTab === "activity" && "Identify the best times and highest interactions of your audience based on posting times."}
-           </p>
-         </div>
-         <div className="flex items-center gap-2 shrink-0 pt-1 md:pt-0">
-           {isMobile && (
+      {isMobile && (
+        <div className="pt-2 pb-2 flex justify-end items-center gap-4 w-full">
+           <div className="flex items-center gap-2 shrink-0">
              <button
                onClick={() => {
                  setTempSelectedMetrics([...activeMetrics]);
@@ -1056,17 +1056,13 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                  <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-blue-600 rounded-full ring-2 ring-white" />
                )}
              </button>
-           )}
-           <button onClick={handleOpenPrintModal} className="hidden md:flex hover-scale btn-hover px-4 py-2 rounded-xl h-10 text-[13px] font-bold bg-white border border-black/[0.04] text-gray-900 shadow-sm items-center gap-2 cursor-pointer transition-all">
-              <Download size={16} className="text-gray-900" />
-              {lang === "id" ? "Simpan Laporan PDF" : "Save PDF Report"}
-           </button>
-         </div>
-      </div>
+           </div>
+        </div>
+      )}
 
       {/* Filters */}
       {!isMobile && (
-        <div className="flex items-center justify-start gap-4 flex-wrap mb-4 bg-white border border-black/[0.03] rounded-full pl-8 pr-6 py-3.5 shadow-sm">
+        <div className="flex items-center justify-between gap-4 flex-wrap mb-0 bg-white/90 border border-black/[0.03] rounded-full pl-8 pr-4 py-2.5 shadow-[0_4px_20px_rgba(0,0,0,0.02)] w-full">
           <div className="flex gap-4 items-center flex-wrap">
             <PlatformFilterPopover 
               platformFilter={platformFilter} 
@@ -1090,6 +1086,14 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
               customE={customE} setCustomE={setCustomE}
             />
           </div>
+
+          <button 
+            onClick={handleOpenPrintModal} 
+            className="hover-scale btn-hover px-5 h-9 text-[13px] font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-full flex items-center gap-2 cursor-pointer transition-all border-none shadow-sm mr-2"
+          >
+             <Download size={15} />
+             {lang === "id" ? "Ekspor PDF" : "Export PDF"}
+          </button>
         </div>
       )}
 
@@ -1858,57 +1862,22 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
           {/* VIEW: ACTIVITY HEATMAP & DEMOGRAPHICS */}
           {activeSubTab === "activity" && (
             <div className="flex flex-col gap-6 w-full">
-              {/* Card 1: Heatmap Activity */}
-              <div id="analytics-audience-heatmap" className="bg-white rounded-2xl border border-black/[0.03] shadow-sm p-6 min-w-0 transition-shadow hover:shadow-md overflow-hidden w-full" style={{ scrollMarginTop: 100 }}>
-                <div className="w-full">
-                  <div className="flex items-center gap-2.5 mb-5 justify-between flex-wrap">
-                    <div className="flex items-center gap-2">
-                      <div className="bg-red-50 p-2 rounded-lg text-red-600"><Clock size={18} /></div>
-                      <h4 className="font-extrabold text-gray-900 text-[15px] m-0 tracking-tight">{lang === "id" ? "Heatmap Aktivitas (Best Time)" : "Activity Heatmap (Best Time)"}</h4>
-                    </div>
-                    <CustomDropdown 
-                      value={heatmapMetric} 
-                      onChange={setHeatmapMetric} 
-                      options={[
-                        {id:"engagement", label:"Engagement"},
-                        {id:"reach", label:"Awareness (Reach)"},
-                        {id:"views", label:"Awareness (Views)"}
-                      ]} 
-                      style={{ width: 170 }} 
-                    />
-                  </div>
-                  <div className="flex gap-[1%] mb-2">
-                    <div className="w-6 shrink-0"/>
-                    {Array.from({length:24}).map((_,i)=><div key={`h${i}`} className="flex-1 text-center text-[9px] text-gray-400 font-bold">{i}</div>)}
-                  </div>
-                  {heatmap.map((row,di) => {
-                    const rowMax = Math.max(...row, 1);
-                    return (
-                      <div key={di} className="flex gap-[1%] mb-1.5 items-center">
-                        <div className="w-6 text-[10px] font-bold text-gray-900 shrink-0">{(lang === "id" ? DAYS_S : DAYS_S_EN)[di]}</div>
-                        {row.map((val,hi) => (
-                          <div key={hi} title={`${(lang === "id" ? DAYS_ID : DAYS_EN)[di]} ${lang === "id" ? "Jam" : "Hour"} ${hi} - ${fmt(val)} ${heatmapMetric==="engagement"?"Eng":heatmapMetric==="reach"?"Reach":"Views"}`} className="flex-1 h-7 rounded-sm transition-all duration-200" style={{background:val===0?'#F3F4F6':(heatmapMetric==="engagement"?`#3B82F6`:`#8B5CF6`) , opacity: val===0 ? 1 : Math.max(0.15, val/rowMax)}}/>
-                        ))}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Card 2: Complete Demographics Section */}
+              {/* Card 1: Complete Demographics Section */}
               <div className="bg-white rounded-2xl border border-black/[0.03] shadow-sm p-6 min-w-0 transition-shadow hover:shadow-md overflow-hidden w-full">
                 {/* Header and Platform Indicator */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-5 border-b border-b-black/[0.03]">
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <div className="bg-blue-50 p-2 rounded-lg text-blue-600"><Users size={18} /></div>
-                      <h4 className="font-extrabold text-gray-900 text-[15px] m-0 tracking-tight">{lang === "id" ? "Demografi Lengkap Audiens" : "Complete Audience Demographics"}</h4>
+                      <h4 className="font-extrabold text-gray-900 text-[15px] m-0 tracking-tight">{lang === "id" ? "Demografi Audiens" : "Audience Demographics"}</h4>
                       
-                      {/* Interactive Active Platform Badge synced with navbar */}
-                      <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-blue-50 text-blue-600 border border-blue-100 flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-                        {platformFilter === "all" ? (lang === "id" ? "Semua Platform" : "All Platforms") : platformFilter}
-                      </span>
+                      {/* Interactive local platform dropdown */}
+                      <CustomDropdown 
+                        value={demoPlatformFilter} 
+                        onChange={setDemoPlatformFilter} 
+                        options={demoPlatformOptions} 
+                        style={{ width: 160 }} 
+                      />
                     </div>
                     <p className="text-xs text-gray-400 mt-1">{lang === "id" ? "Persebaran umur, jenis kelamin, lokasi, dan preferensi minat berdasarkan tiap platform yang difilter." : "Distribution of age, gender, location, and interest preferences based on each filtered platform."}</p>
                   </div>
@@ -1919,19 +1888,19 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                     className="flex items-center gap-2 px-3.5 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl cursor-pointer transition-all shadow-sm hover:shadow-md border-none"
                   >
                     <Edit2 size={13} />
-                    <span>{lang === "id" ? "Edit Data Demografi" : "Edit Demographic Data"}</span>
+                    <span>Edit</span>
                   </button>
                 </div>
 
                 {/* Demographics Content */}
                 {(() => {
-                  const isAll = platformFilter === "all";
+                  const isAll = demoPlatformFilter === "all";
                   const demo = isAll 
                     ? getAggregatedDemographics(demographics, platforms) 
-                    : demographics[platformFilter.toLowerCase()];
+                    : demographics[demoPlatformFilter];
 
                   const hasNoData = !demo;
-                  const activeDemo = demo || getDemographicsForPlatform(isAll ? "all" : platformFilter);
+                  const activeDemo = demo || getDemographicsForPlatform(isAll ? "all" : demoPlatformFilter);
 
                   return (
                     <div className="relative rounded-2xl overflow-hidden min-h-[340px]">
@@ -2085,6 +2054,43 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                     </div>
                   );
                 })()}
+              </div>
+
+              {/* Card 2: Heatmap Activity */}
+              <div id="analytics-audience-heatmap" className="bg-white rounded-2xl border border-black/[0.03] shadow-sm p-6 min-w-0 transition-shadow hover:shadow-md overflow-hidden w-full" style={{ scrollMarginTop: 100 }}>
+                <div className="w-full">
+                  <div className="flex items-center gap-2.5 mb-5 justify-between flex-wrap">
+                    <div className="flex items-center gap-2">
+                      <div className="bg-red-50 p-2 rounded-lg text-red-600"><Clock size={18} /></div>
+                      <h4 className="font-extrabold text-gray-900 text-[15px] m-0 tracking-tight">{lang === "id" ? "Heatmap Aktivitas (Best Time)" : "Activity Heatmap (Best Time)"}</h4>
+                    </div>
+                    <CustomDropdown 
+                      value={heatmapMetric} 
+                      onChange={setHeatmapMetric} 
+                      options={[
+                        {id:"engagement", label:"Engagement"},
+                        {id:"reach", label:"Awareness (Reach)"},
+                        {id:"views", label:"Awareness (Views)"}
+                      ]} 
+                      style={{ width: 170 }} 
+                    />
+                  </div>
+                  <div className="flex gap-[1%] mb-2">
+                    <div className="w-6 shrink-0"/>
+                    {Array.from({length:24}).map((_,i)=><div key={`h${i}`} className="flex-1 text-center text-[9px] text-gray-400 font-bold">{i}</div>)}
+                  </div>
+                  {heatmap.map((row,di) => {
+                    const rowMax = Math.max(...row, 1);
+                    return (
+                      <div key={di} className="flex gap-[1%] mb-1.5 items-center">
+                        <div className="w-6 text-[10px] font-bold text-gray-900 shrink-0">{(lang === "id" ? DAYS_S : DAYS_S_EN)[di]}</div>
+                        {row.map((val,hi) => (
+                          <div key={hi} title={`${(lang === "id" ? DAYS_ID : DAYS_EN)[di]} ${lang === "id" ? "Jam" : "Hour"} ${hi} - ${fmt(val)} ${heatmapMetric==="engagement"?"Eng":heatmapMetric==="reach"?"Reach":"Views"}`} className="flex-1 h-7 rounded-sm transition-all duration-200" style={{background:val===0?'#F3F4F6':(heatmapMetric==="engagement"?`#3B82F6`:`#8B5CF6`) , opacity: val===0 ? 1 : Math.max(0.15, val/rowMax)}}/>
+                        ))}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           )}

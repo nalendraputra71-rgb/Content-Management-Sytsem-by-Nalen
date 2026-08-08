@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { doc, updateDoc, collection, getDocs, setDoc, increment, query, where, auth, signOut } from "./firebase";
+import { doc, updateDoc, collection, getDocs, setDoc, increment, query, where, auth, signOut, getDoc } from "./firebase";
 import { db } from "./firebase";
 import { CARD, B, I } from "./data";
 import { motion, AnimatePresence } from "motion/react";
@@ -23,8 +23,13 @@ export function BillingView({ userProfile, onUpdate }: { userProfile: any, activ
   const [appliedVoucher, setAppliedVoucher] = useState<any>(null);
   const [voucherCodeInput, setVoucherCodeInput] = useState("");
   const [voucherError, setVoucherError] = useState("");
+
+  useEffect(() => {
+    document.title = lang === 'id' ? 'Billing & Upgrade - Hubify Social' : 'Billing & Upgrade - Hubify Social';
+  }, [lang]);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showFailureModal, setShowFailureModal] = useState(false);
+  const [systemConfig, setSystemConfig] = useState<any>(null);
 
   useEffect(() => {
     if (paymentStatus === "success") {
@@ -59,8 +64,19 @@ export function BillingView({ userProfile, onUpdate }: { userProfile: any, activ
         console.warn("Failed to load plans in BillingView:", error);
       }
     };
+    const loadSystemConfig = async () => {
+      try {
+        const snap = await getDoc(doc(db, "config", "system"));
+        if (snap.exists()) {
+          setSystemConfig(snap.data());
+        }
+      } catch (error) {
+        console.warn("Failed to load system config in BillingView:", error);
+      }
+    };
     loadPromos();
     loadPlans();
+    loadSystemConfig();
   }, []);
 
   const getPlanPrice = (planSlug: string, isAnn: boolean, defaultPrice: number) => {
@@ -109,7 +125,9 @@ export function BillingView({ userProfile, onUpdate }: { userProfile: any, activ
     priceAnnual: dbFreePlan?.price || 0,
     priceAnnualTotal: dbFreePlan?.price || 0,
     popular: dbFreePlan?.popular || false,
-    originalPrice: dbFreePlan?.originalPrice || 0
+    originalPrice: dbFreePlan?.originalPrice || 0,
+    trialEnabled: false,
+    trialDays: 0
   };
 
   const dynamicPlans = dbPlans.filter(p => (isAnnual ? p.addMonths >= 12 : p.addMonths < 12) && !p.id.startsWith('free')).sort((a,b) => a.price - b.price).map(p => {
@@ -131,7 +149,9 @@ export function BillingView({ userProfile, onUpdate }: { userProfile: any, activ
       popular: p.popular,
       originalPrice: p.originalPrice || 0,
       limits: p.limits,
-      capabilities: p.capabilities
+      capabilities: p.capabilities,
+      trialEnabled: p.trialEnabled || false,
+      trialDays: p.trialDays || 0
     };
   });
 
@@ -208,6 +228,64 @@ export function BillingView({ userProfile, onUpdate }: { userProfile: any, activ
     };
     setModal(selectedPlan);
     setVoucherError("");
+  };
+
+  const handleStartTrial = async (plan: any) => {
+    const auth = getAuth();
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      alert(lang === "id" ? "Anda harus login terlebih dahulu." : "You must log in first.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const userRef = doc(db, 'users', currentUser.uid);
+      const trialDurationDays = plan.trialDays || 7;
+      const expiryDate = new Date();
+      expiryDate.setDate(expiryDate.getDate() + trialDurationDays);
+
+      const existingUsedPlans = userProfile?.usedTrialPlans || [];
+      const updatedUsedPlans = existingUsedPlans.includes(plan.id) 
+        ? existingUsedPlans 
+        : [...existingUsedPlans, plan.id];
+
+      const trialData = {
+        plan: 'trial',
+        trialPlanId: plan.id,
+        activeUntil: expiryDate.toISOString(),
+        subscriptionStatus: 'pro',
+        trialStartedAt: new Date().toISOString(),
+        hasUsedTrial: true,
+        usedTrialPlans: updatedUsedPlans
+      };
+
+      await updateDoc(userRef, trialData);
+
+      await setDoc(doc(collection(db, "transactions")), {
+        userId: currentUser.uid,
+        userEmail: userProfile?.email || currentUser.email || 'unknown',
+        amount: 0,
+        planName: `${plan.name} (Trial Gratis)`,
+        paymentMethod: 'Free Trial',
+        status: 'PAID',
+        externalId: `trial_${plan.id}_${currentUser.uid}_${Date.now()}`,
+        timestamp: new Date().toISOString()
+      });
+
+      if (onUpdate) {
+        onUpdate(trialData);
+      }
+
+      alert(lang === "id" 
+        ? `Selamat! Anda berhasil mengaktifkan uji coba gratis ${plan.name} selama ${trialDurationDays} hari.` 
+        : `Success! You have activated a free trial for ${plan.name} for ${trialDurationDays} days.`
+      );
+      window.location.reload();
+    } catch (e: any) {
+      alert("Gagal mengaktifkan uji coba gratis: " + e.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSimulatePayment = async () => {
@@ -386,7 +464,7 @@ export function BillingView({ userProfile, onUpdate }: { userProfile: any, activ
                 key={p.id} 
                 className={`rounded-3xl p-6 flex flex-col h-full relative transition-all duration-200 ${
                   p.popular 
-                    ? "bg-[#0B2A4A] text-white shadow-xl lg:-translate-y-2 border border-blue-900" 
+                    ? "bg-[#0B2A4A] text-white shadow-xl border border-blue-900" 
                     : "bg-white text-slate-800 shadow-sm border border-slate-200 hover:shadow-md"
                 }`}
               >
@@ -397,7 +475,9 @@ export function BillingView({ userProfile, onUpdate }: { userProfile: any, activ
                 )}
 
                 <div className="mb-6">
-                  <div className={`text-lg font-bold mb-2 ${p.popular ? "text-white" : "text-slate-700"}`}>{p.name}</div>
+                  <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+                    <div className={`text-lg font-bold ${p.popular ? "text-white" : "text-slate-700"}`}>{p.name}</div>
+                  </div>
                   <div className="flex flex-col gap-1 mb-2">
                     {hasDiscount && (
                       <div className="flex items-center gap-1.5 flex-wrap">
@@ -445,16 +525,38 @@ export function BillingView({ userProfile, onUpdate }: { userProfile: any, activ
                     {currentPlanActive ? "Paket Saat Ini" : "Bawaan Akun"}
                   </button>
                 ) : (
-                  <button 
-                    onClick={() => handleSelectPlan(p)} 
-                    className={`w-full py-3 rounded-xl font-bold text-xs md:text-sm transition-all duration-200 mt-auto ${
-                      p.popular 
-                        ? "bg-white text-[#0B2A4A] hover:bg-slate-100 shadow-md" 
-                        : "bg-blue-50 text-blue-700 hover:bg-blue-100"
-                    }`}
-                  >
-                    {currentPlanActive ? "Perpanjang Paket" : "Pilih Paket"}
-                  </button>
+                  <div className="flex flex-col mt-auto w-full">
+                    {(() => {
+                      const hasUsedThisTrial = systemConfig?.trialLimitMode === "per_plan"
+                        ? (userProfile?.usedTrialPlans || []).includes(p.id)
+                        : !!userProfile?.hasUsedTrial;
+                      return p.trialEnabled && !hasUsedThisTrial;
+                    })() ? (
+                      <button 
+                        onClick={() => handleStartTrial(p)} 
+                        disabled={loading}
+                        className={`w-full py-3 rounded-xl font-bold text-xs md:text-sm transition-all duration-200 ${
+                          p.popular 
+                            ? "bg-white text-[#0B2A4A] hover:bg-slate-100 shadow-md" 
+                            : "bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
+                        }`}
+                      >
+                        {loading ? "Memproses..." : `Mulai Trial ${p.trialDays} Hari`}
+                      </button>
+                    ) : (
+                      <button 
+                        onClick={() => handleSelectPlan(p)} 
+                        disabled={loading}
+                        className={`w-full py-3 rounded-xl font-bold text-xs md:text-sm transition-all duration-200 ${
+                          p.popular 
+                            ? "bg-white text-[#0B2A4A] hover:bg-slate-100 shadow-md" 
+                            : "bg-blue-50 text-blue-700 hover:bg-blue-100"
+                        }`}
+                      >
+                        {currentPlanActive ? "Perpanjang Paket" : "Pilih Paket"}
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
             );
@@ -486,16 +588,16 @@ export function BillingView({ userProfile, onUpdate }: { userProfile: any, activ
         </div>
 
         {/* Feature Comparison */}
-        <div className="max-w-6xl mx-auto mb-20 overflow-x-auto">
+        <div className="max-w-6xl mx-auto mb-20">
           <h3 className="text-2xl font-bold text-center text-[#0B2A4A] mb-8">Perbandingan Fitur Lengkap</h3>
-          <div className="bg-white rounded-3xl shadow-sm border border-slate-200 min-w-[800px] overflow-hidden">
-            <table className="w-full text-left border-collapse">
-              <thead>
+          <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-x-auto lg:overflow-x-visible">
+            <table className="w-full text-left border-collapse min-w-[800px]">
+              <thead className="sticky top-0 z-20 shadow-sm">
                 <tr className="bg-slate-100 border-b border-slate-200">
-                  <th className="py-4 px-6 font-bold text-slate-700 w-1/3">Fitur</th>
-                  <th className="py-4 px-4 font-bold text-slate-700 text-center">Free</th>
+                  <th className="py-4 px-6 font-bold text-slate-700 w-1/3 bg-slate-100">Fitur</th>
+                  <th className="py-4 px-4 font-bold text-slate-700 text-center bg-slate-100">Free</th>
                   {dynamicPlans.map(plan => (
-                    <th key={plan.id} className={`py-4 px-4 font-bold text-center ${plan.popular ? 'text-blue-700 bg-blue-50/80' : 'text-[#0B2A4A]'}`}>
+                    <th key={plan.id} className={`py-4 px-4 font-bold text-center ${plan.popular ? 'text-blue-700 bg-blue-50' : 'text-[#0B2A4A] bg-slate-100'}`}>
                       {plan.name}
                     </th>
                   ))}

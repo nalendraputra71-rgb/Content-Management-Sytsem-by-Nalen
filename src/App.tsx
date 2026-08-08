@@ -323,7 +323,9 @@ export default function App() {
               maxWorkspaces: planData.limits?.workspaces ?? 1,
               maxSocialAccounts: planData.limits?.socialAccounts ?? 10,
               aiTokenLimit: planData.limits?.aiCreditsPerMonth ?? 50,
+              aiTokenLimitDaily: planData.limits?.aiCreditsPerDay ?? 50,
               maxTeamMembers: planData.limits?.teamMembers ?? 0,
+              maxStorageMB: planData.limits?.storageMB ?? 100,
             });
           } else {
             const fallbackSnap = await getDocs(collection(db, "plans"));
@@ -338,22 +340,57 @@ export default function App() {
                  maxWorkspaces: planData.limits?.workspaces ?? 1,
                  maxSocialAccounts: planData.limits?.socialAccounts ?? 10,
                  aiTokenLimit: planData.limits?.aiCreditsPerMonth ?? 50,
+              aiTokenLimitDaily: planData.limits?.aiCreditsPerDay ?? 50,
                  maxTeamMembers: planData.limits?.teamMembers ?? 0,
+              maxStorageMB: planData.limits?.storageMB ?? 100,
                });
             }
             else setPlanDetails(null);
           }
         } catch (e) { console.error("Error fetching plan:", e); }
       } else if (profile?.plan === "trial") {
-         setPlanDetails({
-           maxWorkspaces: 2,
-           maxSocialAccounts: 15,
-           aiTokenLimit: 100,
-           maxTeamMembers: 3,
-           features: [],
-           limits: { workspaces: 2, socialAccounts: 15, aiCreditsPerMonth: 100, teamMembers: 3, storageMB: 5000 },
-           capabilities: { autoPublishing: true, analyticsLevel: 'advanced', exportReports: 'basic', contentApproval: false, commentManagement: true, supportLevel: 'email' }
-         });
+         const targetPlanId = profile?.trialPlanId || systemConfig?.trialPlanId || "pro-monthly";
+         try {
+           const snap = await getDoc(doc(db, "plans", targetPlanId));
+           if (snap.exists()) {
+             const planData = snap.data();
+             setPlanDetails({
+               ...planData,
+               maxWorkspaces: planData.limits?.workspaces ?? 1,
+               maxSocialAccounts: planData.limits?.socialAccounts ?? 10,
+               aiTokenLimit: planData.limits?.aiCreditsPerMonth ?? 50,
+              aiTokenLimitDaily: planData.limits?.aiCreditsPerDay ?? 50,
+               maxTeamMembers: planData.limits?.teamMembers ?? 0,
+               maxStorageMB: planData.limits?.storageMB ?? 100,
+             });
+           } else {
+             // Fallback if plan doesn't exist
+             setPlanDetails({
+               maxWorkspaces: 2,
+               maxSocialAccounts: 15,
+               aiTokenLimit: 100,
+               aiTokenLimitDaily: 50,
+               maxTeamMembers: 3,
+               maxStorageMB: 5000,
+               features: [],
+               limits: { workspaces: 2, socialAccounts: 15, aiCreditsPerMonth: 100, teamMembers: 3, storageMB: 5000 },
+               capabilities: { autoPublishing: true, analyticsLevel: 'advanced', exportReports: 'basic', contentApproval: false, commentManagement: true, supportLevel: 'email' }
+             });
+           }
+         } catch (e) {
+           console.error("Error fetching trial plan:", e);
+           setPlanDetails({
+             maxWorkspaces: 2,
+             maxSocialAccounts: 15,
+             aiTokenLimit: 100,
+               aiTokenLimitDaily: 50,
+             maxTeamMembers: 3,
+             maxStorageMB: 5000,
+             features: [],
+             limits: { workspaces: 2, socialAccounts: 15, aiCreditsPerMonth: 100, teamMembers: 3, storageMB: 5000 },
+             capabilities: { autoPublishing: true, analyticsLevel: 'advanced', exportReports: 'basic', contentApproval: false, commentManagement: true, supportLevel: 'email' }
+           });
+         }
       } else {
          try {
            const snap = await getDoc(doc(db, "plans", "free-monthly"));
@@ -363,7 +400,9 @@ export default function App() {
                maxWorkspaces: freeData.limits?.workspaces ?? 1,
                maxSocialAccounts: freeData.limits?.socialAccounts ?? 3,
                aiTokenLimit: freeData.limits?.aiCreditsPerMonth ?? 10,
+               aiTokenLimitDaily: freeData.limits?.aiCreditsPerDay ?? 10,
                maxTeamMembers: freeData.limits?.teamMembers ?? 0,
+               maxStorageMB: freeData.limits?.storageMB ?? 100,
                features: []
              });
            } else {
@@ -371,7 +410,9 @@ export default function App() {
                maxWorkspaces: 1,
                maxSocialAccounts: 3,
                aiTokenLimit: 10,
+               aiTokenLimitDaily: 10,
                maxTeamMembers: 0,
+               maxStorageMB: 100,
                features: [],
                limits: { workspaces: 1, socialAccounts: 3, aiCreditsPerMonth: 10, teamMembers: 0, storageMB: 100 },
                capabilities: { autoPublishing: false, analyticsLevel: 'basic', exportReports: 'none', contentApproval: false, commentManagement: false, supportLevel: 'community' }
@@ -382,7 +423,9 @@ export default function App() {
              maxWorkspaces: 1,
              maxSocialAccounts: 3,
              aiTokenLimit: 10,
+               aiTokenLimitDaily: 10,
              maxTeamMembers: 0,
+               maxStorageMB: 100,
              features: [],
              limits: { workspaces: 1, socialAccounts: 3, aiCreditsPerMonth: 10, teamMembers: 0, storageMB: 100 },
              capabilities: { autoPublishing: false, analyticsLevel: 'basic', exportReports: 'none', contentApproval: false, commentManagement: false, supportLevel: 'community' }
@@ -391,7 +434,7 @@ export default function App() {
       }
     };
     fetchPlan();
-  }, [profile?.plan]);
+  }, [profile?.plan, systemConfig?.trialPlanId]);
 
   const currentTheme = useMemo(() => {
     return THEMES.find(t => t.id === profile?.themeId) || THEMES[0];

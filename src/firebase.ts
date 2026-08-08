@@ -161,40 +161,74 @@ export async function testFirestoreConnection() {
 }
 
 // Request AI processing, incrementing quota usage in Firestore
-export async function callAiWithQuota(uid: string, plan: string | undefined, payload: any, maxAiTokens: number = 100000): Promise<any> {
-    const userDocRef = doc(db, 'users', uid);
+export async function callAiWithQuota(uid: string, plan: string | undefined, payload: any, maxDaily: number = 50, maxMonthly: number = 100000): Promise<any> {
+    const userDocRef = doc(db, "users", uid);
     const userSnap = await getDoc(userDocRef);
+    let aiCreditsToday = 0;
     let aiTokensUsed = 0;
     let lastAiRequestMonth = "";
+    let lastAiRequestDate = "";
+    let userData: any = null;
     
     const currentUser = auth.currentUser;
     let isAdmin = currentUser?.email?.toLowerCase() === "nalendraputra71@gmail.com";
-
     if (userSnap.exists()) {
         const data = userSnap.data();
+        userData = data;
+        aiCreditsToday = data?.aiCreditsToday || data?.aiRequestsToday || 0; // Fallback to old format
+        lastAiRequestDate = data?.lastAiRequestDate || "";
         aiTokensUsed = data?.aiTokensUsed || 0;
         lastAiRequestMonth = data?.lastAiRequestMonth || "";
         if (data?.role === "admin" || data?.email?.toLowerCase() === "nalendraputra71@gmail.com") {
             isAdmin = true;
         }
     }
+    const now = new Date();
+    const year = now.getFullYear();
+    const monthStr = String(now.getMonth() + 1).padStart(2, '0');
+    const dayStr = String(now.getDate()).padStart(2, '0');
+    const todayStr = `${year}-${monthStr}-${dayStr}`;
 
-    const currentMonth = new Date().toISOString().substring(0, 7); // e.g., "2026-08"
+    let resetDay = 1;
+    if (userData?.activeUntil) {
+        resetDay = new Date(userData.activeUntil).getDate();
+    } else if (userData?.createdAt) {
+        resetDay = new Date(userData.createdAt).getDate();
+    }
+    
+    let cycleStartMonth = now.getMonth();
+    let cycleStartYear = now.getFullYear();
+    if (now.getDate() < resetDay) {
+        cycleStartMonth -= 1;
+        if (cycleStartMonth < 0) {
+            cycleStartMonth = 11;
+            cycleStartYear -= 1;
+        }
+    }
+    const maxDaysInCycleStartMonth = new Date(cycleStartYear, cycleStartMonth + 1, 0).getDate();
+    const actualResetDay = Math.min(resetDay, maxDaysInCycleStartMonth);
+    const currentMonth = `${cycleStartYear}-${String(cycleStartMonth + 1).padStart(2, '0')}-${String(actualResetDay).padStart(2, '0')}`;
+
     if (lastAiRequestMonth !== currentMonth) {
         aiTokensUsed = 0;
     }
-
-    const MAX_TOKENS = isAdmin ? 999999999 : (maxAiTokens === -1 ? 999999999 : (maxAiTokens || 100000));
+    if (lastAiRequestDate !== todayStr) {
+        aiCreditsToday = 0;
+    }
+    const MAX_DAILY = isAdmin ? 999999999 : (maxDaily === -1 ? 999999999 : (maxDaily || 50));
+    const MAX_MONTHLY = isAdmin ? 999999999 : (maxMonthly === -1 ? 999999999 : (maxMonthly || 100000));
     
-    if (!isAdmin && aiTokensUsed >= MAX_TOKENS) {
-        throw new Error(`Credit AI Anda bulan ini habis (${aiTokensUsed.toLocaleString()}/${MAX_TOKENS.toLocaleString()} credits). Silakan upgrade plan Anda.`);
+    if (!isAdmin && aiCreditsToday >= MAX_DAILY) {
+        throw new Error(`Kuota Harian HUB.AI Anda habis (${aiCreditsToday.toLocaleString(undefined, {maximumFractionDigits: 1})}/${MAX_DAILY.toLocaleString()} credits). Silakan upgrade plan Anda atau coba besok.`);
+    }
+    if (!isAdmin && aiTokensUsed >= MAX_MONTHLY) {
+        throw new Error(`Kuota Bulanan HUB.AI Anda habis (${aiTokensUsed.toLocaleString(undefined, {maximumFractionDigits: 1})}/${MAX_MONTHLY.toLocaleString()} credits). Silakan upgrade plan Anda.`);
     }
 
     let token = "";
     if (currentUser) {
         token = await currentUser.getIdToken();
     }
-
     const req = await fetch("/api/gemini", {
         method: "POST",
         headers: { 
@@ -203,7 +237,6 @@ export async function callAiWithQuota(uid: string, plan: string | undefined, pay
         },
         body: JSON.stringify(payload)
     });
-
     if (!req.ok) {
         let errorMsg = `Server error (${req.status})`;
         try {
@@ -217,23 +250,27 @@ export async function callAiWithQuota(uid: string, plan: string | undefined, pay
     
     const data = await req.json();
     
-    // Hitung Multiplier berdasarkan model
+    // Calculate credits based on actual token usage and model tier
     const model = payload.model || "gemini-3.6-flash";
-    let multiplier = 10; // default gemini-3.6-flash
-    if (model.includes("gemini-3.1-flash-lite")) multiplier = 1;
-    else if (model.includes("gemini-3.6-flash")) multiplier = 10;
-    else if (model.includes("gemini-3.1-pro")) multiplier = 25;
+    let multiplier = 1; // Base 1 credit per 1000 tokens for Flash
+    if (model.includes("gemini-3.1-flash-lite")) multiplier = 0.2;
+    else if (model.includes("gemini-3.6-flash")) multiplier = 1;
+    else if (model.includes("gemini-3.1-pro")) multiplier = 5;
 
     const rawTokens = data.usage?.totalTokenCount || 0;
-    const billedTokens = rawTokens * multiplier;
+    let creditsUsed = (rawTokens / 1000) * multiplier;
+    if (creditsUsed === 0) creditsUsed = 0.5; // Minimal credit charge if token count is missing
+    creditsUsed = Math.round(creditsUsed * 100) / 100;
 
     try {
         await updateDoc(userDocRef, {
-            aiTokensUsed: lastAiRequestMonth !== currentMonth ? billedTokens : increment(billedTokens),
+            aiCreditsToday: lastAiRequestDate !== todayStr ? creditsUsed : increment(creditsUsed),
+            lastAiRequestDate: todayStr,
+            aiTokensUsed: lastAiRequestMonth !== currentMonth ? creditsUsed : increment(creditsUsed),
             lastAiRequestMonth: currentMonth
         });
     } catch (e) {
-        console.error("Gagal update token stat user", e);
+        console.error("Gagal update kuota harian AI user", e);
     }
 
     return data;

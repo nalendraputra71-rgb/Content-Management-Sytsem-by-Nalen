@@ -36,6 +36,8 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
           name: p.name.replace(/ \((Monthly|Annual)\)/i, ''),
           desc: p.desc,
           popular: p.popular || false,
+          trialEnabled: p.trialEnabled || false,
+          trialDays: p.trialDays || 0,
           limits: p.limits || {},
           capabilities: p.capabilities || {},
           features: p.features || [],
@@ -52,6 +54,8 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
           g.name = p.name.replace(/ \((Monthly|Annual)\)/i, '');
           g.desc = p.desc;
           g.popular = p.popular || g.popular;
+          g.trialEnabled = p.trialEnabled || g.trialEnabled;
+          g.trialDays = p.trialDays || g.trialDays;
           g.limits = p.limits || g.limits;
           g.capabilities = p.capabilities || g.capabilities;
           g.features = p.features || g.features;
@@ -77,6 +81,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
 
   const [showPlanModal, setShowPlanModal] = useState(false);
   const [editingPlan, setEditingPlan] = useState<any>(null);
+  const [editingFeatures, setEditingFeatures] = useState<string[]>([]);
   const [modalPlanTab, setModalPlanTab] = useState<"general" | "pricing" | "limits" | "capabilities">("general");
   const [financeFilter, setFinanceFilter] = useState({ month: new Date().getMonth() + 1, year: new Date().getFullYear() });
   const [showPromoModal, setShowPromoModal] = useState(false);
@@ -107,7 +112,9 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
   const [systemSettings, setSystemSettings] = useState<any>({
     maintenanceMode: false,
     allowRegistration: true,
-    trialDays: 7
+    trialDays: 7,
+    trialEnabled: true,
+    trialPlanId: "pro-monthly"
   });
 
   const [featureRows, setFeatureRows] = useState<any[]>([]);
@@ -248,7 +255,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
           addMonths: 1,
           popular: false,
           features: ["1 Workspace", "Hub.AI: 10x Generate AI / Bulan", "Analitik Dasar", "Kalender Konten"],
-          limits: { workspaces: 1, socialAccounts: 3, teamMembers: 1, aiCreditsPerMonth: 100000, storageMB: 100 },
+          limits: { workspaces: 1, socialAccounts: 3, teamMembers: 1, aiCreditsPerMonth: 100000, aiCreditsPerDay: 5000, storageMB: 100 },
           capabilities: { autoPublishing: false, analyticsLevel: 'basic', exportReports: 'none', contentApproval: false, commentManagement: false, supportLevel: 'community' }
         },
         {
@@ -260,7 +267,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
           addMonths: 12,
           popular: false,
           features: ["1 Workspace", "Hub.AI: 10x Generate AI / Bulan", "Analitik Dasar", "Kalender Konten"],
-          limits: { workspaces: 1, socialAccounts: 3, teamMembers: 1, aiCreditsPerMonth: 100000, storageMB: 100 },
+          limits: { workspaces: 1, socialAccounts: 3, teamMembers: 1, aiCreditsPerMonth: 100000, aiCreditsPerDay: 5000, storageMB: 100 },
           capabilities: { autoPublishing: false, analyticsLevel: 'basic', exportReports: 'none', contentApproval: false, commentManagement: false, supportLevel: 'community' }
         },
         {
@@ -272,7 +279,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
           addMonths: 1,
           popular: false,
           features: ["1 Workspace", "Hub.AI: 100x Generate AI / Bulan", "10 Akun Sosmed"],
-          limits: { workspaces: 1, socialAccounts: 10, teamMembers: 1, aiCreditsPerMonth: 1000000, storageMB: 1000 },
+          limits: { workspaces: 1, socialAccounts: 10, teamMembers: 1, aiCreditsPerMonth: 1000000, aiCreditsPerDay: 50000, storageMB: 1000 },
           capabilities: { autoPublishing: true, analyticsLevel: 'advanced', exportReports: 'basic', contentApproval: false, commentManagement: true, supportLevel: 'email' }
         },
         {
@@ -284,7 +291,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
           addMonths: 12,
           popular: false,
           features: ["1 Workspace", "Hub.AI: 100x Generate AI / Bulan", "10 Akun Sosmed"],
-          limits: { workspaces: 1, socialAccounts: 10, teamMembers: 1, aiCreditsPerMonth: 1000000, storageMB: 1000 },
+          limits: { workspaces: 1, socialAccounts: 10, teamMembers: 1, aiCreditsPerMonth: 1000000, aiCreditsPerDay: 50000, storageMB: 1000 },
           capabilities: { autoPublishing: true, analyticsLevel: 'advanced', exportReports: 'basic', contentApproval: false, commentManagement: true, supportLevel: 'email' }
         },
         {
@@ -296,7 +303,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
           addMonths: 1,
           popular: true,
           features: ["3 Workspaces", "Hub.AI: 500x Generate AI / Bulan", "Kolaborasi 5 Anggota Tim"],
-          limits: { workspaces: 3, socialAccounts: 30, teamMembers: 5, aiCreditsPerMonth: 5000000, storageMB: 10000 },
+          limits: { workspaces: 3, socialAccounts: 30, teamMembers: 5, aiCreditsPerMonth: 5000000, aiCreditsPerDay: 200000, storageMB: 10000 },
           capabilities: { autoPublishing: true, analyticsLevel: 'advanced', exportReports: 'custom', contentApproval: true, commentManagement: true, supportLevel: 'priority' }
         },
         {
@@ -308,7 +315,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
           addMonths: 12,
           popular: true,
           features: ["3 Workspaces", "Hub.AI: 500x Generate AI / Bulan", "Kolaborasi 5 Anggota Tim"],
-          limits: { workspaces: 3, socialAccounts: 30, teamMembers: 5, aiCreditsPerMonth: 5000000, storageMB: 10000 },
+          limits: { workspaces: 3, socialAccounts: 30, teamMembers: 5, aiCreditsPerMonth: 5000000, aiCreditsPerDay: 200000, storageMB: 10000 },
           capabilities: { autoPublishing: true, analyticsLevel: 'advanced', exportReports: 'custom', contentApproval: true, commentManagement: true, supportLevel: 'priority' }
         },
         {
@@ -320,7 +327,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
           addMonths: 1,
           popular: false,
           features: ["Unlimited Workspaces", "Hub.AI: Unlimited Generate AI", "Custom Analytics & Reporting", "White-label Export & Branding", "Prioritas Dukungan 24/7 VIP"],
-          limits: { workspaces: -1, socialAccounts: -1, teamMembers: -1, aiCreditsPerMonth: -1, storageMB: -1 },
+          limits: { workspaces: -1, socialAccounts: -1, teamMembers: -1, aiCreditsPerMonth: -1, aiCreditsPerDay: -1, storageMB: -1 },
           capabilities: { autoPublishing: true, analyticsLevel: 'custom', exportReports: 'white-label', contentApproval: true, commentManagement: true, supportLevel: 'vip' }
         },
         {
@@ -332,7 +339,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
           addMonths: 12,
           popular: false,
           features: ["Unlimited Workspaces", "Hub.AI: Unlimited Generate AI", "Custom Analytics & Reporting", "White-label Export & Branding", "Prioritas Dukungan 24/7 VIP"],
-          limits: { workspaces: -1, socialAccounts: -1, teamMembers: -1, aiCreditsPerMonth: -1, storageMB: -1 },
+          limits: { workspaces: -1, socialAccounts: -1, teamMembers: -1, aiCreditsPerMonth: -1, aiCreditsPerDay: -1, storageMB: -1 },
           capabilities: { autoPublishing: true, analyticsLevel: 'custom', exportReports: 'white-label', contentApproval: true, commentManagement: true, supportLevel: 'vip' }
         }
       ];
@@ -407,6 +414,8 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
        const price_annual = Number(fd.get("price_annual"));
        const originalPrice_annual = Number(fd.get("originalPrice_annual")) || 0;
        const popular = fd.get("popular") === "on";
+       const trialEnabled = fd.get("trialEnabled") === "on";
+       const trialDays = Number(fd.get("trialDays")) || 0;
 
        
        const limits = {
@@ -414,6 +423,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
           socialAccounts: Number(fd.get("socialAccounts")),
           teamMembers: Number(fd.get("teamMembers")),
           aiCreditsPerMonth: Number(fd.get("aiCreditsPerMonth")),
+          aiCreditsPerDay: Number(fd.get("aiCreditsPerDay") || -1),
           storageMB: Number(fd.get("storageMB"))
        };
        
@@ -455,7 +465,9 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
           originalPrice: originalPrice_monthly,
           addMonths: 1,
           popular,
-          features: [],
+          trialEnabled,
+          trialDays,
+          features: editingFeatures,
           limits,
           capabilities
        };
@@ -470,7 +482,9 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
           originalPrice: originalPrice_annual,
           addMonths: 12,
           popular,
-          features: [],
+          trialEnabled: false,
+          trialDays: 0,
+          features: editingFeatures,
           limits,
           capabilities
        };
@@ -478,7 +492,12 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
        await setDoc(doc(db, "plans", monthlyId), monthlyData);
        await setDoc(doc(db, "plans", annualId), annualData);
 
+       
        setShowPlanModal(false);
+       // Refresh plans locally
+       getDocs(collection(db, "plans")).then(snap => {
+         setPlans(snap.docs.map(d => ({id: d.id, ...(d.data() as any)})));
+       });
      } catch (e: any) { alert(e.message); }
   };
 
@@ -534,6 +553,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
       }
 
       await setDoc(doc(db, "config", "system"), finalUpdates, { merge: true });
+      setSystemSettings((prev: any) => ({ ...prev, ...finalUpdates }));
     } catch (e: any) { alert(e.message); }
   };
 
@@ -1146,7 +1166,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                      <button onClick={() => { setEditingPromo({}); setShowPromoModal(true); }} style={{background:"#FFFFFF", border:"1px solid rgba(0,0,0,0.08)", color: "#111827", padding:"10px 18px", borderRadius:12, fontSize:13, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", gap:6, transition: "all 0.2s"}} className="hover-scale">
                        <Tag size={14}/> Voucher Baru
                      </button>
-                     <button onClick={() => { setEditingPlan({}); setShowPlanModal(true); }} style={{background:"var(--theme-primary, #2563EB)", color:"white", border:"none", padding:"10px 20px", borderRadius:12, fontSize:13, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", gap:6, transition: "all 0.2s"}} className="hover-scale">
+                     <button onClick={() => { setEditingPlan({}); setEditingFeatures([]); setShowPlanModal(true); }} style={{background:"var(--theme-primary, #2563EB)", color:"white", border:"none", padding:"10px 20px", borderRadius:12, fontSize:13, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", gap:6, transition: "all 0.2s"}} className="hover-scale">
                        <Package size={14}/> Paket Baru
                      </button>
                    </div>
@@ -1276,7 +1296,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
 
                          {/* Action Buttons */}
                          <div style={{display:"flex", gap:10, marginTop: "auto", paddingTop: 10, borderTop: "1px solid rgba(0,0,0,0.03)"}}>
-                            <button type="button" onClick={() => { setEditingPlan(p); setShowPlanModal(true); }} style={{flex:1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding:"10px", borderRadius:12, border:"1px solid rgba(0,0,0,0.05)", background:"#FFFFFF", fontWeight:700, color: "#111827", cursor:"pointer", fontSize:12, transition: "all 0.2s"}} className="hover-bg-light">
+                            <button type="button" onClick={() => { setEditingPlan(p); setEditingFeatures(p.features || []); setShowPlanModal(true); }} style={{flex:1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding:"10px", borderRadius:12, border:"1px solid rgba(0,0,0,0.05)", background:"#FFFFFF", fontWeight:700, color: "#111827", cursor:"pointer", fontSize:12, transition: "all 0.2s"}} className="hover-bg-light">
                               <Edit2 size={12} /> Edit Detail
                             </button>
                              {p.id !== 'free' ? (
@@ -1694,15 +1714,61 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                     </div>
 
                     <div style={CARD({padding:24, borderRadius:24})}>
-                       <h3 style={{fontSize:16, fontWeight:800, marginBottom:20, display:"flex", alignItems:"center", gap:8}}><Calendar size={18}/> Billing Logic</h3>
-                       <div style={{display:"flex", flexDirection:"column", gap:16}}>
-                          <div>
-                             <div style={{fontSize:13, fontWeight:700, marginBottom:8}}>Masa Uji Coba (Hari)</div>
-                             <input type="number" defaultValue={systemSettings.trialDays} 
-                               onBlur={(e)=>updateSystemConfig({trialDays: Number(e.target.value)})}
-                               style={{width:"100%", padding:"12px", borderRadius:12, border:"1px solid #EEE", fontSize:14}} />
-                             <div style={{fontSize:11, color:"#999", marginTop:6}}>Default jumlah hari user baru mendapatkan akses PRO gratis.</div>
+                       <h3 style={{fontSize:16, fontWeight:800, marginBottom:20, display:"flex", alignItems:"center", gap:8}}><Calendar size={18}/> Billing Logic & Free Trial</h3>
+                       <div style={{display:"flex", flexDirection:"column", gap:20}}>
+                          <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", borderBottom: "1px solid rgba(0,0,0,0.03)", paddingBottom: 16}}>
+                             <div>
+                                <div style={{fontSize:14, fontWeight:700}}>{lang === "id" ? "Aktifkan Uji Coba Gratis (Trial)" : "Enable Free Trial"}</div>
+                                <div style={{fontSize:12, color:"#999"}}>{lang === "id" ? "Berikan masa trial berbayar secara otomatis untuk pendaftaran baru." : "Automatically grant a free trial for new signups."}</div>
+                             </div>
+                             <button onClick={()=>updateSystemConfig({ trialEnabled: systemSettings.trialEnabled === false ? true : false })} style={{background:"transparent", border:"none", cursor:"pointer", padding: 0}}>
+                                {systemSettings.trialEnabled !== false ? <ToggleRight size={32} color="#4CAF50"/> : <ToggleLeft size={32} color="#CCC"/>}
+                             </button>
                           </div>
+
+                          {systemSettings.trialEnabled !== false && (
+                            <>
+                               <div>
+                                  <div style={{fontSize:13, fontWeight:700, marginBottom:8}}>{lang === "id" ? "Masa Uji Coba (Hari)" : "Trial Duration (Days)"}</div>
+                                  <input type="number" defaultValue={systemSettings.trialDays} 
+                                    onBlur={(e)=>updateSystemConfig({trialDays: Number(e.target.value)})}
+                                    style={{width:"100%", padding:"12px", borderRadius:12, border:"1px solid #EEE", fontSize:14}} />
+                                  <div style={{fontSize:11, color:"#999", marginTop:6}}>{lang === "id" ? "Jumlah hari user baru mendapatkan akses trial gratis." : "Number of days new users get free trial access."}</div>
+                               </div>
+
+                               <div>
+                                  <div style={{fontSize:13, fontWeight:700, marginBottom:8}}>{lang === "id" ? "Aturan Batasan Free Trial" : "Free Trial Limit Rule"}</div>
+                                  <select 
+                                    value={systemSettings.trialLimitMode || "global"} 
+                                    onChange={(e)=>updateSystemConfig({trialLimitMode: e.target.value})}
+                                    style={{width:"100%", padding:"12px", borderRadius:12, border:"1px solid #EEE", fontSize:14, background: "#FFF", cursor: "pointer"}}
+                                  >
+                                    <option value="global">{lang === "id" ? "Global (Satu Kali Seumur Hidup)" : "Global (Once in a Lifetime)"}</option>
+                                    <option value="per_plan">{lang === "id" ? "Per Paket (Satu Trial per Jenis Paket)" : "Per Plan (One Trial per Plan Type)"}</option>
+                                  </select>
+                                  <div style={{fontSize:11, color:"#999", marginTop:6}}>
+                                    {lang === "id" 
+                                      ? "Global: User hanya bisa mencicipi free trial sekali saja. Per Paket: User bisa mencicipi trial sekali untuk setiap paket premium yang berbeda (misalnya, mencoba Solo lalu mencoba Team)."
+                                      : "Global: Users can only use a trial once in a lifetime. Per Plan: Users can trial once for each premium plan (e.g. trial Solo, and later trial Team)."}
+                                  </div>
+                               </div>
+
+                               <div>
+                                  <div style={{fontSize:13, fontWeight:700, marginBottom:8}}>{lang === "id" ? "Target Paket Premium untuk Trial" : "Target Premium Plan for Trial"}</div>
+                                  <select 
+                                    value={systemSettings.trialPlanId || "pro-monthly"} 
+                                    onChange={(e)=>updateSystemConfig({trialPlanId: e.target.value})}
+                                    style={{width:"100%", padding:"12px", borderRadius:12, border:"1px solid #EEE", fontSize:14, background: "#FFF", cursor: "pointer"}}
+                                  >
+                                    <option value="trial">{lang === "id" ? "Default Trial (Batas Khusus)" : "Default Trial (Custom Limits)"}</option>
+                                    {plans.filter((p: any) => p.price > 0 || p.id.includes("pro") || p.id.includes("plus") || p.id.includes("max")).map((p: any) => (
+                                      <option key={p.id} value={p.id}>{p.name || p.id}</option>
+                                    ))}
+                                  </select>
+                                  <div style={{fontSize:11, color:"#999", marginTop:6}}>{lang === "id" ? "Pilih paket premium mana yang fiturnya akan diwarisi oleh user trial." : "Select which premium plan features will be inherited by trial users."}</div>
+                               </div>
+                            </>
+                          )}
                        </div>
                     </div>
                  </div>
@@ -1833,7 +1899,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                                  name="price_monthly" 
                                  type="number" 
                                  placeholder="99000" 
-                                 value={modalPriceMonthly || ""} 
+                                 value={modalPriceMonthly === 0 ? 0 : (modalPriceMonthly || "")} 
                                  onChange={(e) => setModalPriceMonthly(Number(e.target.value))}
                                  required 
                                  style={{width:"100%", padding:"11px 14px 11px 34px", borderRadius:12, border:"1px solid rgba(0,0,0,0.08)", background: "#FFFFFF", fontSize:14, color: "#111827", fontWeight: 700}} 
@@ -1849,7 +1915,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                                  name="originalPrice_monthly" 
                                  type="number" 
                                  placeholder="149000" 
-                                 value={modalOriginalPriceMonthly || ""} 
+                                 value={modalOriginalPriceMonthly === 0 ? 0 : (modalOriginalPriceMonthly || "")} 
                                  onChange={(e) => setModalOriginalPriceMonthly(Number(e.target.value))}
                                  style={{width:"100%", padding:"11px 14px 11px 34px", borderRadius:12, border:"1px solid rgba(0,0,0,0.08)", background: "#FFFFFF", fontSize:14, color: "rgba(17,24,39,0.5)", textDecoration: modalOriginalPriceMonthly > modalPriceMonthly ? "line-through" : "none"}} 
                                />
@@ -1896,7 +1962,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                                  name="price_annual" 
                                  type="number" 
                                  placeholder="948000" 
-                                 value={modalPriceAnnual || ""} 
+                                 value={modalPriceAnnual === 0 ? 0 : (modalPriceAnnual || "")} 
                                  onChange={(e) => setModalPriceAnnual(Number(e.target.value))}
                                  required 
                                  style={{width:"100%", padding:"11px 14px 11px 34px", borderRadius:12, border:"1px solid rgba(0,0,0,0.08)", background: "#FFFFFF", fontSize:14, color: "#10B981", fontWeight: 700}} 
@@ -1914,7 +1980,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                                  name="originalPrice_annual" 
                                  type="number" 
                                  placeholder="1788000" 
-                                 value={modalOriginalPriceAnnual || ""} 
+                                 value={modalOriginalPriceAnnual === 0 ? 0 : (modalOriginalPriceAnnual || "")} 
                                  onChange={(e) => setModalOriginalPriceAnnual(Number(e.target.value))}
                                  style={{width:"100%", padding:"11px 14px 11px 34px", borderRadius:12, border:"1px solid rgba(0,0,0,0.08)", background: "#FFFFFF", fontSize:14, color: "rgba(17,24,39,0.5)", textDecoration: modalOriginalPriceAnnual > modalPriceAnnual ? "line-through" : "none"}} 
                                />
@@ -1952,6 +2018,40 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                            )}
                          </div>
                        </div>
+
+                       {/* Free Trial configuration group */}
+                       <div style={{background: "rgba(59,130,246,0.01)", padding: 16, borderRadius: 18, border: "1px solid rgba(59,130,246,0.06)", display: "flex", flexDirection: "column", gap: 12, marginTop: 12}}>
+                         <div style={{fontSize: 11, fontWeight: 800, color: "var(--theme-primary, #2563EB)", textTransform: "uppercase", letterSpacing: "0.5px", display: "flex", alignItems: "center", gap: 6}}>
+                           <div style={{width: 6, height: 6, borderRadius: "50%", background: "var(--theme-primary, #2563EB)"}} />
+                           {lang === "id" ? "UJI COBA GRATIS (FREE TRIAL)" : "FREE TRIAL CONFIGURATION"}
+                         </div>
+                         
+                         <label style={{display:"flex", alignItems:"center", gap:10, cursor:"pointer", background: "#FFFFFF", padding: 12, borderRadius: 14, border: "1px solid rgba(0,0,0,0.02)"}}>
+                           <input 
+                             name="trialEnabled" 
+                             type="checkbox" 
+                             defaultChecked={editingPlan.trialEnabled} 
+                             style={{width: 16, height: 16, accentColor: "var(--theme-primary, #2563EB)"}} 
+                           />
+                           <div>
+                             <span style={{fontSize:13, fontWeight:700, color: "#111827", display: "block"}}>{lang === "id" ? "Aktifkan Free Trial untuk Paket Ini" : "Enable Free Trial for This Plan"}</span>
+                             <span style={{fontSize:11, color: "var(--theme-primary, #2563EB)", fontWeight: 700, display: "block", marginTop: 2}}>{lang === "id" ? "💡 Hanya berlaku untuk opsi Paket Bulanan (Monthly)" : "💡 Only applies to the Monthly subscription option"}</span>
+                             <span style={{fontSize:11, color: "rgba(17,24,39,0.4)", display: "block", marginTop: 2}}>{lang === "id" ? "Izinkan pendaftar baru atau pengguna gratis untuk menguji coba paket bulanan ini secara cuma-cuma." : "Allow new signups or free users to trial this monthly plan for free."}</span>
+                           </div>
+                         </label>
+
+                         <div>
+                           <label style={{display:"block", fontSize:11, fontWeight:800, color:"rgba(17,24,39,0.5)", textTransform:"uppercase", marginBottom:6, letterSpacing: "0.5px"}}>{lang === "id" ? "Durasi Masa Trial (Hari)" : "Trial Duration (Days)"}</label>
+                           <input 
+                             name="trialDays" 
+                             type="number" 
+                             placeholder="7" 
+                             defaultValue={editingPlan.trialDays ?? 7} 
+                             style={{width:"100%", padding:"11px 14px", borderRadius:12, border:"1px solid rgba(0,0,0,0.08)", background: "#FFFFFF", fontSize:14, color: "#111827"}} 
+                           />
+                           <div style={{fontSize: 10, color: "rgba(17,24,39,0.4)", marginTop: 4}}>{lang === "id" ? "Jumlah hari masa uji coba gratis berlangsung." : "Number of days the free trial will last."}</div>
+                         </div>
+                       </div>
                     </div>
                     
 
@@ -1973,10 +2073,14 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                         </div>
                       </div>
 
-                      <div style={{display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12}}>
+                      <div style={{display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr", gap:12}}>
                         <div>
                           <label style={{display:"block", fontSize:11, fontWeight:800, color:"rgba(17,24,39,0.4)", textTransform:"uppercase", marginBottom:6, letterSpacing: "0.5px"}}>Akses AI (Kredit/Bulan)</label>
                           <input name="aiCreditsPerMonth" type="number" placeholder="100" defaultValue={editingPlan.limits?.aiCreditsPerMonth ?? 500000} required style={{width:"100%", padding:"11px 14px", borderRadius:12, border:"1px solid rgba(0,0,0,0.08)", background: "rgba(0,0,0,0.02)", fontSize:14}} />
+                        </div>
+                        <div>
+                          <label style={{display:"block", fontSize:11, fontWeight:800, color:"rgba(17,24,39,0.4)", textTransform:"uppercase", marginBottom:6, letterSpacing: "0.5px"}}>Akses AI (Kredit/Hari)</label>
+                          <input name="aiCreditsPerDay" type="number" placeholder="50" defaultValue={editingPlan.limits?.aiCreditsPerDay ?? 5000} required style={{width:"100%", padding:"11px 14px", borderRadius:12, border:"1px solid rgba(0,0,0,0.08)", background: "rgba(0,0,0,0.02)", fontSize:14}} />
                         </div>
                         <div>
                           <label style={{display:"block", fontSize:11, fontWeight:800, color:"rgba(17,24,39,0.4)", textTransform:"uppercase", marginBottom:6, letterSpacing: "0.5px"}}>Batas Anggota Tim</label>

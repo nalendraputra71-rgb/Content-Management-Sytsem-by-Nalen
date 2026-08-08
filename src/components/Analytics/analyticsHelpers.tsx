@@ -343,9 +343,7 @@ export function getAggregatedDemographics(demographicsState: any, platformsList:
   let totalFemale = 0;
   let totalMale = 0;
   
-  const ageSums: { [range: string]: number } = {
-    "13-17": 0, "18-24": 0, "25-34": 0, "35-44": 0, "45+": 0
-  };
+  const ageSums: { [range: string]: number } = {};
 
   const citySums: { [name: string]: number } = {};
   const countrySums: { [name: string]: number } = {};
@@ -418,32 +416,40 @@ export function getAggregatedDemographics(demographicsState: any, platformsList:
     }
   });
 
-  const femaleAvg = Math.round(totalFemale / numPlatforms);
-  const maleAvg = 100 - femaleAvg;
+  const femaleAvg = parseFloat((totalFemale / numPlatforms).toFixed(2));
+  const maleAvg = parseFloat((totalMale / numPlatforms).toFixed(2));
+
+  const getSortValue = (rangeStr: string) => {
+    const match = rangeStr.match(/^(\d+)/);
+    if (match) return parseInt(match[1]);
+    const val = parseInt(rangeStr);
+    if (!isNaN(val)) return val;
+    return 999;
+  };
 
   const ageList = Object.keys(ageSums).map(range => ({
     range,
-    value: Math.round(ageSums[range] / numPlatforms)
-  }));
+    value: parseFloat((ageSums[range] / numPlatforms).toFixed(2))
+  })).sort((a, b) => getSortValue(a.range) - getSortValue(b.range));
 
   const citiesList = Object.keys(citySums).map(name => ({
     name,
-    percentage: Math.round(citySums[name] / numPlatforms)
+    percentage: parseFloat((citySums[name] / numPlatforms).toFixed(2))
   })).sort((a, b) => b.percentage - a.percentage).slice(0, 5);
 
   const countriesList = Object.keys(countrySums).map(name => ({
     name,
-    percentage: Math.round(countrySums[name] / numPlatforms)
+    percentage: parseFloat((countrySums[name] / numPlatforms).toFixed(2))
   })).sort((a, b) => b.percentage - a.percentage).slice(0, 5);
 
   const devicesList = Object.keys(deviceSums).map(name => ({
     name,
-    percentage: Math.round(deviceSums[name] / numPlatforms)
+    percentage: parseFloat((deviceSums[name] / numPlatforms).toFixed(2))
   })).sort((a, b) => b.percentage - a.percentage).slice(0, 3);
 
   const interestsList = Object.keys(interestSums).map(name => ({
     name,
-    percentage: Math.round(interestSums[name] / numPlatforms)
+    percentage: parseFloat((interestSums[name] / numPlatforms).toFixed(2))
   })).sort((a, b) => b.percentage - a.percentage).slice(0, 5);
 
   return {
