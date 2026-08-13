@@ -912,7 +912,7 @@ export function CreatePostModal({ ctx }: { ctx: any }) {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}
-          className="flex-1 min-h-0 flex flex-col bg-white overflow-hidden"
+          className="flex-1 min-h-0 flex flex-col bg-white overflow-hidden md:rounded-t-[28px]"
         >
           <div
             style={{

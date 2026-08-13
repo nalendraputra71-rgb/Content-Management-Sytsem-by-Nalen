@@ -70,7 +70,8 @@ export function CustomDropdown({ value, options = [], onChange, dark = false, st
       setLocalOptions(options || []);
       setOriginalOptionsMap(options || []);
     }
-  }, [options, editMode]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [options]);
 
   const handleSaveEdit = (optsToSave?: any[]) => {
     const rawOpts = optsToSave !== undefined ? optsToSave : localOptions;
@@ -123,6 +124,8 @@ export function CustomDropdown({ value, options = [], onChange, dark = false, st
         return true;
     });
 
+    setLocalOptions(finalOpts);
+    setOriginalOptionsMap(finalOpts);
     setEditMode(false);
     if (onUpdateOptions) {
       onUpdateOptions(finalOpts, renames);
@@ -277,6 +280,7 @@ export function CustomDropdown({ value, options = [], onChange, dark = false, st
                           }}
                         />
                         <button 
+                          type="button"
                           onClick={(e: any) => {
                             e.stopPropagation();
                             const newOpts = localOptions.filter((_: any, idx: number) => idx !== i);
@@ -304,6 +308,7 @@ export function CustomDropdown({ value, options = [], onChange, dark = false, st
                   })}
                 </div>
                 <button 
+                  type="button"
                   onClick={(e: any) => {
                     e.stopPropagation();
                     const isObj = localOptions.length > 0 && typeof localOptions[0] !== 'string';
@@ -318,6 +323,7 @@ export function CustomDropdown({ value, options = [], onChange, dark = false, st
                   <Plus size={12}/> Tambah Opsi
                 </button>
                 <button
+                  type="button"
                   onClick={(e: any) => {
                     e.stopPropagation();
                     handleSaveEdit();

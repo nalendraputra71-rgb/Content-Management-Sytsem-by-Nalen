@@ -2039,7 +2039,7 @@ export function TableView({filtered,openEdit,archiveItem,unarchiveItem,deleteIte
                     <td style={td}>
                       <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
                         <button onClick={()=>openEdit(item)} style={{background:"#F1F1EF",border:"none",borderRadius:4,padding:"4px 8px",fontSize:11,cursor:"pointer",color:"#37352F",fontWeight:500}}>{lang === "id" ? "Edit" : "Edit"}</button>
-                        {item.status==="Published"&&!item.archived&&<button onClick={()=>archiveItem(item.id)} style={{background:"#F1F1EF",border:"none",borderRadius:4,padding:"4px 8px",fontSize:11,cursor:"pointer",color:"#37352F",fontWeight:500}}>{lang === "id" ? "Arsip" : "Archive"}</button>}
+                        {item.status==="Published" || String(status).toLowerCase().includes("tayang") || String(status).toLowerCase().includes("publikasi")&&!item.archived&&<button onClick={()=>archiveItem(item.id)} style={{background:"#F1F1EF",border:"none",borderRadius:4,padding:"4px 8px",fontSize:11,cursor:"pointer",color:"#37352F",fontWeight:500}}>{lang === "id" ? "Arsip" : "Archive"}</button>}
                         {item.archived&&<button onClick={()=>unarchiveItem(item.id)} style={{background:"#F1F1EF",border:"none",borderRadius:4,padding:"4px 8px",fontSize:11,cursor:"pointer",color:"#37352F",fontWeight:500}}>{lang === "id" ? "Pulihkan" : "Restore"}</button>}
                         {!item.archived&&<button onClick={()=>deleteItem(item.id)} style={{background:"#FFEEA3",border:"1px solid #FFE066",borderRadius:4,padding:"4px 8px",fontSize:11,cursor:"pointer",color:"#D9730D",fontWeight:500}}>{lang === "id" ? "Hapus" : "Delete"}</button>}
                       </div>

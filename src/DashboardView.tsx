@@ -58,6 +58,15 @@ const DEFAULT_LAYOUT: LayoutItem[] = [
   { id: "w-shortcut", type: "shortcut", w: 3, h: 1 },
 ];
 
+const stripHtml = (html: string) => {
+  if (!html) return "";
+  let text = html.replace(/<p[^>]*>/gi, '\n');
+  text = text.replace(/<br\s*\/?>/gi, '\n');
+  text = text.replace(/<\/p>/gi, '');
+  text = text.replace(/<[^>]*>?/gm, '');
+  return text.trim();
+};
+
 export function DashboardView({ user, profile, activeWorkspace, content, theme, setTab, sidebarOpen, setSidebarOpen, openEdit, openAdd }: any) {
   const { lang } = useI18n();
   const [isEditing, setIsEditing] = useState(false);
@@ -184,22 +193,41 @@ export function DashboardView({ user, profile, activeWorkspace, content, theme, 
     setSharedLoading(true);
     
     const q = query(
-      collectionGroup(db, "content"),
-      where("sharedUids", "array-contains", user.uid),
-      limit(30)
+      collection(db, "notifications"),
+      where("userId", "==", user.uid)
     );
 
     getDocs(q)
-      .then((snap) => {
-        const briefs = snap.docs.map(docSnap => {
-          const data = docSnap.data();
-          const wsId = data.workspaceId || docSnap.ref.parent?.parent?.id || "";
-          return {
-            id: docSnap.id,
-            workspaceId: wsId,
-            ...data
-          };
-        });
+      .then(async (snap) => {
+        const uniqueBriefs = new Map<string, any>();
+        
+        await Promise.all(
+          snap.docs.map(async (docSnap) => {
+            const notif = docSnap.data();
+            if (notif.type !== "shared_brief" || !notif.workspaceId || !notif.contentId) return;
+            const uniqueKey = `${notif.workspaceId}_${notif.contentId}`;
+            if (uniqueBriefs.has(uniqueKey)) return;
+            
+            try {
+              const briefSnap = await getDoc(doc(db, "workspaces", notif.workspaceId, "content", notif.contentId));
+              if (briefSnap.exists()) {
+                const data = briefSnap.data();
+                if (data.sharedUids?.includes(user.uid)) {
+                   uniqueBriefs.set(uniqueKey, {
+                     id: briefSnap.id,
+                     workspaceId: notif.workspaceId,
+                     ...data
+                   });
+                }
+              }
+            } catch (e) {
+               // Silently ignore if access is denied (e.g. revoked)
+            }
+          })
+        );
+        
+        const briefs = Array.from(uniqueBriefs.values());
+        
         // Sort in-memory to avoid compound index requirements
         briefs.sort((a: any, b: any) => {
           const tA = a.updatedAt?.toMillis ? a.updatedAt.toMillis() : (a.updatedAt || 0);
@@ -499,7 +527,7 @@ export function DashboardView({ user, profile, activeWorkspace, content, theme, 
                     overflow: "hidden",
                     flex: 1
                   }}>
-                    {b.objective || b.briefCopywriting || b.brief || (lang === "id" ? "Tidak ada deskripsi singkat." : "No short description.")}
+                    {stripHtml(b.objective || b.briefCopywriting || b.brief) || (lang === "id" ? "Tidak ada deskripsi singkat." : "No short description.")}
                   </p>
 
                   <div style={{
@@ -665,8 +693,8 @@ function MetricsRow({ content, config, updateConfig, theme }: any) {
       acc.saves += (m.saves || 0) + (am.saves || 0);
       acc.clicks += (m.clicks || 0) + (am.clicks || 0);
       acc.conversions += (m.conversions || 0) + (am.conversions || 0);
-      acc.totalPosts += (c.status === "Published" ? 1 : 0);
-      acc.pendingPosts += (c.status !== "Published" ? 1 : 0);
+      acc.totalPosts += ((c.status === "Published" || String(c.status).toLowerCase().includes("tayang") || String(c.status).toLowerCase().includes("publikasi")) ? 1 : 0);
+      acc.pendingPosts += (!(c.status === "Published" || String(c.status).toLowerCase().includes("tayang") || String(c.status).toLowerCase().includes("publikasi")) ? 1 : 0);
       return acc;
     }, { views: 0, likes: 0, comments: 0, shares: 0, reach: 0, reposts: 0, saves: 0, clicks: 0, conversions: 0, totalPosts: 0, pendingPosts: 0 });
   }, [content]);
@@ -1017,7 +1045,7 @@ function TodoWidget({ todos, activeWorkspace, user, content, theme, openEdit }: 
     return content.map((c: any) => ({
       id: `content-${c.id}`,
       text: c.title || "Konten Tanpa Judul",
-      completed: c.status === "Published",
+      completed: (c.status === "Published" || String(c.status).toLowerCase().includes("tayang") || String(c.status).toLowerCase().includes("publikasi")),
       type: "KONTEN",
       dueDate: `${c.year}-${String(c.month).padStart(2, '0')}-${String(c.day).padStart(2, '0')}`,
       isAutomated: true
@@ -1335,7 +1363,7 @@ function DailyProgressWidget({ todos, content, theme }: any) {
   const manualTodos = todos.filter((t: any) => t.dueDate === todayStr);
 
   const total = automatedContent.length + manualTodos.length;
-  const completed = automatedContent.filter((c:any)=>c.status==="Published").length + manualTodos.filter((t:any)=>t.completed).length;
+  const completed = automatedContent.filter((c:any)=>(c.status==="Published" || String(c.status).toLowerCase().includes("tayang") || String(c.status).toLowerCase().includes("publikasi"))).length + manualTodos.filter((t:any)=>t.completed).length;
 
   const perc = total === 0 ? 50 : Math.round((completed / total) * 100);
   const displayTotal = total === 0 ? 4 : total;

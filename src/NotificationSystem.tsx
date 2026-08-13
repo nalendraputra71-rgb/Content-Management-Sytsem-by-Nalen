@@ -92,20 +92,38 @@ export function useNotifications(userProfile: any, isPanelOpen = false) {
     let initialGlobalLoaded = false;
 
     if (isPanelOpen) {
-      unsubGlobal = onSnapshot(query(collection(db, "global_notifications"), orderBy("createdAt", "desc"), limit(10)), (snap) => {
+      unsubGlobal = onSnapshot(collection(db, "global_notifications"), (snap) => {
         if (!isMounted) return;
         
         const isInitial = !initialGlobalLoaded;
         initialGlobalLoaded = true;
 
         const globalNotifs = snap.docs.map(d => ({id: d.id, ...d.data()})) as any[];
+        globalNotifs.sort((a, b) => {
+          const timeA = typeof a.createdAt === 'number' ? a.createdAt : new Date(a.createdAt || 0).getTime();
+          const timeB = typeof b.createdAt === 'number' ? b.createdAt : new Date(b.createdAt || 0).getTime();
+          return timeB - timeA;
+        });
         
         // Filter by target
         const applicableGlobal = globalNotifs.filter((n:any) => {
-          if (n.target === "all") return true;
-          if (n.target === "pro" && !isExpired && !isTrial) return true;
-          if (n.target === "expired" && isExpired) return true;
-          return false;
+          if (n.active === false) return false;
+          let isMatch = false;
+          if (Array.isArray(n.target)) {
+            if (n.target.includes("all")) isMatch = true;
+            if (n.target.includes("pro") && !isExpired && !isTrial) isMatch = true;
+            if (n.target.includes("expired") && isExpired) isMatch = true;
+            if (n.target.some((t: string) => t.startsWith("plan:") && userProfile?.plan === t.replace("plan:", ""))) isMatch = true;
+          } else {
+            if (n.target === "all") isMatch = true;
+            if (n.target === "pro" && !isExpired && !isTrial) isMatch = true;
+            if (n.target === "expired" && isExpired) isMatch = true;
+            if (n.target?.startsWith("plan:")) {
+              const targetPlan = n.target.replace("plan:", "");
+              if (userProfile?.plan === targetPlan) isMatch = true;
+            }
+          }
+          return isMatch;
         }).map((n:any) => ({
           id: `global_${n.id}`,
           icon: <Bell size={14} color="#2D7A5E" />,

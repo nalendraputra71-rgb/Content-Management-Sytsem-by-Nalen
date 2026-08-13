@@ -42,6 +42,11 @@ export function ContentModal({modal, workspace, userProfile, planDetails, onSave
   const [aiResult, setAiResult] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
   const [captionLoading, setCaptionLoading] = useState(false);
+  const [briefLoading, setBriefLoading] = useState(false);
+  const [showBriefPrompt, setShowBriefPrompt] = useState(false);
+  const [briefCustomPrompt, setBriefCustomPrompt] = useState("");
+  const [showCaptionPrompt, setShowCaptionPrompt] = useState(false);
+  const [captionCustomPrompt, setCaptionCustomPrompt] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -160,24 +165,32 @@ export function ContentModal({modal, workspace, userProfile, planDetails, onSave
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
   const [showResolvedInSection, setShowResolvedInSection] = useState<Record<string, boolean>>({});
 
-  // Real-time snapshot listener for editor's comments sync
+  // Real-time snapshot listener for document sync
   useEffect(() => {
     if (!d.id || !d.workspaceId) return;
     const docRef = doc(db, "workspaces", d.workspaceId, "content", d.id);
     const unsubscribe = onSnapshot(docRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
-        if (data.comments) {
-          setD((prev: any) => {
+        setD((prev: any) => {
+          // If we are currently editing (isDirty.current is true), we only want to sync comments to avoid overwriting user's active typing
+          if (isDirty.current) {
             if (JSON.stringify(prev.comments) !== JSON.stringify(data.comments)) {
               return { ...prev, comments: data.comments };
             }
             return prev;
-          });
-        }
+          }
+          // If not dirty, sync the whole document to prevent stale data
+          const newData = { ...prev, ...data };
+          if (JSON.stringify(prev) !== JSON.stringify(newData)) {
+            dRef.current = newData;
+            return newData;
+          }
+          return prev;
+        });
       }
     }, (err) => {
-      console.error("Error listening to real-time comments:", err);
+      console.error("Error listening to real-time document:", err);
     });
     return () => unsubscribe();
   }, [d.id, d.workspaceId]);
@@ -1121,35 +1134,42 @@ export function ContentModal({modal, workspace, userProfile, planDetails, onSave
   };
 
   const analyzeContent = async () => {
-    if(!d.caption && !d.briefCopywriting) {
-        showToast("Harap isi caption atau brief terlebih dahulu untuk dianalisis AI.", "error");
+    if (!d.caption && !d.briefCopywriting && !d.title && !d.hook && !d.objective) {
+        showToast(lang === "id" ? "Harap isi minimal satu kolom (Judul, Brief, Caption, dll) untuk dianalisis AI." : "Please fill in at least one field (Title, Brief, Caption, etc.) for AI to analyze.", "error");
         return;
     }
     setAiLoading(true);
     setAiResult("");
     try {
-        const prompt = `Analisis konten pemasaran berikut ini:
-        Judul: ${d.title}
-        Pillar: ${d.pillar}
-        Platform: ${d.platform}
-        Hook: ${d.hook || "-"}
-        Brief: ${d.briefCopywriting}
-        Call to Action: ${d.cta || "-"}
-        Objective: ${d.objective}
-        
-        Berikan evaluasi singkat dan 3 poin saran perbaikan untuk meningkatkan engagement. Format dalam Bahasa Indonesia, singkat, padat, dan teknis.`;
+        const prompt = `Anda adalah seorang ahli pemasaran media sosial. Analisis draf konten berikut ini:
+
+[DETAIL KONTEN]
+- Judul: ${d.title || "Belum ditentukan"}
+- Pillar Konten: ${d.pillar || "Belum ditentukan"}
+- Platform: ${d.platform || "Belum ditentukan"}
+- Hook (3 Detik Pertama): ${d.hook || "Belum ditentukan"}
+- Brief/Arah Konten: ${d.briefCopywriting || "Belum ditentukan"}
+- Call to Action (CTA): ${d.cta || "Belum ditentukan"}
+- Objective/Tujuan: ${d.objective || "Belum ditentukan"}
+- Caption Saat Ini: ${d.caption || "Belum ada caption"}
+
+Tugas Anda:
+1. Evaluasi kekuatan dan kelemahan konten ini berdasarkan praktik terbaik platform (${d.platform || 'umum'}).
+2. Berikan 3 poin saran perbaikan yang sangat spesifik dan dapat langsung diterapkan untuk meningkatkan engagement, reach, atau konversi sesuai objective (${d.objective || 'umum'}).
+
+Format: Gunakan Bahasa Indonesia, buat format yang rapi (menggunakan markdown tebal/list), padat, dan teknis (fokus pada psikologi audiens dan algoritma). Hindari basa-basi.`;
         
         const data = await callAiWithQuota(auth.currentUser?.uid || 'anon', userProfile?.plan, { prompt, model: planDetails?.capabilities?.allowedModels?.[0] || "gemini-3.6-flash" }, aiTokenLimitDaily, aiTokenLimit);
-        setAiResult(data.text || lang === "id" ? "Tidak ada respon dari AI." : "No response from AI.");
+        setAiResult(data.text ? data.text : (lang === "id" ? "Tidak ada respon dari AI." : "No response from AI."));
     } catch (e: any) {
         console.error("AI Error:", e);
         const errMsg = e.message || "";
         if (errMsg.includes("habis")) {
           setAiResult(errMsg);
         } else if (errMsg.includes("429") || errMsg.includes("RESOURCE_EXHAUSTED") || errMsg.includes("Quota exceeded")) {
-          setAiResult(lang === "id" ? "Gagal menganalisis konten: Terlalu banyak permintaan saat ini (Quota Exceeded). Silakan tunggu sekitar 30 detik lalu coba lagi, atau update akun Google AI Studio Anda ke Pay-as-you-go." : "Failed to analyze content: Too many requests at this time (Quota Exceeded). Please wait about 30 seconds and try again, or upgrade your Google AI Studio account to Pay-as-you-go.");
+          setAiResult(lang === "id" ? "Gagal menganalisis konten: Terlalu banyak permintaan saat ini. Silakan tunggu sekitar 30 detik lalu coba lagi." : "Failed to analyze content: Too many requests at this time. Please wait about 30 seconds and try again.");
         } else {
-          setAiResult("Gagal menganalisis konten: " + errMsg + ".\n\nPastikan VITE_GEMINI_API_KEY sudah diset di Settings > Secrets.");
+          setAiResult((lang === "id" ? "Gagal menganalisis konten: " : "Failed to analyze content: ") + errMsg);
         }
     }
     setAiLoading(false);
@@ -1732,19 +1752,19 @@ export function ContentModal({modal, workspace, userProfile, planDetails, onSave
     const renderAiButton = () => {
       if (id === "briefCopywriting") {
         return (
-          <button onClick={analyzeContent} disabled={aiLoading} 
-            style={{...B(false), fontSize:10, padding:"4px 10px", borderRadius: 8, background:"#f3f4f6", color:"#1f2937", border:"1px solid #d1d5db", display:"flex", alignItems:"center", gap:4}}>
-            <GeminiIcon size={12} />
-            {aiLoading ? <LoadingDots /> : "Analyze with Gemini"}
+          <button onClick={() => setShowBriefPrompt(!showBriefPrompt)} disabled={briefLoading} 
+            style={{...B(false), fontSize:10, padding:"4px 10px", borderRadius: 8, background: showBriefPrompt ? "rgba(37,99,235,0.15)" : "rgba(37,99,235,0.06)", color: showBriefPrompt ? "#1d4ed8" : "#2563eb", border: "1px solid rgba(37,99,235,0.2)", display:"flex", alignItems:"center", gap:4, transition: "all 0.2s"}}>
+            <Sparkles size={11} className="text-blue-600 animate-pulse" />
+            <span style={{ fontWeight: 700 }}>Improve It</span>
           </button>
         );
       }
       if (id === "caption") {
         return (
-          <button onClick={generateCaption} disabled={captionLoading} 
-            style={{...B(false), fontSize:10, padding:"4px 10px", borderRadius: 8, background:"#f3f4f6", color:"#1f2937", border:"1px solid #d1d5db", display:"flex", alignItems:"center", gap:4}}>
-            <GeminiIcon size={12} />
-            {captionLoading ? <LoadingDots /> : "Generate Caption"}
+          <button onClick={() => setShowCaptionPrompt(!showCaptionPrompt)} disabled={captionLoading} 
+            style={{...B(false), fontSize:10, padding:"4px 10px", borderRadius: 8, background: showCaptionPrompt ? "rgba(37,99,235,0.15)" : "rgba(37,99,235,0.06)", color: showCaptionPrompt ? "#1d4ed8" : "#2563eb", border: "1px solid rgba(37,99,235,0.2)", display:"flex", alignItems:"center", gap:4, transition: "all 0.2s"}}>
+            <Sparkles size={11} className="text-blue-600 animate-pulse" />
+            <span style={{ fontWeight: 700 }}>Improve It</span>
           </button>
         );
       }
@@ -1763,7 +1783,254 @@ export function ContentModal({modal, workspace, userProfile, planDetails, onSave
               {renderSectionCommentBadge(id)}
             </div>
           </div>
-          <div style={{ display: "flex", flexDirection: "column", minHeight: id === "briefCopywriting" ? 120 : id === "caption" ? 150 : 80, minWidth: 0, width: "100%", maxWidth: "100%", overflow: "hidden" }}>
+          
+          {id === "briefCopywriting" && showBriefPrompt && (
+            <div style={{ 
+              marginBottom: 10, 
+              padding: "10px 12px", 
+              background: "linear-gradient(135deg, rgba(37, 99, 235, 0.04) 0%, rgba(37, 99, 235, 0.01) 100%)", 
+              border: "1px dashed rgba(37, 99, 235, 0.2)", 
+              borderRadius: 10,
+              boxShadow: "inset 0 1px 2px rgba(37, 99, 235, 0.02)",
+              display: "flex",
+              flexDirection: "column",
+              gap: 8
+            }}>
+              <div style={{ 
+                display: "flex", 
+                alignItems: "center",
+                gap: 6, 
+                background: "#ffffff", 
+                border: "1px solid rgba(37, 99, 235, 0.15)", 
+                borderRadius: 20, 
+                padding: "2px 2px 2px 10px",
+                boxShadow: "0 1px 6px rgba(37, 99, 235, 0.03)",
+                transition: "border-color 0.2s"
+              }}>
+                <input 
+                  type="text" 
+                  value={briefCustomPrompt} 
+                  onChange={e => setBriefCustomPrompt(e.target.value)} 
+                  placeholder={lang === "id" ? "Ketik instruksi modifikasi/pembuatan brief oleh HUB.AI..." : "Type instruction for HUB.AI to craft your brief..."} 
+                  style={{ flex: 1, padding: "4px 0", fontSize: 11, border: "none", outline: "none", background: "transparent", color: "#1e3a8a" }} 
+                  onKeyDown={e => { if(e.key === "Enter") generateBrief(); }}
+                />
+                <button 
+                  onClick={() => generateBrief()} 
+                  disabled={briefLoading || !briefCustomPrompt.trim()} 
+                  title={lang === "id" ? "Kirim Instruksi" : "Send Instruction"}
+                  style={{ 
+                    width: 24,
+                    height: 24,
+                    borderRadius: "50%",
+                    background: "#2563eb", 
+                    color: "#ffffff", 
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    border: "none",
+                    cursor: "pointer",
+                    flexShrink: 0,
+                    opacity: (!briefCustomPrompt.trim() || briefLoading) ? 0.4 : 1,
+                    transition: "all 0.2s"
+                  }}
+                >
+                  {briefLoading ? <LoadingDots /> : <ArrowUp size={13} strokeWidth={2.5} />}
+                </button>
+              </div>
+
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 5, alignItems: "center" }}>
+                <span style={{ fontSize: 9, color: "rgba(37, 99, 235, 0.6)", fontWeight: 700, marginRight: 2 }}>{lang === "id" ? "Rekomendasi:" : "Suggestions:"}</span>
+                <button 
+                  onClick={() => { 
+                    const p = lang === "id" ? "Rapikan dan jabarkan detail brief ini jadi lebih profesional" : "Polish and detail this brief professionally";
+                    setBriefCustomPrompt(p); 
+                  }} 
+                  onMouseEnter={(e) => e.currentTarget.style.background = "rgba(37, 99, 235, 0.08)"}
+                  onMouseLeave={(e) => e.currentTarget.style.background = "rgba(37, 99, 235, 0.04)"}
+                  style={{ fontSize: 9, padding: "4px 8px", background: "rgba(37, 99, 235, 0.04)", border: "1px solid rgba(37, 99, 235, 0.1)", borderRadius: 16, color: "#1d4ed8", cursor: "pointer", fontWeight: 600, transition: "background 0.2s" }}
+                >
+                  ✨ {lang === "id" ? "Polishing & Rapikan" : "Polish Text"}
+                </button>
+                <button 
+                  onClick={() => { 
+                    const p = lang === "id" ? "Buatkan 3 opsi hook/pembuka video berdasarkan konteks ini" : "Create 3 video hook options based on this context";
+                    setBriefCustomPrompt(p); 
+                  }} 
+                  onMouseEnter={(e) => e.currentTarget.style.background = "rgba(37, 99, 235, 0.08)"}
+                  onMouseLeave={(e) => e.currentTarget.style.background = "rgba(37, 99, 235, 0.04)"}
+                  style={{ fontSize: 9, padding: "4px 8px", background: "rgba(37, 99, 235, 0.04)", border: "1px solid rgba(37, 99, 235, 0.1)", borderRadius: 16, color: "#1d4ed8", cursor: "pointer", fontWeight: 600, transition: "background 0.2s" }}
+                >
+                  🎯 {lang === "id" ? "Saran 3 Hook" : "Suggest 3 Hooks"}
+                </button>
+                <button 
+                  onClick={() => { 
+                    const p = lang === "id" ? "Perpanjang tulisan ini jadi skrip video berdurasi 30 detik" : "Expand this into a 30-second video script";
+                    setBriefCustomPrompt(p); 
+                  }} 
+                  onMouseEnter={(e) => e.currentTarget.style.background = "rgba(37, 99, 235, 0.08)"}
+                  onMouseLeave={(e) => e.currentTarget.style.background = "rgba(37, 99, 235, 0.04)"}
+                  style={{ fontSize: 9, padding: "4px 8px", background: "rgba(37, 99, 235, 0.04)", border: "1px solid rgba(37, 99, 235, 0.1)", borderRadius: 16, color: "#1d4ed8", cursor: "pointer", fontWeight: 600, transition: "background 0.2s" }}
+                >
+                  📝 {lang === "id" ? "Kembangkan ke Skrip 30 Detik" : "Draft 30s Script"}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {id === "caption" && showCaptionPrompt && (
+            <div style={{ 
+              marginBottom: 10, 
+              padding: "10px 12px", 
+              background: "linear-gradient(135deg, rgba(37, 99, 235, 0.04) 0%, rgba(37, 99, 235, 0.01) 100%)", 
+              border: "1px dashed rgba(37, 99, 235, 0.25)", 
+              borderRadius: 10,
+              boxShadow: "inset 0 1px 2px rgba(37, 99, 235, 0.02)",
+              display: "flex",
+              flexDirection: "column",
+              gap: 8
+            }}>
+              <div style={{ 
+                display: "flex", 
+                alignItems: "center",
+                gap: 6, 
+                background: "#ffffff", 
+                border: "1px solid rgba(37, 99, 235, 0.15)", 
+                borderRadius: 20, 
+                padding: "2px 2px 2px 10px",
+                boxShadow: "0 1px 6px rgba(37, 99, 235, 0.03)",
+                transition: "border-color 0.2s"
+              }}>
+                <input 
+                  type="text" 
+                  value={captionCustomPrompt} 
+                  onChange={e => setCaptionCustomPrompt(e.target.value)} 
+                  placeholder={lang === "id" ? "Ketik instruksi pembuatan/modifikasi caption oleh HUB.AI..." : "Type instruction for HUB.AI to craft your caption..."} 
+                  style={{ flex: 1, padding: "4px 0", fontSize: 11, border: "none", outline: "none", background: "transparent", color: "#1e3a8a" }} 
+                  onKeyDown={e => { if(e.key === "Enter") generateCaption(); }}
+                />
+                <button 
+                  onClick={() => generateCaption()} 
+                  disabled={captionLoading || !captionCustomPrompt.trim()} 
+                  title={lang === "id" ? "Kirim Instruksi" : "Send Instruction"}
+                  style={{ 
+                    width: 24,
+                    height: 24,
+                    borderRadius: "50%",
+                    background: "#2563eb", 
+                    color: "#ffffff", 
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    border: "none",
+                    cursor: "pointer",
+                    flexShrink: 0,
+                    opacity: (!captionCustomPrompt.trim() || captionLoading) ? 0.4 : 1,
+                    transition: "all 0.2s"
+                  }}
+                >
+                  {captionLoading ? <LoadingDots /> : <ArrowUp size={13} strokeWidth={2.5} />}
+                </button>
+              </div>
+
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 5, alignItems: "center" }}>
+                <span style={{ fontSize: 9, color: "rgba(37, 99, 235, 0.6)", fontWeight: 700, marginRight: 2 }}>{lang === "id" ? "Rekomendasi:" : "Suggestions:"}</span>
+                <button 
+                  onClick={() => { 
+                    const p = lang === "id" ? "Buatkan 3 opsi variasi caption (Santai, Profesional, Hard Selling) beserta rekomendasi hashtag" : "Generate 3 caption variations (Casual, Professional, Hard Selling) with hashtag recommendations";
+                    setCaptionCustomPrompt(p); 
+                  }} 
+                  onMouseEnter={(e) => e.currentTarget.style.background = "rgba(37, 99, 235, 0.08)"}
+                  onMouseLeave={(e) => e.currentTarget.style.background = "rgba(37, 99, 235, 0.04)"}
+                  style={{ fontSize: 9, padding: "4px 8px", background: "rgba(37, 99, 235, 0.04)", border: "1px solid rgba(37, 99, 235, 0.1)", borderRadius: 16, color: "#1d4ed8", cursor: "pointer", fontWeight: 600, transition: "background 0.2s" }}
+                >
+                  ✨ {lang === "id" ? "Buat 3 Opsi Caption" : "Generate 3 Caption Options"}
+                </button>
+                <button 
+                  onClick={() => { 
+                    const p = lang === "id" ? "Buat caption ini jadi lebih menarik, catchy, tambahkan emoji yang relevan, dan rapikan spasinya" : "Make this caption catchier, add relevant emojis, and polish line spacing";
+                    setCaptionCustomPrompt(p); 
+                  }} 
+                  onMouseEnter={(e) => e.currentTarget.style.background = "rgba(37, 99, 235, 0.08)"}
+                  onMouseLeave={(e) => e.currentTarget.style.background = "rgba(37, 99, 235, 0.04)"}
+                  style={{ fontSize: 9, padding: "4px 8px", background: "rgba(37, 99, 235, 0.04)", border: "1px solid rgba(37, 99, 235, 0.1)", borderRadius: 16, color: "#1d4ed8", cursor: "pointer", fontWeight: 600, transition: "background 0.2s" }}
+                >
+                  🔥 {lang === "id" ? "Bikin Lebih Catchy" : "Make it Catchier"}
+                </button>
+                <button 
+                  onClick={() => { 
+                    const p = lang === "id" ? "Tambahkan Call to Action (CTA) yang kuat dan 5 hashtag teroptimasi SEO di bawah caption saat ini" : "Add a strong Call to Action (CTA) and 5 SEO-optimized hashtags below current caption";
+                    setCaptionCustomPrompt(p); 
+                  }} 
+                  onMouseEnter={(e) => e.currentTarget.style.background = "rgba(37, 99, 235, 0.08)"}
+                  onMouseLeave={(e) => e.currentTarget.style.background = "rgba(37, 99, 235, 0.04)"}
+                  style={{ fontSize: 9, padding: "4px 8px", background: "rgba(37, 99, 235, 0.04)", border: "1px solid rgba(37, 99, 235, 0.1)", borderRadius: 16, color: "#1d4ed8", cursor: "pointer", fontWeight: 600, transition: "background 0.2s" }}
+                >
+                  🎯 {lang === "id" ? "Tambah CTA & Hashtag" : "Add CTA & Hashtags"}
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div style={{ position: "relative", display: "flex", flexDirection: "column", minHeight: id === "briefCopywriting" ? 120 : id === "caption" ? 150 : 80, minWidth: 0, width: "100%", maxWidth: "100%", overflow: "hidden" }}>
+            {((id === "briefCopywriting" && briefLoading) || (id === "caption" && captionLoading)) && (
+              <div style={{ 
+                position: "absolute", 
+                inset: 0, 
+                zIndex: 25, 
+                borderRadius: 12, 
+                overflow: "hidden",
+                background: "rgba(255, 255, 255, 0.95)", 
+                backdropFilter: "blur(6px)",
+                border: "1px solid rgba(37, 99, 235, 0.3)",
+                display: "flex", 
+                flexDirection: "column", 
+                alignItems: "center", 
+                justifyContent: "center",
+                gap: 12,
+                padding: "16px 20px"
+              }} className="hubai-loading-box">
+                
+                {/* Sleek Icon + Text Row */}
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{ 
+                    width: 28, 
+                    height: 28, 
+                    borderRadius: "50%", 
+                    background: "rgba(37, 99, 235, 0.1)", 
+                    border: "1px solid rgba(37, 99, 235, 0.25)",
+                    display: "flex", 
+                    alignItems: "center", 
+                    justifyContent: "center",
+                    color: "#2563eb",
+                    animation: "hubAiPulse 2s ease-in-out infinite"
+                  }}>
+                    <Sparkles size={14} className="animate-spin" style={{ animationDuration: "3s" }} />
+                  </div>
+                  
+                  <div style={{ display: "flex", flexDirection: "column" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, fontWeight: 700, color: "#1d4ed8" }}>
+                      <span>HUB.AI Working</span>
+                      <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#2563eb", display: "inline-block" }} className="animate-ping" />
+                    </div>
+                    <div style={{ fontSize: 10, fontWeight: 500, color: "#64748b" }}>
+                      {id === "briefCopywriting" 
+                        ? (lang === "id" ? "Sedang merancang Brief Konten..." : "Drafting Content Brief...") 
+                        : (lang === "id" ? "Sedang menyusun Caption..." : "Crafting Caption...")
+                      }
+                    </div>
+                  </div>
+                </div>
+
+                {/* Subtle Skeleton Preview Lines */}
+                <div style={{ width: "85%", maxWidth: 320, display: "flex", flexDirection: "column", gap: 6 }}>
+                  <div className="hubai-skeleton-line" style={{ height: 6, width: "100%" }} />
+                  <div className="hubai-skeleton-line" style={{ height: 6, width: "80%" }} />
+                  <div className="hubai-skeleton-line" style={{ height: 6, width: "60%" }} />
+                </div>
+              </div>
+            )}
+
             <RichTextEditor 
               inputRef={id === "briefCopywriting" ? briefRef : id === "caption" ? captionRef : id === "objective" ? objectiveRef : undefined} 
               value={fieldValue} 
@@ -1831,34 +2098,119 @@ export function ContentModal({modal, workspace, userProfile, planDetails, onSave
     }
   };
 
-  const generateCaption = async () => {
-    if (userProfile?.plan !== "vip") {
-       const hasFeature = planDetails?.features?.includes("AI Caption Generator");
-       if (!hasFeature) {
-          showToast(`Fitur AI Caption Generator tidak tersedia di paket Anda. Silakan upgrade paket.`, "error");
+  const generateBrief = async (overridePrompt?: string) => {
+    if (userProfile?.plan !== "vip" && planDetails) {
+       const hasAIAccess = (planDetails?.limits?.aiCreditsPerMonth || 0) > 0 || (planDetails?.features || []).some((f: string) => f.toLowerCase().includes("ai"));
+       if (!hasAIAccess) {
+          showToast(lang === "id" ? `Fitur AI tidak tersedia di paket Anda. Silakan upgrade paket.` : `AI features are not available in your plan. Please upgrade.`, "error");
           return;
        }
     }
-    if(!d.briefCopywriting) {
-        showToast("Harap isi Brief Konten terlebih dahulu agar AI memiliki konteks untuk membuat caption.", "error");
+    if (!d.title) {
+        showToast(lang === "id" ? "Harap isi Judul terlebih dahulu agar AI memiliki konteks." : "Please fill in Title first so AI has context.", "error");
         return;
     }
-    setCaptionLoading(true);
+    
+    const userInstruction = overridePrompt || briefCustomPrompt;
+    if (!userInstruction.trim()) {
+        showToast(lang === "id" ? "Harap masukkan instruksi Anda." : "Please enter your instruction.", "error");
+        return;
+    }
+
+    setBriefLoading(true);
     try {
-        const prompt = `Buatkan caption social media berdasarkan brief berikut:
-        Judul: ${d.title}
-        Pillar: ${d.pillar}
-        Platform: ${d.platform}
-        Hook: ${d.hook || "-"}
-        Brief: ${d.briefCopywriting}
-        Call to Action: ${d.cta || "-"}
-        Objective: ${d.objective}
+        const prompt = `Anda adalah seorang Creative Director dan Copywriter profesional. Pengguna meminta bantuan untuk memodifikasi atau membuat brief konten dengan instruksi spesifik berikut:
         
-        Tuliskan HANYA hasil caption akhirnya saja. Jangan berikan pengantar/penutup eksplanasi. Sertakan hashtag yang relevan sesuai dengan platform. Outputkan dalam format tag HTML dasar seperti <p>, <strong>, <em>, <br> untuk styling format typography-nya.`;
+[INSTRUKSI USER]
+"${userInstruction}"
+        
+[KONTEKS KONTEN SAAT INI]
+- Judul/Topik: ${d.title || "Belum ditentukan"}
+- Pillar Konten: ${d.pillar || "Belum ditentukan"}
+- Platform Target: ${d.platform || "Instagram"}
+- Objective/Tujuan: ${d.objective || "Awareness"}
+- Brief/Catatan Saat Ini: ${d.briefCopywriting || "-"}
+
+[PANDUAN OUTPUT]
+1. Jalankan instruksi dari user dengan menggunakan konteks konten yang ada.
+2. Output HANYA berisi hasil akhir (konten brief), TANPA teks pengantar, TANPA penjelasan, TANPA "Berikut adalah hasilnya".
+3. SANGAT PENTING (BAHASA OUTPUT): Deteksi secara otomatis bahasa utama yang digunakan pada Judul, Objective, atau Brief saat ini (misalnya Bahasa Indonesia, Bahasa Inggris, dll.). Output HASIL HARUS SELALU MENGGUNAKAN BAHASA YANG SAMA DENGAN BAHASA DRAF/KONTEKS USER TERSEBUT.
+4. Wajib gunakan format HTML dasar HANYA untuk formatting typography (seperti <p>, <strong>, <em>, <ul>, <li>, <br>). Jangan gunakan tag html, head, atau body, dan JANGAN gunakan markdown asterisks. Pisahkan paragraf dengan <br><br>.`;
         
         const data = await callAiWithQuota(auth.currentUser?.uid || 'anon', userProfile?.plan, { prompt, model: planDetails?.capabilities?.allowedModels?.[0] || "gemini-3.6-flash" }, aiTokenLimitDaily, aiTokenLimit);
-        set("caption", (data.text || "").trim());
-        showToast("Caption berhasil dibuat oleh Gemini!", "success");
+        
+        let resultText = data.text || "";
+        resultText = resultText.replace(/^```html/i, "").replace(/```$/i, "").trim();
+        
+        set("briefCopywriting", resultText);
+        setBriefCustomPrompt("");
+        setShowBriefPrompt(false);
+        showToast(lang === "id" ? "Brief berhasil diproses oleh Gemini!" : "Brief processed successfully by Gemini!", "success");
+    } catch (e: any) {
+        console.error("AI Error:", e);
+        const errMsg = e.message || "";
+        if (errMsg.includes("habis")) {
+          showToast(errMsg, "error");
+        } else if (errMsg.includes("429") || errMsg.includes("RESOURCE_EXHAUSTED") || errMsg.includes("Quota exceeded")) {
+          showToast(lang === "id" ? "Gagal menggenerate brief: Terlalu banyak permintaan AI. Silakan tunggu sekitar 30 detik lalu coba lagi." : "Failed to generate brief: Too many AI requests. Please wait about 30 seconds and try again.", "error");
+        } else {
+          showToast((lang === "id" ? "Gagal menggenerate brief: " : "Failed to generate brief: ") + errMsg, "error");
+        }
+    }
+    setBriefLoading(false);
+  };
+
+  const generateCaption = async (overridePrompt?: string) => {
+    if (userProfile?.plan !== "vip" && planDetails) {
+       const hasAIAccess = (planDetails?.limits?.aiCreditsPerMonth || 0) > 0 || (planDetails?.features || []).some((f: string) => f.toLowerCase().includes("ai"));
+       if (!hasAIAccess) {
+          showToast(lang === "id" ? `Fitur AI tidak tersedia di paket Anda. Silakan upgrade paket.` : `AI features are not available in your plan. Please upgrade.`, "error");
+          return;
+       }
+    }
+    if (!d.briefCopywriting && !d.title && !d.objective) {
+        showToast(lang === "id" ? "Harap isi Judul, Objective, atau Brief Konten terlebih dahulu agar AI memiliki konteks." : "Please fill in Title, Objective, or Brief first so AI has context.", "error");
+        return;
+    }
+    
+    const userInstruction = overridePrompt || captionCustomPrompt;
+    if (!userInstruction.trim()) {
+        showToast(lang === "id" ? "Harap masukkan instruksi Anda." : "Please enter your instruction.", "error");
+        return;
+    }
+
+    setCaptionLoading(true);
+    try {
+        const prompt = `Anda adalah seorang social media copywriter dan content creator profesional. Pengguna meminta bantuan untuk memodifikasi atau membuat caption media sosial berdasarkan instruksi spesifik berikut:
+
+[INSTRUKSI USER]
+"${userInstruction}"
+
+[KONTEKS KONTEN SAAT INI]
+- Judul: ${d.title || "Belum ditentukan"}
+- Pillar Konten: ${d.pillar || "Belum ditentukan"}
+- Platform Target: ${d.platform || "Instagram"}
+- Hook/Skenario: ${d.hook || "-"}
+- Brief Copywriting: ${d.briefCopywriting || "-"}
+- Call to Action (CTA): ${d.cta || "Engagement (Like/Komen/Share)"}
+- Objective/Tujuan: ${d.objective || "Awareness"}
+- Caption Saat Ini: ${d.caption || "-"}
+
+[PANDUAN OUTPUT]
+1. Jalankan instruksi dari user dengan menggunakan konteks konten yang ada.
+2. Output HANYA berisi hasil akhir (konten caption), TANPA teks pengantar, TANPA penjelasan, TANPA "Berikut adalah hasilnya".
+3. SANGAT PENTING (BAHASA OUTPUT): Deteksi secara otomatis bahasa utama yang digunakan pada Judul, Brief, atau Caption saat ini (misalnya Bahasa Indonesia, Bahasa Inggris, dll.). Output HASIL HARUS SELALU MENGGUNAKAN BAHASA YANG SAMA DENGAN BAHASA DRAF/KONTEKS USER TERSEBUT.
+4. Wajib gunakan format HTML dasar HANYA untuk formatting typography jika perlu (seperti <p>, <strong>, <em>, <br>). Jangan gunakan tag html, head, atau body, dan JANGAN gunakan markdown asterisks. Pisahkan paragraf dengan <br><br>.`;
+        
+        const data = await callAiWithQuota(auth.currentUser?.uid || 'anon', userProfile?.plan, { prompt, model: planDetails?.capabilities?.allowedModels?.[0] || "gemini-3.6-flash" }, aiTokenLimitDaily, aiTokenLimit);
+        
+        let resultText = data.text || "";
+        resultText = resultText.replace(/^```html/i, "").replace(/```$/i, "").trim();
+        
+        set("caption", resultText);
+        setCaptionCustomPrompt("");
+        setShowCaptionPrompt(false);
+        showToast(lang === "id" ? "Caption berhasil diproses oleh Gemini!" : "Caption processed successfully by Gemini!", "success");
     } catch (e: any) {
         console.error("AI Error:", e);
         const errMsg = e.message || "";
@@ -1867,7 +2219,7 @@ export function ContentModal({modal, workspace, userProfile, planDetails, onSave
         } else if (errMsg.includes("429") || errMsg.includes("RESOURCE_EXHAUSTED") || errMsg.includes("Quota exceeded")) {
           showToast(lang === "id" ? "Gagal menggenerate caption: Terlalu banyak permintaan AI. Silakan tunggu sekitar 30 detik lalu coba lagi." : "Failed to generate caption: Too many AI requests. Please wait about 30 seconds and try again.", "error");
         } else {
-          showToast("Gagal menggenerate caption: " + errMsg, "error");
+          showToast((lang === "id" ? "Gagal menggenerate caption: " : "Failed to generate caption: ") + errMsg, "error");
         }
     }
     setCaptionLoading(false);

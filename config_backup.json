@@ -1,0 +1,136 @@
+[
+  {
+    "id": "pricing_features",
+    "rows": [
+      {
+        "a": "Unlimited",
+        "f": "1",
+        "s": "1",
+        "en": "Workspaces",
+        "t": "3",
+        "type": "text",
+        "key": "workspaces",
+        "id": "Workspaces"
+      },
+      {
+        "t": "30 Akun",
+        "s": "10 Akun",
+        "key": "socials",
+        "type": "text",
+        "a": "Unlimited",
+        "f": "3 Akun",
+        "id": "Integrasi Akun Sosial",
+        "en": "Social Account Integrations"
+      },
+      {
+        "type": "text",
+        "t": "Hingga 3",
+        "s": "1 (Solo)",
+        "key": "members",
+        "a": "Unlimited",
+        "f": "1 (Solo)",
+        "id": "Anggota Tim",
+        "en": "Team Members"
+      },
+      {
+        "type": "boolean",
+        "t": true,
+        "s": true,
+        "en": "Auto-Publishing",
+        "id": "Penjadwalan Otomatis",
+        "key": "publishing",
+        "a": true,
+        "f": false
+      },
+      {
+        "type": "text",
+        "en": "AI Generation / Month",
+        "id": "Batas Generate AI / Bulan",
+        "a": "Unlimited",
+        "f": "10 Prompts",
+        "s": "100 Prompts",
+        "t": "500 Prompts",
+        "key": "ai_limit"
+      },
+      {
+        "t": "5 GB",
+        "s": "1 GB",
+        "key": "storage",
+        "type": "text",
+        "en": "Asset Storage",
+        "id": "Penyimpanan Aset",
+        "a": "Unlimited",
+        "f": "100 MB"
+      },
+      {
+        "id": "Analisis Performa",
+        "s": "Lanjutan",
+        "t": "Lanjutan",
+        "en": "Performance Analytics",
+        "f": "Dasar",
+        "a": "Mendalam",
+        "type": "text",
+        "key": "analytics"
+      },
+      {
+        "id": "Export Laporan",
+        "a": "Ya (White-label)",
+        "f": "Tidak",
+        "type": "text",
+        "en": "Export Reports",
+        "s": "Ya",
+        "key": "export",
+        "t": "Ya (Kustom)"
+      },
+      {
+        "type": "boolean",
+        "f": false,
+        "a": true,
+        "id": "Alur Persetujuan Konten",
+        "key": "approval",
+        "en": "Content Approval Workflow",
+        "t": true,
+        "s": false
+      },
+      {
+        "key": "comments",
+        "t": true,
+        "s": true,
+        "en": "Comment Management",
+        "id": "Manajemen Komentar",
+        "a": true,
+        "f": false,
+        "type": "boolean"
+      },
+      {
+        "key": "support",
+        "f": "Komunitas",
+        "a": "24/7 Prioritas",
+        "type": "text",
+        "s": "Email",
+        "en": "Customer Support",
+        "t": "Email Prioritas",
+        "id": "Dukungan Pelanggan"
+      }
+    ]
+  },
+  {
+    "id": "system",
+    "bannerActive": false,
+    "bannerMessageDraft": "Awas Penipuan Gess",
+    "allowRegistration": true,
+    "bannerActiveDraft": false,
+    "bannerTypeDraft": "warning",
+    "maintenanceMode": false,
+    "bannerMessage": "Awas Penipuan Gess",
+    "features": {
+      "sochub": false,
+      "contentPlanner": true,
+      "socialStudio": false,
+      "hubai": true
+    },
+    "features.sochub": false,
+    "bannerType": "warning",
+    "features.contentPlanner": false
+  }
+]

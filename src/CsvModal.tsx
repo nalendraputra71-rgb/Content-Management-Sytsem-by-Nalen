@@ -43,9 +43,42 @@ export function CsvModal({onClose, onImport, pillars, platforms, contentTypes, p
     }
   };
 
-  const template = [
-    ["Judul Konten", "Tanggal (1-31)", "Bulan (1-12)", "Tahun", "Jam (0-23)", "Menit", "Pillar", "Platform", "Tipe Konten", "PIC", "Status Konten", "Status Ads", "Views", "Reach", "Likes", "Comments", "Shares", "Saves", "Objective", "Hook", "Brief Konten", "Call to Action", "Catatan Referensi", "Caption", "Link Aset", "Link Sosmed", "Link Referensi"],
-    ["Contoh Konten Instagram", "15", "5", "2025", "10", "30", pillars[0]?.name||"Pillar Utama", platforms[0]?.name||"Instagram", contentTypes?.[0]?.name||"Video Pendek", pics[0]||"PIC 1", statuses[0]||"Draft", "N", "100", "80", "10", "2", "1", "5", "Meningkatkan brand awareness", "Tahukah kamu bahwa...", "Gunakan nada bicara santai", "Klik link di bio!", "Contoh referensi tone: kasual", "Keren banget nih!", "https://drive.google.com/...", "https://instagram.com/...", "https://contoh.com, https://contoh2.com"]
+  const template = lang === "id" ? [
+    [
+      "Judul Konten", "Tanggal (1-31)", "Bulan (1-12)", "Tahun", "Jam (0-23)", "Menit", 
+      "Pillar", "Platform", "Tipe Konten", "PIC", "Status Konten", "Status Ads", 
+      "Objective", "Hook", "Brief Konten", "Call to Action", "Catatan Referensi", "Caption", 
+      "Link Aset", "Link Sosmed", "Link Referensi",
+      "Views", "Reach", "Likes", "Comments", "Shares", "Saves", "Reposts", "Profile Visits", "Bio Link Taps", "Follows",
+      "Ads Views", "Ads Reach", "Ads Likes", "Ads Comments", "Ads Shares", "Ads Saves", "Ads Reposts", "Ads Profile Visits", "Ads Bio Link Taps", "Ads Follows",
+      "Ads Clicks", "Ads Conversions", "Ads Msg Conv Started", "Ads 3s Plays", "Ads Spend Budget", "Ads Daily Budget", "Ads Duration", "Ads CPR Profile Visit", "Ads Audience"
+    ],
+    [
+      "Contoh Konten Instagram", "15", "5", "2025", "10", "30", 
+      pillars[0]?.name||"Pillar Utama", platforms[0]?.name||"Instagram", contentTypes?.[0]?.name||"Video Pendek", pics[0]?.name||pics[0]||"PIC 1", statuses[0]?.name||statuses[0]||"Draft", "N", 
+      "Meningkatkan brand awareness", "Tahukah kamu bahwa...", "Gunakan nada bicara santai", "Klik link di bio!", "Contoh referensi tone: kasual", "Keren banget nih!", 
+      "https://drive.google.com/...", "https://instagram.com/...", "https://contoh.com, https://contoh2.com",
+      "100", "80", "10", "2", "1", "5", "0", "10", "1", "2",
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", ""
+    ]
+  ] : [
+    [
+      "Content Title", "Date (1-31)", "Month (1-12)", "Year", "Hour (0-23)", "Minute", 
+      "Pillar", "Platform", "Content Type", "PIC", "Content Status", "Ads Status", 
+      "Objective", "Hook", "Content Brief", "Call to Action", "Reference Notes", "Caption", 
+      "Asset Link", "Social Media Link", "Reference Link",
+      "Views", "Reach", "Likes", "Comments", "Shares", "Saves", "Reposts", "Profile Visits", "Bio Link Taps", "Follows",
+      "Ads Views", "Ads Reach", "Ads Likes", "Ads Comments", "Ads Shares", "Ads Saves", "Ads Reposts", "Ads Profile Visits", "Ads Bio Link Taps", "Ads Follows",
+      "Ads Clicks", "Ads Conversions", "Ads Msg Conv Started", "Ads 3s Plays", "Ads Spend Budget", "Ads Daily Budget", "Ads Duration", "Ads CPR Profile Visit", "Ads Audience"
+    ],
+    [
+      "Example Instagram Content", "15", "5", "2025", "10", "30", 
+      pillars[0]?.name||"Main Pillar", platforms[0]?.name||"Instagram", contentTypes?.[0]?.name||"Short Video", pics[0]?.name||pics[0]||"PIC 1", statuses[0]?.name||statuses[0]||"Draft", "N", 
+      "Increase brand awareness", "Did you know that...", "Use a casual tone", "Click link in bio!", "Casual tone reference", "This is so cool!", 
+      "https://drive.google.com/...", "https://instagram.com/...", "https://example.com, https://example2.com",
+      "100", "80", "10", "2", "1", "5", "0", "10", "1", "2",
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", ""
+    ]
   ];
 
   const handleDownloadTemplate = async () => {
@@ -58,11 +91,11 @@ export function CsvModal({onClose, onImport, pillars, platforms, contentTypes, p
       const dataSheet = workbook.addWorksheet("DataLists", { state: "hidden" });
 
       // Add data lists
-      pillars.forEach((p: any, i: number) => dataSheet.getCell(`A${i + 1}`).value = p.name);
-      platforms.forEach((p: any, i: number) => dataSheet.getCell(`B${i + 1}`).value = p.name);
-      contentTypes.forEach((p: any, i: number) => dataSheet.getCell(`C${i + 1}`).value = p.name);
-      pics.forEach((p: any, i: number) => dataSheet.getCell(`D${i + 1}`).value = p);
-      statuses.forEach((p: any, i: number) => dataSheet.getCell(`E${i + 1}`).value = p);
+      pillars.forEach((p: any, i: number) => dataSheet.getCell(`A${i + 1}`).value = p?.name || p);
+      platforms.forEach((p: any, i: number) => dataSheet.getCell(`B${i + 1}`).value = p?.name || p);
+      contentTypes.forEach((p: any, i: number) => dataSheet.getCell(`C${i + 1}`).value = p?.name || p);
+      pics.forEach((p: any, i: number) => dataSheet.getCell(`D${i + 1}`).value = p?.name || p);
+      statuses.forEach((p: any, i: number) => dataSheet.getCell(`E${i + 1}`).value = p?.name || p);
 
       sheet.addRow(template[0]);
       sheet.addRow(template[1]);
@@ -147,33 +180,60 @@ export function CsvModal({onClose, onImport, pillars, platforms, contentTypes, p
             };
             
             const idxId = getColIdx(["id system", "id"]);
-            const idxTitle = getColIdx(["judul"]);
-            const idxDate = getColIdx(["tanggal"]);
-            const idxMonth = getColIdx(["bulan"]);
-            const idxYear = getColIdx(["tahun"]);
-            const idxHour = getColIdx(["jam"]);
-            const idxMin = getColIdx(["menit"]);
+            const idxTitle = getColIdx(["judul", "title"]);
+            const idxDate = getColIdx(["tanggal", "date"]);
+            const idxMonth = getColIdx(["bulan", "month"]);
+            const idxYear = getColIdx(["tahun", "year"]);
+            const idxHour = getColIdx(["jam", "hour"]);
+            const idxMin = getColIdx(["menit", "minute"]);
             const idxPillar = getColIdx(["pillar"]);
             const idxPlatform = getColIdx(["platform"]);
-            const idxContentType = getColIdx(["tipe konten", "tipe"]);
+            const idxContentType = getColIdx(["tipe konten", "tipe", "content type"]);
             const idxPic = getColIdx(["pic"]);
-            const idxStatus = getColIdx(["status konten", "status"]);
-            const idxAds = getColIdx(["status ads", "ads"]);
+            const idxStatus = getColIdx(["status konten", "status", "content status"]);
+            const idxAds = getColIdx(["status ads", "ads", "ads status"]);
+            const idxObjective = getColIdx(["objective"]);
+            const idxHook = getColIdx(["hook"]);
+            const idxBrief = getColIdx(["brief", "content brief"]);
+            const idxCta = getColIdx(["call to action", "cta"]);
+            const idxRefText = getColIdx(["catatan referensi", "catatan", "reference notes"]);
+            const idxCaption = getColIdx(["caption"]);
+            
+            const idxLinkAset = getColIdx(["link aset", "aset", "asset link"]);
+            const idxLinkSosmed = getColIdx(["link sosmed", "sosmed", "social media link"]);
+            const idxLinkRefer = getColIdx(["link referensi", "referensi", "reference link"]);
+
             const idxViews = getColIdx(["views"]);
             const idxReach = getColIdx(["reach"]);
             const idxLikes = getColIdx(["likes"]);
             const idxComments = getColIdx(["comments"]);
             const idxShares = getColIdx(["share"]);
             const idxSaves = getColIdx(["save"]);
-            const idxObjective = getColIdx(["objective"]);
-            const idxHook = getColIdx(["hook"]);
-            const idxBrief = getColIdx(["brief"]);
-            const idxCta = getColIdx(["call to action", "cta"]);
-            const idxRefText = getColIdx(["catatan referensi", "catatan"]);
-            const idxCaption = getColIdx(["caption"]);
-            const idxLinkAset = getColIdx(["link aset", "aset"]);
-            const idxLinkSosmed = getColIdx(["link sosmed", "sosmed"]);
-            const idxLinkRefer = getColIdx(["link referensi", "referensi"]);
+            const idxReposts = getColIdx(["reposts", "repost"]);
+            const idxProfileVisits = getColIdx(["profile visits", "profile visit"]);
+            const idxBioLinkTaps = getColIdx(["bio link taps", "bio link tap", "link taps"]);
+            const idxFollows = getColIdx(["follows", "follow"]);
+
+            // Ads Metrics
+            const idxAdsViews = getColIdx(["ads views"]);
+            const idxAdsReach = getColIdx(["ads reach"]);
+            const idxAdsLikes = getColIdx(["ads likes"]);
+            const idxAdsComments = getColIdx(["ads comments"]);
+            const idxAdsShares = getColIdx(["ads shares"]);
+            const idxAdsSaves = getColIdx(["ads saves"]);
+            const idxAdsReposts = getColIdx(["ads reposts"]);
+            const idxAdsProfileVisits = getColIdx(["ads profile visits"]);
+            const idxAdsBioLinkTaps = getColIdx(["ads bio link taps"]);
+            const idxAdsFollows = getColIdx(["ads follows"]);
+            const idxAdsClicks = getColIdx(["ads clicks"]);
+            const idxAdsConversions = getColIdx(["ads conversions"]);
+            const idxAdsMsgConvStarted = getColIdx(["ads msg conv started"]);
+            const idxAds3sPlays = getColIdx(["ads 3s plays"]);
+            const idxAdsSpendBudget = getColIdx(["ads spend budget"]);
+            const idxAdsDailyBudget = getColIdx(["ads daily budget"]);
+            const idxAdsDuration = getColIdx(["ads duration"]);
+            const idxAdsCPRProfileVisit = getColIdx(["ads cpr profile visit"]);
+            const idxAdsAudience = getColIdx(["ads audience"]);
 
             const parsedData = json.slice(1).filter(r => r.length > 0 && idxTitle !== -1 && String(r[idxTitle]||"").trim() !== "").map((row: any) => {
                 const item = emptyItem(Number(row[idxYear])||2025, Number(row[idxMonth])||1, Number(row[idxDate])||1, pillars, platforms, pics, statuses, contentTypes);
@@ -195,10 +255,31 @@ export function CsvModal({onClose, onImport, pillars, platforms, contentTypes, p
                     comments: idxComments !== -1 ? Number(row[idxComments])||0 : 0,
                     shares: idxShares !== -1 ? Number(row[idxShares])||0 : 0,
                     saves: idxSaves !== -1 ? Number(row[idxSaves])||0 : 0,
-                    reposts: 0,
-                    profileVisits: 0,
-                    bioLinkTaps: 0,
-                    follows: 0
+                    reposts: idxReposts !== -1 ? Number(row[idxReposts])||0 : 0,
+                    profileVisits: idxProfileVisits !== -1 ? Number(row[idxProfileVisits])||0 : 0,
+                    bioLinkTaps: idxBioLinkTaps !== -1 ? Number(row[idxBioLinkTaps])||0 : 0,
+                    follows: idxFollows !== -1 ? Number(row[idxFollows])||0 : 0
+                };
+                item.adsMetrics = {
+                    views: idxAdsViews !== -1 ? Number(row[idxAdsViews])||0 : 0,
+                    reach: idxAdsReach !== -1 ? Number(row[idxAdsReach])||0 : 0,
+                    likes: idxAdsLikes !== -1 ? Number(row[idxAdsLikes])||0 : 0,
+                    comments: idxAdsComments !== -1 ? Number(row[idxAdsComments])||0 : 0,
+                    shares: idxAdsShares !== -1 ? Number(row[idxAdsShares])||0 : 0,
+                    saves: idxAdsSaves !== -1 ? Number(row[idxAdsSaves])||0 : 0,
+                    reposts: idxAdsReposts !== -1 ? Number(row[idxAdsReposts])||0 : 0,
+                    profileVisits: idxAdsProfileVisits !== -1 ? Number(row[idxAdsProfileVisits])||0 : 0,
+                    bioLinkTaps: idxAdsBioLinkTaps !== -1 ? Number(row[idxAdsBioLinkTaps])||0 : 0,
+                    follows: idxAdsFollows !== -1 ? Number(row[idxAdsFollows])||0 : 0,
+                    clicks: idxAdsClicks !== -1 ? Number(row[idxAdsClicks])||0 : 0,
+                    conversions: idxAdsConversions !== -1 ? Number(row[idxAdsConversions])||0 : 0,
+                    msgConvStarted: idxAdsMsgConvStarted !== -1 ? Number(row[idxAdsMsgConvStarted])||0 : 0,
+                    threeSecPlays: idxAds3sPlays !== -1 ? Number(row[idxAds3sPlays])||0 : 0,
+                    spendBudget: idxAdsSpendBudget !== -1 ? Number(row[idxAdsSpendBudget])||0 : 0,
+                    dailyBudget: idxAdsDailyBudget !== -1 ? Number(row[idxAdsDailyBudget])||0 : 0,
+                    duration: idxAdsDuration !== -1 ? Number(row[idxAdsDuration])||0 : 0,
+                    cprProfileVisit: idxAdsCPRProfileVisit !== -1 ? Number(row[idxAdsCPRProfileVisit])||0 : 0,
+                    audience: idxAdsAudience !== -1 ? String(row[idxAdsAudience]||"") : ""
                 };
                 if (idxObjective !== -1) item.objective = textToHtml(cleanStr(row[idxObjective])) || "";
                 if (idxHook !== -1) item.hook = textToHtml(cleanStr(row[idxHook])) || "";

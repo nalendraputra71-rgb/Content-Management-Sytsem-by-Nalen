@@ -1235,9 +1235,14 @@ export function SettingsPanel({
                                 </span>
                                 <span className="text-xs font-black text-neutral-900">
                                   {(() => {
+                                    const isSuperAdmin = profile?.role === "admin" || auth.currentUser?.email?.toLowerCase() === "nalendraputra71@gmail.com";
+                                    if (isSuperAdmin) return `Unlimited`;
+                                    
                                     const maxReq = planDetails?.aiTokenLimitDaily || 50;
                                     if (maxReq === -1) return `0% ${lang === "id" ? "digunakan" : "used"}`;
-                                    const todayStr = new Date().toISOString().split("T")[0];
+                                    
+                                    const now = new Date();
+                                    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
                                     const usedReq = profile?.lastAiRequestDate === todayStr ? (profile?.aiCreditsToday || profile?.aiRequestsToday || 0) : 0;
                                     const usedPercent = Math.min((usedReq / maxReq) * 100, 100);
                                     return `${Math.round(usedPercent)}% ${lang === "id" ? "digunakan" : "used"}`;
@@ -1246,6 +1251,9 @@ export function SettingsPanel({
                               </div>
                               <div className="w-full h-1.5 bg-black/[0.03] rounded-full overflow-hidden mb-2">
                                 {(() => {
+                                  const isSuperAdmin = profile?.role === "admin" || auth.currentUser?.email?.toLowerCase() === "nalendraputra71@gmail.com";
+                                  if (isSuperAdmin) return <div className="h-full bg-blue-600 rounded-full transition-all duration-500 shadow-[0_0_8px_rgba(37,99,235,0.4)]" style={{ width: `100%` }} />;
+                                  
                                   const maxReq = planDetails?.aiTokenLimitDaily || 50;
                                   const now = new Date();
                                   const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;

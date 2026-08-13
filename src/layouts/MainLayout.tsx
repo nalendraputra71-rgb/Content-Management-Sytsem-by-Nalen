@@ -11,7 +11,7 @@ import {
 import { 
   auth, db, onAuthStateChanged, signOut,
   doc, setDoc, getDoc, collection, collectionGroup, query, onSnapshot, deleteDoc, writeBatch, updateDoc,
-  handleFirestoreError, testFirestoreConnection, where, getDocs, documentId, increment
+  handleFirestoreError, testFirestoreConnection, where, getDocs, documentId, increment, orderBy, limit, serverTimestamp
 } from "../firebase";
 
 import { AppRoutes } from "../AppRoutes";
@@ -55,7 +55,7 @@ import { ColorPickerSelect } from "../components/ColorPickerSelect";
 
 import { motion, AnimatePresence } from "motion/react";
 
-import { Calendar, Download, X, CheckCircle2, AlertTriangle, Trash2, Loader2 } from "lucide-react";
+import { Calendar, Download, X, CheckCircle2, AlertTriangle, Trash2, Loader2, Megaphone } from "lucide-react";
 
 export function cleanAndFormatHolidayText(text: string): string {
   if (!text) return "";
@@ -388,6 +388,130 @@ export function Dashboard({ user, profile, planDetails, onUpdateProfile, current
     setBannerDismissed(true);
   };
 
+  const [broadcastBanner, setBroadcastBanner] = useState<any | null>(null);
+  const [showBroadcastModal, setShowBroadcastModal] = useState(false);
+  const [activeBroadcast, setActiveBroadcast] = useState<any | null>(null);
+
+  useEffect(() => {
+    if (!profile) return;
+    const isTrial = profile?.plan === "trial";
+    const activeUntil = profile?.activeUntil ? new Date(profile.activeUntil) : new Date(0);
+    const isExpired = new Date() > activeUntil;
+
+    const notifRef = collection(db, "global_notifications");
+    const unsub = onSnapshot(notifRef, (snap) => {
+      const docs = snap.docs.map(d => ({ id: d.id, ...d.data() as any }));
+      docs.sort((a, b) => {
+        const timeA = typeof a.createdAt === 'number' ? a.createdAt : new Date(a.createdAt || 0).getTime();
+        const timeB = typeof b.createdAt === 'number' ? b.createdAt : new Date(b.createdAt || 0).getTime();
+        return timeB - timeA;
+      });
+      const dismissedIds = JSON.parse(localStorage.getItem(`dismissedBroadcasts_${profile?.uid}`) || "[]");
+
+      // Find the latest applicable notification that has not been dismissed
+      const latestNotDismissed = docs.find((n: any) => {
+        if (n.active === false) return false;
+        
+        const dismissKey = n.id + (n.updatedAt ? `_${n.updatedAt}` : "");
+        if (dismissedIds.includes(dismissKey)) return false;
+        
+        let isMatch = false;
+        if (Array.isArray(n.target)) {
+          if (n.target.includes("all")) isMatch = true;
+          if (n.target.includes("pro") && !isExpired && !isTrial) isMatch = true;
+          if (n.target.includes("expired") && isExpired) isMatch = true;
+          if (n.target.some((t: string) => t.startsWith("plan:") && profile?.plan === t.replace("plan:", ""))) isMatch = true;
+        } else {
+          if (n.target === "all") isMatch = true;
+          if (n.target === "pro" && !isExpired && !isTrial) isMatch = true;
+          if (n.target === "expired" && isExpired) isMatch = true;
+          if (n.target?.startsWith("plan:")) {
+            const targetPlan = n.target.replace("plan:", "");
+            if (profile?.plan === targetPlan) isMatch = true;
+          }
+        }
+        if (!isMatch) return false;
+        return true;
+      });
+
+      setBroadcastBanner(latestNotDismissed || null);
+    }, (err) => {
+      console.warn("Error listening to global_notifications for banner:", err);
+    });
+
+    return () => unsub();
+  }, [profile]);
+
+  const handleDismissBroadcast = (banner: any) => {
+    if (!profile || !banner) return;
+    const dismissKey = banner.id + (banner.updatedAt ? `_${banner.updatedAt}` : "");
+    const dismissedIds = JSON.parse(localStorage.getItem(`dismissedBroadcasts_${profile?.uid}`) || "[]");
+    if (!dismissedIds.includes(dismissKey)) {
+      localStorage.setItem(`dismissedBroadcasts_${profile?.uid}`, JSON.stringify([...dismissedIds, dismissKey]));
+    }
+    setBroadcastBanner(null);
+  };
+
+  const getBroadcastStyles = (banner: any) => {
+    if (!banner) return {
+      bg: "linear-gradient(135deg, #1E3A8A 0%, #3B82F6 100%)",
+      color: "#FFFFFF",
+      linkColor: "rgba(255,255,255,0.85)",
+      badgeBg: "rgba(255,255,255,0.2)",
+      badgeText: "#FFFFFF",
+      iconBg: "rgba(59, 130, 246, 0.1)",
+      iconColor: "#3B82F6",
+      btnBg: "var(--theme-primary)",
+      badgeLabel: lang === "id" ? "Info Penting" : "Announcement"
+    };
+
+    let bg = "linear-gradient(135deg, #1E3A8A 0%, #3B82F6 100%)";
+    let color = "#FFFFFF";
+    let linkColor = "rgba(255,255,255,0.85)";
+    let badgeBg = "rgba(255,255,255,0.2)";
+    let badgeText = "#FFFFFF";
+    let iconBg = "rgba(59, 130, 246, 0.1)";
+    let iconColor = "#3B82F6";
+    let btnBg = "var(--theme-primary)";
+    let badgeLabel = lang === "id" ? "Info Penting" : "Announcement";
+
+    const type = banner.colorType || "info";
+
+    if (type === "urgent") {
+      bg = "linear-gradient(135deg, #9C2B4E 0%, #D32F2F 100%)";
+      badgeLabel = lang === "id" ? "Sangat Urgent" : "Urgent";
+      iconColor = "#D32F2F";
+      iconBg = "rgba(211, 47, 47, 0.1)";
+      btnBg = "#D32F2F";
+    } else if (type === "alert") {
+      bg = "linear-gradient(135deg, #D97706 0%, #F59E0B 100%)";
+      badgeLabel = lang === "id" ? "Peringatan" : "Alert";
+      iconColor = "#D97706";
+      iconBg = "rgba(217, 119, 6, 0.1)";
+      btnBg = "#D97706";
+    } else if (type === "success") {
+      bg = "linear-gradient(135deg, #065F46 0%, #10B981 100%)";
+      badgeLabel = lang === "id" ? "Promo/Sukses" : "Promo/Success";
+      iconColor = "#10B981";
+      iconBg = "rgba(16, 185, 129, 0.1)";
+      btnBg = "#10B981";
+    } else if (type === "custom") {
+      const start = banner.colorBgStart || "#3B82F6";
+      const end = banner.colorBgEnd || "#1E3A8A";
+      bg = `linear-gradient(135deg, ${start} 0%, ${end} 100%)`;
+      color = banner.colorTextColor || "#FFFFFF";
+      linkColor = banner.colorTextColor ? `${banner.colorTextColor}D0` : "rgba(255,255,255,0.85)";
+      badgeBg = banner.colorTextColor ? `${banner.colorTextColor}20` : "rgba(255,255,255,0.2)";
+      badgeText = banner.colorTextColor || "#FFFFFF";
+      iconColor = banner.colorBgStart || "#3B82F6";
+      iconBg = `${banner.colorBgStart || "#3B82F6"}15`;
+      btnBg = banner.colorBgStart || "var(--theme-primary)";
+      badgeLabel = lang === "id" ? "Pengumuman" : "Announcement";
+    }
+
+    return { bg, color, linkColor, badgeBg, badgeText, iconBg, iconColor, btnBg, badgeLabel };
+  };
+
   useEffect(() => {
     workspaceRef.current = workspace;
   }, [workspace]);
@@ -634,6 +758,10 @@ export function Dashboard({ user, profile, planDetails, onUpdateProfile, current
   const [exPlatform, setExPlatform] = useState("All");
   const [exOption, setExOption] = useState("all"); // "all", "range"
   const [isExportLoading, setIsExportLoading] = useState(false);
+
+  const [isImporting, setIsImporting] = useState(false);
+  const [importStatus, setImportStatus] = useState({ state: "", message: "" });
+
 
   const isRestricted = useMemo(() => {
     if (!profile?.activeUntil) return false;
@@ -1084,7 +1212,20 @@ export function Dashboard({ user, profile, planDetails, onUpdateProfile, current
     }
 
     let changedFields: any[] = [];
-    const prevData = !isNew && content ? content.find(c => c.id === itemId) : null;
+    let prevData = !isNew && content ? content.find(c => c.id === itemId) : null;
+    
+    if (!isNew && !prevData) {
+      try {
+        const targetWorkspaceId = cleanData.workspaceId || workspace.id;
+        const docSnap = await getDoc(doc(db, "workspaces", targetWorkspaceId, "content", itemId));
+        if (docSnap.exists()) {
+          prevData = docSnap.data();
+        }
+      } catch (e) {
+        console.error("Failed to fetch prevData for history", e);
+      }
+    }
+
     if (prevData) {
       const fieldsToTrack = ["date", "type", "pic", "status", "platform", "title", "details", "visualRef", "designNote", "copywriting", "callToAction", "notes", "caption", "objective", "hook", "briefCopywriting", "cta", "targetAudience", "keyAngle", "visualConcept", "audioBgm", "outro", "hashtags", "linkAsset", "linkSosmed", "assetLink", "referenceText"];
       const nameMap: any = { date: "Tanggal", type: "Tipe Konten", pic: "PIC", status: "Status", platform: "Platform", title: "Judul", details: "Detail Singkat", visualRef: "Referensi Visual", designNote: "Catatan Desain", copywriting: "Copywriting", callToAction: "Call to Action", notes: "Catatan Tambahan", caption: "Caption", objective: "Objective", hook: "Hook", briefCopywriting: "Brief Utama", cta: "Call to Action (CTA)", targetAudience: "Target Audien", keyAngle: "Key Angle", visualConcept: "Visual Concept", audioBgm: "Audio & BGM", outro: "Outro", hashtags: "Hashtags", linkAsset: "Link Aset Final", linkSosmed: "Link Postingan", assetLink: "Link Referensi", referenceText: "Catatan Referensi" };
@@ -1231,6 +1372,26 @@ export function Dashboard({ user, profile, planDetails, onUpdateProfile, current
     const targetUserId = data.userId || user?.uid || "";
     const itemData = { ...cleanData, id: itemId, workspaceId: targetWorkspaceId, userId: targetUserId };
     console.log("Cleaned itemData:", itemData);
+    
+    // Create or update notifications for all shared users so they appear in their dashboard
+    const currSharedUids = cleanData.sharedUids || [];
+    if (currSharedUids.length > 0) {
+      currSharedUids.forEach((uid: string) => {
+        const notifId = `shared_${targetWorkspaceId}_${itemId}_${uid}`;
+        const notifRef = doc(db, "notifications", notifId);
+        setDoc(notifRef, {
+          userId: uid,
+          type: "shared_brief",
+          title: `Brief Dibagikan: ${cleanData.title || "Tanpa Judul"}`,
+          body: `Anda telah diberikan akses ke brief ini oleh ${profile?.fullName || user?.email || "pengguna"}.`,
+          workspaceId: targetWorkspaceId,
+          contentId: itemId,
+          updatedAt: serverTimestamp(),
+          // Only set createdAt if it doesn't exist (handled by merge, but we can just use updatedAt for sorting if needed, 
+          // or just rely on the dashboard which doesn't sort notifications for this specific fetch anyway)
+        }, { merge: true }).catch(e => console.error("Failed to notify shared user:", e));
+      });
+    }
     
     try {
       await setDoc(doc(db, "workspaces", targetWorkspaceId, "content", itemId), itemData, { merge: true });
@@ -1402,6 +1563,18 @@ export function Dashboard({ user, profile, planDetails, onUpdateProfile, current
       }
       await updateDoc(wsRef, fsUpdates);
       
+      setWorkspace((prev: any) => ({ ...prev, ...fsUpdates }));
+      
+      if (settingsUpdates.title !== undefined) setTitle(settingsUpdates.title);
+      if (settingsUpdates.tagline !== undefined) setTagline(settingsUpdates.tagline);
+      if (settingsUpdates.pillars) setPillars(settingsUpdates.pillars);
+      if (settingsUpdates.contentTypes) setContentTypes(settingsUpdates.contentTypes);
+      if (settingsUpdates.pics) setPics(settingsUpdates.pics);
+      if (settingsUpdates.statuses) setStatuses(settingsUpdates.statuses);
+      if (settingsUpdates.holidays !== undefined) setHolidays(settingsUpdates.holidays);
+      if (settingsUpdates.showHolidays !== undefined) setShowHolidays(settingsUpdates.showHolidays);
+      if (settingsUpdates.holidayApis !== undefined) setHolidayApis(settingsUpdates.holidayApis);
+
       if (settingsUpdates.title) {
         document.title = `${settingsUpdates.title} - Hubify Social`;
       }
@@ -1507,11 +1680,67 @@ export function Dashboard({ user, profile, planDetails, onUpdateProfile, current
   };
 
   useEffect(() => {
-    if (title) document.title = `${title} - Hubify Social`;
-  }, [title]);
+    const currentWorkspaceName = workspace?.name || title || "Workspace";
+    if (tab === "dashboard") {
+      document.title = `${currentWorkspaceName} - Hubify Social`;
+    } else {
+      const getTabLabel = (currentTab: string, currentContentTab: string, langCode: string) => {
+        switch (currentTab) {
+          case "dashboard":
+            return "Dashboard";
+          case "content_planner":
+            if (currentContentTab === "board") return "Board";
+            if (currentContentTab === "timeline") return "Timeline";
+            if (currentContentTab === "table") return langCode === "id" ? "Tabel" : "Table";
+            return langCode === "id" ? "Calendar" : "Calendar";
+          case "analytics":
+          case "analytics-overview":
+            return "Overview";
+          case "analytics-content":
+            return "Content";
+          case "analytics-trends":
+            return "Trends";
+          case "analytics-activity":
+            return "Audience";
+          case "social-hub-ai":
+            return "Hub.ai";
+          case "soc_hub":
+            return "SocHub";
+          case "social-dashboard":
+            return langCode === "id" ? "Integrasi Sosmed" : "Social Dashboard";
+          case "social-competitor":
+            return langCode === "id" ? "Analisis Kompetitor" : "Competitor Analysis";
+          case "social-inbox":
+            return langCode === "id" ? "Inbox & Komen" : "Inbox & Comments";
+          case "social-admin":
+            return "Admin Panel";
+          case "profile":
+            return langCode === "id" ? "Profil" : "Profile";
+          case "settings":
+            return langCode === "id" ? "Pengaturan" : "Settings";
+          default:
+            if (currentTab.startsWith("social-")) {
+              const sub = currentTab.replace("social-", "");
+              return sub.charAt(0).toUpperCase() + sub.slice(1);
+            }
+            if (currentTab.startsWith("analytics-")) {
+              const sub = currentTab.replace("analytics-", "");
+              if (sub === "activity") return "Audience";
+              return sub.charAt(0).toUpperCase() + sub.slice(1);
+            }
+            return currentTab.charAt(0).toUpperCase() + currentTab.slice(1);
+        }
+      };
+
+      const pageLabel = getTabLabel(tab, contentTab, lang);
+      document.title = `${currentWorkspaceName} - ${pageLabel}`;
+    }
+  }, [workspace?.name, title, tab, contentTab, lang]);
 
   const handleBulkImport = async (items: any[]) => {
     if (!workspace) return;
+    setIsImporting(true);
+    setImportStatus({ state: "loading", message: lang === "id" ? "Memproses impor data..." : "Processing import data..." });
     try {
       const newPillars = [...pillars];
       const newPics = [...pics];
@@ -1549,6 +1778,7 @@ export function Dashboard({ user, profile, planDetails, onUpdateProfile, current
 
       const CHUNK_SIZE = 450;
       for (let i = 0; i < items.length; i += CHUNK_SIZE) {
+        setImportStatus({ state: "loading", message: lang === "id" ? `Menyimpan ${Math.min(i + CHUNK_SIZE, items.length)} dari ${items.length} konten...` : `Saving ${Math.min(i + CHUNK_SIZE, items.length)} of ${items.length} content...` });
         const chunk = items.slice(i, i + CHUNK_SIZE);
         const batch = writeBatch(db);
         chunk.forEach(item => {
@@ -1564,10 +1794,18 @@ export function Dashboard({ user, profile, planDetails, onUpdateProfile, current
         });
         await batch.commit();
       }
-      setSaveMsg(`Berhasil mengimpor ${items.length} konten.`);
-      setTimeout(()=>setSaveMsg(""), 3000);
-    } catch (e) {
+      setImportStatus({ state: "success", message: lang === "id" ? `Berhasil mengimpor ${items.length} konten!` : `Successfully imported ${items.length} content!` });
+      setTimeout(() => {
+          setIsImporting(false);
+          setImportStatus({ state: "", message: "" });
+      }, 3000);
+    } catch (e: any) {
       handleFirestoreError(e, 'write');
+      setImportStatus({ state: "error", message: lang === "id" ? `Gagal impor: ${e.message}` : `Import failed: ${e.message}` });
+      setTimeout(() => {
+          setIsImporting(false);
+          setImportStatus({ state: "", message: "" });
+      }, 5000);
     }
   };
 
@@ -1588,10 +1826,21 @@ export function Dashboard({ user, profile, planDetails, onUpdateProfile, current
         <div style={{width:40, height:40, border:"3px solid var(--theme-primary)", borderTopColor:"transparent", borderRadius:"50%", animation:"spin 1s linear infinite"}}/>
         
         {errorMsg && (
-          <div style={{maxWidth:500, fontSize:13, color:"#9C2B4E", background:"#F8EAF0", padding:16, borderRadius:12, fontWeight:500}}>
-             {errorMsg.includes("index") ? 
-               "Firebase sedang membuat indeks untuk pencarian workspace. Proses ini biasanya memakan waktu 1-2 menit. Silakan tunggu sebentar dan refresh halaman ini." : 
-               `Oops! Terjadi kendala: ${errorMsg}`}
+          <div style={{maxWidth:500, fontSize:13, color:"#9C2B4E", background:"#F8EAF0", padding:16, borderRadius:12, fontWeight:500, wordBreak:"break-all"}}>
+             {errorMsg.includes("index") ? (
+                <>
+                  <p>Firebase membutuhkan Index untuk query ini. Silakan klik link di bawah ini untuk membuat Index (tunggu 1-2 menit setelah dibuat sebelum refresh):</p>
+                  <p style={{marginTop: 8}}>
+                    {errorMsg.match(/https:\/\/[^\s]+/) ? (
+                      <a href={errorMsg.match(/https:\/\/[^\s]+/)?.[0]} target="_blank" rel="noopener noreferrer" style={{color: "#9C2B4E", textDecoration: "underline"}}>
+                        Buat Index di Firebase Console
+                      </a>
+                    ) : errorMsg}
+                  </p>
+                </>
+             ) : (
+                `Oops! Terjadi kendala: ${errorMsg}`
+             )}
           </div>
         )}
         
@@ -1624,14 +1873,22 @@ export function Dashboard({ user, profile, planDetails, onUpdateProfile, current
           try {
             await updateDoc(doc(db, "workspaces", wsId), { name: newName });
             setWorkspaces(prev => prev.map(w => w.id === wsId ? { ...w, name: newName } : w));
-            if (workspace?.id === wsId) setWorkspace(prev => prev ? { ...prev, name: newName } : null);
+            if (workspace?.id === wsId) {
+              setWorkspace(prev => prev ? { ...prev, name: newName } : null);
+              setTitle(newName);
+            }
           } catch(e: any) { handleFirestoreError(e, 'update'); }
         }}
         onUpdateWorkspace={async (wsId: string, updates: any) => {
           try {
             await updateDoc(doc(db, "workspaces", wsId), updates);
             setWorkspaces(prev => prev.map(w => w.id === wsId ? { ...w, ...updates } : w));
-            if (workspace?.id === wsId) setWorkspace(prev => prev ? { ...prev, ...updates } : null);
+            if (workspace?.id === wsId) {
+              setWorkspace(prev => prev ? { ...prev, ...updates } : null);
+              if (updates.name) {
+                setTitle(updates.name);
+              }
+            }
           } catch(e: any) { handleFirestoreError(e, 'update'); }
         }}
         onTitleChange={async (newTitle: string) => {
@@ -1666,11 +1923,27 @@ export function Dashboard({ user, profile, planDetails, onUpdateProfile, current
           background: "#FFFFFF",
           boxShadow: "0 10px 30px rgba(0, 0, 0, 0.03)",
           border: "1px solid rgba(0, 0, 0, 0.04)",
-          overflow: ["social-hub-ai", "soc_hub", "admin"].includes(tab) ? "hidden" : "auto",
-          position: "relative"
+          position: "relative",
+          overflow: "hidden"
         }}
       >
-        <AnimatePresence>
+        <div 
+          className="rounded-t-none md:rounded-t-[28px]"
+          style={{
+            margin: "-1px -1px 0 -1px",
+            width: "calc(100% + 2px)",
+            position: "relative",
+            zIndex: 99,
+            flexShrink: 0,
+            overflow: "hidden",
+            background: (systemConfig?.bannerActive && systemConfig?.bannerMessage && !bannerDismissed) 
+              ? (systemConfig.bannerType === "alert" ? "#9C2B4E" : systemConfig.bannerType === "warning" ? "#FBC02D" : "#1D4D7A")
+              : broadcastBanner 
+                ? getBroadcastStyles(broadcastBanner).bg 
+                : "transparent"
+          }}
+        >
+          <AnimatePresence>
           {systemConfig?.bannerActive && systemConfig?.bannerMessage && !bannerDismissed && (
             <motion.div 
               initial={{ height: 0, opacity: 0 }}
@@ -1728,9 +2001,104 @@ export function Dashboard({ user, profile, planDetails, onUpdateProfile, current
               </div>
             </motion.div>
           )}
-        </AnimatePresence>
 
-        {(!["dashboard", "settings", "admin", "soc_hub"].includes(tab) && !tab.startsWith("social")) && (
+          {broadcastBanner && (() => {
+            const bStyle = getBroadcastStyles(broadcastBanner);
+            return (
+              <motion.div 
+                key="broadcastBanner"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ ease: [0.16, 1, 0.3, 1], duration: 0.35 }}
+                style={{
+                  background: bStyle.bg,
+                  color: bStyle.color,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  zIndex: 99,
+                  flexShrink: 0,
+                  position: "relative",
+                  overflow: "hidden",
+                  borderBottom: "1px solid rgba(255,255,255,0.1)",
+                  cursor: "pointer"
+                }}
+                onClick={() => {
+                  setActiveBroadcast(broadcastBanner);
+                  setShowBroadcastModal(true);
+                }}
+              >
+                <div style={{
+                  padding: "10px 48px 10px 24px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: "100%",
+                  gap: 12
+                }}>
+                  <Megaphone size={16} style={{ color: bStyle.iconColor }} className="shrink-0 animate-bounce" />
+                  <span style={{
+                    flex: 1, 
+                    textAlign: "center", 
+                    overflow: "hidden", 
+                    textOverflow: "ellipsis", 
+                    whiteSpace: "nowrap"
+                  }}>
+                    <span style={{ background: bStyle.badgeBg, color: bStyle.badgeText }} className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full font-bold mr-2 shrink-0">
+                      {bStyle.badgeLabel}
+                    </span>
+                    {broadcastBanner.title} - <span style={{ color: bStyle.linkColor }} className="font-normal hover:underline">{lang === "id" ? "Klik untuk selengkapnya" : "Click to read more"}</span>
+                  </span>
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDismissBroadcast(broadcastBanner);
+                    }}
+                    style={{
+                      position: "absolute",
+                      right: 16,
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      background: "rgba(255,255,255,0.15)",
+                      border: "none",
+                      borderRadius: "50%",
+                      width: 24,
+                      height: 24,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      cursor: "pointer",
+                      color: bStyle.color
+                    }}
+                    className="hover:bg-white/25 transition-colors"
+                    title={lang === "id" ? "Tutup" : "Close"}
+                  >
+                    <X size={14}/>
+                  </button>
+                </div>
+              </motion.div>
+            );
+          })()}
+        </AnimatePresence>
+        </div>
+
+        <div
+          id="main-content-scrollable"
+          className={`scrollbar-thin md:rounded-b-[28px] ${(!["dashboard", "settings", "admin", "soc_hub"].includes(tab) && !tab.startsWith("social")) ? "" : "md:rounded-t-[28px]"}`}
+          style={{
+            flex: 1,
+            minHeight: 0,
+            overflowY: ["social-hub-ai", "soc_hub", "admin"].includes(tab) ? "hidden" : "auto",
+            display: "flex",
+            flexDirection: "column",
+            position: "relative",
+            overflowX: "hidden"
+          }}
+        >
+          {(!["dashboard", "settings", "admin", "soc_hub"].includes(tab) && !tab.startsWith("social")) && (
           <Header 
             profile={profile}
             tab={tab}
@@ -1879,6 +2247,7 @@ export function Dashboard({ user, profile, planDetails, onUpdateProfile, current
           </motion.div>
         </AnimatePresence>
       </div>
+      </div>
 
       <AnimatePresence>
         {shareModal && <Suspense fallback={null}><ShareWorkspaceModal key="share" workspace={workspace} userProfile={profile} planDetails={planDetails} onClose={()=>setShareModal(false)} /></Suspense>}
@@ -2011,68 +2380,70 @@ export function Dashboard({ user, profile, planDetails, onUpdateProfile, current
                  });
 
                  const exportData = toExport.map((c: any) => {
-                      const row: any = {
-                          // 1. Metadata & Jadwal
-                          "ID System (Jangan Diubah)": c.id || "",
-                          "Platform": c.platform || "",
-                          "Tanggal (1-31)": c.day || 1,
-                          "Bulan (1-12)": c.month || 1,
-                          "Tahun": c.year || 2025,
-                          "Jam (0-23)": c.uploadHour || 9,
-                          "Menit": c.uploadMinute || 0,
-                          "Judul Konten": c.title || "",
-                          "PIC": c.pic || "",
-                          "Pillar": c.pillar || "",
-                          "Tipe Konten": c.contentType || "",
-                          "Status Konten": c.status || "",
-                          "Status Ads": c.isAds ? "Y" : "N",
-                          
-                          // 2. Copywriting & Strategy
-                          "Objective": htmlToPlainText(c.objective || ""),
-                          "Hook": htmlToPlainText(c.hook || ""),
-                          "CTA": htmlToPlainText(c.cta || ""),
-                          "Caption": htmlToPlainText(c.caption || ""),
-                          "Brief Konten": htmlToPlainText(c.briefCopywriting || ""),
-                          
-                          // 3. Assets & Reference
-                          "Link Aset": c.linkAsset || "",
-                          "Link Sosmed": c.linkSosmed || c.linkUpload || "",
-                          "Teks Referensi": c.referenceText || "",
-                          "Link Referensi": Array.isArray(c.referenceLinks) ? c.referenceLinks.join(", ") : "",
-                          
-                          // 4. Organic Metrics
-                          "Views (Organik)": c.metrics?.views || 0,
-                          "Reach (Organik)": c.metrics?.reach || 0,
-                          "Likes (Organik)": c.metrics?.likes || 0,
-                          "Comments (Organik)": c.metrics?.comments || 0,
-                          "Reposts (Organik)": c.metrics?.reposts || 0,
-                          "Shares (Organik)": c.metrics?.shares || 0,
-                          "Saves (Organik)": c.metrics?.saves || 0,
-                          "Profile Visits (Organik)": c.metrics?.profileVisits || 0,
-                          "Bio Link Taps (Organik)": c.metrics?.bioLinkTaps || 0,
-                          "Follows (Organik)": c.metrics?.follows || 0,
+                      const isId = lang === "id";
+                      const row: any = {};
+                      
+                      // 1. Metadata & Jadwal
+                      row[isId ? "ID System (Jangan Diubah)" : "System ID (Do Not Edit)"] = c.id || "";
+                      row[isId ? "Platform" : "Platform"] = c.platform || "";
+                      row[isId ? "Tanggal (1-31)" : "Date (1-31)"] = c.day || 1;
+                      row[isId ? "Bulan (1-12)" : "Month (1-12)"] = c.month || 1;
+                      row[isId ? "Tahun" : "Year"] = c.year || 2025;
+                      row[isId ? "Jam (0-23)" : "Hour (0-23)"] = c.uploadHour || 9;
+                      row[isId ? "Menit" : "Minute"] = c.uploadMinute || 0;
+                      row[isId ? "Judul Konten" : "Content Title"] = c.title || "";
+                      row[isId ? "PIC" : "PIC"] = c.pic || "";
+                      row[isId ? "Pillar" : "Pillar"] = c.pillar || "";
+                      row[isId ? "Tipe Konten" : "Content Type"] = c.contentType || "";
+                      row[isId ? "Status Konten" : "Content Status"] = c.status || "";
+                      row[isId ? "Status Ads" : "Ads Status"] = c.isAds ? "Y" : "N";
+                      
+                      // 2. Copywriting & Strategy
+                      row[isId ? "Objective" : "Objective"] = htmlToPlainText(c.objective || "");
+                      row[isId ? "Hook" : "Hook"] = htmlToPlainText(c.hook || "");
+                      row[isId ? "CTA" : "CTA"] = htmlToPlainText(c.cta || "");
+                      row[isId ? "Caption" : "Caption"] = htmlToPlainText(c.caption || "");
+                      row[isId ? "Brief Konten" : "Content Brief"] = htmlToPlainText(c.briefCopywriting || "");
+                      
+                      // 3. Assets & Reference
+                      row[isId ? "Link Aset" : "Asset Link"] = c.linkAsset || "";
+                      row[isId ? "Link Sosmed" : "Social Media Link"] = c.linkSosmed || c.linkUpload || "";
+                      row[isId ? "Teks Referensi" : "Reference Text"] = c.referenceText || "";
+                      row[isId ? "Link Referensi" : "Reference Link"] = Array.isArray(c.referenceLinks) ? c.referenceLinks.join(", ") : "";
+                      
+                      // 4. Organic Metrics
+                      row[isId ? "Views (Organik)" : "Views (Organic)"] = c.metrics?.views || 0;
+                      row[isId ? "Reach (Organik)" : "Reach (Organic)"] = c.metrics?.reach || 0;
+                      row[isId ? "Likes (Organik)" : "Likes (Organic)"] = c.metrics?.likes || 0;
+                      row[isId ? "Comments (Organik)" : "Comments (Organic)"] = c.metrics?.comments || 0;
+                      row[isId ? "Reposts (Organik)" : "Reposts (Organic)"] = c.metrics?.reposts || 0;
+                      row[isId ? "Shares (Organik)" : "Shares (Organic)"] = c.metrics?.shares || 0;
+                      row[isId ? "Saves (Organik)" : "Saves (Organic)"] = c.metrics?.saves || 0;
+                      row[isId ? "Profile Visits (Organik)" : "Profile Visits (Organic)"] = c.metrics?.profileVisits || 0;
+                      row[isId ? "Bio Link Taps (Organik)" : "Bio Link Taps (Organic)"] = c.metrics?.bioLinkTaps || 0;
+                      row[isId ? "Follows (Organik)" : "Follows (Organic)"] = c.metrics?.follows || 0;
 
-                          // 5. Ads Metrics
-                          "Views (Ads)": c.adsMetrics?.views || 0,
-                          "Reach (Ads)": c.adsMetrics?.reach || 0,
-                          "Likes (Ads)": c.adsMetrics?.likes || 0,
-                          "Comments (Ads)": c.adsMetrics?.comments || 0,
-                          "Reposts (Ads)": c.adsMetrics?.reposts || 0,
-                          "Shares (Ads)": c.adsMetrics?.shares || 0,
-                          "Saves (Ads)": c.adsMetrics?.saves || 0,
-                          "Profile Visits (Ads)": c.adsMetrics?.profileVisits || 0,
-                          "Bio Link Taps (Ads)": c.adsMetrics?.bioLinkTaps || 0,
-                          "Follows (Ads)": c.adsMetrics?.follows || 0,
-                          "Clicks (Ads)": c.adsMetrics?.clicks || 0,
-                          "Conversions (Ads)": c.adsMetrics?.conversions || 0,
-                          "Conversations Started (Ads)": c.adsMetrics?.msgConvStarted || 0,
-                          "3s Plays (Ads)": c.adsMetrics?.threeSecPlays || 0,
-                          "Spend Budget (Ads)": c.adsMetrics?.spendBudget || 0,
-                          "Daily Budget (Ads)": c.adsMetrics?.dailyBudget || 0,
-                          "Duration Days (Ads)": c.adsMetrics?.duration || 0,
-                          "CPR Profile Visit (Ads)": c.adsMetrics?.cprProfileVisit || 0,
-                          "Audience Target (Ads)": c.adsMetrics?.audience || ""
-                      };
+                      // 5. Ads Metrics
+                      row[isId ? "Views (Ads)" : "Views (Ads)"] = c.adsMetrics?.views || 0;
+                      row[isId ? "Reach (Ads)" : "Reach (Ads)"] = c.adsMetrics?.reach || 0;
+                      row[isId ? "Likes (Ads)" : "Likes (Ads)"] = c.adsMetrics?.likes || 0;
+                      row[isId ? "Comments (Ads)" : "Comments (Ads)"] = c.adsMetrics?.comments || 0;
+                      row[isId ? "Reposts (Ads)" : "Reposts (Ads)"] = c.adsMetrics?.reposts || 0;
+                      row[isId ? "Shares (Ads)" : "Shares (Ads)"] = c.adsMetrics?.shares || 0;
+                      row[isId ? "Saves (Ads)" : "Saves (Ads)"] = c.adsMetrics?.saves || 0;
+                      row[isId ? "Profile Visits (Ads)" : "Profile Visits (Ads)"] = c.adsMetrics?.profileVisits || 0;
+                      row[isId ? "Bio Link Taps (Ads)" : "Bio Link Taps (Ads)"] = c.adsMetrics?.bioLinkTaps || 0;
+                      row[isId ? "Follows (Ads)" : "Follows (Ads)"] = c.adsMetrics?.follows || 0;
+                      row[isId ? "Clicks (Ads)" : "Clicks (Ads)"] = c.adsMetrics?.clicks || 0;
+                      row[isId ? "Conversions (Ads)" : "Conversions (Ads)"] = c.adsMetrics?.conversions || 0;
+                      row[isId ? "Conversations Started (Ads)" : "Conversations Started (Ads)"] = c.adsMetrics?.msgConvStarted || 0;
+                      row[isId ? "3s Plays (Ads)" : "3s Plays (Ads)"] = c.adsMetrics?.threeSecPlays || 0;
+                      row[isId ? "Spend Budget (Ads)" : "Spend Budget (Ads)"] = c.adsMetrics?.spendBudget || 0;
+                      row[isId ? "Daily Budget (Ads)" : "Daily Budget (Ads)"] = c.adsMetrics?.dailyBudget || 0;
+                      row[isId ? "Duration Days (Ads)" : "Duration Days (Ads)"] = c.adsMetrics?.duration || 0;
+                      row[isId ? "CPR Profile Visit (Ads)" : "CPR Profile Visit (Ads)"] = c.adsMetrics?.cprProfileVisit || 0;
+                      row[isId ? "Audience Target (Ads)" : "Audience Target (Ads)"] = c.adsMetrics?.audience || "";
+
 
                       // Add custom fields
                       if (Array.isArray(c.customFields)) {
@@ -2112,6 +2483,17 @@ export function Dashboard({ user, profile, planDetails, onUpdateProfile, current
           </motion.div>
         </motion.div>}
         </AnimatePresence>
+      <AnimatePresence>
+        {isImporting && (
+          <motion.div key="importing" initial={{opacity:0, y: -20}} animate={{opacity:1, y: 0}} exit={{opacity:0, y: -20}} style={{position:"fixed", top:24, left:"50%", transform:"translateX(-50%)", background:"white", zIndex:999999, display:"flex", alignItems:"center", gap: 12, padding: "12px 24px", borderRadius: 100, boxShadow:"0 10px 25px rgba(0,0,0,0.1)", border: "1px solid rgba(0,0,0,0.05)"}}>
+            {importStatus.state === 'loading' && <Loader2 className="animate-spin" color="#3B82F6" size={18} />}
+            {importStatus.state === 'success' && <CheckCircle2 color="#10B981" size={18} />}
+            {importStatus.state === 'error' && <AlertTriangle color="#EF4444" size={18} />}
+            <span style={{fontSize: 14, fontWeight: 600, color: "#111827"}}>{importStatus.message}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <AnimatePresence>
         {confirmAction && (
           <motion.div key="confirm" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.8)", zIndex:999999, display:"flex", alignItems:"center", justifyContent:"center"}}>
@@ -2165,6 +2547,151 @@ export function Dashboard({ user, profile, planDetails, onUpdateProfile, current
           </motion.div>
         )}
         </AnimatePresence>
+
+      <AnimatePresence>
+        {showBroadcastModal && activeBroadcast && (
+          <motion.div 
+            key="broadcastDetailModal" 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }} 
+            style={{
+              position: "fixed", 
+              inset: 0, 
+              background: "rgba(0,0,0,0.6)", 
+              backdropFilter: "blur(4px)", 
+              WebkitBackdropFilter: "blur(4px)", 
+              zIndex: 100000, 
+              display: "flex", 
+              alignItems: "center", 
+              justifyContent: "center", 
+              padding: 16
+            }}
+            onClick={() => setShowBroadcastModal(false)}
+          >
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0, y: 20 }} 
+              animate={{ scale: 1, opacity: 1, y: 0 }} 
+              exit={{ scale: 0.95, opacity: 0, y: 20 }} 
+              transition={{ type: "spring", damping: 25, stiffness: 350 }} 
+              style={{
+                background: "white", 
+                borderRadius: 24, 
+                width: "100%", 
+                maxWidth: 520, 
+                padding: 32, 
+                boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+                position: "relative"
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {(() => {
+                const mStyle = getBroadcastStyles(activeBroadcast);
+                return (
+                  <>
+                    {/* Header */}
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
+                      <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                        <div style={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: 20,
+                          background: mStyle.iconBg,
+                          color: mStyle.iconColor,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexShrink: 0
+                        }}>
+                          <Megaphone size={20} />
+                        </div>
+                        <div>
+                          <span style={{
+                            fontSize: 10,
+                            fontWeight: 700,
+                            textTransform: "uppercase",
+                            letterSpacing: "0.5px",
+                            color: mStyle.iconColor,
+                            background: mStyle.iconBg,
+                            padding: "2px 8px",
+                            borderRadius: 12,
+                            display: "inline-block",
+                            marginBottom: 4
+                          }}>
+                            {mStyle.badgeLabel}
+                          </span>
+                          <div style={{ fontSize: 12, color: "rgba(0,0,0,0.4)" }}>
+                            {new Date(activeBroadcast.createdAt).toLocaleDateString(lang === "id" ? "id-ID" : "en-US", {
+                              dateStyle: "medium"
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                      <button 
+                        onClick={() => setShowBroadcastModal(false)}
+                        style={{
+                          background: "rgba(0,0,0,0.04)",
+                          border: "none",
+                          borderRadius: "50%",
+                          width: 32,
+                          height: 32,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          cursor: "pointer",
+                          color: "#6B7280"
+                        }}
+                        className="hover-bg-gray-100 transition-colors"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+
+                    {/* Content */}
+                    <h3 style={{ fontSize: 20, fontWeight: 800, color: "#111827", marginBottom: 14, lineHeight: 1.3 }}>
+                      {activeBroadcast.title}
+                    </h3>
+                    <div 
+                      style={{ 
+                        fontSize: 14, 
+                        color: "#4B5563", 
+                        lineHeight: 1.6, 
+                        maxHeight: 300, 
+                        overflowY: "auto", 
+                        whiteSpace: "pre-wrap",
+                        paddingRight: 8,
+                        marginBottom: 28
+                      }}
+                      className="scrollbar-thin"
+                    >
+                      {activeBroadcast.desc}
+                    </div>
+
+                    {/* Actions */}
+                    <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                      <button 
+                        className="hover-scale btn-hover"
+                        onClick={() => setShowBroadcastModal(false)}
+                        style={{
+                          ...B(true, mStyle.btnBg),
+                          padding: "12px 28px",
+                          borderRadius: 24,
+                          fontSize: 14,
+                          fontWeight: 700,
+                          cursor: "pointer",
+                          boxShadow: `0 4px 12px ${mStyle.btnBg}33`
+                        }}
+                      >
+                        {lang === "id" ? "Selesai Membaca" : "Close"}
+                      </button>
+                    </div>
+                  </>
+                );
+              })()}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <HubyTutorial 
         profile={profile} 

@@ -98,35 +98,35 @@ export function OrderSummary({ user, profile }: { user: any, profile: any }) {
     originalPrice = matchedPlan.originalPrice || matchedPlan.price;
     finalPrice = hasTrialAccess ? 0 : matchedPlan.price;
     features = generateBulletPoints(matchedPlan, 'id');
-  } else if (plan === 'solo') {
-    planName = 'Solo Creator';
-    originalPrice = matchedPlan ? matchedPlan.originalPrice || matchedPlan.price : (isAnnual ? 1188000 : 99000);
-    finalPrice = hasTrialAccess ? 0 : (matchedPlan ? matchedPlan.price : (isAnnual ? 948000 : 99000));
+  } else if (plan === 'plus') {
+    planName = 'Plus';
+    originalPrice = matchedPlan ? matchedPlan.originalPrice || matchedPlan.price : (isAnnual ? 1999000 : 199000);
+    finalPrice = hasTrialAccess ? 0 : (matchedPlan ? matchedPlan.price : (isAnnual ? 999000 : 99000));
     features = matchedPlan?.features || [
       "1 Workspace", 
-      "10 Akun Sosmed", 
-      "100x Generate AI / Bulan"
+      "3 Akun Sosmed", 
+      "100K Credits AI / Bulan"
     ];
-  } else if (plan === 'team') {
-    planName = 'Team';
-    originalPrice = matchedPlan ? matchedPlan.originalPrice || matchedPlan.price : (isAnnual ? 3588000 : 299000);
-    finalPrice = hasTrialAccess ? 0 : (matchedPlan ? matchedPlan.price : (isAnnual ? 2868000 : 299000));
+  } else if (plan === 'pro') {
+    planName = 'Pro';
+    originalPrice = matchedPlan ? matchedPlan.originalPrice || matchedPlan.price : (isAnnual ? 4999000 : 499000);
+    finalPrice = hasTrialAccess ? 0 : (matchedPlan ? matchedPlan.price : (isAnnual ? 2999000 : 299000));
     features = matchedPlan?.features || [
       "3 Workspaces", 
-      "30 Akun Sosmed", 
-      "500x Generate AI / Bulan",
-      "Kolaborasi 3 Anggota"
+      "10 Akun Sosmed", 
+      "1M Credits AI / Bulan",
+      "Kolaborasi 5 Anggota"
     ];
-  } else if (plan === 'agency') {
-    planName = 'Agency';
-    originalPrice = matchedPlan ? matchedPlan.originalPrice || matchedPlan.price : (isAnnual ? 10788000 : 899000);
-    finalPrice = hasTrialAccess ? 0 : (matchedPlan ? matchedPlan.price : (isAnnual ? 8988000 : 899000));
+  } else if (plan === 'max') {
+    planName = 'Max';
+    originalPrice = matchedPlan ? matchedPlan.originalPrice || matchedPlan.price : (isAnnual ? 12999000 : 1299000);
+    finalPrice = hasTrialAccess ? 0 : (matchedPlan ? matchedPlan.price : (isAnnual ? 8999000 : 899000));
     features = matchedPlan?.features || [
       "Unlimited Workspaces", 
       "Unlimited Akun Sosmed", 
       "Unlimited Generate AI",
       "White-label Export",
-      "Prioritas Dukungan 24/7"
+      "VIP Support"
     ];
   }
 

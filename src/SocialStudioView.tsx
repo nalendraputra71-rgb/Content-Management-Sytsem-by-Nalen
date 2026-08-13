@@ -1933,6 +1933,7 @@ PENTING:
 
   return (
     <div
+      className="md:rounded-t-[28px]"
       style={{
         flex: 1,
         display: "flex",

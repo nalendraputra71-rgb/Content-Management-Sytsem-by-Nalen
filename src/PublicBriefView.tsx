@@ -612,13 +612,15 @@ export function PublicBriefView() {
 
   const userRole = getUserRole();
   const canEdit = userRole === "owner" || userRole === "editor";
-  const canComment = userRole === "owner" || userRole === "editor" || userRole === "commenter";
+  const isGuestCommentsEnabled = brief?.isPublic && brief?.allowComments !== false;
+  const canComment = userRole === "owner" || userRole === "editor" || userRole === "commenter" || isGuestCommentsEnabled;
 
   const isSharedWithCommentAccess = brief ? 
-    (brief.isPublic && (brief.publicRole === "editor" || brief.publicRole === "commenter")) || 
+    isGuestCommentsEnabled ||
+    (brief.isPublic && (brief.publicRole === "editor" || brief.publicRole === "commenter" || brief.linkAccessRole === "editor" || brief.linkAccessRole === "commenter")) || 
     (brief.sharedUsers && brief.sharedUsers.some((u: any) => u.role === "editor" || u.role === "commenter")) : false;
   
-  const showCommentUI = isSharedWithCommentAccess || (comments && comments.length > 0) || userRole === "editor" || userRole === "commenter";
+  const showCommentUI = isSharedWithCommentAccess || (comments && comments.length > 0) || userRole === "editor" || userRole === "commenter" || isGuestCommentsEnabled;
 
   const getInitialLayoutFields = () => {
     if (brief && brief.layoutSettings && Array.isArray(brief.layoutSettings.fields)) {

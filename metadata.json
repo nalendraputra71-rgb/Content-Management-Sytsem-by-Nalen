@@ -1,5 +1,5 @@
 {
-  "name": "Nexus Content",
+  "name": "Hubify Social",
   "description": "Content Management System for Social Media Planning and Analytics.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]

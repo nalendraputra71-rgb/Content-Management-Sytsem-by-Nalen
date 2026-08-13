@@ -45,55 +45,68 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   useEffect(() => {
+    let unsubProfile: (() => void) | null = null;
     const unsubAuth = onAuthStateChanged(auth, async (u) => {
       try {
         if (u) {
           try {
-            const snap = await getDoc(doc(db, "users", u.uid));
-            if (snap.exists()) {
-              const data = snap.data();
-              setProfile(data as UserProfile);
-              setShowOnboarding(false);
+            unsubProfile = onSnapshot(doc(db, "users", u.uid), async (snap) => {
+              if (snap.exists()) {
+                const data = snap.data();
+                setProfile(data as UserProfile);
+                setShowOnboarding(false);
 
-              // Run checks and merge updates if necessary to avoid looping
-              let needsUpdate = false;
-              const updates: any = {};
+                // Run checks and merge updates if necessary to avoid looping
+                let needsUpdate = false;
+                const updates: any = {};
 
-              if (data.emailVerified !== u.emailVerified) {
-                updates.emailVerified = u.emailVerified;
-                needsUpdate = true;
-              }
-              if (u.email?.toLowerCase() === "nalendraputra71@gmail.com" && data.role !== "admin") {
-                updates.role = "admin";
-                needsUpdate = true;
-              }
-
-              if (needsUpdate) {
-                try {
-                  await setDoc(doc(db, "users", u.uid), updates, { merge: true });
-                  setProfile((prev: any) => ({ ...prev, ...updates }));
-                } catch (err) {
-                  console.warn("Failed to auto-update user profile details on login:", err);
+                if (data.emailVerified !== u.emailVerified) {
+                  updates.emailVerified = u.emailVerified;
+                  needsUpdate = true;
                 }
+                if (u.email?.toLowerCase() === "nalendraputra71@gmail.com" && data.role !== "admin") {
+                  updates.role = "admin";
+                  needsUpdate = true;
+                }
+
+                if (needsUpdate) {
+                  try {
+                    await setDoc(doc(db, "users", u.uid), updates, { merge: true });
+                    // No need to setProfile here, onSnapshot will catch it
+                  } catch (err) {
+                    console.warn("Failed to auto-update user profile details on login:", err);
+                  }
+                }
+              } else {
+                setProfile(null);
+                setShowOnboarding(false);
               }
-            } else {
-              setShowOnboarding(false);
-            }
+              setAuthLoading(false);
+            }, (err) => {
+              console.error("User profile fetch error:", err);
+              setAuthLoading(false);
+            });
           } catch (err) {
             console.error("User profile fetch error:", err);
+            setAuthLoading(false);
           }
           setUser(u);
         } else {
+          if (unsubProfile) {
+            unsubProfile();
+            unsubProfile = null;
+          }
           setUser(null);
           setProfile(null);
+          setAuthLoading(false);
         }
       } catch (err) {
         console.error("Auth init error:", err);
-      } finally {
         setAuthLoading(false);
       }
     });
     return () => {
+      if (unsubProfile) unsubProfile();
       unsubAuth();
     };
   }, []);

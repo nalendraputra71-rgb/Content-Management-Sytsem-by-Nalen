@@ -22,6 +22,12 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
   const [proUsersCount, setProUsersCount] = useState<number | null>(null);
   const [selectedUser, setSelectedUser] = useState<any>(null);
 
+  const [broadcastsList, setBroadcastsList] = useState<any[]>([]);
+  const [showBroadcastModal, setShowBroadcastModal] = useState(false);
+  const [editingBroadcast, setEditingBroadcast] = useState<any>(null);
+  const [deletingBc, setDeletingBc] = useState<any>(null);
+  const [isDeletingBc, setIsDeletingBc] = useState(false);
+
   const [plans, setPlans] = useState<any[]>([]);
   const [customAssignPlan, setCustomAssignPlan] = useState("vip");
   const [customAssignDuration, setCustomAssignDuration] = useState(30);
@@ -203,12 +209,41 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
     }).catch(err => console.warn("Admin roles fetch error:", err));
 
     getDocs(collection(db, "plans")).then(snap => {
-      setPlans(snap.docs.map(d => ({id: d.id, ...(d.data() as any)})));
+      const allPlans = snap.docs.map(d => ({id: d.id, ...(d.data() as any)}));
+      // Cleanup ghost plans automatically
+      const ghostIds = ['solo', 'team', 'agency', 'solo-monthly', 'solo-annual', 'team-monthly', 'team-annual', 'agency-monthly', 'agency-annual'];
+      const ghosts = allPlans.filter(p => ghostIds.includes(p.id) || ghostIds.includes(p.id.replace('-monthly', '').replace('-annual', '')));
+      ghosts.forEach(async (g) => {
+        try { await deleteDoc(doc(db, "plans", g.id)); } catch (e) {}
+      });
+      const validPlans = allPlans.filter(p => !ghostIds.includes(p.id) && !ghostIds.includes(p.id.replace('-monthly', '').replace('-annual', '')));
+      setPlans(validPlans);
     }).catch(err => console.warn("Admin plans fetch error:", err));
 
     getDocs(collection(db, "promos")).then(snap => {
       setPromosList(snap.docs.map(d => ({id: d.id, ...(d.data() as any)})));
     }).catch(err => console.warn("Admin promos fetch error:", err));
+
+    const unsubBroadcasts = onSnapshot(collection(db, "global_notifications"), (snap) => {
+      const list = snap.docs.map(d => ({id: d.id, ...(d.data() as any)}));
+      list.sort((a: any, b: any) => {
+        const aActive = a.active !== false ? 1 : 0;
+        const bActive = b.active !== false ? 1 : 0;
+        if (aActive !== bActive) {
+          return bActive - aActive;
+        }
+        const getTime = (val: any) => {
+          if (!val) return 0;
+          if (typeof val === 'number') return val;
+          if (val?.toMillis) return val.toMillis();
+          if (val?.seconds) return val.seconds * 1000;
+          return new Date(val).getTime() || 0;
+        };
+        return getTime(b.createdAt) - getTime(a.createdAt);
+      });
+      setBroadcastsList(list);
+    }, (err) => console.warn("Admin broadcasts fetch error:", err));
+    unsubs.push(unsubBroadcasts);
 
     getDocs(query(collection(db, "transactions"), limit(200))).then(snap => {
       setTransactions(snap.docs.map(d => ({id: d.id, ...(d.data() as any)})));
@@ -325,18 +360,6 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
           price: 899000,
           originalPrice: 899000,
           addMonths: 1,
-          popular: false,
-          features: ["Unlimited Workspaces", "Hub.AI: Unlimited Generate AI", "Custom Analytics & Reporting", "White-label Export & Branding", "Prioritas Dukungan 24/7 VIP"],
-          limits: { workspaces: -1, socialAccounts: -1, teamMembers: -1, aiCreditsPerMonth: -1, aiCreditsPerDay: -1, storageMB: -1 },
-          capabilities: { autoPublishing: true, analyticsLevel: 'custom', exportReports: 'white-label', contentApproval: true, commentManagement: true, supportLevel: 'vip' }
-        },
-        {
-          id: "agency-annual",
-          name: "Agency (Annual)",
-          desc: "Skalabilitas tanpa batas untuk agensi besar.",
-          price: 8988000,
-          originalPrice: 10788000,
-          addMonths: 12,
           popular: false,
           features: ["Unlimited Workspaces", "Hub.AI: Unlimited Generate AI", "Custom Analytics & Reporting", "White-label Export & Branding", "Prioritas Dukungan 24/7 VIP"],
           limits: { workspaces: -1, socialAccounts: -1, teamMembers: -1, aiCreditsPerMonth: -1, aiCreditsPerDay: -1, storageMB: -1 },
@@ -614,26 +637,97 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
 
   const [bcTitle, setBcTitle] = useState("");
   const [bcDesc, setBcDesc] = useState("");
-  const [bcTarget, setBcTarget] = useState("all");
+  const [bcTarget, setBcTarget] = useState<string[]>(["all"]);
+  const [bcColorType, setBcColorType] = useState("info"); // "urgent" | "alert" | "info" | "success" | "custom"
+  const [bcBgStart, setBcBgStart] = useState("#3B82F6");
+  const [bcBgEnd, setBcBgEnd] = useState("#1E3A8A");
+  const [bcTextColor, setBcTextColor] = useState("#FFFFFF");
+  const [bcActive, setBcActive] = useState(true);
   const [bcSending, setBcSending] = useState(false);
 
-  const handleSendBroadcast = async () => {
+  const openBroadcastModal = (b?: any) => {
+    if (b) {
+      setEditingBroadcast(b);
+      setBcTitle(b.title || "");
+      setBcDesc(b.desc || "");
+      setBcTarget(b.target ? (Array.isArray(b.target) ? b.target : [b.target]) : ["all"]);
+      setBcColorType(b.colorType || "info");
+      setBcBgStart(b.colorBgStart || "#3B82F6");
+      setBcBgEnd(b.colorBgEnd || "#1E3A8A");
+      setBcTextColor(b.colorTextColor || "#FFFFFF");
+      setBcActive(b.active !== false); // default true if undefined
+    } else {
+      setEditingBroadcast(null);
+      setBcTitle("");
+      setBcDesc("");
+      setBcTarget(["all"]);
+      setBcColorType("info");
+      setBcBgStart("#3B82F6");
+      setBcBgEnd("#1E3A8A");
+      setBcTextColor("#FFFFFF");
+      setBcActive(true);
+    }
+    setShowBroadcastModal(true);
+  };
+
+  const handleSaveBroadcast = async () => {
     if(!bcTitle || !bcDesc) return alert("Title and Desc are required.");
     setBcSending(true);
     try {
-      await addDoc(collection(db, "global_notifications"), {
+      const data = {
         title: bcTitle,
         desc: bcDesc,
         target: bcTarget,
-        createdAt: new Date().getTime(),
-      });
-      alert("Broadcast terkirim.");
-      setBcTitle("");
-      setBcDesc("");
+        colorType: bcColorType,
+        colorBgStart: bcColorType === "custom" ? bcBgStart : "",
+        colorBgEnd: bcColorType === "custom" ? bcBgEnd : "",
+        colorTextColor: bcColorType === "custom" ? bcTextColor : "",
+        active: bcActive,
+        updatedAt: new Date().getTime(),
+      };
+      if (editingBroadcast) {
+        await updateDoc(doc(db, "global_notifications", editingBroadcast.id), data);
+        alert("Broadcast diperbarui.");
+      } else {
+        await addDoc(collection(db, "global_notifications"), {
+          ...data,
+          createdAt: new Date().getTime(),
+        });
+        alert("Broadcast ditambahkan.");
+      }
+      setShowBroadcastModal(false);
     } catch(e:any) {
       alert(e.message);
     }
     setBcSending(false);
+  };
+
+  const confirmDeleteBroadcast = async () => {
+    if (!deletingBc) return;
+    const targetId = deletingBc.id;
+    setIsDeletingBc(true);
+    setBroadcastsList(prev => prev.filter(item => item.id !== targetId));
+    try {
+      await deleteDoc(doc(db, "global_notifications", targetId));
+      setDeletingBc(null);
+    } catch (e: any) {
+      alert("Gagal menghapus: " + e.message);
+    } finally {
+      setIsDeletingBc(false);
+    }
+  };
+
+  const handleToggleBroadcast = async (b: any) => {
+    const newActive = b.active !== false ? false : true;
+    setBroadcastsList(prev => prev.map(item => item.id === b.id ? { ...item, active: newActive } : item));
+    try {
+      await updateDoc(doc(db, "global_notifications", b.id), {
+        active: newActive,
+        updatedAt: new Date().getTime()
+      });
+    } catch (e: any) {
+      alert("Gagal mengupdate status: " + e.message);
+    }
   };
 
   const isAdminUser = userProfile?.role === "admin" || userProfile?.email?.toLowerCase() === "nalendraputra71@gmail.com";
@@ -656,7 +750,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
   const filteredUsers = users.filter((u:any) => (u.email || "").toLowerCase().includes(searchEmail.toLowerCase()));
 
   return (
-    <div style={{flex:1, width:"100%", display:"flex", flexDirection:"column", minHeight:0, background:"#FAFAFA", overflow:"hidden"}}>
+    <div className="md:rounded-t-[28px]" style={{flex:1, width:"100%", display:"flex", flexDirection:"column", minHeight:0, background:"#FAFAFA", overflow:"hidden"}}>
       {/* Header */}
       <div style={{background:"#FFFFFF", padding:"16px 28px", display:"flex", justifyContent:"space-between", alignItems:"center", borderBottom:"1px solid rgba(0,0,0,0.05)", zIndex:10}}>
         <div style={{display:"flex", alignItems:"center", gap: 12}}>
@@ -1153,32 +1247,187 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
 
             {/* PLANS & PROMOS */}
             {activeTab === "plans" && (
-              <motion.div key="plans" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0}} style={{display: "flex", flexDirection: "column", gap: 24}}>
-                <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", paddingBottom: 16, borderBottom: "1px solid rgba(0,0,0,0.04)"}}>
-                   <div>
-                     <h2 style={{fontSize:24, fontWeight:800, color: "#111827", margin:0, letterSpacing:"-0.5px"}}>Paket & Promosi</h2>
-                     <p style={{fontSize:13, color:"rgba(17,24,39,0.5)", marginTop:4}}>Konfigurasi skema pricing paket langganan dan kode diskon kupon marketing.</p>
+              <motion.div key="plans" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0}} style={{display: "flex", flexDirection: "column", gap: 28}}>
+                
+                {/* Header & Quick Action Toolbar */}
+                <div style={{background: "#FFFFFF", borderRadius: 24, padding: "24px 28px", border: "1px solid rgba(0,0,0,0.05)", boxShadow: "0 10px 30px rgba(0,0,0,0.01)", display: "flex", flexDirection: "column", gap: 20}}>
+                   <div style={{display:"flex", justifyContent:"space-between", alignItems:"flex-start", flexWrap: "wrap", gap: 16}}>
+                      <div>
+                        <div style={{display: "flex", alignItems: "center", gap: 10, marginBottom: 4}}>
+                          <div style={{width: 36, height: 36, borderRadius: 12, background: "rgba(37,99,235,0.08)", color: "var(--theme-primary, #2563EB)", display: "flex", alignItems: "center", justifyContent: "center"}}>
+                            <Package size={20} />
+                          </div>
+                          <h2 style={{fontSize:22, fontWeight:800, color: "#111827", margin:0, letterSpacing:"-0.5px"}}>Paket & Promosi</h2>
+                        </div>
+                        <p style={{fontSize:13, color:"rgba(17,24,39,0.5)", margin:0, paddingLeft: 46}}>Konfigurasi skema harga paket langganan dan voucher diskon promo secara terpusat.</p>
+                      </div>
+                      
+                      {/* Control Action Buttons */}
+                      <div style={{display:"flex", gap:10, flexWrap: "wrap", alignItems: "center"}}>
+                        <button onClick={() => { setEditingPlan({}); setEditingFeatures([]); setShowPlanModal(true); }} style={{background:"var(--theme-primary, #2563EB)", color:"white", border:"none", padding:"10px 18px", borderRadius:12, fontSize:13, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", gap:8, boxShadow: "0 4px 12px rgba(37,99,235,0.2)", transition: "all 0.2s"}} className="hover-scale">
+                          <Package size={15}/> + Paket Baru
+                        </button>
+                        <button onClick={() => { setEditingPromo({}); setShowPromoModal(true); }} style={{background:"#111827", color: "#FFFFFF", border:"none", padding:"10px 18px", borderRadius:12, fontSize:13, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", gap:8, boxShadow: "0 4px 12px rgba(0,0,0,0.1)", transition: "all 0.2s"}} className="hover-scale">
+                          <Tag size={15}/> + Voucher Baru
+                        </button>
+                        <button onClick={async () => {
+                           const restoredPlans = [
+                             {
+                                   id: "plus-monthly",
+                                   name: "Plus (Monthly)",
+                                   desc: "Cocok untuk kreator individu.",
+                                   price: 99000,
+                                   originalPrice: 199000,
+                                   addMonths: 1,
+                                   popular: false,
+                                   trialEnabled: true,
+                                   trialDays: 7,
+                                   features: ["1 Workspace", "Hub.AI: 100K Credits/Bulan", "Standar Analytics", "Email Support"],
+                                   limits: { workspaces: 1, socialAccounts: 3, teamMembers: 1, aiCreditsPerMonth: 100000, aiCreditsPerDay: 5000, storageMB: 100 },
+                                   capabilities: { autoPublishing: true, analyticsLevel: 'basic', exportReports: 'none', contentApproval: false, commentManagement: false, supportLevel: 'standard' }
+                             },
+                             {
+                                   id: "plus-annual",
+                                   name: "Plus (Annual)",
+                                   desc: "Cocok untuk kreator individu.",
+                                   price: 999000,
+                                   originalPrice: 1999000,
+                                   addMonths: 12,
+                                   popular: false,
+                                   trialEnabled: false,
+                                   trialDays: 0,
+                                   features: ["1 Workspace", "Hub.AI: 100K Credits/Bulan", "Standar Analytics", "Email Support"],
+                                   limits: { workspaces: 1, socialAccounts: 3, teamMembers: 1, aiCreditsPerMonth: 100000, aiCreditsPerDay: 5000, storageMB: 100 },
+                                   capabilities: { autoPublishing: true, analyticsLevel: 'basic', exportReports: 'none', contentApproval: false, commentManagement: false, supportLevel: 'standard' }
+                             },
+                             {
+                                   id: "pro-monthly",
+                                   name: "Pro (Monthly)",
+                                   desc: "Untuk tim kecil yang berkembang.",
+                                   price: 299000,
+                                   originalPrice: 499000,
+                                   addMonths: 1,
+                                   popular: true,
+                                   trialEnabled: true,
+                                   trialDays: 7,
+                                   features: ["3 Workspaces", "Hub.AI: 1M Credits/Bulan", "Advanced Analytics", "Prioritas Support"],
+                                   limits: { workspaces: 3, socialAccounts: 10, teamMembers: 5, aiCreditsPerMonth: 1000000, aiCreditsPerDay: 50000, storageMB: 1000 },
+                                   capabilities: { autoPublishing: true, analyticsLevel: 'advanced', exportReports: 'pdf', contentApproval: true, commentManagement: true, supportLevel: 'priority' }
+                             },
+                             {
+                                   id: "pro-annual",
+                                   name: "Pro (Annual)",
+                                   desc: "Untuk tim kecil yang berkembang.",
+                                   price: 2999000,
+                                   originalPrice: 4999000,
+                                   addMonths: 12,
+                                   popular: true,
+                                   trialEnabled: false,
+                                   trialDays: 0,
+                                   features: ["3 Workspaces", "Hub.AI: 1M Credits/Bulan", "Advanced Analytics", "Prioritas Support"],
+                                   limits: { workspaces: 3, socialAccounts: 10, teamMembers: 5, aiCreditsPerMonth: 1000000, aiCreditsPerDay: 50000, storageMB: 1000 },
+                                   capabilities: { autoPublishing: true, analyticsLevel: 'advanced', exportReports: 'pdf', contentApproval: true, commentManagement: true, supportLevel: 'priority' }
+                             },
+                             {
+                                   id: "max-monthly",
+                                   name: "Max (Monthly)",
+                                   desc: "Skalabilitas tanpa batas untuk agensi & enterprise.",
+                                   price: 899000,
+                                   originalPrice: 1299000,
+                                   addMonths: 1,
+                                   popular: false,
+                                   trialEnabled: false,
+                                   trialDays: 0,
+                                   features: ["Unlimited Workspaces", "Hub.AI: Unlimited Generate AI", "Custom Analytics", "VIP Support"],
+                                   limits: { workspaces: -1, socialAccounts: -1, teamMembers: -1, aiCreditsPerMonth: -1, aiCreditsPerDay: -1, storageMB: -1 },
+                                   capabilities: { autoPublishing: true, analyticsLevel: 'custom', exportReports: 'white-label', contentApproval: true, commentManagement: true, supportLevel: 'vip' }
+                             },
+                             {
+                                   id: "max-annual",
+                                   name: "Max (Annual)",
+                                   desc: "Skalabilitas tanpa batas untuk agensi & enterprise.",
+                                   price: 8999000,
+                                   originalPrice: 12999000,
+                                   addMonths: 12,
+                                   popular: false,
+                                   trialEnabled: false,
+                                   trialDays: 0,
+                                   features: ["Unlimited Workspaces", "Hub.AI: Unlimited Generate AI", "Custom Analytics", "VIP Support"],
+                                   limits: { workspaces: -1, socialAccounts: -1, teamMembers: -1, aiCreditsPerMonth: -1, aiCreditsPerDay: -1, storageMB: -1 },
+                                   capabilities: { autoPublishing: true, analyticsLevel: 'custom', exportReports: 'white-label', contentApproval: true, commentManagement: true, supportLevel: 'vip' }
+                             }
+                           ];
+                           try {
+                             for(const p of restoredPlans) {
+                               await setDoc(doc(db, "plans", p.id), p);
+                             }
+                             getDocs(collection(db, "plans")).then(snap => {
+                               const allPlans = snap.docs.map(d => ({id: d.id, ...(d.data() as any)}));
+                               const ghostIds = ['solo', 'team', 'agency', 'solo-monthly', 'solo-annual', 'team-monthly', 'team-annual', 'agency-monthly', 'agency-annual'];
+                               setPlans(allPlans.filter(p => !ghostIds.includes(p.id) && !ghostIds.includes(p.id.replace('-monthly', '').replace('-annual', ''))));
+                             });
+                             alert("Paket Plus, Pro, dan Max berhasil dipulihkan!");
+                           } catch(e: any) {
+                             alert("Gagal: " + e.message);
+                           }
+                        }} style={{background:"rgba(16,185,129,0.08)", color:"#059669", border:"1px solid rgba(16,185,129,0.2)", padding:"10px 16px", borderRadius:12, fontSize:12, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", gap:6, transition: "all 0.2s"}} className="hover-scale">
+                          <RefreshCw size={14}/> Pulihkan Plus/Pro/Max
+                        </button>
+                        <button onClick={seedDefaultData} style={{background:"rgba(239,68,68,0.06)", color:"#DC2626", border:"1px solid rgba(239,68,68,0.15)", padding:"10px 16px", borderRadius:12, fontSize:12, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", gap:6, transition: "all 0.2s"}} className="hover-scale" title="Mengembalikan seluruh data ke default awal (Paket & Promosi)">
+                          <RefreshCw size={14}/> Reset Semua
+                        </button>
+                      </div>
                    </div>
-                   <div style={{display:"flex", gap:10, flexWrap: "wrap"}}>
-                     <button onClick={seedDefaultData} style={{background:"rgba(var(--theme-primary-rgb, 37,99,235), 0.06)", color:"var(--theme-primary, #2563EB)", border:"none", padding:"10px 18px", borderRadius:12, fontSize:13, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", gap:6, transition: "all 0.2s"}} className="hover-scale">
-                       <RefreshCw size={14}/> Muat Data Default
-                     </button>
-                     <button onClick={() => { setEditingPromo({}); setShowPromoModal(true); }} style={{background:"#FFFFFF", border:"1px solid rgba(0,0,0,0.08)", color: "#111827", padding:"10px 18px", borderRadius:12, fontSize:13, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", gap:6, transition: "all 0.2s"}} className="hover-scale">
-                       <Tag size={14}/> Voucher Baru
-                     </button>
-                     <button onClick={() => { setEditingPlan({}); setEditingFeatures([]); setShowPlanModal(true); }} style={{background:"var(--theme-primary, #2563EB)", color:"white", border:"none", padding:"10px 20px", borderRadius:12, fontSize:13, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", gap:6, transition: "all 0.2s"}} className="hover-scale">
-                       <Package size={14}/> Paket Baru
-                     </button>
+
+                   {/* Stats Overview Bar */}
+                   <div style={{display:"grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14, paddingTop: 16, borderTop: "1px solid rgba(0,0,0,0.04)"}}>
+                      <div style={{background: "rgba(37,99,235,0.03)", padding: "14px 18px", borderRadius: 16, border: "1px solid rgba(37,99,235,0.08)", display: "flex", alignItems: "center", justifyContent: "space-between"}}>
+                        <div>
+                          <div style={{fontSize: 11, fontWeight: 700, color: "rgba(17,24,39,0.5)", textTransform: "uppercase", letterSpacing: "0.5px"}}>Paket Aktif</div>
+                          <div style={{fontSize: 20, fontWeight: 800, color: "var(--theme-primary, #2563EB)", marginTop: 2}}>{groupedPlans.length} Kategori</div>
+                        </div>
+                        <div style={{width: 38, height: 38, borderRadius: 12, background: "rgba(37,99,235,0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--theme-primary, #2563EB)"}}>
+                          <Package size={18} />
+                        </div>
+                      </div>
+
+                      <div style={{background: "rgba(16,185,129,0.03)", padding: "14px 18px", borderRadius: 16, border: "1px solid rgba(16,185,129,0.08)", display: "flex", alignItems: "center", justifyContent: "space-between"}}>
+                        <div>
+                          <div style={{fontSize: 11, fontWeight: 700, color: "rgba(17,24,39,0.5)", textTransform: "uppercase", letterSpacing: "0.5px"}}>Voucher Aktif</div>
+                          <div style={{fontSize: 20, fontWeight: 800, color: "#10B981", marginTop: 2}}>{promosList.filter(p => p.isActive).length} Kode</div>
+                        </div>
+                        <div style={{width: 38, height: 38, borderRadius: 12, background: "rgba(16,185,129,0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#10B981"}}>
+                          <Tag size={18} />
+                        </div>
+                      </div>
+
+                      <div style={{background: "rgba(139,92,246,0.03)", padding: "14px 18px", borderRadius: 16, border: "1px solid rgba(139,92,246,0.08)", display: "flex", alignItems: "center", justifyContent: "space-between"}}>
+                        <div>
+                          <div style={{fontSize: 11, fontWeight: 700, color: "rgba(17,24,39,0.5)", textTransform: "uppercase", letterSpacing: "0.5px"}}>Opsi Langganan</div>
+                          <div style={{fontSize: 20, fontWeight: 800, color: "#8B5CF6", marginTop: 2}}>Bulanan & Tahunan</div>
+                        </div>
+                        <div style={{width: 38, height: 38, borderRadius: 12, background: "rgba(139,92,246,0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#8B5CF6"}}>
+                          <Calendar size={18} />
+                        </div>
+                      </div>
                    </div>
                 </div>
 
-                <div style={{marginTop: 8}}>
-                  <h3 style={{fontSize:16, fontWeight:800, color: "#111827", marginBottom:16, display: "flex", alignItems: "center", gap: 8}}>
-                    <Package size={18} color="var(--theme-primary)" />
-                    Subscription Plans (Paket Langganan)
-                  </h3>
+                {/* Subscription Plans Section */}
+                <div>
+                  <div style={{display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18}}>
+                    <h3 style={{fontSize:17, fontWeight:800, color: "#111827", margin:0, display: "flex", alignItems: "center", gap: 10}}>
+                      <div style={{width: 28, height: 28, borderRadius: 8, background: "rgba(37,99,235,0.1)", color: "var(--theme-primary, #2563EB)", display: "flex", alignItems: "center", justifyContent: "center"}}>
+                        <Package size={16} />
+                      </div>
+                      Subscription Plans (Paket Langganan)
+                    </h3>
+                    <span style={{fontSize: 12, fontWeight: 700, color: "rgba(17,24,39,0.5)", background: "#FFFFFF", padding: "4px 12px", borderRadius: 20, border: "1px solid rgba(0,0,0,0.05)"}}>
+                      Total {groupedPlans.length} Paket
+                    </span>
+                  </div>
                   
-                  <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(320px, 1fr))", gap:20, marginBottom:40}}>
+                  <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(340px, 1fr))", gap:22}}>
                     {groupedPlans.map(p => {
                       const monthlyPrice = p.monthlyPrice || 0;
                       const monthlyOriginal = p.monthlyOriginalPrice || 0;
@@ -1190,75 +1439,85 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                       const annualSavings = annualOriginal - annualPrice;
 
                       return (
-                        <div key={p.id} style={CARD({padding:24, borderRadius:24, background: "#FFFFFF", position: "relative", border:"1px solid rgba(0,0,0,0.04)", overflow: "hidden", display:"flex", flexDirection:"column", gap: 20, boxShadow:"0 10px 30px rgba(0,0,0,0.02)", transition: "all 0.2s"})} className="hover-scale">
-                           {p.popular && (
-                             <div style={{position: "absolute", top: 12, right: 12, background:"rgba(37,99,235,0.08)", color:"var(--theme-primary, #2563EB)", fontSize:10, fontWeight:800, padding:"4px 10px", borderRadius:30, textTransform:"uppercase", display: "flex", alignItems: "center", gap: 4}}>
-                               <Sparkles size={10} /> Popular
-                             </div>
-                           )}
+                        <div key={p.id} style={CARD({padding:24, borderRadius:24, background: "#FFFFFF", position: "relative", border: p.popular ? "1.5px solid var(--theme-primary, #2563EB)" : "1px solid rgba(0,0,0,0.06)", overflow: "hidden", display:"flex", flexDirection:"column", gap: 20, boxShadow: p.popular ? "0 12px 36px rgba(37,99,235,0.08)" : "0 8px 24px rgba(0,0,0,0.02)", transition: "all 0.2s"})} className="hover-scale">
                            
-                           <div>
-                              <div style={{fontSize:18, fontWeight:800, color: "#111827"}}>{p.name}</div>
-                              <div style={{fontSize:12, color:"rgba(17,24,39,0.5)", marginTop:4}}>{p.desc}</div>
+                           {/* Badge Row */}
+                           <div style={{display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8}}>
+                             <div style={{fontSize:18, fontWeight:800, color: "#111827"}}>{p.name}</div>
+                             <div style={{display: "flex", alignItems: "center", gap: 6}}>
+                                {p.trialEnabled && (
+                                  <span style={{background: "rgba(16,185,129,0.1)", color: "#059669", fontSize: 10, fontWeight: 800, padding: "3px 8px", borderRadius: 20, border: "1px solid rgba(16,185,129,0.2)"}}>
+                                    ✨ {p.trialDays || 7} Hari Trial
+                                  </span>
+                                )}
+                                {p.popular && (
+                                  <span style={{background: "rgba(37,99,235,0.1)", color: "var(--theme-primary, #2563EB)", fontSize:10, fontWeight:800, padding:"3px 9px", borderRadius:20, border: "1px solid rgba(37,99,235,0.2)", display: "flex", alignItems: "center", gap: 4}}>
+                                    <Sparkles size={11} /> Popular
+                                  </span>
+                                )}
+                             </div>
                            </div>
+                           
+                           <div style={{fontSize:12, color:"rgba(17,24,39,0.5)", marginTop: -12, lineHeight: "1.4"}}>{p.desc}</div>
 
                            {/* Comparative Pricing Layout */}
                            <div style={{display:"grid", gridTemplateColumns: "1fr 1fr", gap:10}}>
-                              <div style={{background:"rgba(0,0,0,0.015)", padding:12, borderRadius:16, border:"1px solid rgba(0,0,0,0.025)"}}>
-                                 <div style={{fontSize:9, color:"rgba(17,24,39,0.4)", fontWeight:800, textTransform:"uppercase", marginBottom:4, letterSpacing: "0.5px"}}>Bulanan (Monthly)</div>
+                              <div style={{background:"rgba(0,0,0,0.015)", padding:"12px 14px", borderRadius:16, border:"1px solid rgba(0,0,0,0.03)", display: "flex", flexDirection: "column", justifyContent: "between"}}>
+                                 <div style={{fontSize:10, color:"rgba(17,24,39,0.4)", fontWeight:800, textTransform:"uppercase", marginBottom:4, letterSpacing: "0.5px"}}>Bulanan (Monthly)</div>
                                  <div style={{fontSize:16, fontWeight:800, color:"#111827"}}>Rp{monthlyPrice.toLocaleString("id-ID")}</div>
-                                 {monthlyOriginal > monthlyPrice && (
+                                 {monthlyOriginal > monthlyPrice ? (
                                     <div style={{display: "flex", flexDirection: "column", gap: 2, marginTop: 4}}>
                                       <div style={{fontSize:10, color:"rgba(17,24,39,0.4)", textDecoration:"line-through"}}>Rp{monthlyOriginal.toLocaleString("id-ID")}</div>
-                                      <span style={{background: "rgba(16,185,129,0.1)", color: "#10B981", fontSize: 8, padding: "2px 4px", borderRadius: 4, fontWeight: 900, alignSelf: "flex-start"}}>SAVE {monthlyDiscountPercent}%</span>
+                                      <span style={{background: "rgba(16,185,129,0.1)", color: "#10B981", fontSize: 9, padding: "2px 6px", borderRadius: 4, fontWeight: 900, alignSelf: "flex-start"}}>SAVE {monthlyDiscountPercent}%</span>
                                     </div>
+                                 ) : (
+                                    <div style={{fontSize: 10, color: "rgba(17,24,39,0.3)", marginTop: 4}}>Harga Standar</div>
                                  )}
                               </div>
                               
-                              <div style={{background:"rgba(16,185,129,0.03)", padding:12, borderRadius:16, border:"1px solid rgba(16,185,129,0.08)", position: "relative"}}>
-                                 <div style={{fontSize:9, color:"#10B981", fontWeight:800, textTransform:"uppercase", marginBottom:4, letterSpacing: "0.5px", display: "flex", alignItems: "center", gap: 3}}>
-                                   Tahunan (Annual)
+                              <div style={{background:"rgba(16,185,129,0.03)", padding:"12px 14px", borderRadius:16, border:"1px solid rgba(16,185,129,0.12)", position: "relative"}}>
+                                 <div style={{fontSize:10, color:"#059669", fontWeight:800, textTransform:"uppercase", marginBottom:4, letterSpacing: "0.5px", display: "flex", alignItems: "center", justifyContent: "space-between"}}>
+                                   Tahunan
                                    {annualDiscountPercent > 0 && (
-                                     <span style={{background: "#10B981", color: "#FFF", fontSize: 8, padding: "1px 4px", borderRadius: 4, fontWeight: 900}}>SAVE {annualDiscountPercent}%</span>
+                                     <span style={{background: "#10B981", color: "#FFF", fontSize: 8, padding: "1px 5px", borderRadius: 4, fontWeight: 900}}>SAVE {annualDiscountPercent}%</span>
                                    )}
                                  </div>
-                                 <div style={{fontSize:16, fontWeight:800, color:"#10B981"}}>Rp{annualPrice.toLocaleString("id-ID")}</div>
-                                 <div style={{fontSize:9, color:"rgba(16,185,129,0.7)", fontWeight:600}}>(Setara Rp{Math.round(annualPrice / 12).toLocaleString("id-ID")}/bln)</div>
+                                 <div style={{fontSize:16, fontWeight:800, color:"#059669"}}>Rp{annualPrice.toLocaleString("id-ID")}</div>
+                                 <div style={{fontSize:9, color:"rgba(16,185,129,0.8)", fontWeight:700, marginTop: 1}}>(Setara Rp{Math.round(annualPrice / 12).toLocaleString("id-ID")}/bln)</div>
                                  {annualOriginal > annualPrice && (
-                                    <div style={{display: "flex", flexDirection: "column", gap: 2, marginTop: 4}}>
-                                      <div style={{fontSize:10, color:"rgba(17,24,39,0.3)", textDecoration:"line-through"}}>Rp{annualOriginal.toLocaleString("id-ID")}</div>
-                                      <div style={{fontSize:8, color:"#10B981", fontWeight:800}}>Hemat Rp{annualSavings.toLocaleString("id-ID")}</div>
+                                    <div style={{fontSize:9, color:"#10B981", fontWeight:800, marginTop: 3}}>
+                                      Hemat Rp{annualSavings.toLocaleString("id-ID")}
                                     </div>
                                  )}
                               </div>
                            </div>
 
                          {/* Usage Limits Section with clean Icons */}
-                         <div style={{background: "rgba(0,0,0,0.01)", padding: 16, borderRadius: 16, display:"flex", flexDirection:"column", gap:10}}>
-                            <div style={{fontSize: 11, fontWeight: 800, color: "rgba(17,24,39,0.4)", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 2}}>Batasan Penggunaan</div>
+                         <div style={{background: "rgba(0,0,0,0.015)", padding: 14, borderRadius: 16, border: "1px solid rgba(0,0,0,0.025)", display:"flex", flexDirection:"column", gap:10}}>
+                            <div style={{fontSize: 10, fontWeight: 800, color: "rgba(17,24,39,0.4)", textTransform: "uppercase", letterSpacing: "0.5px"}}>Batasan Penggunaan</div>
                             
-                            <div style={{display:"grid", gridTemplateColumns: "1fr 1fr", gap: 8}}>
+                            <div style={{display:"grid", gridTemplateColumns: "1fr 1fr", gap: 10}}>
                               <div style={{display: "flex", alignItems: "center", gap: 8, fontSize: 12, fontWeight: 600, color: "#111827"}}>
-                                <div style={{width: 24, height: 24, borderRadius: 8, background: "rgba(0,0,0,0.03)", display: "flex", alignItems: "center", justifyContent: "center"}}>
-                                  <Layout size={12} color="#111827" />
+                                <div style={{width: 26, height: 26, borderRadius: 8, background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.05)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 4px rgba(0,0,0,0.02)"}}>
+                                  <Layout size={13} color="#2563EB" />
                                 </div>
                                 <span>{p.limits?.workspaces === -1 ? "Unlimited" : p.limits?.workspaces} Workspace</span>
                               </div>
                               <div style={{display: "flex", alignItems: "center", gap: 8, fontSize: 12, fontWeight: 600, color: "#111827"}}>
-                                <div style={{width: 24, height: 24, borderRadius: 8, background: "rgba(0,0,0,0.03)", display: "flex", alignItems: "center", justifyContent: "center"}}>
-                                  <Globe size={12} color="#111827" />
+                                <div style={{width: 26, height: 26, borderRadius: 8, background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.05)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 4px rgba(0,0,0,0.02)"}}>
+                                  <Globe size={13} color="#10B981" />
                                 </div>
                                 <span>{p.limits?.socialAccounts === -1 ? "Unlimited" : p.limits?.socialAccounts} Sosmed</span>
                               </div>
                               <div style={{display: "flex", alignItems: "center", gap: 8, fontSize: 12, fontWeight: 600, color: "#111827"}}>
-                                <div style={{width: 24, height: 24, borderRadius: 8, background: "rgba(37,99,235,0.05)", display: "flex", alignItems: "center", justifyContent: "center"}}>
-                                  <Sparkles size={12} color="var(--theme-primary, #2563EB)" />
+                                <div style={{width: 26, height: 26, borderRadius: 8, background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.05)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 4px rgba(0,0,0,0.02)"}}>
+                                  <Sparkles size={13} color="#8B5CF6" />
                                 </div>
-                                <span>{p.limits?.aiCreditsPerMonth === -1 ? "Unlimited" : p.limits?.aiCreditsPerMonth} Credits/bln</span>
+                                <span>{p.limits?.aiCreditsPerMonth === -1 ? "Unlimited" : p.limits?.aiCreditsPerMonth?.toLocaleString("id-ID")} Credits/bln</span>
                               </div>
                               <div style={{display: "flex", alignItems: "center", gap: 8, fontSize: 12, fontWeight: 600, color: "#111827"}}>
-                                <div style={{width: 24, height: 24, borderRadius: 8, background: "rgba(0,0,0,0.03)", display: "flex", alignItems: "center", justifyContent: "center"}}>
-                                  <Users size={12} color="#111827" />
+                                <div style={{width: 26, height: 26, borderRadius: 8, background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.05)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 4px rgba(0,0,0,0.02)"}}>
+                                  <Users size={13} color="#F59E0B" />
                                 </div>
                                 <span>{p.limits?.teamMembers === -1 ? "Unlimited" : p.limits?.teamMembers || "0"} Member</span>
                               </div>
@@ -1267,44 +1526,44 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
 
                          {/* Capabilities Checklist */}
                          <div style={{display: "flex", flexDirection: "column", gap: 8}}>
-                           <div style={{fontSize: 11, fontWeight: 800, color: "rgba(17,24,39,0.4)", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 2}}>Fitur & Layanan</div>
+                           <div style={{fontSize: 10, fontWeight: 800, color: "rgba(17,24,39,0.4)", textTransform: "uppercase", letterSpacing: "0.5px"}}>Fitur & Layanan</div>
                            
                            <div style={{display: "flex", flexWrap: "wrap", gap: 6}}>
                              {p.capabilities?.autoPublishing && (
-                               <span style={{fontSize: 10, fontWeight: 700, color: "#10B981", background: "rgba(16,185,129,0.06)", padding: "4px 10px", borderRadius: 30, display: "flex", alignItems: "center", gap: 4}}>
-                                 <Check size={10} /> Auto-Publish
+                               <span style={{fontSize: 10, fontWeight: 700, color: "#059669", background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.15)", padding: "4px 10px", borderRadius: 30, display: "flex", alignItems: "center", gap: 4}}>
+                                 <Check size={11} /> Auto-Publish
                                </span>
                              )}
                              {p.capabilities?.contentApproval && (
-                               <span style={{fontSize: 10, fontWeight: 700, color: "#10B981", background: "rgba(16,185,129,0.06)", padding: "4px 10px", borderRadius: 30, display: "flex", alignItems: "center", gap: 4}}>
-                                 <Check size={10} /> Approval Workflow
+                               <span style={{fontSize: 10, fontWeight: 700, color: "#059669", background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.15)", padding: "4px 10px", borderRadius: 30, display: "flex", alignItems: "center", gap: 4}}>
+                                 <Check size={11} /> Approval Workflow
                                </span>
                              )}
                              {p.capabilities?.commentManagement && (
-                               <span style={{fontSize: 10, fontWeight: 700, color: "#10B981", background: "rgba(16,185,129,0.06)", padding: "4px 10px", borderRadius: 30, display: "flex", alignItems: "center", gap: 4}}>
-                                 <Check size={10} /> Comment Manager
+                               <span style={{fontSize: 10, fontWeight: 700, color: "#059669", background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.15)", padding: "4px 10px", borderRadius: 30, display: "flex", alignItems: "center", gap: 4}}>
+                                 <Check size={11} /> Comment Manager
                                </span>
                              )}
-                             <span style={{fontSize: 10, fontWeight: 700, color: "var(--theme-primary, #2563EB)", background: "rgba(37,99,235,0.06)", padding: "4px 10px", borderRadius: 30}}>
-                               📈 Analitik: {p.capabilities?.analyticsLevel === "custom" ? "Mendalam" : p.capabilities?.analyticsLevel === "advanced" ? "Lanjutan" : "Dasar"}
+                             <span style={{fontSize: 10, fontWeight: 700, color: "var(--theme-primary, #2563EB)", background: "rgba(37,99,235,0.08)", border: "1px solid rgba(37,99,235,0.15)", padding: "4px 10px", borderRadius: 30}}>
+                               📊 Analitik: {p.capabilities?.analyticsLevel === "custom" ? "Mendalam" : p.capabilities?.analyticsLevel === "advanced" ? "Lanjutan" : "Dasar"}
                              </span>
-                             <span style={{fontSize: 10, fontWeight: 700, color: "var(--theme-primary, #2563EB)", background: "rgba(37,99,235,0.06)", padding: "4px 10px", borderRadius: 30}}>
-                               💌 CS: {p.capabilities?.supportLevel === "vip" ? "24/7 VIP" : p.capabilities?.supportLevel === "priority" ? "Prioritas" : p.capabilities?.supportLevel === "email" ? "Email" : "Komunitas"}
+                             <span style={{fontSize: 10, fontWeight: 700, color: "#7C3AED", background: "rgba(124,58,237,0.08)", border: "1px solid rgba(124,58,237,0.15)", padding: "4px 10px", borderRadius: 30}}>
+                               🎧 CS: {p.capabilities?.supportLevel === "vip" ? "24/7 VIP" : p.capabilities?.supportLevel === "priority" ? "Prioritas" : p.capabilities?.supportLevel === "email" ? "Email" : "Komunitas"}
                              </span>
                            </div>
                          </div>
 
                          {/* Action Buttons */}
-                         <div style={{display:"flex", gap:10, marginTop: "auto", paddingTop: 10, borderTop: "1px solid rgba(0,0,0,0.03)"}}>
-                            <button type="button" onClick={() => { setEditingPlan(p); setEditingFeatures(p.features || []); setShowPlanModal(true); }} style={{flex:1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding:"10px", borderRadius:12, border:"1px solid rgba(0,0,0,0.05)", background:"#FFFFFF", fontWeight:700, color: "#111827", cursor:"pointer", fontSize:12, transition: "all 0.2s"}} className="hover-bg-light">
-                              <Edit2 size={12} /> Edit Detail
+                         <div style={{display:"flex", gap:10, marginTop: "auto", paddingTop: 12, borderTop: "1px solid rgba(0,0,0,0.04)"}}>
+                            <button type="button" onClick={() => { setEditingPlan(p); setEditingFeatures(p.features || []); setShowPlanModal(true); }} style={{flex:1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding:"10px 14px", borderRadius:12, border:"1px solid rgba(0,0,0,0.08)", background:"#FFFFFF", fontWeight:700, color: "#111827", cursor:"pointer", fontSize:12, boxShadow: "0 2px 4px rgba(0,0,0,0.02)", transition: "all 0.2s"}} className="hover-bg-light">
+                              <Edit2 size={13} /> Edit Detail
                             </button>
                              {p.id !== 'free' ? (
-                               <button type="button" onClick={() => setDeletingItem({id: p.monthlyId || p.annualId || p.id, type:"plans", name: p.name})} style={{background:"rgba(239,68,68,0.06)", color:"#EF4444", border:"none", padding:"10px 14px", borderRadius:12, fontWeight:700, cursor:"pointer", fontSize:12, display: "flex", alignItems: "center", gap: 6, transition: "all 0.2s"}} className="hover-scale">
-                                 <Trash2 size={12}/> Hapus
+                               <button type="button" onClick={() => setDeletingItem({id: p.monthlyId || p.annualId || p.id, type:"plans", name: p.name})} style={{background:"rgba(239,68,68,0.06)", color:"#DC2626", border:"1px solid rgba(239,68,68,0.12)", padding:"10px 14px", borderRadius:12, fontWeight:700, cursor:"pointer", fontSize:12, display: "flex", alignItems: "center", gap: 6, transition: "all 0.2s"}} className="hover-scale">
+                                 <Trash2 size={13}/> Hapus
                                </button>
                              ) : (
-                               <span style={{fontSize: 11, fontWeight: 700, color: "rgba(17,24,39,0.4)", padding: "10px 14px", background: "rgba(0,0,0,0.02)", borderRadius: 12, display: "flex", alignItems: "center", gap: 4}}>
+                               <span style={{fontSize: 11, fontWeight: 700, color: "rgba(17,24,39,0.4)", padding: "10px 14px", background: "rgba(0,0,0,0.03)", borderRadius: 12, display: "flex", alignItems: "center", gap: 4}}>
                                  Sistem Default
                                </span>
                              )}
@@ -1314,7 +1573,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                     })}
                     
                     {plans.length === 0 && (
-                      <div style={{gridColumn:"1/-1", padding:"60px 20px", textAlign:"center", background:"#FFFFFF", borderRadius:24, border:"1px dashed rgba(0,0,0,0.08)", color:"#111827", display:"flex", flexDirection:"column", alignItems:"center", gap:16}}>
+                      <div style={{gridColumn:"1/-1", padding:"60px 20px", textAlign:"center", background:"#FFFFFF", borderRadius:24, border:"1px dashed rgba(0,0,0,0.1)", color:"#111827", display:"flex", flexDirection:"column", alignItems:"center", gap:16}}>
                         <div style={{fontSize:14, fontWeight:600, color:"rgba(17,24,39,0.5)"}}>Belum ada data paket langganan di database.</div>
                         <button type="button" onClick={seedDefaultData} style={{background:"var(--theme-primary, #2563EB)", color:"white", border:"none", padding:"12px 24px", borderRadius:12, fontSize:13, fontWeight:800, cursor:"pointer", display:"flex", alignItems:"center", gap:8}}>
                           <RefreshCw size={16}/> Muat Semua Paket & Promo Default
@@ -1324,64 +1583,88 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                   </div>
                 </div>
 
-                <div style={{marginTop: 16}}>
-                  <h3 style={{fontSize:16, fontWeight:800, color: "#111827", marginBottom:16, display: "flex", alignItems: "center", gap: 8}}>
-                    <Tag size={18} color="var(--theme-primary)" />
-                    Coupon & Promo Codes (Kode Voucher)
-                  </h3>
+                {/* Coupon & Promo Codes Section */}
+                <div style={{marginTop: 8}}>
+                  <div style={{display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18}}>
+                    <h3 style={{fontSize:17, fontWeight:800, color: "#111827", margin:0, display: "flex", alignItems: "center", gap: 10}}>
+                      <div style={{width: 28, height: 28, borderRadius: 8, background: "rgba(16,185,129,0.1)", color: "#10B981", display: "flex", alignItems: "center", justifyContent: "center"}}>
+                        <Tag size={16} />
+                      </div>
+                      Coupon & Promo Codes (Kode Voucher)
+                    </h3>
+                    <span style={{fontSize: 12, fontWeight: 700, color: "rgba(17,24,39,0.5)", background: "#FFFFFF", padding: "4px 12px", borderRadius: 20, border: "1px solid rgba(0,0,0,0.05)"}}>
+                      {promosList.length} Kode Voucher
+                    </span>
+                  </div>
 
-                  <div style={CARD({borderRadius:24, overflow:"hidden", border:"1px solid rgba(0,0,0,0.04)", padding: 0, boxShadow: "0 10px 30px rgba(0,0,0,0.01)"})}>
-                     <table style={{width:"100%", borderCollapse:"collapse", fontSize:13}}>
-                        <thead style={{background:"rgba(0,0,0,0.015)", borderBottom: "1px solid rgba(0,0,0,0.03)"}}>
+                  <div style={CARD({borderRadius:24, overflowX:"auto", overflowY:"hidden", border:"1px solid rgba(0,0,0,0.05)", padding: 0, boxShadow: "0 10px 30px rgba(0,0,0,0.01)", background: "#FFFFFF", width: "100%"})}>
+                     <table style={{width:"100%", minWidth: 840, borderCollapse:"collapse", fontSize:13}}>
+                        <thead style={{background:"rgba(0,0,0,0.015)", borderBottom: "1px solid rgba(0,0,0,0.04)"}}>
                           <tr>
-                            <th style={{padding:"16px 20px", textAlign:"left", fontSize:11, fontWeight:800, textTransform:"uppercase", color:"rgba(17,24,39,0.4)", letterSpacing: "0.5px", minWidth:140}}>Kode Promo</th>
-                            <th style={{padding:"16px 20px", textAlign:"center", fontSize:11, fontWeight:800, textTransform:"uppercase", color:"rgba(17,24,39,0.4)", letterSpacing: "0.5px"}}>Diskon</th>
-                            <th style={{padding:"16px 20px", textAlign:"center", fontSize:11, fontWeight:800, textTransform:"uppercase", color:"rgba(17,24,39,0.4)", letterSpacing: "0.5px"}}>Pemakaian</th>
-                            <th style={{padding:"16px 20px", textAlign:"left", fontSize:11, fontWeight:800, textTransform:"uppercase", color:"rgba(17,24,39,0.4)", letterSpacing: "0.5px", minWidth:200}}>Masa Berlaku & Target</th>
-                            <th style={{padding:"16px 20px", textAlign:"center", fontSize:11, fontWeight:800, textTransform:"uppercase", color:"rgba(17,24,39,0.4)", letterSpacing: "0.5px"}}>{lang === "id" ? "Status" : "Status"}</th>
-                            <th style={{padding:"16px 20px", textAlign:"right"}}></th>
+                            <th style={{padding:"16px 20px", textAlign:"left", fontSize:11, fontWeight:800, textTransform:"uppercase", color:"rgba(17,24,39,0.4)", letterSpacing: "0.5px", minWidth:160, whiteSpace:"nowrap"}}>Kode Promo</th>
+                            <th style={{padding:"16px 20px", textAlign:"center", fontSize:11, fontWeight:800, textTransform:"uppercase", color:"rgba(17,24,39,0.4)", letterSpacing: "0.5px", minWidth:130, whiteSpace:"nowrap"}}>Besar Diskon</th>
+                            <th style={{padding:"16px 20px", textAlign:"center", fontSize:11, fontWeight:800, textTransform:"uppercase", color:"rgba(17,24,39,0.4)", letterSpacing: "0.5px", minWidth:140, whiteSpace:"nowrap"}}>Batas Pemakaian</th>
+                            <th style={{padding:"16px 20px", textAlign:"left", fontSize:11, fontWeight:800, textTransform:"uppercase", color:"rgba(17,24,39,0.4)", letterSpacing: "0.5px", minWidth:210}}>Masa Berlaku & Target</th>
+                            <th style={{padding:"16px 20px", textAlign:"center", fontSize:11, fontWeight:800, textTransform:"uppercase", color:"rgba(17,24,39,0.4)", letterSpacing: "0.5px", minWidth:120, whiteSpace:"nowrap"}}>Status</th>
+                            <th style={{padding:"16px 20px", textAlign:"right", minWidth: 140, whiteSpace:"nowrap"}}>Aksi</th>
                           </tr>
                         </thead>
                         <tbody>
                           {promosList.map(p => (
-                            <tr key={p.id} style={{borderBottom:"1px solid rgba(0,0,0,0.02)", verticalAlign:"middle"}} className="hover-bg-light">
-                               <td style={{padding:"16px 20px", fontWeight:800, color: "#111827", whiteSpace:"normal", wordBreak:"break-word"}}>
-                                 <div style={{display: "flex", alignItems: "center", gap: 8}}>
-                                   <div style={{width: 8, height: 8, borderRadius: "50%", background: p.isActive ? "#10B981" : "rgba(17,24,39,0.15)"}} />
-                                   <span style={{fontFamily: "var(--font-mono, monospace)", letterSpacing: "0.5px", background: "rgba(0,0,0,0.03)", padding: "4px 8px", borderRadius: 8}}>{p.code}</span>
+                            <tr key={p.id} style={{borderBottom:"1px solid rgba(0,0,0,0.025)", verticalAlign:"middle"}} className="hover-bg-light">
+                               <td style={{padding:"18px 20px", fontWeight:800, color: "#111827"}}>
+                                 <div style={{display: "flex", alignItems: "center", gap: 10}}>
+                                   <div style={{width: 8, height: 8, borderRadius: "50%", background: p.isActive ? "#10B981" : "rgba(17,24,39,0.2)", boxShadow: p.isActive ? "0 0 8px rgba(16,185,129,0.4)" : "none", flexShrink: 0}} />
+                                   <span style={{fontFamily: "var(--font-mono, monospace)", fontSize: 13, fontWeight: 800, letterSpacing: "0.8px", background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.05)", padding: "5px 10px", borderRadius: 8, color: "#111827", whiteSpace:"nowrap"}}>{p.code}</span>
                                  </div>
                                </td>
-                               <td style={{padding:"16px 20px", textAlign:"center"}}>
-                                 <span style={{background:p.type === "percent" ? "rgba(16,185,129,0.08)" : "rgba(37,99,235,0.08)", color:p.type === "percent" ? "#10B981" : "var(--theme-primary, #2563EB)", padding:"6px 12px", borderRadius:30, fontWeight:800, fontSize:12, display:"inline-flex", alignItems: "center", gap: 4}}>
-                                   {p.type === "percent" ? <Percent size={11} /> : "Rp"}
+                               <td style={{padding:"18px 20px", textAlign:"center"}}>
+                                 <span style={{background: p.type === "percent" ? "rgba(16,185,129,0.08)" : "rgba(37,99,235,0.08)", border: p.type === "percent" ? "1px solid rgba(16,185,129,0.2)" : "1px solid rgba(37,99,235,0.2)", color: p.type === "percent" ? "#059669" : "var(--theme-primary, #2563EB)", padding:"6px 14px", borderRadius:30, fontWeight:800, fontSize:12, display:"inline-flex", alignItems: "center", gap: 4, whiteSpace:"nowrap"}}>
+                                   {p.type === "percent" ? <Percent size={12} /> : "Rp"}
                                    {p.type === "percent" ? `${p.value}%` : p.value.toLocaleString("id-ID")}
                                  </span>
                                </td>
-                               <td style={{padding:"16px 20px", textAlign:"center", fontWeight:700, color: "#111827"}}>
-                                 <span style={{background: "rgba(0,0,0,0.02)", padding: "4px 10px", borderRadius: 10}}>{p.usageCount || 0}x dipakai</span>
+                               <td style={{padding:"18px 20px", textAlign:"center", fontWeight:700, color: "#111827"}}>
+                                 <span style={{background: "rgba(0,0,0,0.025)", padding: "5px 12px", borderRadius: 12, fontSize: 12, border: "1px solid rgba(0,0,0,0.03)", whiteSpace:"nowrap", display:"inline-block"}}>
+                                   {p.usageCount || 0} / {p.usageLimit || "∞"} dipakai
+                                 </span>
                                </td>
-                               <td style={{padding:"16px 20px", textAlign:"left", whiteSpace:"normal"}}>
-                                  <div style={{display: "flex", flexDirection: "column", gap: 2}}>
-                                    <div style={{fontSize:12, color:"#111827", fontWeight:600}}>
-                                      {p.startDate ? `📅 ${p.startDate}` : "Immediate"} sd {p.endDate ? `🏁 ${p.endDate}` : "♾ No Expiry"}
+                               <td style={{padding:"18px 20px", textAlign:"left"}}>
+                                  <div style={{display: "flex", flexDirection: "column", gap: 4}}>
+                                    <div style={{fontSize:12, color:"#111827", fontWeight:600, display: "flex", alignItems: "center", gap: 4, whiteSpace:"nowrap"}}>
+                                      <Calendar size={12} color="rgba(17,24,39,0.4)" />
+                                      {p.startDate ? p.startDate : "Immediate"} — {p.endDate ? p.endDate : "Tanpa Batas"}
                                     </div>
-                                    <div style={{fontSize:10, color:"rgba(17,24,39,0.4)", fontWeight:700, textTransform: "uppercase"}}>
-                                      Target: {p.targetType === "first_timer" ? "Hanya User Baru" : "Semua Pengguna"}
+                                    <div style={{fontSize:10, color:"rgba(17,24,39,0.45)", fontWeight:700, textTransform: "uppercase", letterSpacing: "0.3px"}}>
+                                      Target: {p.targetType === "first_timer" ? "Pengguna Baru" : "Semua Pengguna"}
                                     </div>
+                                    {p.terms && (
+                                      <div style={{fontSize:11, color:"rgba(17,24,39,0.5)", marginTop: 2, fontStyle: "italic", maxWidth: 260, lineHeight: 1.3}}>
+                                        S&K: {p.terms}
+                                      </div>
+                                    )}
                                   </div>
                                </td>
-                               <td style={{padding:"16px 20px", textAlign:"center"}}>
-                                  <button onClick={()=>togglePromo(p)} style={{background:"none", border:"none", cursor:"pointer", padding: 0, display: "inline-flex", alignItems: "center", transition: "all 0.2s"}}>
-                                    {p.isActive ? <ToggleRight color="#10B981" size={28}/> : <ToggleLeft color="rgba(17,24,39,0.2)" size={28}/>}
+                               <td style={{padding:"18px 20px", textAlign:"center"}}>
+                                  <button onClick={()=>togglePromo(p)} style={{background:"none", border:"none", cursor:"pointer", padding: 0, display: "inline-flex", alignItems: "center", gap: 6, transition: "all 0.2s"}}>
+                                    {p.isActive ? (
+                                      <span style={{display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 700, color: "#059669", background: "rgba(16,185,129,0.08)", padding: "4px 10px", borderRadius: 20, whiteSpace:"nowrap"}}>
+                                        <ToggleRight color="#10B981" size={20}/> Aktif
+                                      </span>
+                                    ) : (
+                                      <span style={{display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 700, color: "rgba(17,24,39,0.4)", background: "rgba(0,0,0,0.03)", padding: "4px 10px", borderRadius: 20, whiteSpace:"nowrap"}}>
+                                        <ToggleLeft color="rgba(17,24,39,0.3)" size={20}/> Nonaktif
+                                      </span>
+                                    )}
                                   </button>
                                </td>
-                               <td style={{padding:"16px 20px", textAlign:"right"}}>
-                                  <div style={{display:"flex", gap:8, justifyContent:"flex-end"}}>
-                                     <button onClick={() => { setEditingPromo(p); setShowPromoModal(true); }} style={{color:"var(--theme-primary, #2563EB)", background:"rgba(37,99,235,0.05)", border:"none", padding: "6px 12px", borderRadius: 10, fontWeight:800, cursor:"pointer", fontSize:11, display: "flex", alignItems: "center", gap: 4, transition: "all 0.2s"}} className="hover-scale">
-                                       <Edit2 size={10} /> Edit
+                               <td style={{padding:"18px 20px", textAlign:"right"}}>
+                                  <div style={{display:"flex", gap:8, justifyContent:"flex-end", whiteSpace:"nowrap"}}>
+                                     <button onClick={() => { setEditingPromo(p); setShowPromoModal(true); }} style={{color:"var(--theme-primary, #2563EB)", background:"rgba(37,99,235,0.06)", border:"1px solid rgba(37,99,235,0.12)", padding: "6px 12px", borderRadius: 10, fontWeight:700, cursor:"pointer", fontSize:12, display: "flex", alignItems: "center", gap: 4, transition: "all 0.2s"}} className="hover-scale">
+                                       <Edit2 size={12} /> Edit
                                      </button>
-                                     <button onClick={() => setDeletingItem({id: p.id, type:"promos", name: p.code})} style={{color:"#EF4444", background:"rgba(239,68,68,0.05)", border:"none", padding: "6px 12px", borderRadius: 10, fontWeight:800, cursor:"pointer", fontSize:11, display: "flex", alignItems: "center", gap: 4, transition: "all 0.2s"}} className="hover-scale">
-                                       <Trash2 size={10} /> Hapus
+                                     <button onClick={() => setDeletingItem({id: p.id, type:"promos", name: p.code})} style={{color:"#DC2626", background:"rgba(239,68,68,0.06)", border:"1px solid rgba(239,68,68,0.12)", padding: "6px 12px", borderRadius: 10, fontWeight:700, cursor:"pointer", fontSize:12, display: "flex", alignItems: "center", gap: 4, transition: "all 0.2s"}} className="hover-scale">
+                                       <Trash2 size={12} /> Hapus
                                      </button>
                                   </div>
                                </td>
@@ -1390,7 +1673,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                         </tbody>
                      </table>
                      {promosList.length === 0 && (
-                       <div style={{padding:"40px 20px", textAlign:"center", color:"rgba(17,24,39,0.5)", display:"flex", flexDirection:"column", alignItems:"center", gap:12}}>
+                       <div style={{padding:"50px 20px", textAlign:"center", color:"rgba(17,24,39,0.5)", display:"flex", flexDirection:"column", alignItems:"center", gap:12}}>
                          <div style={{fontSize:13, fontWeight:600}}>Belum ada kode voucher aktif.</div>
                          <button type="button" onClick={seedDefaultData} style={{background:"rgba(var(--theme-primary-rgb, 37,99,235), 0.06)", color:"var(--theme-primary, #2563EB)", border:"none", padding:"10px 20px", borderRadius:12, fontSize:12, fontWeight:800, cursor:"pointer", display:"flex", alignItems:"center", gap:6}}>
                            <RefreshCw size={14}/> Muat Voucher Default
@@ -1521,53 +1804,476 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
 
             {/* BROADCASTS */}
             {activeTab === "broadcasts" && (
-              <motion.div key="broadcasts" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0}} style={{maxWidth:600}}>
-                 <h2 style={{fontSize:28, fontWeight:800, marginBottom:24, letterSpacing:"-1px"}}>Kirim Broadcast Notification</h2>
+              <motion.div key="broadcasts" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0}} style={{maxWidth:850}}>
+                 <div style={{display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20}}>
+                   <div>
+                     <h2 style={{fontSize:24, fontWeight:800, margin: 0, color: "#0F172A", letterSpacing:"-0.5px"}}>Broadcast Notifications</h2>
+                     <p style={{fontSize: 13, color: "#64748B", margin: "4px 0 0 0"}}>Kelola pengumuman publik dan banner notifikasi interaktif secara real-time.</p>
+                   </div>
+                   <button 
+                     onClick={() => openBroadcastModal()} 
+                     className="hover-scale"
+                     style={{
+                       background: "#0F172A", 
+                       color: "#FFFFFF", 
+                       padding: "10px 18px", 
+                       borderRadius: 12, 
+                       fontWeight: 700, 
+                       fontSize: 13, 
+                       border: "none", 
+                       cursor: "pointer", 
+                       display: "flex", 
+                       alignItems: "center", 
+                       gap: 8,
+                       boxShadow: "0 2px 8px rgba(15,23,42,0.15)"
+                     }}
+                   >
+                     <Sparkles size={16} /> Buat Broadcast
+                   </button>
+                 </div>
+
+                 {/* Stats Bar */}
+                 <div style={{display: "flex", gap: 12, marginBottom: 16}}>
+                   <div style={{background: "#F8FAFC", border: "1px solid #E2E8F0", padding: "8px 14px", borderRadius: 10, fontSize: 12, fontWeight: 600, color: "#475569"}}>
+                     Total: <span style={{fontWeight: 800, color: "#0F172A"}}>{broadcastsList.length}</span>
+                   </div>
+                   <div style={{background: "#F0FDF4", border: "1px solid #DCFCE7", padding: "8px 14px", borderRadius: 10, fontSize: 12, fontWeight: 600, color: "#166534"}}>
+                     Aktif: <span style={{fontWeight: 800, color: "#15803D"}}>{broadcastsList.filter(b => b.active !== false).length}</span>
+                   </div>
+                   <div style={{background: "#F8FAFC", border: "1px solid #E2E8F0", padding: "8px 14px", borderRadius: 10, fontSize: 12, fontWeight: 600, color: "#64748B"}}>
+                     Nonaktif: <span style={{fontWeight: 800, color: "#64748B"}}>{broadcastsList.filter(b => b.active === false).length}</span>
+                   </div>
+                 </div>
                  
-                 <div style={CARD({padding:24, borderRadius:24})}>
-                    <div style={{display:"flex", flexDirection:"column", gap:16}}>
-                       <div>
-                          <label style={{display:"block", fontSize:12, fontWeight:700, marginBottom:8}}>Judul Notifikasi</label>
-                          <input 
-                            value={bcTitle} 
-                            onChange={(e)=>setBcTitle(e.target.value)}
-                            style={{width:"100%", padding:"12px", borderRadius:12, border:"1px solid #EEE", fontSize:14}} 
-                            placeholder="Contoh: Fitur Baru: AI Generator"
-                          />
-                       </div>
-                       <div>
-                          <label style={{display:"block", fontSize:12, fontWeight:700, marginBottom:8}}>Isi Pesan</label>
-                          <textarea 
-                            value={bcDesc} 
-                            onChange={(e)=>setBcDesc(e.target.value)}
-                            style={{width:"100%", padding:"12px", borderRadius:12, border:"1px solid #EEE", fontSize:14, minHeight:80, fontFamily:"inherit"}} 
-                            placeholder="Contoh: Kami baru saja merilis fitur AI Generator..."
-                          />
-                       </div>
-                       <div>
-                          <label style={{display:"block", fontSize:12, fontWeight:700, marginBottom:8}}>Target User</label>
-                          <select 
-                            value={bcTarget} 
-                            onChange={(e)=>setBcTarget(e.target.value)}
-                            style={{width:"100%", padding:"12px", borderRadius:12, border:"1px solid #EEE", fontSize:14, background:"white", outline:"none"}}
-                          >
-                            <option value="all">Semua User</option>
-                            <option value="pro">Hanya User PRO</option>
-                            <option value="expired">Hanya User Expired / Free</option>
-                          </select>
-                       </div>
+                 <div style={{background: "#FFFFFF", borderRadius: 16, border: "1px solid #E2E8F0", boxShadow: "0 1px 3px rgba(0,0,0,0.05)", overflow: "hidden"}}>
+                   <div style={{display: "flex", flexDirection: "column"}}>
+                     {broadcastsList.map((b, i) => {
+                       const isUrgent = b.colorType === 'urgent';
+                       const isAlert = b.colorType === 'alert';
+                       const isSuccess = b.colorType === 'success';
                        
-                       <button 
-                         onClick={handleSendBroadcast} 
-                         disabled={bcSending || !bcTitle || !bcDesc}
-                         className="hover-scale btn-hover"
-                         style={{...B(true), width:"100%", height:48, borderRadius:24, opacity: (bcSending || !bcTitle || !bcDesc) ? 0.5 : 1}}
-                       >
-                         {bcSending ? "Mengirim..." : "Kirim Notifikasi"}
-                       </button>
-                    </div>
+                       const iconBg = isUrgent ? '#FEF2F2' : isAlert ? '#FFFBEB' : isSuccess ? '#ECFDF5' : '#EFF6FF';
+                       const iconColor = isUrgent ? '#DC2626' : isAlert ? '#D97706' : isSuccess ? '#059669' : '#2563EB';
+
+                       return (
+                         <div key={b.id} className="hover:bg-slate-50 transition-colors" style={{
+                           padding: "18px 20px", 
+                           display: "flex", 
+                           justifyContent: "space-between", 
+                           alignItems: "center", 
+                           borderBottom: i < broadcastsList.length - 1 ? "1px solid #F1F5F9" : "none",
+                           background: b.active !== false ? "#FFFFFF" : "#FAFBFD",
+                         }}>
+                           <div style={{display: "flex", gap: 14, alignItems: "flex-start", flex: 1, minWidth: 0, marginRight: 16}}>
+                             <div style={{
+                               width: 38, height: 38, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                               background: iconBg,
+                               color: iconColor,
+                               border: `1px solid ${iconBg}`
+                             }}>
+                               <Bell size={18} />
+                             </div>
+                             <div style={{minWidth: 0, flex: 1}}>
+                               <div style={{display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap"}}>
+                                 <span style={{fontSize: 15, fontWeight: 700, color: "#0F172A"}}>{b.title}</span>
+                                 
+                                 {/* Target Badge */}
+                                 <span style={{fontSize: 10, padding: "2px 8px", background: "#F1F5F9", color: "#475569", borderRadius: 6, fontWeight: 600}}>
+                                   {Array.isArray(b.target) ? (
+                                     b.target.includes('all') ? 'Semua User' : 
+                                     b.target.map((t: string) => 
+                                       t === 'pro' ? 'User PRO' : 
+                                       t === 'expired' ? 'Free / Expired' : 
+                                       t.startsWith('plan:') ? `Plan: ${t.replace('plan:', '').toUpperCase()}` : t
+                                     ).join(', ')
+                                   ) : (
+                                     b.target === 'all' ? 'Semua User' : 
+                                     b.target === 'pro' ? 'User PRO' : 
+                                     b.target === 'expired' ? 'Free / Expired' : 
+                                     b.target?.startsWith('plan:') ? `Plan: ${b.target.replace('plan:', '').toUpperCase()}` :
+                                     b.target
+                                   )}
+                                 </span>
+
+                                 {/* Status Badge */}
+                                 {b.active !== false ? (
+                                   <span style={{fontSize: 10, padding: "2px 8px", background: "#DCFCE7", color: "#15803D", borderRadius: 6, fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 4}}>
+                                     <span style={{width: 5, height: 5, borderRadius: "50%", background: "#16A34A"}}></span> Aktif
+                                   </span>
+                                 ) : (
+                                   <span style={{fontSize: 10, padding: "2px 8px", background: "#F1F5F9", color: "#64748B", borderRadius: 6, fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 4}}>
+                                     <span style={{width: 5, height: 5, borderRadius: "50%", background: "#94A3B8"}}></span> Nonaktif
+                                   </span>
+                                 )}
+                               </div>
+                               <div style={{fontSize: 13, color: "#64748B", lineHeight: 1.5, overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical"}}>
+                                 {b.desc}
+                               </div>
+                             </div>
+                           </div>
+
+                           <div style={{display: "flex", gap: 10, alignItems: "center", flexShrink: 0}}>
+                             <button 
+                               onClick={() => handleToggleBroadcast(b)} 
+                               title={b.active !== false ? "Nonaktifkan Broadcast" : "Aktifkan Broadcast"}
+                               style={{background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center", opacity: b.active !== false ? 1 : 0.6}}
+                             >
+                                {b.active !== false ? <ToggleRight size={30} color="#10B981"/> : <ToggleLeft size={30} color="#94A3B8"/>}
+                             </button>
+                             <div style={{width: 1, height: 20, background: "#E2E8F0"}}></div>
+                             <button 
+                               onClick={() => openBroadcastModal(b)} 
+                               title="Edit Broadcast"
+                               style={{background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: 8, padding: 8, cursor: "pointer", color: "#475569", display: "flex", alignItems: "center", justifyContent: "center"}} 
+                               className="hover:bg-slate-100 transition-colors"
+                             >
+                               <Edit2 size={16}/>
+                             </button>
+                             <button 
+                               onClick={() => setDeletingBc(b)} 
+                               title="Hapus Broadcast"
+                               style={{background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 8, padding: 8, cursor: "pointer", color: "#DC2626", display: "flex", alignItems: "center", justifyContent: "center"}} 
+                               className="hover:bg-rose-100 transition-colors"
+                             >
+                               <Trash2 size={16}/>
+                             </button>
+                           </div>
+                         </div>
+                       );
+                     })}
+
+                     {broadcastsList.length === 0 && (
+                       <div style={{padding: "50px 20px", textAlign: "center"}}>
+                          <div style={{width: 56, height: 56, borderRadius: 16, background: "#F1F5F9", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px", color: "#64748B"}}>
+                             <Bell size={24} />
+                          </div>
+                          <div style={{fontSize: 15, fontWeight: 700, color: "#0F172A", marginBottom: 4}}>Belum Ada Broadcast</div>
+                          <div style={{fontSize: 13, color: "#64748B", marginBottom: 16}}>Buat pengumuman pertama Anda untuk dibagikan ke pengguna aplikasi.</div>
+                          <button 
+                            onClick={() => openBroadcastModal()} 
+                            style={{background: "#0F172A", color: "#FFFFFF", padding: "8px 16px", borderRadius: 10, fontWeight: 600, fontSize: 13, border: "none", cursor: "pointer"}}
+                          >
+                            + Buat Broadcast Sekarang
+                          </button>
+                       </div>
+                     )}
+                   </div>
                  </div>
               </motion.div>
+            )}
+
+            {/* Delete Broadcast Confirmation Modal */}
+            {deletingBc && (
+              <div style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(15, 23, 42, 0.4)", backdropFilter: "blur(4px)", zIndex:9999, display:"flex", alignItems:"center", justifyContent:"center", padding: 20}}>
+                <motion.div 
+                  initial={{opacity:0, scale:0.96}} 
+                  animate={{opacity:1, scale:1}} 
+                  style={{
+                    background: "#FFFFFF", 
+                    borderRadius: 20, 
+                    padding: "24px 28px", 
+                    width: "100%", 
+                    maxWidth: 420, 
+                    boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.15)",
+                    border: "1px solid #E2E8F0",
+                    textAlign: "center"
+                  }}
+                >
+                  <div style={{width: 48, height: 48, borderRadius: 14, background: "#FEF2F2", color: "#DC2626", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px"}}>
+                    <Trash2 size={24} />
+                  </div>
+                  <h3 style={{fontSize: 18, fontWeight: 800, color: "#0F172A", margin: "0 0 6px 0"}}>Hapus Broadcast?</h3>
+                  <p style={{fontSize: 13, color: "#64748B", margin: "0 0 20px 0", lineHeight: 1.5}}>
+                    Apakah Anda yakin ingin menghapus pengumuman <b>"{deletingBc.title}"</b>? Tindakan ini akan menghapusnya dari Firestore.
+                  </p>
+                  <div style={{display: "flex", gap: 10}}>
+                    <button
+                      type="button"
+                      onClick={() => setDeletingBc(null)}
+                      disabled={isDeletingBc}
+                      style={{flex: 1, padding: "10px", borderRadius: 10, border: "1px solid #CBD5E1", background: "#FFFFFF", color: "#475569", fontWeight: 700, fontSize: 13, cursor: "pointer"}}
+                    >
+                      Batal
+                    </button>
+                    <button
+                      type="button"
+                      onClick={confirmDeleteBroadcast}
+                      disabled={isDeletingBc}
+                      style={{flex: 1, padding: "10px", borderRadius: 10, border: "none", background: "#DC2626", color: "#FFFFFF", fontWeight: 700, fontSize: 13, cursor: isDeletingBc ? "wait" : "pointer", transition: "all 0.15s"}}
+                    >
+                      {isDeletingBc ? "Menghapus..." : "Ya, Hapus"}
+                    </button>
+                  </div>
+                </motion.div>
+              </div>
+            )}
+
+            {/* Broadcast Modal */}
+            {showBroadcastModal && (
+              <div style={{position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(15, 23, 42, 0.4)", backdropFilter: "blur(4px)", zIndex:9999, display:"flex", alignItems:"center", justifyContent:"center", padding: 20}}>
+                <motion.div 
+                  initial={{opacity:0, scale:0.96}} 
+                  animate={{opacity:1, scale:1}} 
+                  style={{
+                    background: "#FFFFFF", 
+                    borderRadius: 20, 
+                    padding: "28px 32px", 
+                    width: "100%", 
+                    maxWidth: 580, 
+                    maxHeight: "88vh", 
+                    overflowY: "auto", 
+                    boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.15)",
+                    border: "1px solid #E2E8F0"
+                  }}
+                >
+                  <div style={{display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, paddingBottom: 16, borderBottom: "1px solid #F1F5F9"}}>
+                    <div>
+                      <h3 style={{fontSize: 18, fontWeight: 800, color: "#0F172A", margin: 0}}>{editingBroadcast ? "Edit Broadcast" : "Buat Broadcast Baru"}</h3>
+                      <p style={{fontSize: 12, color: "#64748B", margin: "2px 0 0 0"}}>Pengumuman akan langsung tampil di banner atas aplikasi.</p>
+                    </div>
+                    <button 
+                      onClick={() => setShowBroadcastModal(false)} 
+                      style={{background: "#F1F5F9", border: "none", width: 32, height: 32, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#475569"}} 
+                      className="hover:bg-slate-200 transition-colors"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+
+                  <div style={{display:"flex", flexDirection:"column", gap:18}}>
+                       {/* Status Switcher */}
+                       <div>
+                          <label style={{display:"block", fontSize:12, fontWeight:700, marginBottom:8, color: "#334155"}}>Status Pengumuman</label>
+                          <div style={{display: "flex", background: "#F8FAFC", padding: 4, borderRadius: 10, border: "1px solid #E2E8F0", width: "fit-content"}}>
+                            <button
+                              type="button"
+                              onClick={() => setBcActive(true)}
+                              style={{
+                                padding: "6px 16px",
+                                borderRadius: 8,
+                                fontSize: 13,
+                                fontWeight: 700,
+                                border: "none",
+                                cursor: "pointer",
+                                background: bcActive ? "#10B981" : "transparent",
+                                color: bcActive ? "#FFFFFF" : "#64748B",
+                                transition: "all 0.15s"
+                              }}
+                            >
+                              ✓ Aktif
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setBcActive(false)}
+                              style={{
+                                padding: "6px 16px",
+                                borderRadius: 8,
+                                fontSize: 13,
+                                fontWeight: 700,
+                                border: "none",
+                                cursor: "pointer",
+                                background: !bcActive ? "#64748B" : "transparent",
+                                color: !bcActive ? "#FFFFFF" : "#64748B",
+                                transition: "all 0.15s"
+                              }}
+                            >
+                              Nonaktif
+                            </button>
+                          </div>
+                       </div>
+
+                       {/* Judul Notifikasi */}
+                       <div>
+                          <label style={{display:"block", fontSize:12, fontWeight:700, marginBottom:6, color: "#334155"}}>Judul Notifikasi</label>
+                          <input 
+                             value={bcTitle} 
+                             onChange={(e)=>setBcTitle(e.target.value)}
+                             style={{width:"100%", padding:"10px 14px", borderRadius:10, border:"1px solid #CBD5E1", fontSize:14, color: "#0F172A", outline: "none"}} 
+                             placeholder="Contoh: Update Fitur Baru AI Generator"
+                          />
+                       </div>
+
+                       {/* Isi Pesan */}
+                       <div>
+                          <label style={{display:"block", fontSize:12, fontWeight:700, marginBottom:6, color: "#334155"}}>Isi Pesan</label>
+                          <textarea 
+                             value={bcDesc} 
+                             ref={(el) => {
+                               if (el) {
+                                 el.style.height = 'auto';
+                                 el.style.height = `${el.scrollHeight}px`;
+                               }
+                             }}
+                             onChange={(e)=>{
+                               setBcDesc(e.target.value);
+                             }}
+                             style={{width:"100%", padding:"10px 14px", borderRadius:10, border:"1px solid #CBD5E1", fontSize:14, color: "#0F172A", minHeight:85, fontFamily:"inherit", resize: "none", outline: "none", lineHeight: 1.5, overflow: "hidden"}} 
+                             placeholder="Tuliskan isi pengumuman atau instruksi singkat..."
+                          />
+                       </div>
+
+                       {/* Target User */}
+                       <div>
+                          <label style={{display:"block", fontSize:12, fontWeight:700, marginBottom:8, color: "#334155"}}>Target Audiens</label>
+                          <div style={{display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", gap: 8}}>
+                            {[
+                              { id: "all", label: "Semua User" },
+                              { id: "pro", label: "Hanya PRO" },
+                              { id: "expired", label: "Free / Expired" },
+                              ...Array.from(new Set(plans.map(p => p.id.replace(/-monthly|-annual$/, '')))).map(up => ({ id: `plan:${up}`, label: `Plan: ${up.toUpperCase()}` }))
+                            ].map((t) => (
+                              <button
+                                key={t.id}
+                                type="button"
+                                onClick={() => {
+                                  if (t.id === "all") {
+                                    setBcTarget(["all"]);
+                                  } else {
+                                    setBcTarget(prev => {
+                                      const isSelected = prev.includes(t.id);
+                                      let next = isSelected ? prev.filter(x => x !== t.id) : [...prev, t.id];
+                                      next = next.filter(x => x !== "all");
+                                      if (next.length === 0) return ["all"];
+                                      return next;
+                                    });
+                                  }
+                                }}
+                                style={{
+                                  padding: "8px 12px",
+                                  borderRadius: 8,
+                                  fontSize: 12,
+                                  fontWeight: 600,
+                                  border: bcTarget.includes(t.id) ? "1.5px solid #0F172A" : "1px solid #E2E8F0",
+                                  background: bcTarget.includes(t.id) ? "#0F172A" : "#F8FAFC",
+                                  color: bcTarget.includes(t.id) ? "#FFFFFF" : "#475569",
+                                  cursor: "pointer",
+                                  transition: "all 0.15s"
+                                }}
+                              >
+                                {t.label}
+                              </button>
+                            ))}
+                          </div>
+                       </div>
+
+                       {/* Tipe Notifikasi */}
+                       <div>
+                          <label style={{display:"block", fontSize:12, fontWeight:700, marginBottom:8, color: "#334155"}}>Tipe Notifikasi</label>
+                          <div style={{display:"grid", gridTemplateColumns:"repeat(2, 1fr)", gap:8}}>
+                            {[
+                              { id: "info", name: "Fitur / News", color: "#2563EB", bg: "#EFF6FF" },
+                              { id: "success", name: "Promo / Deal", color: "#059669", bg: "#ECFDF5" },
+                              { id: "alert", name: "Peringatan", color: "#D97706", bg: "#FFFBEB" },
+                              { id: "urgent", name: "Kritis / Urgent", color: "#DC2626", bg: "#FEF2F2" },
+                              { id: "custom", name: "Warna Kustom", color: "#7C3AED", bg: "#F5F3FF" }
+                            ].map((opt) => {
+                              const isSelected = bcColorType === opt.id;
+                              return (
+                                <button
+                                  key={opt.id}
+                                  type="button"
+                                  onClick={() => setBcColorType(opt.id)}
+                                  style={{
+                                    padding: "10px 12px",
+                                    borderRadius: 10,
+                                    border: isSelected ? `2px solid ${opt.color}` : "1px solid #E2E8F0",
+                                    background: isSelected ? opt.bg : "#FFFFFF",
+                                    textAlign: "left",
+                                    cursor: "pointer",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 8,
+                                    transition: "all 0.15s"
+                                  }}
+                                >
+                                  <span style={{width: 10, height: 10, borderRadius: "50%", background: opt.color, flexShrink: 0}}></span>
+                                  <span style={{fontWeight: 700, fontSize: 13, color: isSelected ? opt.color : "#334155"}}>{opt.name}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+
+                          {bcColorType === "custom" && (
+                            <div style={{display: "flex", gap:12, padding:12, background: "#F8FAFC", borderRadius: 10, border: "1px solid #E2E8F0", marginTop: 10}}>
+                              <div style={{flex: 1}}>
+                                <label style={{display: "block", fontSize: 10, fontWeight: 700, marginBottom: 4, color: "#64748B"}}>Bg Start</label>
+                                <div style={{display: "flex", gap: 6, alignItems: "center"}}>
+                                  <input type="color" value={bcBgStart} onChange={(e) => setBcBgStart(e.target.value)} style={{border: "none", width: 26, height: 26, padding: 0, background: "none", cursor: "pointer"}} />
+                                  <input type="text" value={bcBgStart} onChange={(e) => setBcBgStart(e.target.value)} style={{flex: 1, padding: "4px 8px", fontSize: 12, border: "1px solid #CBD5E1", borderRadius: 6}} />
+                                </div>
+                              </div>
+                              <div style={{flex: 1}}>
+                                <label style={{display: "block", fontSize: 10, fontWeight: 700, marginBottom: 4, color: "#64748B"}}>Bg End</label>
+                                <div style={{display: "flex", gap: 6, alignItems: "center"}}>
+                                  <input type="color" value={bcBgEnd} onChange={(e) => setBcBgEnd(e.target.value)} style={{border: "none", width: 26, height: 26, padding: 0, background: "none", cursor: "pointer"}} />
+                                  <input type="text" value={bcBgEnd} onChange={(e) => setBcBgEnd(e.target.value)} style={{flex: 1, padding: "4px 8px", fontSize: 12, border: "1px solid #CBD5E1", borderRadius: 6}} />
+                                </div>
+                              </div>
+                              <div style={{flex: 1}}>
+                                <label style={{display: "block", fontSize: 10, fontWeight: 700, marginBottom: 4, color: "#64748B"}}>Text Color</label>
+                                <div style={{display: "flex", gap: 6, alignItems: "center"}}>
+                                  <input type="color" value={bcTextColor} onChange={(e) => setBcTextColor(e.target.value)} style={{border: "none", width: 26, height: 26, padding: 0, background: "none", cursor: "pointer"}} />
+                                  <input type="text" value={bcTextColor} onChange={(e) => setBcTextColor(e.target.value)} style={{flex: 1, padding: "4px 8px", fontSize: 12, border: "1px solid #CBD5E1", borderRadius: 6}} />
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                       </div>
+
+                       {/* Live Banner Preview Box */}
+                       <div style={{background: "#F8FAFC", border: "1px solid #E2E8F0", padding: 12, borderRadius: 12}}>
+                          <label style={{display: "block", fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.5px", color: "#64748B", marginBottom: 8}}>Live Banner Preview</label>
+                          <div style={{
+                            background: bcColorType === "urgent" ? "#9C2B4E" : bcColorType === "alert" ? "#FBC02D" : bcColorType === "success" ? "#059669" : bcColorType === "custom" ? `linear-gradient(135deg, ${bcBgStart} 0%, ${bcBgEnd} 100%)` : "#1D4D7A",
+                            color: bcColorType === "custom" ? bcTextColor : "#FFFFFF",
+                            padding: "8px 14px",
+                            borderRadius: 8,
+                            fontSize: 12,
+                            fontWeight: 600,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between"
+                          }}>
+                            <span>
+                              <span style={{background: "rgba(255,255,255,0.2)", fontSize: 9, padding: "2px 6px", borderRadius: 4, marginRight: 8, textTransform: "uppercase"}}>PROMO</span>
+                              {bcTitle || "Judul Banner"} - <span style={{fontWeight: 400}}>{bcDesc || "Isi pengumuman akan muncul di sini..."}</span>
+                            </span>
+                            <span style={{fontSize: 12, opacity: 0.8}}>✕</span>
+                          </div>
+                       </div>
+
+                       {/* Action Buttons */}
+                       <div style={{display: "flex", gap: 10, marginTop: 6}}>
+                         <button
+                           type="button"
+                           onClick={() => setShowBroadcastModal(false)}
+                           style={{flex: 1, padding: "10px", borderRadius: 10, border: "1px solid #CBD5E1", background: "#FFFFFF", color: "#475569", fontWeight: 700, fontSize: 13, cursor: "pointer"}}
+                         >
+                           Batal
+                         </button>
+                         <button 
+                           type="button"
+                           onClick={handleSaveBroadcast} 
+                           disabled={bcSending || !bcTitle || !bcDesc}
+                           style={{
+                             flex: 2, 
+                             padding: "10px", 
+                             borderRadius: 10, 
+                             background: (bcSending || !bcTitle || !bcDesc) ? "#CBD5E1" : "#0F172A", 
+                             color: "#FFFFFF", 
+                             fontWeight: 700, 
+                             fontSize: 13, 
+                             border: "none", 
+                             cursor: (bcSending || !bcTitle || !bcDesc) ? "not-allowed" : "pointer",
+                             transition: "all 0.15s"
+                           }}
+                         >
+                           {bcSending ? "Menyimpan..." : "Simpan Broadcast"}
+                         </button>
+                       </div>
+                     </div>
+                 </motion.div>
+               </div>
             )}
 
             {/* SETTINGS */}
@@ -1748,8 +2454,8 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                                   </select>
                                   <div style={{fontSize:11, color:"#999", marginTop:6}}>
                                     {lang === "id" 
-                                      ? "Global: User hanya bisa mencicipi free trial sekali saja. Per Paket: User bisa mencicipi trial sekali untuk setiap paket premium yang berbeda (misalnya, mencoba Solo lalu mencoba Team)."
-                                      : "Global: Users can only use a trial once in a lifetime. Per Plan: Users can trial once for each premium plan (e.g. trial Solo, and later trial Team)."}
+                                      ? "Global: User hanya bisa mencicipi free trial sekali saja. Per Paket: User bisa mencicipi trial sekali untuk setiap paket premium yang berbeda (misalnya, mencoba Plus lalu mencoba Pro)."
+                                      : "Global: Users can only use a trial once in a lifetime. Per Plan: Users can trial once for each premium plan (e.g. trial Plus, and later trial Pro)."}
                                   </div>
                                </div>
 
@@ -2284,6 +2990,7 @@ export function AdminPanel({ userProfile, onLogout }: { userProfile: any, onLogo
                        const baseId = deletingItem.id.replace('-monthly', '').replace('-annual', '');
                        await deleteDoc(doc(db, "plans", `${baseId}-monthly`));
                        await deleteDoc(doc(db, "plans", `${baseId}-annual`));
+                      await deleteDoc(doc(db, "plans", baseId));
                      } else {
                        await deleteDoc(doc(db, deletingItem.type, deletingItem.id));
                      }

@@ -254,7 +254,7 @@ export function PrintReportModal({
     const engagementRate = totalReach > 0 ? ((totalEngagement / totalReach) * 100).toFixed(2) : "0.00";
 
     const totalPosts = filteredBase.length;
-    const publishedPosts = filteredBase.filter((c: any) => c.status === "Published").length;
+    const publishedPosts = filteredBase.filter((c: any) => (c.status === "Published" || String(c.status).toLowerCase().includes("tayang") || String(c.status).toLowerCase().includes("publikasi") || getV(c) > 0)).length;
 
     const sortedTopPosts = [...filteredBase]
       .sort((a, b) => getEng(b) - getEng(a))

@@ -369,7 +369,7 @@ const {
                   </div>
                   {editingFieldLeft === "platform" ? (
                     <div ref={activeFieldRef} style={{ width: "55%" }}>
-                      <CustomDropdown alignRight={true} dark={false} value={d.platform} options={platforms} prefix="" onChange={(v)=>{set("platform", v);}} initiallyOpen={true} onClose={() => setEditingFieldLeft(null)} 
+                      <CustomDropdown alignRight={true} dark={false} value={d.platform} options={platforms} prefix="" onChange={(v)=>{set("platform", v);}} initiallyOpen={true} onClose={() => setEditingFieldLeft(null)} onUpdateOptions={(opts, renames) => onSettingUpdate && onSettingUpdate({platforms: opts, ...(renames && Object.keys(renames).length > 0 ? { renames: { platforms: renames } } : {})})}
                         style={{ padding: "4px 8px", fontSize: 11, fontWeight: 600, background: "transparent", color: "#4b5563", borderRadius: 8 }} />
                     </div>
                   ) : (
@@ -943,7 +943,7 @@ const {
               }}
             >
               <Send size={14} />
-              Bagikan
+              {lang === "id" ? "Bagikan" : "Share"}
             </button>
           </div>
 
@@ -1022,7 +1022,7 @@ const {
 
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#111827", fontSize: 14, fontWeight: 800 }}>
-                    <Globe size={16} style={{ color: "#2563EB" }} /> Pengaturan Berbagi
+                    <Globe size={16} style={{ color: "#2563EB" }} /> {lang === "id" ? "Pengaturan Berbagi" : "Share Settings"}
                   </div>
                   <button 
                     type="button"
@@ -1060,7 +1060,7 @@ const {
                       transition: "all 0.2s"
                     }}
                   >
-                    Tautan Publik
+                    {lang === "id" ? "Tautan Publik" : "Public Link"}
                   </button>
                   <button
                     type="button"
@@ -1074,44 +1074,47 @@ const {
                       transition: "all 0.2s"
                     }}
                   >
-                    Kirim ke Pengguna
+                    {lang === "id" ? "Kirim ke Pengguna" : "Send to Users"}
                   </button>
                 </div>
-
                 {shareTab === "public" ? (
                   <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                    <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", userSelect: "none", background: "rgba(0,0,0,0.02)", padding: "12px 16px", borderRadius: "12px" }}>
-                      <input disabled={!canEdit}
-                        type="checkbox"
-                        checked={!!d.isPublic}
-                        onChange={(e) => {
-                          const isChecked = e.target.checked;
-                          set("isPublic", isChecked);
-                          if (!isChecked) {
-                            set("allowComments", false);
-                          }
-                        }}
-                        style={{ width: 16, height: 16, accentColor: "#2563eb" }}
-                      />
-                      <span style={{ fontSize: 13, fontWeight: 700, color: "#111827" }}>
-                        Aktifkan Link Publik
-                      </span>
-                    </label>
+                    <div style={{ display: "flex", gap: 10 }}>
+                      <label style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, cursor: "pointer", userSelect: "none", background: "rgba(0,0,0,0.02)", padding: "12px", borderRadius: "12px", border: "1px solid rgba(0,0,0,0.04)" }}>
+                        <input disabled={!canEdit}
+                          type="checkbox"
+                          checked={!!d.isPublic}
+                          onChange={(e) => {
+                            const isChecked = e.target.checked;
+                            set("isPublic", isChecked);
+                            if (!isChecked) {
+                              set("allowComments", false);
+                            }
+                          }}
+                          style={{ width: 16, height: 16, accentColor: "#2563eb", flexShrink: 0 }}
+                        />
+                        <span style={{ fontSize: 12, fontWeight: 700, color: "#111827", lineHeight: 1.2 }}>
+                          {lang === "id" ? "Aktifkan Link Publik" : "Enable Public Link"}
+                        </span>
+                      </label>
 
-                    {d.isPublic && (
-                      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                        <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", userSelect: "none", background: "rgba(0,0,0,0.02)", padding: "12px 16px", borderRadius: "12px" }}>
+                      {d.isPublic && (
+                        <label style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, cursor: "pointer", userSelect: "none", background: "rgba(0,0,0,0.02)", padding: "12px", borderRadius: "12px", border: "1px solid rgba(0,0,0,0.04)" }}>
                           <input disabled={!canEdit}
                             type="checkbox"
                             checked={d.allowComments !== false}
                             onChange={(e) => set("allowComments", e.target.checked)}
-                            style={{ width: 16, height: 16, accentColor: "#2563eb" }}
+                            style={{ width: 16, height: 16, accentColor: "#2563eb", flexShrink: 0 }}
                           />
-                          <span style={{ fontSize: 13, fontWeight: 700, color: "#111827" }}>
-                            Izinkan Komentar Pengunjung
+                          <span style={{ fontSize: 12, fontWeight: 700, color: "#111827", lineHeight: 1.2 }}>
+                            {lang === "id" ? "Izinkan Komentar" : "Allow Comments"}
                           </span>
                         </label>
+                      )}
+                    </div>
 
+                    {d.isPublic && (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                         <div style={{ display: "flex", gap: 4, alignItems: "center", background: "rgba(0,0,0,0.03)", padding: "10px 14px", borderRadius: 12 }}>
                           <input disabled={!canEdit}
                             type="text"
@@ -1138,11 +1141,11 @@ const {
                           >
                             {copiedSharedLink ? (
                               <>
-                                <Check size={14} /> Disalin!
+                                <Check size={14} /> {lang === "id" ? "Disalin!" : "Copied!"}
                               </>
                             ) : (
                               <>
-                                <Link2 size={14} /> Salin Link
+                                <Link2 size={14} /> {lang === "id" ? "Salin Link" : "Copy Link"}
                               </>
                             )}
                           </button>
@@ -1156,14 +1159,14 @@ const {
                               background: "rgba(0,0,0,0.04)", color: "#111827", border: "none", borderRadius: 12, padding: "12px", fontSize: "12px", fontWeight: 800, textDecoration: "none"
                             }}
                           >
-                            <ExternalLink size={14} /> Buka
+                            <ExternalLink size={14} /> {lang === "id" ? "Buka" : "Open"}
                           </a>
                         </div>
                       </div>
                     )}
                   </div>
                 ) : canManageShare ? (<div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(0,0,0,0.5)", letterSpacing: "0.2px" }}>Masukkan username atau email</div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(0,0,0,0.5)", letterSpacing: "0.2px" }}>{lang === "id" ? "Masukkan username atau email" : "Enter username or email"}</div>
                     <div style={{ display: "flex", gap: 8 }}>
                       <div style={{ position: "relative", flex: 1 }}>
                         <Search size={14} style={{ position: "absolute", left: 12, top: 12, color: "rgba(0,0,0,0.4)" }} />
@@ -1172,11 +1175,11 @@ const {
                           value={shareSearch}
                           onChange={(e) => setShareSearch(e.target.value)}
                           onKeyDown={(e) => e.key === "Enter" && handleShareSearch()}
-                          placeholder="username atau email"
+                          placeholder={lang === "id" ? "username atau email" : "username or email"}
                           style={{ width: "100%", background: "rgba(0,0,0,0.03)", border: "none", borderRadius: 12, padding: "10px 12px 10px 34px", fontSize: 13, fontWeight: 500, outline: "none" }}
                         />
                       </div>
-                      <button type="button" onClick={handleShareSearch} disabled={shareSearchLoading || !shareSearch.trim()} style={{ background: "#2563eb", color: "#FFFFFF", border: "none", borderRadius: 12, padding: "0 16px", fontSize: 12, fontWeight: 800, cursor: "pointer" }}>{shareSearchLoading ? "..." : "Cari"}</button>
+                      <button type="button" onClick={handleShareSearch} disabled={shareSearchLoading || !shareSearch.trim()} style={{ background: "#2563eb", color: "#FFFFFF", border: "none", borderRadius: 12, padding: "0 16px", fontSize: 12, fontWeight: 800, cursor: "pointer" }}>{shareSearchLoading ? "..." : (lang === "id" ? "Cari" : "Search")}</button>
                     </div>
 
                     {shareSearchError && <div style={{ fontSize: 12, color: "#e11d48", fontWeight: 700 }}>{shareSearchError}</div>}
@@ -1200,15 +1203,15 @@ const {
                             compact={true}
                             align="left"
                           />
-                          <button type="button" onClick={() => handleAddSharedUser(shareSearchSuccess)} style={{ background: "#2563eb", color: "#FFFFFF", border: "none", borderRadius: 8, padding: "6px 14px", fontSize: 11, fontWeight: 800, cursor: "pointer" }}>Bagikan Akses</button>
+                          <button type="button" onClick={() => handleAddSharedUser(shareSearchSuccess)} style={{ background: "#2563eb", color: "#FFFFFF", border: "none", borderRadius: 8, padding: "6px 14px", fontSize: 11, fontWeight: 800, cursor: "pointer" }}>{lang === "id" ? "Bagikan Akses" : "Share Access"}</button>
                         </div>
                       </div>
                     )}
 
                     <div style={{ borderTop: "1px solid rgba(0,0,0,0.06)", paddingTop: 12 }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(0,0,0,0.5)", marginBottom: 8, letterSpacing: "0.2px" }}>Memiliki Akses ({(d.sharedUsers || []).length})</div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(0,0,0,0.5)", marginBottom: 8, letterSpacing: "0.2px" }}>{lang === "id" ? `Memiliki Akses (${(d.sharedUsers || []).length})` : `Has Access (${(d.sharedUsers || []).length})`}</div>
                       {(!d.sharedUsers || d.sharedUsers.length === 0) ? (
-                        <div style={{ fontSize: 12, color: "rgba(0,0,0,0.4)", fontStyle: "italic", textAlign: "center", padding: "12px 0" }}>Belum ada pengguna.</div>
+                        <div style={{ fontSize: 12, color: "rgba(0,0,0,0.4)", fontStyle: "italic", textAlign: "center", padding: "12px 0" }}>{lang === "id" ? "Belum ada pengguna." : "No users yet."}</div>
                       ) : (
                         <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 180, overflowY: "auto" }}>
                           {(d.sharedUsers || []).map((u: any) => (
@@ -1235,7 +1238,7 @@ const {
                                     background: u.role === "editor" ? "#eff6ff" : u.role === "commenter" ? "#fefce8" : "rgba(0,0,0,0.04)",
                                     color: u.role === "editor" ? "#2563eb" : u.role === "commenter" ? "#ca8a04" : "#374151"
                                   }}>
-                                    {u.role === "editor" ? "Editor" : u.role === "commenter" ? "Komentator" : "Pelihat"}
+                                    {u.role === "editor" ? "Editor" : u.role === "commenter" ? (lang === "id" ? "Komentator" : "Commenter") : (lang === "id" ? "Pelihat" : "Viewer")}
                                   </span>
                                 )}
 

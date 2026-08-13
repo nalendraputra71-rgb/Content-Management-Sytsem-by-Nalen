@@ -472,7 +472,7 @@ export function AnalyticsView({
     const engagementRate = totalReach > 0 ? ((totalEngagement / totalReach) * 100).toFixed(2) : "0.00";
 
     const totalPosts = filteredBase.length;
-    const publishedPosts = filteredBase.filter((c: any) => c.status === "Published").length;
+    const publishedPosts = filteredBase.filter((c: any) => (c.status === "Published" || String(c.status).toLowerCase().includes("tayang") || String(c.status).toLowerCase().includes("publikasi") || getV(c) > 0)).length;
 
     const sortedTopPosts = [...filteredBase]
       .sort((a, b) => getEng(b) - getEng(a))
@@ -701,7 +701,7 @@ export function AnalyticsView({
   const getShares = (c: any) => (c.metrics?.shares || 0) + (c.isAds || adsFilter === "all" ? c.adsMetrics?.shares || 0 : 0);
   
   const total  = base.length;
-  const pub    = base.filter((c:any)=>c.status==="Published").length;
+  const pub    = base.filter((c:any)=>(c.status==="Published" || String(c.status).toLowerCase().includes("tayang") || String(c.status).toLowerCase().includes("publikasi") || getV(c) > 0)).length;
   
   // Randomize numbers if restricted to prevent data leak but show structure
   const seededRandom = (seed: number) => {
@@ -878,7 +878,7 @@ export function AnalyticsView({
   // Heatmap Data
   const heatmap = useMemo(() => {
     let m = Array(7).fill(0).map(() => Array(24).fill(0));
-    base.filter((c:any)=>c.status==="Published").forEach((c:any) => {
+    base.filter((c:any)=>(c.status==="Published" || String(c.status).toLowerCase().includes("tayang") || String(c.status).toLowerCase().includes("publikasi") || getV(c) > 0)).forEach((c:any) => {
       let cd = new Date(c.year, c.month - 1, c.day).getDay();
       let h = c.uploadHour || 9;
       if (h>=0 && h<24) {
@@ -973,8 +973,8 @@ export function AnalyticsView({
     setAiInsight("");
     try {
       // Extract data untuk LLM
-      const topCont = base.filter((c:any)=>c.status==="Published"&&getV(c)>0).sort((a:any,b:any)=>getEng(b)-getEng(a)).slice(0,3);
-      const badCont = base.filter((c:any)=>c.status==="Published"&&getV(c)>0).sort((a:any,b:any)=>getEng(a)-getEng(b)).slice(0,3);
+      const topCont = base.filter((c:any)=>(c.status==="Published" || String(c.status).toLowerCase().includes("tayang") || String(c.status).toLowerCase().includes("publikasi") || getV(c) > 0)&&getV(c)>0).sort((a:any,b:any)=>getEng(b)-getEng(a)).slice(0,3);
+      const badCont = base.filter((c:any)=>(c.status==="Published" || String(c.status).toLowerCase().includes("tayang") || String(c.status).toLowerCase().includes("publikasi") || getV(c) > 0)&&getV(c)>0).sort((a:any,b:any)=>getEng(a)-getEng(b)).slice(0,3);
       
       let bestDay = 0, bestHour = 0, maxEng = 0;
       heatmap.forEach((days, dIdx) => {
@@ -1100,7 +1100,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
       {/* Restricted Overlay & Main Dashboard Content */}
       <div className="relative">
 
-        {(!hasCapability('heatmaps') || !hasCapability('topBadAnalysis') || !hasCapability('platformAnalytics')) && (
+        {!isTutorialActive && (!hasCapability('heatmaps') || !hasCapability('topBadAnalysis') || !hasCapability('platformAnalytics')) && (
           <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/40 rounded-[20px]">
             <div className="bg-white/80 p-6 md:p-8 rounded-[24px] shadow-[0_20px_60px_rgba(0,0,0,0.08)] text-center max-w-[400px] border border-white/70">
               <AlertCircle size={40} className="text-blue-500 mx-auto mb-3" />
@@ -1112,7 +1112,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
         )}
 
 
-        <div className={`flex flex-col gap-6 ${isRestricted ? "blur-[8px] pointer-events-none select-none" : ""}`}>
+        <div className={`flex flex-col gap-6 ${(isRestricted && !isTutorialActive) ? "blur-[8px] pointer-events-none select-none" : ""}`}>
           
           {/* VIEW: OVERVIEW */}
           {activeSubTab === "overview" && (
@@ -1319,7 +1319,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                 <div>
                   <CDataList 
                     title={lang === "id" ? `🏆 Top 10 Konten Terbaik${topPlatform!=="All"?" ("+topPlatform+")":""}` : `🏆 Top 10 Best Content${topPlatform!=="All"?" ("+topPlatform+")":""}`} 
-                    list={base.filter((c:any)=>c.status==="Published" && getV(c)>0 && (topPlatform==="All" || (c.platform && c.platform.includes(topPlatform)))).sort((a:any,b:any)=>{
+                    list={base.filter((c:any)=>(c.status==="Published" || String(c.status).toLowerCase().includes("tayang") || String(c.status).toLowerCase().includes("publikasi") || getV(c) > 0) && getV(c)>0 && (topPlatform==="All" || (c.platform && c.platform.includes(topPlatform)))).sort((a:any,b:any)=>{
                       if(topSort==="engagement") return getEng(b)-getEng(a);
                       if(topSort==="reach") return getR(b)-getR(a);
                       return getV(b)-getV(a);
@@ -1338,7 +1338,7 @@ Berikan respons dalam bahasa Indonesia yang terstruktur dengan 3 bagian berikut:
                 <div>
                   <CDataList 
                     title={lang === "id" ? `⚠️ 10 Konten Terendah${topPlatform!=="All"?" ("+topPlatform+")":""}` : `⚠️ 10 Lowest Content${topPlatform!=="All"?" ("+topPlatform+")":""}`}
-                    list={base.filter((c:any)=>c.status==="Published" && getV(c)>0 && (topPlatform==="All" || (c.platform && c.platform.includes(topPlatform))))
+                    list={base.filter((c:any)=>(c.status==="Published" || String(c.status).toLowerCase().includes("tayang") || String(c.status).toLowerCase().includes("publikasi") || getV(c) > 0) && getV(c)>0 && (topPlatform==="All" || (c.platform && c.platform.includes(topPlatform))))
                       .sort((a:any,b:any)=>{
                       if(topSort==="engagement") return getEng(a)-getEng(b);
                       if(topSort==="reach") return getR(a)-getR(b);

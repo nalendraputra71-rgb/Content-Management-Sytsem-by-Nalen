@@ -261,11 +261,6 @@ export function HubyTutorial({
       window.dispatchEvent(new Event("closeContentModal"));
     }
 
-    // Synchronously clear elementRect if there's no highlightSelector (avoids flash & lag)
-    if (!step.highlightSelector) {
-      setElementRect(null);
-    }
-
     // Switch tab if needed
     if (tab !== step.tabTarget) {
       setTab(step.tabTarget);
@@ -289,44 +284,52 @@ export function HubyTutorial({
       const el = document.getElementById(step.highlightSelector);
       if (el && el.offsetWidth > 0 && el.offsetHeight > 0) {
         if (shouldScroll) {
-          el.scrollIntoView({ behavior: "smooth", block: "center" });
+          const r = el.getBoundingClientRect();
+          const isVisible = (
+            r.top >= 0 &&
+            r.left >= 0 &&
+            r.bottom <= window.innerHeight &&
+            r.right <= window.innerWidth
+          );
+          if (!isVisible) {
+            el.scrollIntoView({ behavior: "auto", block: "center" });
+          }
         }
         const rect = el.getBoundingClientRect();
         setElementRect(rect);
       }
     };
 
-    // Try immediately first to prevent flash/delay if element is already in DOM
-    calculateRect(false);
-
     // Calculate rect with delay to allow transition completion
-    const delay = step.tabTarget !== tab ? 450 : 150;
+    // Higher delay if switching tabs to allow elements (like heatmap) to render
+    const delay = step.tabTarget !== tab ? 600 : 150;
     const timer = setTimeout(() => {
       calculateRect(true);
       
       // Polling to handle content updates/renders
       let count = 0;
       intervalId = setInterval(() => {
-        calculateRect(false);
+        const el = document.getElementById(step.highlightSelector!);
+        if (el) calculateRect(false);
         count++;
-        if (count > 8) {
+        if (count > 6) {
           clearInterval(intervalId);
         }
-      }, 250);
+      }, 350);
     }, delay);
 
     const handleScrollResize = () => calculateRect(false);
 
     window.addEventListener("resize", handleScrollResize);
-    window.addEventListener("scroll", handleScrollResize, { passive: true });
+    window.addEventListener("scroll", handleScrollResize, { passive: true, capture: true });
 
     return () => {
       clearTimeout(timer);
       if (intervalId) clearInterval(intervalId);
       window.removeEventListener("resize", handleScrollResize);
-      window.removeEventListener("scroll", handleScrollResize);
+      window.removeEventListener("scroll", handleScrollResize, { capture: true } as any);
     };
-  }, [currentStep, isActive, tab, setTab, sidebarOpen, setSidebarOpen]);
+  }, [currentStep, isActive]); // omit tab/sidebar dependencies to prevent multi-firing!
 
   const handleNext = () => {
     if (currentStep < TUTORIAL_STEPS.length - 1) {
@@ -398,19 +401,21 @@ export function HubyTutorial({
     const r = elementRect;
     const padding = 20;
     const popoverWidth = 360;
-    const popoverHeight = 240;
+    const estimatedHeight = 280;
 
-    const spaceRight = window.innerWidth - (r.right + padding);
-    const spaceLeft = r.left - padding;
-    const spaceBottom = window.innerHeight - (r.bottom + padding);
-    const spaceTop = r.top - padding;
+    const spaceRight = window.innerWidth - r.right;
+    const spaceLeft = r.left;
+    const spaceBottom = window.innerHeight - r.bottom;
+    const spaceTop = r.top;
+
+    const clampY = (val: number) => Math.max(16, Math.min(window.innerHeight - estimatedHeight - 16, val));
+    const clampX = (val: number) => Math.max(16, Math.min(window.innerWidth - popoverWidth - 16, val));
 
     // Prefer Right, then Left, then Bottom, then Top
-    if (spaceRight >= popoverWidth) {
-      const topPos = Math.max(16, Math.min(window.innerHeight - popoverHeight - 16, r.top + r.height / 2 - popoverHeight / 2));
-      const elementCenterY = r.top + r.height / 2;
-      const relativeCenterY = elementCenterY - topPos;
-      const arrowTop = Math.max(20, Math.min(popoverHeight - 34, relativeCenterY - 7));
+    if (spaceRight >= popoverWidth + padding) {
+      const topPos = clampY(r.top + r.height / 2 - estimatedHeight / 2);
+      const relativeCenterY = (r.top + r.height / 2) - topPos;
+      const arrowTop = Math.max(20, Math.min(estimatedHeight - 34, relativeCenterY - 7));
       return {
         style: {
           position: "fixed" as const,
@@ -419,37 +424,25 @@ export function HubyTutorial({
           width: `${popoverWidth}px`,
         },
         arrow: "left",
-        arrowStyle: {
-          left: "-8px",
-          top: `${arrowTop}px`,
-          borderRight: "none",
-          borderTop: "none",
-        } as React.CSSProperties
+        arrowStyle: { left: "-8px", top: `${arrowTop}px`, borderRight: "none", borderTop: "none" } as React.CSSProperties
       };
-    } else if (spaceLeft >= popoverWidth) {
-      const topPos = Math.max(16, Math.min(window.innerHeight - popoverHeight - 16, r.top + r.height / 2 - popoverHeight / 2));
-      const elementCenterY = r.top + r.height / 2;
-      const relativeCenterY = elementCenterY - topPos;
-      const arrowTop = Math.max(20, Math.min(popoverHeight - 34, relativeCenterY - 7));
+    } else if (spaceLeft >= popoverWidth + padding) {
+      const topPos = clampY(r.top + r.height / 2 - estimatedHeight / 2);
+      const relativeCenterY = (r.top + r.height / 2) - topPos;
+      const arrowTop = Math.max(20, Math.min(estimatedHeight - 34, relativeCenterY - 7));
       return {
         style: {
           position: "fixed" as const,
-          left: `${r.left - popoverWidth - padding}px`,
+          right: `${window.innerWidth - r.left + padding}px`,
           top: `${topPos}px`,
           width: `${popoverWidth}px`,
         },
         arrow: "right",
-        arrowStyle: {
-          right: "-8px",
-          top: `${arrowTop}px`,
-          borderLeft: "none",
-          borderBottom: "none",
-        } as React.CSSProperties
+        arrowStyle: { right: "-8px", top: `${arrowTop}px`, borderLeft: "none", borderBottom: "none" } as React.CSSProperties
       };
-    } else if (spaceBottom >= popoverHeight) {
-      const leftPos = Math.max(16, Math.min(window.innerWidth - popoverWidth - 16, r.left + r.width / 2 - popoverWidth / 2));
-      const elementCenterX = r.left + r.width / 2;
-      const relativeCenterX = elementCenterX - leftPos;
+    } else if (spaceBottom >= estimatedHeight + padding) {
+      const leftPos = clampX(r.left + r.width / 2 - popoverWidth / 2);
+      const relativeCenterX = (r.left + r.width / 2) - leftPos;
       const arrowLeft = Math.max(20, Math.min(popoverWidth - 34, relativeCenterX - 7));
       return {
         style: {
@@ -459,41 +452,31 @@ export function HubyTutorial({
           width: `${popoverWidth}px`,
         },
         arrow: "top",
-        arrowStyle: {
-          top: "-8px",
-          left: `${arrowLeft}px`,
-          borderRight: "none",
-          borderBottom: "none",
-        } as React.CSSProperties
+        arrowStyle: { top: "-8px", left: `${arrowLeft}px`, borderRight: "none", borderBottom: "none" } as React.CSSProperties
       };
-    } else if (spaceTop >= popoverHeight) {
-      const leftPos = Math.max(16, Math.min(window.innerWidth - popoverWidth - 16, r.left + r.width / 2 - popoverWidth / 2));
-      const elementCenterX = r.left + r.width / 2;
-      const relativeCenterX = elementCenterX - leftPos;
+    } else if (spaceTop >= estimatedHeight + padding) {
+      const leftPos = clampX(r.left + r.width / 2 - popoverWidth / 2);
+      const relativeCenterX = (r.left + r.width / 2) - leftPos;
       const arrowLeft = Math.max(20, Math.min(popoverWidth - 34, relativeCenterX - 7));
       return {
         style: {
           position: "fixed" as const,
           left: `${leftPos}px`,
-          top: `${Math.max(16, r.top - popoverHeight - padding)}px`,
+          bottom: `${window.innerHeight - r.top + padding}px`,
           width: `${popoverWidth}px`,
         },
         arrow: "bottom",
-        arrowStyle: {
-          bottom: "-8px",
-          left: `${arrowLeft}px`,
-          borderLeft: "none",
-          borderTop: "none",
-        } as React.CSSProperties
+        arrowStyle: { bottom: "-8px", left: `${arrowLeft}px`, borderLeft: "none", borderTop: "none" } as React.CSSProperties
       };
     } else {
-      // Element is huge and there's no space on any side, so center the popover in the screen
+      // Element is huge and there's no space on any side, so place the popover at the center
+      // so it's clearly visible and not cut off.
+      // Do not use transform because motion.div overrides it.
       return {
         style: {
           position: "fixed" as const,
-          left: "50%",
-          top: "50%",
-          transform: "translate(-50%, -50%)",
+          left: `calc(50% - ${popoverWidth / 2}px)`,
+          top: `calc(50% - ${estimatedHeight / 2}px)`,
           width: `${popoverWidth}px`,
         },
         arrow: null,
@@ -514,7 +497,7 @@ export function HubyTutorial({
             style={{
               position: "fixed",
               inset: 0,
-              zIndex: 99998,
+              zIndex: 9999999,
               pointerEvents: "auto",
               background: "transparent",
             }}
@@ -522,6 +505,7 @@ export function HubyTutorial({
             {/* Spotlight Cutout Element */}
             {elementRect ? (
               <motion.div
+                key="spotlight-cutout"
                 initial={false}
                 animate={{
                   top: elementRect.top - 8,
@@ -535,21 +519,23 @@ export function HubyTutorial({
                   borderRadius: 16,
                   boxShadow: "0 0 0 9999px rgba(11, 37, 74, 0.45), 0 0 15px rgba(255,255,255,0.4)",
                   pointerEvents: "none",
-                  zIndex: 99998,
+                  zIndex: 9999999,
                 }}
               />
             ) : (
               // General Center Backdrop Overlay
               <motion.div
+                key="general-backdrop"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 style={{
                   position: "fixed",
                   inset: 0,
-                  background: "rgba(11, 37, 74, 0.4)",
-                  backdropFilter: "blur(4px)",
-                  zIndex: 99998,
+                  background: "rgba(15, 23, 42, 0.4)",
+                  backdropFilter: "blur(8px)",
+                  WebkitBackdropFilter: "blur(8px)",
+                  zIndex: 9999999,
                 }}
               />
             )}
@@ -563,7 +549,7 @@ export function HubyTutorial({
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  zIndex: 99999,
+                  zIndex: 9999999,
                   padding: 24,
                   pointerEvents: "none"
                 }}
@@ -731,7 +717,8 @@ export function HubyTutorial({
                   overflow: "visible", // For cloud tail
                   display: "flex",
                   flexDirection: "column",
-                  zIndex: 99999,
+                  zIndex: 9999999,
+                  maxHeight: "calc(100vh - 40px)",
                 }}
               >
                 {/* Cloud speech bubble tail */}
@@ -783,7 +770,7 @@ export function HubyTutorial({
                 </div>
 
                 {/* Popover Content */}
-                <div style={{ padding: "18px 20px", display: "flex", gap: 14, alignItems: "flex-start", flex: 1 }}>
+                <div style={{ padding: "18px 20px", display: "flex", gap: 14, alignItems: "flex-start", flex: 1, overflowY: "auto" }}>
                   {/* Circle character wrapper */}
                   <div 
                     style={{
@@ -908,7 +895,7 @@ export function HubyTutorial({
               inset: 0,
               background: "rgba(11, 37, 74, 0.4)",
               backdropFilter: "blur(3px)",
-              zIndex: 100000,
+              zIndex: 9999999,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -987,13 +974,13 @@ export function HubyTutorial({
       </AnimatePresence>
 
       {/* 3. Floating Companion Badge Button */}
-      {(isActive || tab === "dashboard") && (
+      {(!isActive && tab === "dashboard") && (
       <div 
         style={{
           position: "fixed",
           bottom: isMobile ? 80 : 24,
           right: isMobile ? 16 : 24,
-          zIndex: 9999,
+          zIndex: 9999999,
           display: "flex",
           flexDirection: "column",
           alignItems: "flex-end",

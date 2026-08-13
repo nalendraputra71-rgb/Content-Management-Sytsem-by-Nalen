@@ -7,10 +7,16 @@ interface I18nStore {
   setLang: (lang: Lang) => void;
 }
 
-export const useI18n = create<I18nStore>((set) => ({
-  lang: (localStorage.getItem('hubify_locale') as Lang) || 'id',
-  setLang: (lang: Lang) => {
-    localStorage.setItem('hubify_locale', lang);
-    set({ lang });
-  }
-}));
+export const useI18n = create<I18nStore>((set) => {
+  const explicitLang = localStorage.getItem('hubify_locale_explicit') as Lang;
+  const initialLang = explicitLang || 'en';
+  
+  return {
+    lang: initialLang,
+    setLang: (lang: Lang) => {
+      localStorage.setItem('hubify_locale', lang);
+      localStorage.setItem('hubify_locale_explicit', lang);
+      set({ lang });
+    }
+  };
+});

@@ -1,0 +1,68 @@
+[
+  {
+    "id": "DISKON77",
+    "type": "percent",
+    "endDate": "2027-12-31",
+    "usageCount": 0,
+    "terms": "Diskon spesial 77% untuk semua paket pilihan Anda.",
+    "code": "DISKON77",
+    "startDate": "2026-07-17",
+    "usageLimit": 100,
+    "isActive": true,
+    "value": 77,
+    "targetType": "all"
+  },
+  {
+    "id": "DISKON99",
+    "isActive": false,
+    "usageCount": 0,
+    "terms": "KALO KAMU LAJANG\nINI BISA DIPAKE\nKALO GA LAJANG\nGA BISA DIPAKE",
+    "createdAt": "2026-05-01T03:17:02.093Z",
+    "endDate": null,
+    "value": 50000,
+    "startDate": null,
+    "targetType": "all",
+    "code": "DISKON99",
+    "type": "fixed",
+    "usageLimit": 10
+  },
+  {
+    "id": "GRATISPRO",
+    "targetType": "all",
+    "isActive": false,
+    "usageLimit": 50,
+    "terms": "Diskon 100% (Bypass pembayaran) untuk testing & perpanjangan gratis.",
+    "value": 100,
+    "code": "GRATISPRO",
+    "type": "percent",
+    "usageCount": 0,
+    "startDate": "2026-07-17",
+    "endDate": "2027-12-31"
+  },
+  {
+    "id": "TESTING",
+    "type": "fixed",
+    "startDate": "2026-08-03",
+    "code": "TESTING",
+    "terms": "",
+    "usageCount": 0,
+    "isActive": false,
+    "targetType": "all",
+    "endDate": "2026-08-03",
+    "value": 78000,
+    "createdAt": "2026-08-03T04:05:15.233Z",
+    "usageLimit": 0
+  },
+  {
+    "id": "ULTAHKE1",
+    "usageLimit": 1,
+    "value": 29000,
+    "isActive": true,
+    "createdAt": "2026-05-01T03:18:51.050Z",
+    "targetType": "all",
+    "code": "ULTAHKE1",
+    "usageCount": 1,
+    "type": "fixed",
+    "terms": "HANYA UNTUK ULTAH AJA"
+  }
+]

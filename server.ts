@@ -15,19 +15,19 @@ dotenv.config();
 let firestoreDatabaseId: string | undefined;
 
 function initFirebase() {
-  if (admin.getApps().length === 0) {
-    let projectId = process.env.FIREBASE_PROJECT_ID;
-    const configPath = path.join(process.cwd(), "firebase-applet-config.json");
-    if (fs.existsSync(configPath)) {
-      const firebaseConfig = JSON.parse(fs.readFileSync(configPath, "utf8"));
-      if (!projectId) {
-        projectId = firebaseConfig.projectId;
-      }
-      if (firebaseConfig.firestoreDatabaseId) {
-        firestoreDatabaseId = firebaseConfig.firestoreDatabaseId;
-      }
+  let projectId = process.env.FIREBASE_PROJECT_ID;
+  const configPath = path.join(process.cwd(), "firebase-applet-config.json");
+  if (fs.existsSync(configPath)) {
+    const firebaseConfig = JSON.parse(fs.readFileSync(configPath, "utf8"));
+    if (firebaseConfig.projectId) {
+      projectId = firebaseConfig.projectId;
     }
+    if (firebaseConfig.firestoreDatabaseId) {
+      firestoreDatabaseId = firebaseConfig.firestoreDatabaseId;
+    }
+  }
 
+  if (admin.getApps().length === 0) {
     if (projectId) {
       let credential;
       if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
@@ -70,8 +70,14 @@ apiRoutes.get("/trends", async (req, res) => {
     const geo = (req.query.geo as string) || "ID";
     const gRes = await fetch(
       `https://trends.google.com/trending/rss?geo=${geo}`,
+      {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+          "Accept": "application/rss+xml, application/xml, text/xml"
+        }
+      }
     );
-    if (!gRes.ok) throw new Error("Failed to fetch RSS from Google");
+    if (!gRes.ok) throw new Error(`Failed to fetch RSS from Google: ${gRes.status} ${gRes.statusText}`);
     const text = await gRes.text();
     res.type("application/xml");
     res.send(text);
@@ -218,7 +224,7 @@ apiRoutes.post("/xendit/webhook", async (req, res) => {
       initFirebase();
       const dbInstance = getFirestore(
         getApp(),
-        firestoreDatabaseId || "(default)",
+        firestoreDatabaseId === "(default)" ? undefined : firestoreDatabaseId,
       );
       const userRef = dbInstance.collection("users").doc(uid);
       const userDoc = await userRef.get();
@@ -315,7 +321,7 @@ apiRoutes.post("/meta/manual-token", async (req, res) => {
     const profileId = profileData.id;
 
     // Store in firestore
-    const db = getFirestore(getApp(), firestoreDatabaseId || "(default)");
+    const db = getFirestore(getApp(), firestoreDatabaseId === "(default)" ? undefined : firestoreDatabaseId);
     await db
       .collection("workspaces")
       .doc(workspaceId)
@@ -342,7 +348,7 @@ apiRoutes.post("/meta/manual-token", async (req, res) => {
 apiRoutes.post("/meta/sync-all", async (req, res) => {
   try {
     initFirebase();
-    const db = getFirestore(getApp(), firestoreDatabaseId || "(default)");
+    const db = getFirestore(getApp(), firestoreDatabaseId === "(default)" ? undefined : firestoreDatabaseId);
 
     // Get all workspaces
     const wsSnap = await db.collection("workspaces").get();
@@ -397,7 +403,7 @@ apiRoutes.post("/meta/sync-secrets", async (req, res) => {
 
   try {
     initFirebase();
-    const db = getFirestore(getApp(), firestoreDatabaseId || "(default)");
+    const db = getFirestore(getApp(), firestoreDatabaseId === "(default)" ? undefined : firestoreDatabaseId);
     const connectedAccountsRef = db
       .collection("workspaces")
       .doc(workspaceId)
@@ -483,7 +489,7 @@ apiRoutes.get("/meta/auth", async (req, res) => {
   if (envToken) {
     try {
       initFirebase();
-      const db = getFirestore(getApp(), firestoreDatabaseId || "(default)");
+      const db = getFirestore(getApp(), firestoreDatabaseId === "(default)" ? undefined : firestoreDatabaseId);
       const docRef = db
         .collection("workspaces")
         .doc(workspaceId as string)
@@ -666,7 +672,7 @@ apiRoutes.get("/meta/callback", async (req, res) => {
       }
 
       initFirebase();
-      const db = getFirestore(getApp(), firestoreDatabaseId || "(default)");
+      const db = getFirestore(getApp(), firestoreDatabaseId === "(default)" ? undefined : firestoreDatabaseId);
       const docRef = db
         .collection("workspaces")
         .doc(workspaceId as string)
@@ -760,7 +766,7 @@ apiRoutes.get("/meta/callback", async (req, res) => {
 
     // 3. Save to Firestore
     initFirebase();
-    const db = getFirestore(getApp(), firestoreDatabaseId || "(default)");
+    const db = getFirestore(getApp(), firestoreDatabaseId === "(default)" ? undefined : firestoreDatabaseId);
     const docRef = db
       .collection("workspaces")
       .doc(workspaceId)
@@ -828,7 +834,7 @@ apiRoutes.get("/meta/data", async (req, res) => {
 
   try {
     initFirebase();
-    const db = getFirestore(getApp(), firestoreDatabaseId || "(default)");
+    const db = getFirestore(getApp(), firestoreDatabaseId === "(default)" ? undefined : firestoreDatabaseId);
     const docRef = db
       .collection("workspaces")
       .doc(workspaceId as string)
@@ -935,7 +941,7 @@ apiRoutes.post("/meta/reply-comment", async (req, res) => {
 
   try {
     initFirebase();
-    const db = getFirestore(getApp(), firestoreDatabaseId || "(default)");
+    const db = getFirestore(getApp(), firestoreDatabaseId === "(default)" ? undefined : firestoreDatabaseId);
     const docRef = db
       .collection("workspaces")
       .doc(workspaceId)
@@ -998,7 +1004,7 @@ apiRoutes.post("/meta/send-message", async (req, res) => {
 
   try {
     initFirebase();
-    const db = getFirestore(getApp(), firestoreDatabaseId || "(default)");
+    const db = getFirestore(getApp(), firestoreDatabaseId === "(default)" ? undefined : firestoreDatabaseId);
     const docRef = db
       .collection("workspaces")
       .doc(workspaceId)
@@ -1058,7 +1064,7 @@ apiRoutes.post("/meta/publish-post", async (req, res) => {
 
   try {
     initFirebase();
-    const db = getFirestore(getApp(), firestoreDatabaseId || "(default)");
+    const db = getFirestore(getApp(), firestoreDatabaseId === "(default)" ? undefined : firestoreDatabaseId);
     const docRef = db
       .collection("workspaces")
       .doc(workspaceId)
@@ -1285,7 +1291,7 @@ apiRoutes.post("/gemini", apiLimiter, async (req, res) => {
               const { dataType, month } = call.args;
               const db = getFirestore(
                 getApp(),
-                firestoreDatabaseId || "(default)",
+                firestoreDatabaseId === "(default)" ? undefined : firestoreDatabaseId,
               );
               const contentSnap = await db
                 .collection("workspaces")
@@ -1618,7 +1624,7 @@ if (!process.env.VERCEL) {
     cron.schedule("*/15 * * * *", async () => {
       try {
         initFirebase();
-        const db = getFirestore(getApp(), firestoreDatabaseId || "(default)");
+        const db = getFirestore(getApp(), firestoreDatabaseId === "(default)" ? undefined : firestoreDatabaseId);
         const now = new Date().toISOString();
 
         // Optimizing to limit reads for free tier quota

@@ -1,0 +1,378 @@
+[
+  {
+    "id": "free-annual",
+    "name": "Free (Annual)",
+    "originalPrice": 0,
+    "features": [
+      "1 Workspace",
+      "Hub.AI: 10x Generate AI / Bulan",
+      "Analitik Dasar",
+      "Kalender Konten"
+    ],
+    "price": 0,
+    "capabilities": {
+      "aiModelText": "Limited Model",
+      "csvImportExport": false,
+      "analytics": false,
+      "topBadAnalysis": false,
+      "aiUsageText": "Limited",
+      "autoPublishing": false,
+      "organicPaid": true,
+      "demographics": false,
+      "aiAutoSave": false,
+      "customColumn": false,
+      "pdfExport": false,
+      "sharedBriefs": 20,
+      "allowedModels": [],
+      "heatmaps": false,
+      "publicLink": true,
+      "historyDays": 10,
+      "platformAnalytics": false,
+      "aiSummary": false
+    },
+    "popular": false,
+    "trialEnabled": false,
+    "desc": "Cocok untuk mencoba fitur dasar Hubify.",
+    "addMonths": 12,
+    "trialDays": 0,
+    "limits": {
+      "teamMembers": 1,
+      "aiCreditsPerDay": 5000,
+      "workspaces": 1,
+      "aiCreditsPerMonth": 100,
+      "storageMB": 100,
+      "socialAccounts": 1
+    }
+  },
+  {
+    "id": "free-monthly",
+    "originalPrice": 0,
+    "limits": {
+      "aiCreditsPerMonth": 100,
+      "aiCreditsPerDay": 5000,
+      "socialAccounts": 1,
+      "teamMembers": 1,
+      "workspaces": 1,
+      "storageMB": 100
+    },
+    "addMonths": 1,
+    "trialDays": 0,
+    "popular": false,
+    "desc": "Cocok untuk mencoba fitur dasar Hubify.",
+    "name": "Free (Monthly)",
+    "features": [
+      "1 Workspace",
+      "Hub.AI: 10x Generate AI / Bulan",
+      "Analitik Dasar",
+      "Kalender Konten"
+    ],
+    "capabilities": {
+      "aiSummary": false,
+      "topBadAnalysis": false,
+      "heatmaps": false,
+      "aiModelText": "Limited Model",
+      "csvImportExport": false,
+      "autoPublishing": false,
+      "allowedModels": [],
+      "pdfExport": false,
+      "aiUsageText": "Limited",
+      "publicLink": true,
+      "platformAnalytics": false,
+      "organicPaid": true,
+      "historyDays": 10,
+      "aiAutoSave": false,
+      "demographics": false,
+      "customColumn": false,
+      "analytics": false,
+      "sharedBriefs": 20
+    },
+    "price": 0,
+    "trialEnabled": false
+  },
+  {
+    "id": "max-annual",
+    "features": [
+      "Unlimited Workspaces",
+      "Hub.AI: Unlimited Generate AI",
+      "Custom Analytics",
+      "VIP Support"
+    ],
+    "popular": false,
+    "originalPrice": 9588000,
+    "desc": "Skalabilitas tanpa batas untuk agensi & enterprise.",
+    "trialDays": 0,
+    "addMonths": 12,
+    "price": 2490000,
+    "limits": {
+      "aiCreditsPerDay": 5000,
+      "aiCreditsPerMonth": 50000,
+      "storageMB": 5000,
+      "socialAccounts": 15,
+      "workspaces": 10,
+      "teamMembers": 10
+    },
+    "trialEnabled": false,
+    "name": "Max (Annual)",
+    "capabilities": {
+      "aiAutoSave": true,
+      "aiModelText": "3.1 Flash",
+      "heatmaps": true,
+      "aiSummary": true,
+      "demographics": true,
+      "aiUsageText": "50K Credits",
+      "customColumn": true,
+      "publicLink": true,
+      "sharedBriefs": -1,
+      "pdfExport": true,
+      "allowedModels": [
+        "gemini-3.1-flash-lite",
+        "gemini-3.6-flash",
+        "gemini-3.1-pro-preview"
+      ],
+      "organicPaid": true,
+      "csvImportExport": true,
+      "autoPublishing": true,
+      "analytics": true,
+      "platformAnalytics": true,
+      "topBadAnalysis": true,
+      "historyDays": 90
+    }
+  },
+  {
+    "id": "max-monthly",
+    "popular": false,
+    "originalPrice": 799000,
+    "desc": "Skalabilitas tanpa batas untuk agensi & enterprise.",
+    "capabilities": {
+      "analytics": true,
+      "heatmaps": true,
+      "autoPublishing": true,
+      "platformAnalytics": true,
+      "allowedModels": [
+        "gemini-3.1-flash-lite",
+        "gemini-3.6-flash",
+        "gemini-3.1-pro-preview"
+      ],
+      "aiModelText": "3.1 Flash",
+      "publicLink": true,
+      "csvImportExport": true,
+      "topBadAnalysis": true,
+      "aiAutoSave": true,
+      "aiUsageText": "50K Credits",
+      "pdfExport": true,
+      "organicPaid": true,
+      "customColumn": true,
+      "historyDays": 90,
+      "demographics": true,
+      "aiSummary": true,
+      "sharedBriefs": -1
+    },
+    "features": [
+      "Unlimited Workspaces",
+      "Hub.AI: Unlimited Generate AI",
+      "Custom Analytics",
+      "VIP Support"
+    ],
+    "trialEnabled": false,
+    "trialDays": 0,
+    "addMonths": 1,
+    "limits": {
+      "storageMB": 5000,
+      "aiCreditsPerMonth": 50000,
+      "teamMembers": 10,
+      "socialAccounts": 15,
+      "workspaces": 10,
+      "aiCreditsPerDay": 5000
+    },
+    "name": "Max (Monthly)",
+    "price": 249000
+  },
+  {
+    "id": "plus-annual",
+    "originalPrice": 2988000,
+    "trialEnabled": false,
+    "name": "Plus (Annual)",
+    "capabilities": {
+      "aiUsageText": "5K Credits",
+      "sharedBriefs": -1,
+      "pdfExport": true,
+      "demographics": true,
+      "topBadAnalysis": true,
+      "customColumn": true,
+      "aiModelText": "3.1 Flash",
+      "aiSummary": true,
+      "autoPublishing": true,
+      "platformAnalytics": true,
+      "publicLink": true,
+      "allowedModels": [
+        "gemini-3.1-flash-lite"
+      ],
+      "analytics": true,
+      "historyDays": 45,
+      "organicPaid": true,
+      "aiAutoSave": true,
+      "csvImportExport": true,
+      "heatmaps": true
+    },
+    "features": [
+      "1 Workspace",
+      "Hub.AI: 100K Credits/Bulan",
+      "Standar Analytics",
+      "Email Support"
+    ],
+    "limits": {
+      "socialAccounts": 3,
+      "aiCreditsPerMonth": 5000,
+      "aiCreditsPerDay": 500,
+      "storageMB": 1000,
+      "teamMembers": 3,
+      "workspaces": 3
+    },
+    "desc": "Cocok untuk kreator individu.",
+    "addMonths": 12,
+    "trialDays": 0,
+    "price": 790000,
+    "popular": false
+  },
+  {
+    "id": "plus-monthly",
+    "trialEnabled": true,
+    "name": "Plus (Monthly)",
+    "capabilities": {
+      "publicLink": true,
+      "organicPaid": true,
+      "customColumn": true,
+      "demographics": true,
+      "historyDays": 45,
+      "analytics": true,
+      "sharedBriefs": -1,
+      "aiAutoSave": true,
+      "aiSummary": true,
+      "heatmaps": true,
+      "autoPublishing": true,
+      "allowedModels": [
+        "gemini-3.1-flash-lite"
+      ],
+      "aiModelText": "3.1 Flash",
+      "csvImportExport": true,
+      "pdfExport": true,
+      "platformAnalytics": true,
+      "topBadAnalysis": true,
+      "aiUsageText": "5K Credits"
+    },
+    "addMonths": 1,
+    "trialDays": 30,
+    "desc": "Cocok untuk kreator individu.",
+    "price": 79000,
+    "popular": false,
+    "originalPrice": 249000,
+    "features": [
+      "1 Workspace",
+      "Hub.AI: 100K Credits/Bulan",
+      "Standar Analytics",
+      "Email Support"
+    ],
+    "limits": {
+      "storageMB": 1000,
+      "workspaces": 3,
+      "socialAccounts": 3,
+      "teamMembers": 3,
+      "aiCreditsPerDay": 500,
+      "aiCreditsPerMonth": 5000
+    }
+  },
+  {
+    "id": "pro-annual",
+    "name": "Pro (Annual)",
+    "price": 1490000,
+    "originalPrice": 5880000,
+    "trialDays": 0,
+    "addMonths": 12,
+    "limits": {
+      "aiCreditsPerDay": 1000,
+      "socialAccounts": 10,
+      "workspaces": 5,
+      "storageMB": 5000,
+      "aiCreditsPerMonth": 10000,
+      "teamMembers": 5
+    },
+    "features": [
+      "3 Workspaces",
+      "Hub.AI: 1M Credits/Bulan",
+      "Advanced Analytics",
+      "Prioritas Support"
+    ],
+    "desc": "Untuk tim kecil yang berkembang.",
+    "trialEnabled": false,
+    "popular": true,
+    "capabilities": {
+      "csvImportExport": true,
+      "heatmaps": true,
+      "aiModelText": "3.1 Flash",
+      "autoPublishing": true,
+      "platformAnalytics": true,
+      "aiUsageText": "10K Credits",
+      "topBadAnalysis": true,
+      "analytics": true,
+      "aiSummary": true,
+      "allowedModels": [
+        "gemini-3.1-flash-lite"
+      ],
+      "organicPaid": true,
+      "aiAutoSave": true,
+      "customColumn": true,
+      "pdfExport": true,
+      "demographics": true,
+      "sharedBriefs": -1,
+      "publicLink": true,
+      "historyDays": 60
+    }
+  },
+  {
+    "id": "pro-monthly",
+    "originalPrice": 490000,
+    "addMonths": 1,
+    "trialDays": 0,
+    "desc": "Untuk tim kecil yang berkembang.",
+    "price": 149000,
+    "popular": true,
+    "name": "Pro (Monthly)",
+    "limits": {
+      "socialAccounts": 10,
+      "aiCreditsPerMonth": 10000,
+      "aiCreditsPerDay": 1000,
+      "storageMB": 5000,
+      "workspaces": 5,
+      "teamMembers": 5
+    },
+    "trialEnabled": false,
+    "features": [
+      "3 Workspaces",
+      "Hub.AI: 1M Credits/Bulan",
+      "Advanced Analytics",
+      "Prioritas Support"
+    ],
+    "capabilities": {
+      "csvImportExport": true,
+      "aiSummary": true,
+      "organicPaid": true,
+      "historyDays": 60,
+      "allowedModels": [
+        "gemini-3.1-flash-lite"
+      ],
+      "pdfExport": true,
+      "platformAnalytics": true,
+      "heatmaps": true,
+      "publicLink": true,
+      "topBadAnalysis": true,
+      "aiModelText": "3.1 Flash",
+      "demographics": true,
+      "customColumn": true,
+      "aiAutoSave": true,
+      "autoPublishing": true,
+      "aiUsageText": "10K Credits",
+      "analytics": true,
+      "sharedBriefs": -1
+    }
+  }
+]

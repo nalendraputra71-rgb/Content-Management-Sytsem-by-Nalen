@@ -68,7 +68,7 @@ service cloud.firestore {
       allow list: if isSignedIn();
       allow create: if isSignedIn() && request.auth.uid == userId && incoming().uid == userId;
       allow update: if isSignedIn() && (
-        (request.auth.uid == userId && incoming().diff(existing()).affectedKeys().hasOnly(['fullName', 'nickname', 'avatar', 'username', 'activeUntil', 'plan', 'hasUsedPromo', 'emailVerified', 'createdAt', 'themeId', 'bio', 'following', 'followers', 'aiTokensUsed', 'aiRequestsCount', 'aiRequestsToday', 'lastAiRequestDate', 'completedTour', 'role'])) ||
+        (request.auth.uid == userId && incoming().diff(existing()).affectedKeys().hasOnly(['fullName', 'nickname', 'avatar', 'username', 'activeUntil', 'plan', 'hasUsedPromo', 'emailVerified', 'createdAt', 'themeId', 'bio', 'following', 'followers', 'aiTokensUsed', 'aiRequestsCount', 'aiRequestsToday', 'aiCreditsToday', 'lastAiRequestDate', 'lastAiRequestMonth', 'completedTour', 'role'])) ||
         (incoming().diff(existing()).affectedKeys().hasOnly(['followers'])) ||
         isAdmin()
       );
@@ -208,12 +208,16 @@ service cloud.firestore {
         )) || (resource != null && resource.data.get('isPublic', false) == true) || get(/databases/$(database)/documents/workspaces/$(wsId)).data.get('publicLinkEnabled', false) == true;
         allow create: if isSignedIn() && incoming().workspaceId == wsId && (incoming().userId == request.auth.uid || isAdmin() || isEditor(wsId));
         allow delete: if isSignedIn() && (resource.data.userId == request.auth.uid || isEditor(wsId) || isAdmin());
-        allow update: if isSignedIn() && (
+        allow update: if (isSignedIn() && (
           resource.data.userId == request.auth.uid || 
           isEditor(wsId) || 
           isAdmin() ||
           (request.auth.uid in resource.data.get('editorUids', [])) ||
-          ((isCommenter(wsId) || resource.data.get('isPublic', false) == true) && incoming().diff(existing()).affectedKeys().hasOnly(['comments']))
+          (isCommenter(wsId) && incoming().diff(existing()).affectedKeys().hasOnly(['comments']))
+        )) || (
+          resource.data.get('isPublic', false) == true && 
+          resource.data.get('allowComments', true) != false && 
+          incoming().diff(existing()).affectedKeys().hasOnly(['comments'])
         );
 
         match /history/{historyId} {

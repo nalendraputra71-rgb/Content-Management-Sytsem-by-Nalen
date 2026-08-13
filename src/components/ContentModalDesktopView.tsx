@@ -355,7 +355,7 @@ const {
                     </div>
                     {editingFieldLeft === "platform" ? (
                       <div ref={activeFieldRef} style={{flex: 1}}>
-                        <CustomDropdown alignRight={true} dark={false} value={d.platform} options={platforms} prefix="" onChange={(v)=>{set("platform", v);}} initiallyOpen={true} onClose={() => setEditingFieldLeft(null)} 
+                        <CustomDropdown alignRight={true} dark={false} value={d.platform} options={platforms} prefix="" onChange={(v)=>{set("platform", v);}} initiallyOpen={true} onClose={() => setEditingFieldLeft(null)} onUpdateOptions={(opts, renames) => onSettingUpdate && onSettingUpdate({platforms: opts, ...(renames && Object.keys(renames).length > 0 ? { renames: { platforms: renames } } : {})})}
                           style={{ padding: "4px 8px", fontSize: 12, fontWeight: 600, background: "transparent", color: "#4b5563", border: "1px solid rgba(44,32,22,0.15)", borderRadius: 6, boxShadow: "none" }} />
                       </div>
                     ) : (
@@ -1149,7 +1149,7 @@ const {
                 }}
               >
                 <Send size={13} style={{ marginRight: 4 }} />
-                Bagikan
+                {lang === "id" ? "Bagikan" : "Share"}
               </button>
 
               <AnimatePresence>
@@ -1174,7 +1174,7 @@ const {
                     }}
                   >
                     <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#111827", fontSize: 13, fontWeight: 700, marginBottom: 12 }}>
-                      <Globe size={15} className="text-blue-600" /> Pengaturan Berbagi
+                      <Globe size={15} className="text-blue-600" /> {lang === "id" ? "Pengaturan Berbagi" : "Share Settings"}
                     </div>
 
                     {/* Segmented Tab Control */}
@@ -1204,7 +1204,7 @@ const {
                           transition: "all 0.15s"
                         }}
                       >
-                        Tautan Publik
+                        {lang === "id" ? "Tautan Publik" : "Public Link"}
                       </button>
                       <button
                         type="button"
@@ -1223,7 +1223,7 @@ const {
                           transition: "all 0.15s"
                         }}
                       >
-                        Kirim ke Pengguna
+                        {lang === "id" ? "Kirim ke Pengguna" : "Send to Users"}
                       </button>
                     </div>
 
@@ -1233,38 +1233,42 @@ const {
                       </div>
                     ) : shareTab === "public" ? (
                       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                        <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", userSelect: "none" }}>
-                          <input disabled={!canEdit}
-                            type="checkbox"
-                            checked={!!d.isPublic}
-                            onChange={(e) => {
-                              const isChecked = e.target.checked;
-                              set("isPublic", isChecked);
-                              if (!isChecked) {
-                                set("allowComments", false);
-                              }
-                            }}
-                            style={{ width: 15, height: 15, accentColor: "#2563eb", cursor: "pointer" }}
-                          />
-                          <span style={{ fontSize: 12, fontWeight: 600, color: "#374151" }}>
-                            Aktifkan Link Publik
-                          </span>
-                        </label>
+                        <div style={{ display: "flex", gap: 10 }}>
+                          <label style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, cursor: "pointer", userSelect: "none", background: "rgba(0,0,0,0.02)", padding: "8px 12px", borderRadius: "8px", border: "1px solid rgba(0,0,0,0.04)" }}>
+                            <input disabled={!canEdit}
+                              type="checkbox"
+                              checked={!!d.isPublic}
+                              onChange={(e) => {
+                                const isChecked = e.target.checked;
+                                set("isPublic", isChecked);
+                                if (!isChecked) {
+                                  set("allowComments", false);
+                                }
+                              }}
+                              style={{ width: 14, height: 14, accentColor: "#2563eb", cursor: "pointer", flexShrink: 0 }}
+                            />
+                            <span style={{ fontSize: 12, fontWeight: 600, color: "#374151" }}>
+                              {lang === "id" ? "Aktifkan Link Publik" : "Enable Public Link"}
+                            </span>
+                          </label>
 
-                        {d.isPublic && (
-                          <div style={{ display: "flex", flexDirection: "column", gap: 10, paddingLeft: 4 }}>
-                            <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", userSelect: "none" }}>
+                          {d.isPublic && (
+                            <label style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, cursor: "pointer", userSelect: "none", background: "rgba(0,0,0,0.02)", padding: "8px 12px", borderRadius: "8px", border: "1px solid rgba(0,0,0,0.04)" }}>
                               <input disabled={!canEdit}
                                 type="checkbox"
                                 checked={d.allowComments !== false}
                                 onChange={(e) => set("allowComments", e.target.checked)}
-                                style={{ width: 14, height: 14, accentColor: "#2563eb", cursor: "pointer" }}
+                                style={{ width: 14, height: 14, accentColor: "#2563eb", cursor: "pointer", flexShrink: 0 }}
                               />
-                              <span style={{ fontSize: 11, fontWeight: 600, color: "#4b5563" }}>
-                                Izinkan Komentar Pengunjung
+                              <span style={{ fontSize: 12, fontWeight: 600, color: "#374151" }}>
+                                {lang === "id" ? "Izinkan Komentar" : "Allow Comments"}
                               </span>
                             </label>
+                          )}
+                        </div>
 
+                        {d.isPublic && (
+                          <div style={{ display: "flex", flexDirection: "column", gap: 10, paddingLeft: 4 }}>
                             <div style={{ display: "flex", gap: 4, alignItems: "center", background: "rgba(0,0,0,0.03)", padding: "4px 8px", borderRadius: 8 }}>
                               <input disabled={!canEdit}
                                 type="text"
@@ -1312,11 +1316,11 @@ const {
                               >
                                 {copiedSharedLink ? (
                                   <>
-                                    <Check size={12} /> Disalin!
+                                    <Check size={12} /> {lang === "id" ? "Disalin!" : "Copied!"}
                                   </>
                                 ) : (
                                   <>
-                                    <Link2 size={12} /> Salin Link
+                                    <Link2 size={12} /> {lang === "id" ? "Salin Link" : "Copy Link"}
                                   </>
                                 )}
                               </button>
@@ -1342,7 +1346,7 @@ const {
                                   transition: "background 0.2s"
                                 }}
                               >
-                                <ExternalLink size={12} /> Buka
+                                <ExternalLink size={12} /> {lang === "id" ? "Buka" : "Open"}
                               </a>
                             </div>
                           </div>
@@ -1353,7 +1357,7 @@ const {
                         {/* Search field for Hubify Users */}
                         <div>
                           <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(0,0,0,0.5)", marginBottom: 6 }}>
-                            Masukkan username atau email
+                            {lang === "id" ? "Masukkan username atau email" : "Enter username or email"}
                           </div>
                           <div style={{ display: "flex", gap: 6 }}>
                             <div style={{ position: "relative", flex: 1 }}>
@@ -1363,7 +1367,7 @@ const {
                                 value={shareSearch}
                                 onChange={(e) => setShareSearch(e.target.value)}
                                 onKeyDown={(e) => e.key === "Enter" && handleShareSearch()}
-                                placeholder="username atau email"
+                                placeholder={lang === "id" ? "username atau email" : "username or email"}
                                 style={{
                                   width: "100%",
                                   background: "rgba(0,0,0,0.03)",
@@ -1391,7 +1395,7 @@ const {
                                 opacity: (!shareSearch.trim() || shareSearchLoading) ? 0.6 : 1
                               }}
                             >
-                              {shareSearchLoading ? "..." : "Cari"}
+                              {shareSearchLoading ? "..." : (lang === "id" ? "Cari" : "Search")}
                             </button>
                           </div>
                         </div>
@@ -1443,7 +1447,7 @@ const {
                                   gap: 2
                                 }}
                               >
-                                <UserCheck size={10} /> Bagikan
+                                <UserCheck size={10} /> {lang === "id" ? "Bagikan" : "Share"}
                               </button>
                             </div>
                           </div>
@@ -1452,12 +1456,12 @@ const {
                         {/* List of currently shared users */}
                         <div style={{ borderTop: "1px solid rgba(0,0,0,0.06)", paddingTop: 10, marginTop: 4 }}>
                           <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(0,0,0,0.5)", marginBottom: 8 }}>
-                            Memiliki Akses Khusus ({(d.sharedUsers || []).length})
+                            {lang === "id" ? `Memiliki Akses Khusus (${(d.sharedUsers || []).length})` : `Has Access (${(d.sharedUsers || []).length})`}
                           </div>
                           
                           {(!d.sharedUsers || d.sharedUsers.length === 0) ? (
                             <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", fontStyle: "italic", textAlign: "center", padding: "8px 0" }}>
-                              Belum ada pengguna Hubify Social yang ditambahkan.
+                              {lang === "id" ? "Belum ada pengguna Hubify Social yang ditambahkan." : "No users added yet."}
                             </div>
                           ) : (
                             <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 140, overflowY: "auto", paddingRight: 2 }}>
@@ -1496,7 +1500,7 @@ const {
                                         background: u.role === "editor" ? "#eff6ff" : u.role === "commenter" ? "#fefce8" : "rgba(0,0,0,0.04)",
                                         color: u.role === "editor" ? "#2563eb" : u.role === "commenter" ? "#ca8a04" : "#374151"
                                       }}>
-                                        {u.role === "editor" ? "Editor" : u.role === "commenter" ? "Komentator" : "Pelihat"}
+                                        {u.role === "editor" ? "Editor" : u.role === "commenter" ? (lang === "id" ? "Komentator" : "Commenter") : (lang === "id" ? "Pelihat" : "Viewer")}
                                       </span>
                                     )}
 
@@ -1514,7 +1518,7 @@ const {
                                           alignItems: "center",
                                           opacity: 0.7
                                         }}
-                                        title="Hapus Akses"
+                                        title={lang === "id" ? "Hapus Akses" : "Remove Access"}
                                         onMouseOver={(e: any) => e.currentTarget.style.opacity = 1}
                                         onMouseOut={(e: any) => e.currentTarget.style.opacity = 0.7}
                                       >
