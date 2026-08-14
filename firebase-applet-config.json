@@ -1,10 +1,10 @@
 {
-  "apiKey": "AIzaSyAisPFbPLOYiEvmB8AwqoLTMP6lXOmySyI",
-  "authDomain": "hubify-social.firebaseapp.com",
-  "projectId": "hubify-social",
-  "storageBucket": "hubify-social.firebasestorage.app",
-  "messagingSenderId": "1036340838867",
-  "appId": "1:1036340838867:web:4fcc3f7f7d279eb98cef26",
-  "measurementId": "G-G9RVSKET4Z",
+  "apiKey": "AIzaSyDRBf0tTB3Qbq6UOI07dqN-uSXkgaiONoA",
+  "authDomain": "hubify-social-live.firebaseapp.com",
+  "projectId": "hubify-social-live",
+  "storageBucket": "hubify-social-live.firebasestorage.app",
+  "messagingSenderId": "448472718221",
+  "appId": "1:448472718221:web:4889f2057f05e23852bbc4",
+  "measurementId": "G-RRCC5J7RZJ",
   "firestoreDatabaseId": "(default)"
 }
